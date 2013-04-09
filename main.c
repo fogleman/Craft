@@ -3,10 +3,10 @@
 #include "modern.h"
 
 static const GLfloat g_vertex_buffer_data[] = { 
-    -1*1, -1*1, -10,
-     1*1, -1*1, -10,
-    -1*1,  1*1, -10,
-     1*1,  1*1, -10
+    -1, -1, -10,
+     1, -1, -10,
+    -1,  1, -10,
+     1,  1, -10
 };
 
 static const GLushort g_element_buffer_data[] = {0, 1, 2, 3};
@@ -46,12 +46,15 @@ int main(int argc, char **argv) {
     GLuint program = make_program(vertex_shader, fragment_shader);
     float matrix[16];
     while (glfwGetWindowParam(GLFW_OPENED)) {
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.5, 0.69, 1.0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         set_3d(matrix);
         glUniformMatrix4fv(
             glGetUniformLocation(program, "matrix"),
             1, GL_FALSE, matrix);
+        glUniform1f(
+            glGetUniformLocation(program, "timer"),
+            glfwGetTime());
         glUseProgram(program);
 
         GLuint index = glGetAttribLocation(program, "position");

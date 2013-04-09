@@ -127,3 +127,14 @@ void perspective_matrix(float *matrix, float fov, float aspect,
     xmax = ymax * aspect;
     frustum_matrix(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
 }
+
+// float *make_cube(float x, float y, float z, float n) {
+//     return [
+//         x-n,y+n,z-n, x-n,y+n,z+n, x+n,y+n,z+n, x+n,y+n,z-n,
+//         x-n,y-n,z-n, x+n,y-n,z-n, x+n,y-n,z+n, x-n,y-n,z+n,
+//         x-n,y-n,z-n, x-n,y-n,z+n, x-n,y+n,z+n, x-n,y+n,z-n,
+//         x+n,y-n,z+n, x+n,y-n,z-n, x+n,y+n,z-n, x+n,y+n,z+n,
+//         x-n,y-n,z+n, x+n,y-n,z+n, x+n,y+n,z+n, x-n,y+n,z+n,
+//         x+n,y-n,z-n, x-n,y-n,z-n, x-n,y+n,z-n, x+n,y+n,z-n,
+//     ]
+// }

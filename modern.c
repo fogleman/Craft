@@ -128,13 +128,29 @@ void perspective_matrix(float *matrix, float fov, float aspect,
     frustum_matrix(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
 }
 
-// float *make_cube(float x, float y, float z, float n) {
-//     return [
-//         x-n,y+n,z-n, x-n,y+n,z+n, x+n,y+n,z+n, x+n,y+n,z-n,
-//         x-n,y-n,z-n, x+n,y-n,z-n, x+n,y-n,z+n, x-n,y-n,z+n,
-//         x-n,y-n,z-n, x-n,y-n,z+n, x-n,y+n,z+n, x-n,y+n,z-n,
-//         x+n,y-n,z+n, x+n,y-n,z-n, x+n,y+n,z-n, x+n,y+n,z+n,
-//         x-n,y-n,z+n, x+n,y-n,z+n, x+n,y+n,z+n, x-n,y+n,z+n,
-//         x+n,y-n,z-n, x-n,y-n,z-n, x-n,y+n,z-n, x+n,y+n,z-n,
-//     ]
-// }
+void make_cube(float *output, float x, float y, float z, float n) {
+    *(output++) = x - n;
+    *(output++) = y - n;
+    *(output++) = z - n;
+    *(output++) = x - n;
+    *(output++) = y - n;
+    *(output++) = z + n;
+    *(output++) = x - n;
+    *(output++) = y + n;
+    *(output++) = z - n;
+    *(output++) = x - n;
+    *(output++) = y + n;
+    *(output++) = z + n;
+    *(output++) = x + n;
+    *(output++) = y - n;
+    *(output++) = z - n;
+    *(output++) = x + n;
+    *(output++) = y - n;
+    *(output++) = z + n;
+    *(output++) = x + n;
+    *(output++) = y + n;
+    *(output++) = z - n;
+    *(output++) = x + n;
+    *(output++) = y + n;
+    *(output++) = z + n;
+}

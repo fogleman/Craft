@@ -73,9 +73,9 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
         glEnableVertexAttribArray(index);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
-        glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 0);
-        glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 8);
-        glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 16);
+        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 3);
+        // glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 8);
+        // glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 16);
         glDisableVertexAttribArray(index);
 
         glfwSwapBuffers();

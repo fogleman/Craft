@@ -3,6 +3,8 @@
 uniform mat4 matrix;
 uniform float timer;
 in vec4 position;
+in vec2 vertexUV;
+out vec2 UV;
 flat out int instance;
 
 mat4 translate(vec3 t) {
@@ -36,8 +38,10 @@ void main() {
     instance = i;
     int x = i % 9 - 4;
     int y = i / 9 - 4;
-    p = rotate(vec3(0, 1, 0), timer * 4) * p;
-    p = translate(vec3(sin(timer) * 3 + x * 2, y * 2, cos(timer) * 10 - 20)) * p;
+    //p = rotate(vec3(0, 1, 0), timer * 4) * p;
+    //p = translate(vec3(sin(timer) * 3 + x * 2, y * 2, cos(timer) * 10 - 20)) * p;
+    p = translate(vec3(x * 2, y * 2, -10)) * p;
     p = matrix * p;
     gl_Position = p;
+    UV = vertexUV;
 }

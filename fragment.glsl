@@ -1,10 +1,11 @@
 #version 330 core
 
+uniform sampler2D sampler;
 flat in int instance;
+in vec2 UV;
 out vec3 color;
 
 void main() {
-    int i = instance;
-    float c = i / 80.0;
-    color = vec3(c, c, 1);
+    color = vec3(UV, 1);
+    //color = texture(sampler, UV).rgb;
 }

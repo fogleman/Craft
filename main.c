@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include <GL/glfw.h>
 #include "modern.h"
 
@@ -32,13 +31,12 @@ int main(int argc, char **argv) {
     if (!glfwInit()) {
         return -1;
     }
+    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
         return -1;
     }
     glfwSetWindowTitle("Modern GL");
-    if (glewInit() != GLEW_OK) {
-        return -1;
-    }
     make_cube(g_vertex_buffer_data, 0, 0, -10, 0.5);
     make_cube(g_vertex_buffer_data + 24, -3, 0, -10, 0.5);
     make_cube(g_vertex_buffer_data + 48, 3, 0, -10, 0.5);
@@ -73,8 +71,9 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, 0);
         glEnableVertexAttribArray(index);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
-        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 3);
-        // glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 8);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
+        // glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 3);
+        // glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 0);
         // glDrawElementsBaseVertex(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 16);
         glDisableVertexAttribArray(index);
 

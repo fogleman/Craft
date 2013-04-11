@@ -2,10 +2,9 @@
 
 uniform sampler2D sampler;
 flat in int instance;
-in vec2 UV;
-out vec3 color;
+in vec2 fragment_uv;
+out vec4 color;
 
 void main() {
-    color = vec3(UV, 1);
-    //color = texture(sampler, UV).rgb;
+    color = texture(sampler, fragment_uv);
 }

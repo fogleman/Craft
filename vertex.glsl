@@ -3,8 +3,8 @@
 uniform mat4 matrix;
 uniform float timer;
 in vec4 position;
-in vec2 vertexUV;
-out vec2 UV;
+in vec2 uv;
+out vec2 fragment_uv;
 flat out int instance;
 
 mat4 translate(vec3 t) {
@@ -33,15 +33,14 @@ mat4 rotate(vec3 axis, float angle) {
 }
 
 void main() {
+    fragment_uv = uv;
+    instance = gl_InstanceID;
+    int x = instance % 9 - 4;
+    int y = instance / 9 - 4;
+
     vec4 p = position;
-    int i = gl_InstanceID;
-    instance = i;
-    int x = i % 9 - 4;
-    int y = i / 9 - 4;
-    //p = rotate(vec3(0, 1, 0), timer * 4) * p;
-    //p = translate(vec3(sin(timer) * 3 + x * 2, y * 2, cos(timer) * 10 - 20)) * p;
-    p = translate(vec3(x * 2, y * 2, -10)) * p;
+    p = rotate(vec3(0, 1, 0), timer) * p;
+    p = translate(vec3(x * 2, y * 2, -12)) * p;
     p = matrix * p;
     gl_Position = p;
-    UV = vertexUV;
 }

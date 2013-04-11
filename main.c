@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     glfwSwapInterval(0);
+    glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
 
     if (glewInit() != GLEW_OK) {
@@ -66,6 +67,7 @@ int main(int argc, char **argv) {
     GLuint program = load_program("vertex.glsl", "fragment.glsl");
     GLuint matrix_loc = glGetUniformLocation(program, "matrix");
     GLuint timer_loc = glGetUniformLocation(program, "timer");
+    GLuint rotation_loc = glGetUniformLocation(program, "rotation");
     GLuint sampler_loc = glGetUniformLocation(program, "sampler");
     GLuint position_loc = glGetAttribLocation(program, "position");
     GLuint uv_loc = glGetAttribLocation(program, "uv");
@@ -73,9 +75,22 @@ int main(int argc, char **argv) {
     FPS fps = {0, 0};
     float matrix[16];
     glEnable(GL_CULL_FACE);
+    float rx = 0;
+    float ry = 0;
+    float m = 0.15;
+    int mx, my, px, py;
+    glfwGetMousePos(&px, &py);
     while (glfwGetWindowParam(GLFW_OPENED)) {
         update_fps(&fps);
         update_matrix(matrix);
+
+        glfwGetMousePos(&mx, &my);
+        rx += (mx - px) * m;
+        ry += (my - py) * m;
+        ry = ry < -90 ? -90 : ry;
+        ry = ry > 90 ? 90 : ry;
+        px = mx;
+        py = my;
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -83,6 +98,7 @@ int main(int argc, char **argv) {
         glUseProgram(program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform1f(timer_loc, glfwGetTime());
+        glUniform2f(rotation_loc, rx, ry);
         glUniform1i(sampler_loc, 0);
 
         glEnableVertexAttribArray(position_loc);

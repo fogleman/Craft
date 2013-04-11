@@ -2,6 +2,7 @@
 
 uniform mat4 matrix;
 uniform float timer;
+uniform vec2 rotation;
 in vec4 position;
 in vec2 uv;
 out vec2 fragment_uv;
@@ -37,12 +38,11 @@ void main() {
     int y = (i % 81) / 9 - 4;
     int x = (i % 81) % 9 - 4;
 
-    float m = 2;
     vec4 p = position;
-    //p = rotate(vec3(0, 1, 0), timer) * p;
-    p = translate(vec3(x * m, y * m, -z * m - 5)) * p;
-    //p = translate(vec3(0, -10, 0)) * p;
-    p = rotate(vec3(1, 0, 0), sin(timer) / 4) * p;
+    vec2 r = rotation;
+    p = translate(vec3(x * 2, y * 2, -z * 2 - 5)) * p;
+    p = rotate(vec3(cos(radians(r.x)), 0, sin(radians(r.x))), -radians(r.y)) * p;
+    p = rotate(vec3(0, 1, 0), -radians(r.x)) * p;
     p = matrix * p;
     gl_Position = p;
 

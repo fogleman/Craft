@@ -11,7 +11,7 @@ clean:
 	rm *.o
 
 main: main.o modern.o
-	gcc $(FLAGS) main.o modern.o -o main $(LIBRARY) -lglew32 -lglfw -lopengl32 -lglu32
+	gcc $(FLAGS) main.o modern.o -o main $(LIBRARY) -lglew32 -lglfw -lopengl32
 
 main.o: main.c
 	gcc $(FLAGS) $(INCLUDE) -c -o main.o main.c

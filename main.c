@@ -3,25 +3,6 @@
 #include <stdio.h>
 #include "modern.h"
 
-static GLfloat g_vertex_data[108];
-
-#define N 0.25
-
-static const GLfloat g_uv_data[] = {
-    0, 0, N, N, 0, N,
-    0, 0, N, 0, N, N,
-    N, 0, 0, N, 0, 0,
-    N, 0, N, N, 0, N,
-    0, N, 0, 0, N, 0,
-    0, N, N, 0, N, N,
-    0, 0, N, 0, N, N,
-    0, 0, N, N, 0, N,
-    N, 0, 0, 0, 0, N,
-    N, 0, 0, N, N, N,
-    0, 0, N, N, N, 0,
-    0, 0, 0, N, N, N
-};
-
 typedef struct {
     unsigned int frames;
     double timestamp;
@@ -40,8 +21,7 @@ void update_fps(FPS *fps) {
 }
 
 void update_matrix(float *matrix) {
-    int width;
-    int height;
+    int width, height;
     glfwGetWindowSize(&width, &height);
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
@@ -62,16 +42,18 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    make_cube(g_vertex_data, 0, 0, 0, 0.5);
+    GLfloat vertex_data[108];
+    GLfloat texture_data[72];
+    make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
     GLuint vertex_buffer = make_buffer(
         GL_ARRAY_BUFFER,
-        sizeof(g_vertex_data),
-        g_vertex_data
+        sizeof(vertex_data),
+        vertex_data
     );
     GLuint texture_buffer = make_buffer(
         GL_ARRAY_BUFFER,
-        sizeof(g_uv_data),
-        g_uv_data
+        sizeof(texture_data),
+        texture_data
     );
 
     GLuint texture;

@@ -35,12 +35,16 @@ mat4 rotate(vec3 axis, float angle) {
 void main() {
     fragment_uv = uv;
     instance = gl_InstanceID;
-    int x = instance % 9 - 4;
-    int y = instance / 9 - 4;
+    int z = instance / 81;
+    int y = (instance % 81) / 9 - 4;
+    int x = (instance % 81) % 9 - 4;
 
+    float m = 2;
     vec4 p = position;
-    p = rotate(vec3(0, 1, 0), timer) * p;
-    p = translate(vec3(x * 2, y * 2, -12)) * p;
+    //p = rotate(vec3(0, 1, 0), timer) * p;
+    p = translate(vec3(x * m, y * m, -z * m - 5)) * p;
+    //p = translate(vec3(0, -10, 0)) * p;
+    p = rotate(vec3(1, 0, 0), sin(timer) / 4) * p;
     p = matrix * p;
     gl_Position = p;
 }

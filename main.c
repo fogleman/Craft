@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
 
     FPS fps = {0, 0};
     float matrix[16];
+    glEnable(GL_CULL_FACE);
     while (glfwGetWindowParam(GLFW_OPENED)) {
         update_fps(&fps);
         update_matrix(matrix);
@@ -90,7 +91,7 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 81);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 729);
 
         glfwSwapBuffers();
     }

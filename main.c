@@ -74,12 +74,12 @@ int main(int argc, char **argv) {
 
     FPS fps = {0, 0};
     float matrix[16];
-    glEnable(GL_CULL_FACE);
     float rx = 0;
     float ry = 0;
     float m = 0.15;
     int mx, my, px, py;
     glfwGetMousePos(&px, &py);
+    glEnable(GL_CULL_FACE);
     while (glfwGetWindowParam(GLFW_OPENED)) {
         update_fps(&fps);
         update_matrix(matrix);

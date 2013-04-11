@@ -34,13 +34,13 @@ mat4 rotate(vec3 axis, float angle) {
 
 void main() {
     int i = gl_InstanceID;
-    int z = i / 81;
+    int z = i / 81 - 4;
     int y = (i % 81) / 9 - 4;
     int x = (i % 81) % 9 - 4;
 
     vec4 p = position;
     vec2 r = rotation;
-    p = translate(vec3(x * 2, y * 2, -z * 2 - 5)) * p;
+    p = translate(vec3(x * 2, y * 2, z * 2)) * p;
     p = rotate(vec3(cos(radians(r.x)), 0, sin(radians(r.x))), -radians(r.y)) * p;
     p = rotate(vec3(0, 1, 0), -radians(r.x)) * p;
     p = matrix * p;

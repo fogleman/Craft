@@ -3,6 +3,7 @@
 uniform mat4 matrix;
 uniform float timer;
 uniform vec2 rotation;
+uniform vec3 center;
 in vec4 position;
 in vec2 uv;
 out vec2 fragment_uv;
@@ -32,6 +33,7 @@ void main() {
     vec4 p = position;
     vec2 r = rotation;
     p = p + vec4(x * 2, y * 2, z * 2, 0);
+    p = p + vec4(center, 0);
     p = rotate(vec3(cos(radians(r.x)), 0, sin(radians(r.x))), -radians(r.y)) * p;
     p = rotate(vec3(0, 1, 0), -radians(r.x)) * p;
     p = matrix * p;

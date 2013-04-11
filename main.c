@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 #include <GL/glfw.h>
+#include <math.h>
 #include <stdio.h>
 #include "modern.h"
 
@@ -26,6 +27,26 @@ void update_matrix(float *matrix) {
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
     perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 60.0);
+}
+
+void get_motion_vector(int sz, int sx, float rx, float ry,
+    float *dx, float *dy, float *dz) {
+    *dx = 0; *dy = 0; *dz = 0;
+    if (!sz && !sx) {
+        return;
+    }
+    float strafe = atan2(sz, sx);
+    float m = cos(RADIANS(ry));
+    *dy = -sin(RADIANS(ry));
+    if (sx) {
+        *dy = 0;
+        m = 1;
+    }
+    if (sz > 0) {
+        *dy *= -1;
+    }
+    *dx = cos(RADIANS(rx) + strafe) * m;
+    *dz = sin(RADIANS(rx) + strafe) * m;
 }
 
 int main(int argc, char **argv) {
@@ -68,23 +89,31 @@ int main(int argc, char **argv) {
     GLuint matrix_loc = glGetUniformLocation(program, "matrix");
     GLuint timer_loc = glGetUniformLocation(program, "timer");
     GLuint rotation_loc = glGetUniformLocation(program, "rotation");
+    GLuint center_loc = glGetUniformLocation(program, "center");
     GLuint sampler_loc = glGetUniformLocation(program, "sampler");
     GLuint position_loc = glGetAttribLocation(program, "position");
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
     FPS fps = {0, 0};
     float matrix[16];
+    float x = 0;
+    float y = 0;
+    float z = 0;
     float rx = 0;
     float ry = 0;
-    float m = 0.15;
     int mx, my, px, py;
     glfwGetMousePos(&px, &py);
     glEnable(GL_CULL_FACE);
+    double previous = glfwGetTime();
     while (glfwGetWindowParam(GLFW_OPENED)) {
+        double now = glfwGetTime();
+        double dt = now - previous;
+        previous = now;
         update_fps(&fps);
         update_matrix(matrix);
 
         glfwGetMousePos(&mx, &my);
+        float m = 0.15;
         rx += (mx - px) * m;
         ry += (my - py) * m;
         ry = ry < -90 ? -90 : ry;
@@ -92,13 +121,28 @@ int main(int argc, char **argv) {
         px = mx;
         py = my;
 
+        int sz = 0;
+        int sx = 0;
+        if (glfwGetKey('W')) sz++;
+        if (glfwGetKey('S')) sz--;
+        if (glfwGetKey('A')) sx++;
+        if (glfwGetKey('D')) sx--;
+        float dx, dy, dz;
+        get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
+        float speed = 4;
+        x += dx * dt * speed;
+        y += dy * dt * speed;
+        z += dz * dt * speed;
+        //printf("%f, %f, %f\n", x, y, z);
+
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-        glUniform1f(timer_loc, glfwGetTime());
+        glUniform1f(timer_loc, now);
         glUniform2f(rotation_loc, rx, ry);
+        glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
 
         glEnableVertexAttribArray(position_loc);

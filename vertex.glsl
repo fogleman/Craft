@@ -7,15 +7,6 @@ in vec4 position;
 in vec2 uv;
 out vec2 fragment_uv;
 
-mat4 translate(vec3 t) {
-    return mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        t.x, t.y, t.z, 1.0
-    );
-}
-
 mat4 rotate(vec3 axis, float angle) {
     vec3 a = normalize(axis);
     float x = a.x;
@@ -40,7 +31,7 @@ void main() {
 
     vec4 p = position;
     vec2 r = rotation;
-    p = translate(vec3(x * 2, y * 2, z * 2)) * p;
+    p = p + vec4(x * 2, y * 2, z * 2, 0);
     p = rotate(vec3(cos(radians(r.x)), 0, sin(radians(r.x))), -radians(r.y)) * p;
     p = rotate(vec3(0, 1, 0), -radians(r.x)) * p;
     p = matrix * p;

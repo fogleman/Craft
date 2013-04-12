@@ -98,6 +98,10 @@ int main(int argc, char **argv) {
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
 
+    if (glewInit() != GLEW_OK) {
+        return -1;
+    }
+
     GLfloat vertex_data[108];
     GLfloat texture_data[72];
     Block world_data[65536];
@@ -182,6 +186,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey('S')) sz--;
         if (glfwGetKey('A')) sx++;
         if (glfwGetKey('D')) sx--;
+        if (glfwGetKey(GLFW_KEY_ESC)) break;
         float dx, dy, dz;
         get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
         float speed = 8;

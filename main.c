@@ -40,7 +40,6 @@ void update_fps(FPS *fps) {
 void update_matrix(float *matrix) {
     int width, height;
     glfwGetWindowSize(&width, &height);
-    glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
     perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 128.0);
 }
@@ -71,15 +70,11 @@ int make_world(Block *world, int width, int height) {
     Block *original = world;
     int size = width + 1;
     double p[size * size];
-    p[INDEX(size, 0, 0)] = 0.5;
-    p[INDEX(size, size - 1, 0)] = 0.5;
-    p[INDEX(size, 0, size - 1)] = 0.5;
-    p[INDEX(size, size - 1, size - 1)] = 0.5;
-    plasma(size, 0.2, p);
+    plasma(size, 0.5, p);
     int count = 0;
     for (int x = 0; x < width; x++) {
         for (int z = 0; z < width; z++) {
-            int h = p[INDEX(size, x, z)] * height;
+            int h = p[INDEX(size, x, z)] * (height - 1) + 1;
             for (int y = 0; y < h; y++) {
                 world->x = x;
                 world->y = y;
@@ -101,7 +96,7 @@ int main(int argc, char **argv) {
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
         return -1;
     }
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
 
@@ -173,7 +168,9 @@ int main(int argc, char **argv) {
     int mx, my, px, py;
     glfwGetMousePos(&px, &py);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
     double previous = glfwGetTime();
+    printf("%d\n", count);
     while (glfwGetWindowParam(GLFW_OPENED)) {
         double now = glfwGetTime();
         double dt = now - previous;
@@ -204,6 +201,7 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
+        if (glfwGetKey('Q')) break;
         if (glfwGetKey('W')) sz++;
         if (glfwGetKey('S')) sz--;
         if (glfwGetKey('A')) sx++;
@@ -232,14 +230,14 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        // glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
 
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                glUniform3f(center_loc, x + 64 * dx, y, z + 64 * dz);
-                glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
-            }
-        }
+        // for (int dx = -1; dx <= 1; dx++) {
+        //     for (int dz = -1; dz <= 1; dz++) {
+        //         glUniform3f(center_loc, x + 64 * dx, y, z + 64 * dz);
+        //         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+        //     }
+        // }
 
         glfwSwapBuffers();
     }

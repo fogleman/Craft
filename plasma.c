@@ -13,6 +13,10 @@ double noise(double roughness) {
 void plasma(int size, double roughness, double *data) {
     int n = size - 1;
     int length = size - 1;
+    data[INDEX(size, 0, 0)] = 0.5;
+    data[INDEX(size, n, 0)] = 0.5;
+    data[INDEX(size, 0, n)] = 0.5;
+    data[INDEX(size, n, n)] = 0.5;
     while (length > 1) {
         int half = length / 2;
         for (int x = 0; x < n; x += length) {

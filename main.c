@@ -36,8 +36,8 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
         return;
     }
     float strafe = atan2(sz, sx);
-    float m = cos(RADIANS(ry));
-    *dy = -sin(RADIANS(ry));
+    float m = cos(ry);
+    *dy = -sin(ry);
     if (sx) {
         *dy = 0;
         m = 1;
@@ -45,8 +45,8 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     if (sz > 0) {
         *dy *= -1;
     }
-    *dx = cos(RADIANS(rx) + strafe) * m;
-    *dz = sin(RADIANS(rx) + strafe) * m;
+    *dx = cos(rx + strafe) * m;
+    *dz = sin(rx + strafe) * m;
 }
 
 int main(int argc, char **argv) {
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
         return -1;
     }
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
 
@@ -113,11 +113,12 @@ int main(int argc, char **argv) {
         update_matrix(matrix);
 
         glfwGetMousePos(&mx, &my);
-        float m = 0.15;
+        float m = 0.0025;
+        float t = RADIANS(90);
         rx += (mx - px) * m;
         ry += (my - py) * m;
-        ry = ry < -90 ? -90 : ry;
-        ry = ry > 90 ? 90 : ry;
+        ry = ry < -t ? -t : ry;
+        ry = ry > t ? t : ry;
         px = mx;
         py = my;
 
@@ -133,7 +134,6 @@ int main(int argc, char **argv) {
         x += dx * dt * speed;
         y += dy * dt * speed;
         z += dz * dt * speed;
-        //printf("%f, %f, %f\n", x, y, z);
 
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

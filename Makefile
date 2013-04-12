@@ -10,11 +10,14 @@ run: all
 clean:
 	rm *.o
 
-main: main.o modern.o
-	gcc $(FLAGS) main.o modern.o -o main $(LIBRARY) -lglew32 -lglfw -lopengl32
+main: main.o modern.o plasma.o
+	gcc $(FLAGS) main.o modern.o plasma.o -o main $(LIBRARY) -lglew32 -lglfw -lopengl32
 
 main.o: main.c
 	gcc $(FLAGS) $(INCLUDE) -c -o main.o main.c
 
 modern.o: modern.c modern.h
 	gcc $(FLAGS) $(INCLUDE) -c -o modern.o modern.c
+
+plasma.o: plasma.c plasma.h
+	gcc $(FLAGS) $(INCLUDE) -c -o plasma.o plasma.c

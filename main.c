@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "modern.h"
+#include "plasma.h"
 
 typedef struct {
     GLint x;
@@ -41,7 +42,7 @@ void update_matrix(float *matrix) {
     glfwGetWindowSize(&width, &height);
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
-    perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 60.0);
+    perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 128.0);
 }
 
 void get_motion_vector(int sz, int sx, float rx, float ry,
@@ -64,20 +65,26 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     *dz = sin(rx + strafe) * m;
 }
 
-int make_world(Block *world) {
+#define INDEX(size, x, y) ((y) * (size) + (x))
+
+int make_world(Block *world, int width, int height) {
+    Block *original = world;
+    int size = width + 1;
+    double p[size * size];
+    p[INDEX(size, 0, 0)] = 0.5;
+    p[INDEX(size, size - 1, 0)] = 0.5;
+    p[INDEX(size, 0, size - 1)] = 0.5;
+    p[INDEX(size, size - 1, size - 1)] = 0.5;
+    plasma(size, 0.2, p);
     int count = 0;
-    for (int x = 0; x < 64; x++) {
-        for (int z = 0; z < 64; z++) {
-            for (int y = 0; y < 16; y++) {
-                int skip = randint(16);
-                if (skip && y) {
-                    continue;
-                }
-                int w = randint(4);
+    for (int x = 0; x < width; x++) {
+        for (int z = 0; z < width; z++) {
+            int h = p[INDEX(size, x, z)] * height;
+            for (int y = 0; y < h; y++) {
                 world->x = x;
                 world->y = y;
                 world->z = z;
-                world->w = y ? w : 0;
+                world->w = 0;
                 world++;
                 count++;
             }
@@ -104,9 +111,12 @@ int main(int argc, char **argv) {
 
     GLfloat vertex_data[108];
     GLfloat texture_data[72];
-    Block world_data[65536];
     make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
-    int count = make_world(world_data);
+
+    int width = 64;
+    int height = 16;
+    Block world_data[width * width * height];
+    int count = make_world(world_data, width, height);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -153,6 +163,7 @@ int main(int argc, char **argv) {
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
     FPS fps = {0, 0};
+    int exclusive = 1;
     float matrix[16];
     float x = 0;
     float y = 0;
@@ -170,15 +181,26 @@ int main(int argc, char **argv) {
         update_fps(&fps);
         update_matrix(matrix);
 
-        glfwGetMousePos(&mx, &my);
-        float m = 0.0025;
-        float t = RADIANS(90);
-        rx += (mx - px) * m;
-        ry -= (my - py) * m;
-        ry = ry < -t ? -t : ry;
-        ry = ry > t ? t : ry;
-        px = mx;
-        py = my;
+        if (exclusive) {
+            glfwGetMousePos(&mx, &my);
+            float m = 0.0025;
+            float t = RADIANS(90);
+            rx += (mx - px) * m;
+            ry -= (my - py) * m;
+            ry = ry < -t ? -t : ry;
+            ry = ry > t ? t : ry;
+            px = mx;
+            py = my;
+        }
+        if (exclusive && glfwGetKey(GLFW_KEY_ESC)) {
+            exclusive = 0;
+            glfwEnable(GLFW_MOUSE_CURSOR);
+        }
+        if (!exclusive && glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT)) {
+            exclusive = 1;
+            glfwDisable(GLFW_MOUSE_CURSOR);
+            glfwGetMousePos(&px, &py);
+        }
 
         int sz = 0;
         int sx = 0;
@@ -186,7 +208,6 @@ int main(int argc, char **argv) {
         if (glfwGetKey('S')) sz--;
         if (glfwGetKey('A')) sx++;
         if (glfwGetKey('D')) sx--;
-        if (glfwGetKey(GLFW_KEY_ESC)) break;
         float dx, dy, dz;
         get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
         float speed = 8;

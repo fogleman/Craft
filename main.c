@@ -7,6 +7,14 @@
 #include <stdlib.h>
 #include <time.h>
 #include "modern.h"
+#include "plasma.h"
+
+typedef struct {
+    GLint x;
+    GLint y;
+    GLint z;
+    GLint w;
+} Block;
 
 typedef struct {
     GLint x;
@@ -41,9 +49,8 @@ void update_fps(FPS *fps) {
 void update_matrix(float *matrix) {
     int width, height;
     glfwGetWindowSize(&width, &height);
-    glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
-    perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 60.0);
+    perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 128.0);
 }
 
 void get_motion_vector(int sz, int sx, float rx, float ry,
@@ -54,32 +61,32 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     }
     float strafe = atan2(sz, sx);
     float m = cos(ry);
-    *dy = sin(ry);
+    float y = sin(ry);
     if (sx) {
-        *dy = 0;
+        y = 0;
         m = 1;
     }
     if (sz > 0) {
-        *dy *= -1;
+        y = -y;
     }
     *dx = cos(rx + strafe) * m;
+    *dy = y;
     *dz = sin(rx + strafe) * m;
 }
 
-int make_world(Block *world) {
+int make_world(Block *world, int width, int height) {
+    int size = width + 1;
+    double p[size * size];
+    plasma(size, 0.5, p);
     int count = 0;
-    for (int x = 0; x < 64; x++) {
-        for (int z = 0; z < 64; z++) {
-            for (int y = 0; y < 16; y++) {
-                int skip = randint(16);
-                if (skip && y) {
-                    continue;
-                }
-                int w = randint(4);
+    for (int x = 0; x < width; x++) {
+        for (int z = 0; z < width; z++) {
+            int h = p[x * size + z] * (height - 1) + 1;
+            for (int y = 0; y < h; y++) {
                 world->x = x;
                 world->y = y;
                 world->z = z;
-                world->w = y ? w : 0;
+                world->w = 0;
                 world++;
                 count++;
             }
@@ -108,7 +115,12 @@ int main(int argc, char **argv) {
     GLfloat texture_data[72];
     Block world_data[65536];
     make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
-    int count = make_world(world_data);
+
+    int width = 64;
+    int height = 16;
+    Block world_data[width * width * height];
+    int count = make_world(world_data, width, height);
+    printf("%d\n", count);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -155,6 +167,7 @@ int main(int argc, char **argv) {
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
     FPS fps = {0, 0};
+    int exclusive = 1;
     float matrix[16];
     float x = 0;
     float y = 0;
@@ -166,6 +179,7 @@ int main(int argc, char **argv) {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     double previous = glfwGetTime();
+
     while (glfwGetWindowParam(GLFW_OPENED)) {
         double now = glfwGetTime();
         double dt = now - previous;
@@ -173,18 +187,30 @@ int main(int argc, char **argv) {
         update_fps(&fps);
         update_matrix(matrix);
 
-        glfwGetMousePos(&mx, &my);
-        float m = 0.0025;
-        float t = RADIANS(90);
-        rx += (mx - px) * m;
-        ry -= (my - py) * m;
-        ry = ry < -t ? -t : ry;
-        ry = ry > t ? t : ry;
-        px = mx;
-        py = my;
+        if (exclusive) {
+            glfwGetMousePos(&mx, &my);
+            float m = 0.0025;
+            float t = RADIANS(90);
+            rx += (mx - px) * m;
+            ry -= (my - py) * m;
+            ry = ry < -t ? -t : ry;
+            ry = ry > t ? t : ry;
+            px = mx;
+            py = my;
+        }
+        if (exclusive && glfwGetKey(GLFW_KEY_ESC)) {
+            exclusive = 0;
+            glfwEnable(GLFW_MOUSE_CURSOR);
+        }
+        if (!exclusive && glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT)) {
+            exclusive = 1;
+            glfwDisable(GLFW_MOUSE_CURSOR);
+            glfwGetMousePos(&px, &py);
+        }
 
         int sz = 0;
         int sx = 0;
+        if (glfwGetKey('Q')) break;
         if (glfwGetKey('W')) sz++;
         if (glfwGetKey('S')) sz--;
         if (glfwGetKey('A')) sx++;
@@ -213,14 +239,14 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        // glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
 
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                glUniform3f(center_loc, x + 64 * dx, y, z + 64 * dz);
-                glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
-            }
-        }
+        // for (int dx = -1; dx <= 1; dx++) {
+        //     for (int dz = -1; dz <= 1; dz++) {
+        //         glUniform3f(center_loc, x + 64 * dx, y, z + 64 * dz);
+        //         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+        //     }
+        // }
 
         glfwSwapBuffers();
     }

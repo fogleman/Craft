@@ -3,6 +3,7 @@
 #define PI 3.14159265359
 #define DEGREES(radians) ((radians) * 180 / PI)
 #define RADIANS(degrees) ((degrees) * PI / 180)
+#define ABS(x) ((x) < 0 ? (-x) : (x))
 
 GLuint make_buffer(GLenum target, GLsizei size, const void *data);
 GLuint make_shader(GLenum type, const char *source);

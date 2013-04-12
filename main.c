@@ -39,7 +39,7 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     }
     float strafe = atan2(sz, sx);
     float m = cos(ry);
-    *dy = -sin(ry);
+    *dy = sin(ry);
     if (sx) {
         *dy = 0;
         m = 1;
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
         float m = 0.0025;
         float t = RADIANS(90);
         rx += (mx - px) * m;
-        ry += (my - py) * m;
+        ry -= (my - py) * m;
         ry = ry < -t ? -t : ry;
         ry = ry > t ? t : ry;
         px = mx;

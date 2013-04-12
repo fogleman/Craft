@@ -31,7 +31,7 @@ void main() {
 
     vec4 p = position;
     vec2 r = rotation;
-    p = p + vec4(data.x, data.y, data.z, 0);
+    p = p + vec4(data.xyz, 0);
     p = p + vec4(center, 0);
     p = rotate(vec3(cos(r.x), 0, sin(r.x)), r.y) * p;
     p = rotate(vec3(0, 1, 0), -r.x) * p;

@@ -64,17 +64,14 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     *dz = sin(rx + strafe) * m;
 }
 
-#define INDEX(size, x, y) ((y) * (size) + (x))
-
 int make_world(Block *world, int width, int height) {
-    Block *original = world;
     int size = width + 1;
     double p[size * size];
     plasma(size, 0.5, p);
     int count = 0;
     for (int x = 0; x < width; x++) {
         for (int z = 0; z < width; z++) {
-            int h = p[INDEX(size, x, z)] * (height - 1) + 1;
+            int h = p[x * size + z] * (height - 1) + 1;
             for (int y = 0; y < h; y++) {
                 world->x = x;
                 world->y = y;

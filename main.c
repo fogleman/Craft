@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include "modern.h"
 
+const static GLuint world[] = {
+    0, 0, 0, 2,
+    1, 0, 0, 2,
+    -1, 0, 0, 2
+};
+
 typedef struct {
     unsigned int frames;
     double timestamp;
@@ -77,9 +83,21 @@ int main(int argc, char **argv) {
         sizeof(texture_data),
         texture_data
     );
+    GLuint world_buffer = make_buffer(
+        GL_TEXTURE_BUFFER,
+        sizeof(world),
+        world
+    );
+
+    GLuint world_texture;
+    glGenTextures(1, &world_texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_BUFFER, world_texture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32I, world_buffer);
 
     GLuint texture;
     glGenTextures(1, &texture);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -91,6 +109,7 @@ int main(int argc, char **argv) {
     GLuint rotation_loc = glGetUniformLocation(program, "rotation");
     GLuint center_loc = glGetUniformLocation(program, "center");
     GLuint sampler_loc = glGetUniformLocation(program, "sampler");
+    GLuint world_loc = glGetUniformLocation(program, "world");
     GLuint position_loc = glGetAttribLocation(program, "position");
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
@@ -144,6 +163,7 @@ int main(int argc, char **argv) {
         glUniform2f(rotation_loc, rx, ry);
         glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
+        glUniform1i(world_loc, 1);
 
         glEnableVertexAttribArray(position_loc);
         glEnableVertexAttribArray(uv_loc);
@@ -151,7 +171,7 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 729);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 3);
 
         glfwSwapBuffers();
     }

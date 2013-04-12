@@ -1,5 +1,6 @@
 #version 330 core
 
+uniform isamplerBuffer world;
 uniform mat4 matrix;
 uniform float timer;
 uniform vec2 rotation;
@@ -26,19 +27,16 @@ mat4 rotate(vec3 axis, float angle) {
 
 void main() {
     int i = gl_InstanceID;
-    int z = i / 81 - 4;
-    int y = (i % 81) / 9 - 4;
-    int x = (i % 81) % 9 - 4;
+    ivec4 data = texelFetch(world, i);
 
     vec4 p = position;
     vec2 r = rotation;
-    p = p + vec4(x * 2, y * 2, z * 2, 0);
+    p = p + vec4(data.x, data.y, data.z, 0);
     p = p + vec4(center, 0);
     p = rotate(vec3(cos(r.x), 0, sin(r.x)), r.y) * p;
     p = rotate(vec3(0, 1, 0), -r.x) * p;
     p = matrix * p;
     gl_Position = p;
 
-    int t = i % 4;
-    fragment_uv = uv + vec2(t * 0.125, 0);
+    fragment_uv = uv + vec2(data.w * 0.125, 0);
 }

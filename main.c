@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey('D')) sx--;
         float dx, dy, dz;
         get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
-        float speed = 4;
+        float speed = 8;
         x += dx * dt * speed;
         y += dy * dt * speed;
         z += dz * dt * speed;
@@ -213,7 +213,14 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+        // glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                glUniform3f(center_loc, x + 64 * dx, y, z + 64 * dz);
+                glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+            }
+        }
 
         glfwSwapBuffers();
     }

@@ -4,6 +4,8 @@
 #include <GL/glfw.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include "modern.h"
 
 typedef struct {
@@ -17,6 +19,12 @@ typedef struct {
     unsigned int frames;
     double timestamp;
 } FPS;
+
+unsigned int randint(unsigned int n) {
+    unsigned int result;
+    while (n <= (result = rand() / (RAND_MAX / n)));
+    return result;
+}
 
 void update_fps(FPS *fps) {
     fps->frames++;
@@ -58,21 +66,30 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     *dz = sin(rx + strafe) * m;
 }
 
-void make_world(Block *world) {
-    for (int y = 0; y < 64; y++) {
-        for (int x = 0; x < 32; x++) {
-            for (int z = 0; z < 32; z++) {
+int make_world(Block *world) {
+    int count = 0;
+    for (int x = 0; x < 64; x++) {
+        for (int z = 0; z < 64; z++) {
+            for (int y = 0; y < 16; y++) {
+                int skip = randint(16);
+                if (skip && y) {
+                    continue;
+                }
+                int w = randint(4);
                 world->x = x;
                 world->y = y;
                 world->z = z;
-                world->w = 2;
+                world->w = y ? w : 0;
                 world++;
+                count++;
             }
         }
     }
+    return count;
 }
 
 int main(int argc, char **argv) {
+    srand(time(NULL));
     if (!glfwInit()) {
         return -1;
     }
@@ -87,12 +104,11 @@ int main(int argc, char **argv) {
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
 
-    int count = 65536;
     GLfloat vertex_data[108];
     GLfloat texture_data[72];
-    Block world_data[count];
+    Block world_data[65536];
     make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
-    make_world(world_data);
+    int count = make_world(world_data);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -180,7 +196,7 @@ int main(int argc, char **argv) {
         y += dy * dt * speed;
         z += dz * dt * speed;
 
-        glClearColor(0, 0, 0, 1);
+        glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program);

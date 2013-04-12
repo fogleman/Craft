@@ -1,41 +1,10 @@
+#define GLFW_INCLUDE_GL3
+#define GLFW_NO_GLU
+
 #include <GL/glfw.h>
+#include <math.h>
 #include <stdio.h>
 #include "modern.h"
-
-static GLfloat g_vertex_buffer_data[24];
-
-static const GLushort g_element_buffer_data[] = {
-    0, 3, 2,
-    0, 1, 3,
-    4, 7, 5,
-    4, 6, 7,
-    2, 3, 7,
-    2, 7, 6,
-    0, 4, 5,
-    0, 5, 1,
-    1, 5, 7,
-    1, 7, 3,
-    0, 6, 4,
-    0, 2, 6,
-};
-
-#define A 0.00
-#define B 0.25
-
-static const GLfloat g_uv_buffer_data[] = {
-    A, A, B, B, A, B,
-    A, A, B, A, B, B,
-    A, A, B, B, A, B,
-    A, A, B, A, B, B,
-    A, A, B, B, A, B,
-    A, A, B, A, B, B,
-    A, A, B, B, A, B,
-    A, A, B, A, B, B,
-    A, A, B, B, A, B,
-    A, A, B, A, B, B,
-    A, A, B, B, A, B,
-    A, A, B, A, B, B,
-};
 
 typedef struct {
     unsigned int frames;
@@ -54,13 +23,32 @@ void update_fps(FPS *fps) {
     }
 }
 
-void set_3d(float *matrix) {
-    int width;
-    int height;
+void update_matrix(float *matrix) {
+    int width, height;
     glfwGetWindowSize(&width, &height);
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
     perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 60.0);
+}
+
+void get_motion_vector(int sz, int sx, float rx, float ry,
+    float *dx, float *dy, float *dz) {
+    *dx = 0; *dy = 0; *dz = 0;
+    if (!sz && !sx) {
+        return;
+    }
+    float strafe = atan2(sz, sx);
+    float m = cos(RADIANS(ry));
+    *dy = -sin(RADIANS(ry));
+    if (sx) {
+        *dy = 0;
+        m = 1;
+    }
+    if (sz > 0) {
+        *dy *= -1;
+    }
+    *dx = cos(RADIANS(rx) + strafe) * m;
+    *dz = sin(RADIANS(rx) + strafe) * m;
 }
 
 int main(int argc, char **argv) {
@@ -69,69 +57,109 @@ int main(int argc, char **argv) {
     }
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
         return -1;
     }
     glfwSwapInterval(0);
+    glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
-    make_cube(g_vertex_buffer_data, 0, 0, 0, 0.5);
+
+    GLfloat vertex_data[108];
+    GLfloat texture_data[72];
+    make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
+
+    GLuint vertex_array;
+    glGenVertexArrays(1, &vertex_array);
+    glBindVertexArray(vertex_array);
+
     GLuint vertex_buffer = make_buffer(
         GL_ARRAY_BUFFER,
-        sizeof(g_vertex_buffer_data),
-        g_vertex_buffer_data
+        sizeof(vertex_data),
+        vertex_data
     );
     GLuint texture_buffer = make_buffer(
         GL_ARRAY_BUFFER,
-        sizeof(g_uv_buffer_data),
-        g_uv_buffer_data
+        sizeof(texture_data),
+        texture_data
     );
-    GLuint element_buffer = make_buffer(
-        GL_ELEMENT_ARRAY_BUFFER,
-        sizeof(g_element_buffer_data),
-        g_element_buffer_data
-    );
-    GLuint vertex_shader = load_shader(GL_VERTEX_SHADER, "vertex.glsl");
-    GLuint fragment_shader = load_shader(GL_FRAGMENT_SHADER, "fragment.glsl");
-    GLuint program = make_program(vertex_shader, fragment_shader);
+
     GLuint texture;
-    glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    if (glfwLoadTexture2D("texture.tga", 0) == GL_FALSE) {
-        return -1;
-    }
-    float matrix[16];
-    FPS fps = {0, 0};
-    while (glfwGetWindowParam(GLFW_OPENED)) {
-        update_fps(&fps);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glfwLoadTexture2D("texture.tga", 0);
 
-        glClearColor(0, 0.2, 0, 1);
+    GLuint program = load_program("vertex.glsl", "fragment.glsl");
+    GLuint matrix_loc = glGetUniformLocation(program, "matrix");
+    GLuint timer_loc = glGetUniformLocation(program, "timer");
+    GLuint rotation_loc = glGetUniformLocation(program, "rotation");
+    GLuint center_loc = glGetUniformLocation(program, "center");
+    GLuint sampler_loc = glGetUniformLocation(program, "sampler");
+    GLuint position_loc = glGetAttribLocation(program, "position");
+    GLuint uv_loc = glGetAttribLocation(program, "uv");
+
+    FPS fps = {0, 0};
+    float matrix[16];
+    float x = 0;
+    float y = 0;
+    float z = 0;
+    float rx = 0;
+    float ry = 0;
+    int mx, my, px, py;
+    glfwGetMousePos(&px, &py);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    double previous = glfwGetTime();
+    while (glfwGetWindowParam(GLFW_OPENED)) {
+        double now = glfwGetTime();
+        double dt = now - previous;
+        previous = now;
+        update_fps(&fps);
+        update_matrix(matrix);
+
+        glfwGetMousePos(&mx, &my);
+        float m = 0.15;
+        rx += (mx - px) * m;
+        ry += (my - py) * m;
+        ry = ry < -90 ? -90 : ry;
+        ry = ry > 90 ? 90 : ry;
+        px = mx;
+        py = my;
+
+        int sz = 0;
+        int sx = 0;
+        if (glfwGetKey('W')) sz++;
+        if (glfwGetKey('S')) sz--;
+        if (glfwGetKey('A')) sx++;
+        if (glfwGetKey('D')) sx--;
+        float dx, dy, dz;
+        get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
+        float speed = 4;
+        x += dx * dt * speed;
+        y += dy * dt * speed;
+        z += dz * dt * speed;
+        //printf("%f, %f, %f\n", x, y, z);
+
+        glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        set_3d(matrix);
 
         glUseProgram(program);
-        glUniformMatrix4fv(
-            glGetUniformLocation(program, "matrix"),
-            1, GL_FALSE, matrix);
-        glUniform1f(
-            glGetUniformLocation(program, "timer"),
-            glfwGetTime());
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(
-            glGetUniformLocation(program, "sampler"),
-            0);
+        glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
+        glUniform1f(timer_loc, now);
+        glUniform2f(rotation_loc, rx, ry);
+        glUniform3f(center_loc, x, y, z);
+        glUniform1i(sampler_loc, 0);
 
-        GLuint index = glGetAttribLocation(program, "position");
-        GLuint texture_index = glGetAttribLocation(program, "vertexUV");
-        glEnableVertexAttribArray(index);
-        glEnableVertexAttribArray(texture_index);
+        glEnableVertexAttribArray(position_loc);
+        glEnableVertexAttribArray(uv_loc);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glVertexAttribPointer(index, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
-        glVertexAttribPointer(texture_index, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
-        glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0, 81);
+        glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 729);
 
         glfwSwapBuffers();
     }

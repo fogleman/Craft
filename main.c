@@ -4,11 +4,12 @@
 #include <stdio.h>
 #include "modern.h"
 
-const static GLuint world[] = {
-    0, 0, 0, 2,
-    1, 0, 0, 2,
-    -1, 0, 0, 2
-};
+typedef struct {
+    GLint x;
+    GLint y;
+    GLint z;
+    GLint w;
+} Block;
 
 typedef struct {
     unsigned int frames;
@@ -55,6 +56,20 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     *dz = sin(rx + strafe) * m;
 }
 
+void make_world(Block *world) {
+    for (int y = 0; y < 64; y++) {
+        for (int x = 0; x < 32; x++) {
+            for (int z = 0; z < 32; z++) {
+                world->x = x;
+                world->y = y;
+                world->z = z;
+                world->w = 2;
+                world++;
+            }
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     if (!glfwInit()) {
         return -1;
@@ -66,13 +81,17 @@ int main(int argc, char **argv) {
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
 
-    if (glewInit() != GLEW_OK) {
-        return -1;
-    }
-
+    int count = 65536;
     GLfloat vertex_data[108];
     GLfloat texture_data[72];
+    Block world_data[count];
     make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
+    make_world(world_data);
+
+    GLuint vertex_array;
+    glGenVertexArrays(1, &vertex_array);
+    glBindVertexArray(vertex_array);
+
     GLuint vertex_buffer = make_buffer(
         GL_ARRAY_BUFFER,
         sizeof(vertex_data),
@@ -85,8 +104,8 @@ int main(int argc, char **argv) {
     );
     GLuint world_buffer = make_buffer(
         GL_TEXTURE_BUFFER,
-        sizeof(world),
-        world
+        sizeof(world_data),
+        world_data
     );
 
     GLuint world_texture;
@@ -171,7 +190,7 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 3);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
 
         glfwSwapBuffers();
     }

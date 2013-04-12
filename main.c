@@ -52,15 +52,16 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     }
     float strafe = atan2(sz, sx);
     float m = cos(ry);
-    *dy = sin(ry);
+    float y = sin(ry);
     if (sx) {
-        *dy = 0;
+        y = 0;
         m = 1;
     }
     if (sz > 0) {
-        *dy *= -1;
+        y = -y;
     }
     *dx = cos(rx + strafe) * m;
+    *dy = y;
     *dz = sin(rx + strafe) * m;
 }
 
@@ -109,6 +110,7 @@ int main(int argc, char **argv) {
     int height = 16;
     Block world_data[width * width * height];
     int count = make_world(world_data, width, height);
+    printf("%d\n", count);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -167,7 +169,7 @@ int main(int argc, char **argv) {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     double previous = glfwGetTime();
-    printf("%d\n", count);
+
     while (glfwGetWindowParam(GLFW_OPENED)) {
         double now = glfwGetTime();
         double dt = now - previous;

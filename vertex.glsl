@@ -34,8 +34,8 @@ void main() {
     vec2 r = rotation;
     p = p + vec4(x * 2, y * 2, z * 2, 0);
     p = p + vec4(center, 0);
-    p = rotate(vec3(cos(radians(r.x)), 0, sin(radians(r.x))), -radians(r.y)) * p;
-    p = rotate(vec3(0, 1, 0), -radians(r.x)) * p;
+    p = rotate(vec3(cos(r.x), 0, sin(r.x)), -r.y) * p;
+    p = rotate(vec3(0, 1, 0), -r.x) * p;
     p = matrix * p;
     gl_Position = p;
 

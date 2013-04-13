@@ -71,7 +71,7 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
 void make_world(Map *map, int width, int height) {
     for (int x = 0; x < width; x++) {
         for (int z = 0; z < width; z++) {
-            float f = simplex2(x * 0.02, z * 0.02, 5, 0.5, 2);
+            float f = simplex2(x * 0.02, z * 0.02, 5, 0.2, 2);
             int h = (f + 1) / 2 * (height - 1) + 1;
             for (int y = 0; y < h; y++) {
                 map_set(map, x, y, z, 1);
@@ -84,7 +84,7 @@ int exposed(Map *map, int x, int y, int z) {
     if (map_get(map, x + 1, y, z) == 0) return 1;
     if (map_get(map, x - 1, y, z) == 0) return 1;
     if (map_get(map, x, y + 1, z) == 0) return 1;
-    if (map_get(map, x, y - 1, z) == 0) return 1;
+    if (map_get(map, x, y - 1, z) == 0 && y > 0) return 1;
     if (map_get(map, x, y, z + 1) == 0) return 1;
     if (map_get(map, x, y, z - 1) == 0) return 1;
     return 0;
@@ -110,8 +110,8 @@ int main(int argc, char **argv) {
     GLfloat texture_data[72];
     make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
 
-    int width = 64;
-    int height = 16;
+    int width = 128;
+    int height = 32;
     Map _map;
     Map *map = &_map;
     map_alloc(map);

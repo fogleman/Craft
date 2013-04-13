@@ -17,13 +17,6 @@ typedef struct {
 } Block;
 
 typedef struct {
-    GLint x;
-    GLint y;
-    GLint z;
-    GLint w;
-} Block;
-
-typedef struct {
     unsigned int frames;
     double timestamp;
 } FPS;
@@ -113,7 +106,6 @@ int main(int argc, char **argv) {
 
     GLfloat vertex_data[108];
     GLfloat texture_data[72];
-    Block world_data[65536];
     make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
 
     int width = 64;

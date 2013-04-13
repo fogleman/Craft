@@ -11,7 +11,7 @@ clean:
 	rm *.o
 
 main: main.o modern.o plasma.o
-	gcc $(FLAGS) main.o modern.o -o main $(LIBRARY) -lglfw -framework Cocoa -framework OpenGL
+	gcc $(FLAGS) main.o modern.o plasma.o -o main $(LIBRARY) -lglfw -framework Cocoa -framework OpenGL
 
 main.o: main.c
 	gcc $(FLAGS) $(INCLUDE) -c -o main.o main.c

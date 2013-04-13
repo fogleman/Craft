@@ -172,9 +172,9 @@ int main(int argc, char **argv) {
     FPS fps = {0, 0};
     int exclusive = 1;
     float matrix[16];
-    float x = 0;
-    float y = 0;
-    float z = 0;
+    float x = 128;
+    float y = 32;
+    float z = 128;
     float rx = 0;
     float ry = 0;
     int mx, my, px, py;
@@ -213,10 +213,10 @@ int main(int argc, char **argv) {
         int sz = 0;
         int sx = 0;
         if (glfwGetKey('Q')) break;
-        if (glfwGetKey('W')) sz++;
-        if (glfwGetKey('S')) sz--;
-        if (glfwGetKey('A')) sx++;
-        if (glfwGetKey('D')) sx--;
+        if (glfwGetKey('W')) sz--;
+        if (glfwGetKey('S')) sz++;
+        if (glfwGetKey('A')) sx--;
+        if (glfwGetKey('D')) sx++;
         float dx, dy, dz;
         get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
         float speed = 8;

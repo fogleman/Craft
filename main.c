@@ -73,8 +73,13 @@ void make_world(Map *map, int width, int height) {
         for (int z = 0; z < width; z++) {
             float f = simplex2(x * 0.02, z * 0.02, 5, 0.2, 2);
             int h = (f + 1) / 2 * (height - 1) + 1;
+            int w = 1;
+            if (h < 12) {
+                h = 11;
+                w = 2;
+            }
             for (int y = 0; y < h; y++) {
-                map_set(map, x, y, z, 1);
+                map_set(map, x, y, z, w);
             }
         }
     }

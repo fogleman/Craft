@@ -119,11 +119,7 @@ int main(int argc, char **argv) {
 
     int count = 0;
     Block world_data[map->size];
-    for (int i = 0; i <= map->mask; i++) {
-        Entry *entry = map->data + i;
-        if (EMPTY_ENTRY(entry)) {
-            continue;
-        }
+    MAP_FOR_EACH(map, entry)
         if (!exposed(map, entry->x, entry->y, entry->z)) {
             continue;
         }

@@ -19,4 +19,4 @@ void perspective_matrix(float *matrix, float fov, float aspect,
     float near, float far);
 void make_cube(float *vertex, float *texture,
     int left, int right, int top, int bottom, int front, int back,
-    float x, float y, float z, float n);
+    float x, float y, float z, float n, int w);

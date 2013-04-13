@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
             vertex_data + vertex_offset,
             texture_data + texture_offset,
             f1, f2, f3, f4, f5, f6,
-            e->x, e->y, e->z, 0.5);
+            e->x, e->y, e->z, 0.5, e->w);
         vertex_offset += total * 18;
         texture_offset += total * 12;
     } END_MAP_FOR_EACH;

@@ -130,14 +130,15 @@ void perspective_matrix(float *matrix, float fov, float aspect,
 
 void make_cube(float *vertex, float *texture,
     int left, int right, int top, int bottom, int front, int back,
-    float x, float y, float z, float n) {
+    float x, float y, float z, float n, int w) {
     float *v = vertex;
     float *t = texture;
     float s = 0.125;
     float a = 0;
     float b = s;
     float du, dv;
-    du = 0; dv = s;
+    w--;
+    du = w * s; dv = s;
     if (left) {
         *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
         *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
@@ -146,17 +147,17 @@ void make_cube(float *vertex, float *texture,
         *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = a + dv;
         *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
     }
-    du = 0; dv = s + s;
+    du = w * s; dv = s + s;
     if (top) {
         *(t++) = a + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv;
         *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
     }
-    du = 0; dv = 0;
+    du = w * s; dv = 0;
     if (bottom) {
         *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
         *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
     }
-    du = 0; dv = s;
+    du = w * s; dv = s;
     if (front) {
         *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv;
         *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = b + dv;

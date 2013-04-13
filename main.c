@@ -78,15 +78,15 @@ void make_world(Map *map, int width, int height) {
     }
 }
 
-int exposed_faces(Map *map, int x, int y, int z) {
-    int result = 0;
-    if (map_get(map, x + 1, y, z) == 0) result++;
-    if (map_get(map, x - 1, y, z) == 0) result++;
-    if (map_get(map, x, y + 1, z) == 0) result++;
-    if (map_get(map, x, y - 1, z) == 0 && y > 0) result++;
-    if (map_get(map, x, y, z + 1) == 0) result++;
-    if (map_get(map, x, y, z - 1) == 0) result++;
-    return result;
+void exposed_faces(Map *map, int x, int y, int z,
+    int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
+{
+    *f1 = map_get(map, x - 1, y, z) == 0;
+    *f2 = map_get(map, x + 1, y, z) == 0;
+    *f3 = map_get(map, x, y + 1, z) == 0;
+    *f4 = map_get(map, x, y - 1, z) == 0 & y > 0;
+    *f5 = map_get(map, x, y, z + 1) == 0;
+    *f6 = map_get(map, x, y, z - 1) == 0;
 }
 
 int main(int argc, char **argv) {
@@ -112,7 +112,10 @@ int main(int argc, char **argv) {
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
-        faces += exposed_faces(map, e->x, e->y, e->z);
+        int f1, f2, f3, f4, f5, f6;
+        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        int total = f1 + f2 + f3 + f4 + f5 + f6;
+        faces += total;
     } END_MAP_FOR_EACH;
 
     GLfloat vertex_data[faces * 18];
@@ -120,20 +123,16 @@ int main(int argc, char **argv) {
     int vertex_offset = 0;
     int texture_offset = 0;
     MAP_FOR_EACH(map, e) {
-        int left =   map_get(map, e->x - 1, e->y, e->z) == 0;
-        int right =  map_get(map, e->x + 1, e->y, e->z) == 0;
-        int top =    map_get(map, e->x, e->y + 1, e->z) == 0;
-        int bottom = map_get(map, e->x, e->y - 1, e->z) == 0 && e->y > 0;
-        int front =  map_get(map, e->x, e->y, e->z + 1) == 0;
-        int back =   map_get(map, e->x, e->y, e->z - 1) == 0;
-        int total = left + right + top + bottom + front + back;
+        int f1, f2, f3, f4, f5, f6;
+        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             continue;
         }
         make_cube(
             vertex_data + vertex_offset,
             texture_data + texture_offset,
-            left, right, top, bottom, front, back,
+            f1, f2, f3, f4, f5, f6,
             e->x, e->y, e->z, 0.5);
         vertex_offset += total * 18;
         texture_offset += total * 12;

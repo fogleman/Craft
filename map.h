@@ -7,6 +7,8 @@
             continue; \
         }
 
+#define END_MAP_FOR_EACH }
+
 typedef struct {
     int x;
     int y;

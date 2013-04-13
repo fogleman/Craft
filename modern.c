@@ -129,6 +129,7 @@ void perspective_matrix(float *matrix, float fov, float aspect,
 }
 
 void make_cube(float *vertex, float *texture,
+    int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n) {
     float *v = vertex;
     float *t = texture;
@@ -137,57 +138,81 @@ void make_cube(float *vertex, float *texture,
     float b = s;
     float du, dv;
     du = 0; dv = s;
-    *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
-    *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
-    *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = a + dv;
-    *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
+    if (left) {
+        *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
+        *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
+    }
+    if (right) {
+        *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = a + dv;
+        *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
+    }
     du = 0; dv = s + s;
-    *(t++) = a + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv;
-    *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
+    if (top) {
+        *(t++) = a + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv;
+        *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
+    }
     du = 0; dv = 0;
-    *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
-    *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
+    if (bottom) {
+        *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv;
+        *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = a + du; *(t++) = b + dv;
+    }
     du = 0; dv = s;
-    *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv;
-    *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = b + dv;
-    *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = a + dv;
-    *(t++) = a + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = b + dv;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
+    if (front) {
+        *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv;
+        *(t++) = b + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = b + dv;
+    }
+    if (back) {
+        *(t++) = a + du; *(t++) = a + dv; *(t++) = b + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = a + dv;
+        *(t++) = a + du; *(t++) = a + dv; *(t++) = a + du; *(t++) = b + dv; *(t++) = b + du; *(t++) = b + dv;
+    }
+    if (left) {
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
+    }
+    if (right) {
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+    }
+    if (top) {
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
+    }
+    if (bottom) {
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
+    }
+    if (front) {
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
+    }
+    if (back) {
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
+    }
 }
 
 // *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;

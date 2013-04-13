@@ -11,13 +11,6 @@
 #include "noise.h"
 
 typedef struct {
-    GLint x;
-    GLint y;
-    GLint z;
-    GLint w;
-} Block;
-
-typedef struct {
     unsigned int frames;
     double timestamp;
 } FPS;
@@ -85,14 +78,15 @@ void make_world(Map *map, int width, int height) {
     }
 }
 
-int exposed(Map *map, int x, int y, int z) {
-    if (map_get(map, x + 1, y, z) == 0) return 1;
-    if (map_get(map, x - 1, y, z) == 0) return 1;
-    if (map_get(map, x, y + 1, z) == 0) return 1;
-    if (map_get(map, x, y - 1, z) == 0 && y > 0) return 1;
-    if (map_get(map, x, y, z + 1) == 0) return 1;
-    if (map_get(map, x, y, z - 1) == 0) return 1;
-    return 0;
+int exposed_faces(Map *map, int x, int y, int z) {
+    int result = 0;
+    if (map_get(map, x + 1, y, z) == 0) result++;
+    if (map_get(map, x - 1, y, z) == 0) result++;
+    if (map_get(map, x, y + 1, z) == 0) result++;
+    if (map_get(map, x, y - 1, z) == 0 && y > 0) result++;
+    if (map_get(map, x, y, z + 1) == 0) result++;
+    if (map_get(map, x, y, z - 1) == 0) result++;
+    return result;
 }
 
 int main(int argc, char **argv) {
@@ -111,30 +105,39 @@ int main(int argc, char **argv) {
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
 
-    GLfloat vertex_data[108];
-    GLfloat texture_data[72];
-    make_cube(vertex_data, texture_data, 0, 0, 0, 0.5);
-
-    int width = 128;
-    int height = 32;
     Map _map;
     Map *map = &_map;
     map_alloc(map);
-    make_world(map, width, height);
+    make_world(map, 128, 32);
 
-    int count = 0;
-    Block world_data[map->size];
-    MAP_FOR_EACH(map, entry)
-        if (!exposed(map, entry->x, entry->y, entry->z)) {
+    int faces = 0;
+    MAP_FOR_EACH(map, e) {
+        faces += exposed_faces(map, e->x, e->y, e->z);
+    } END_MAP_FOR_EACH;
+
+    GLfloat vertex_data[faces * 18];
+    GLfloat texture_data[faces * 12];
+    int vertex_offset = 0;
+    int texture_offset = 0;
+    MAP_FOR_EACH(map, e) {
+        int left =   map_get(map, e->x - 1, e->y, e->z) == 0;
+        int right =  map_get(map, e->x + 1, e->y, e->z) == 0;
+        int top =    map_get(map, e->x, e->y + 1, e->z) == 0;
+        int bottom = map_get(map, e->x, e->y - 1, e->z) == 0 && e->y > 0;
+        int front =  map_get(map, e->x, e->y, e->z + 1) == 0;
+        int back =   map_get(map, e->x, e->y, e->z - 1) == 0;
+        int total = left + right + top + bottom + front + back;
+        if (total == 0) {
             continue;
         }
-        world_data[count].x = entry->x;
-        world_data[count].y = entry->y;
-        world_data[count].z = entry->z;
-        world_data[count].w = entry->w;
-        count++;
-    }
-    printf("%d exposed / %d total\n", count, map->size);
+        make_cube(
+            vertex_data + vertex_offset,
+            texture_data + texture_offset,
+            left, right, top, bottom, front, back,
+            e->x, e->y, e->z, 0.5);
+        vertex_offset += total * 18;
+        texture_offset += total * 12;
+    } END_MAP_FOR_EACH;
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -150,17 +153,6 @@ int main(int argc, char **argv) {
         sizeof(texture_data),
         texture_data
     );
-    GLuint world_buffer = make_buffer(
-        GL_TEXTURE_BUFFER,
-        sizeof(world_data),
-        world_data
-    );
-
-    GLuint world_texture;
-    glGenTextures(1, &world_texture);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_BUFFER, world_texture);
-    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32I, world_buffer);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -172,11 +164,9 @@ int main(int argc, char **argv) {
 
     GLuint program = load_program("vertex.glsl", "fragment.glsl");
     GLuint matrix_loc = glGetUniformLocation(program, "matrix");
-    GLuint timer_loc = glGetUniformLocation(program, "timer");
     GLuint rotation_loc = glGetUniformLocation(program, "rotation");
     GLuint center_loc = glGetUniformLocation(program, "center");
     GLuint sampler_loc = glGetUniformLocation(program, "sampler");
-    GLuint world_loc = glGetUniformLocation(program, "world");
     GLuint position_loc = glGetAttribLocation(program, "position");
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
@@ -240,11 +230,9 @@ int main(int argc, char **argv) {
 
         glUseProgram(program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-        glUniform1f(timer_loc, now);
         glUniform2f(rotation_loc, rx, ry);
         glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
-        glUniform1i(world_loc, 1);
 
         glEnableVertexAttribArray(position_loc);
         glEnableVertexAttribArray(uv_loc);
@@ -252,7 +240,7 @@ int main(int argc, char **argv) {
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
+        glDrawArrays(GL_TRIANGLES, 0, faces * 9);
 
         // for (int dx = -1; dx <= 1; dx++) {
         //     for (int dz = -1; dz <= 1; dz++) {

@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include "map.h"
-#include "modern.h"
 #include "noise.h"
+#include "util.h"
 
 typedef struct {
     unsigned int frames;
@@ -108,7 +108,10 @@ int main(int argc, char **argv) {
     Map _map;
     Map *map = &_map;
     map_alloc(map);
-    make_world(map, 256, 32);
+
+    int width = 256;
+    int height = 32;
+    make_world(map, width, height);
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
@@ -172,9 +175,9 @@ int main(int argc, char **argv) {
     FPS fps = {0, 0};
     int exclusive = 1;
     float matrix[16];
-    float x = 128;
-    float y = 32;
-    float z = 128;
+    float x = width / 2;
+    float y = height;
+    float z = width / 2;
     float rx = 0;
     float ry = 0;
     int mx, my, px, py;

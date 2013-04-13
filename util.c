@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "modern.h"
+#include "util.h"
 
 char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");

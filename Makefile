@@ -10,14 +10,14 @@ run: all
 clean:
 	rm *.o
 
-main: main.o modern.o noise.o map.o
-	gcc $(FLAGS) main.o modern.o noise.o map.o -o main $(LIBRARY) -lglfw -framework Cocoa -framework OpenGL
+main: main.o util.o noise.o map.o
+	gcc $(FLAGS) main.o util.o noise.o map.o -o main $(LIBRARY) -lglfw -framework Cocoa -framework OpenGL
 
 main.o: main.c
 	gcc $(FLAGS) $(INCLUDE) -c -o main.o main.c
 
-modern.o: modern.c modern.h
-	gcc $(FLAGS) $(INCLUDE) -c -o modern.o modern.c
+util.o: util.c util.h
+	gcc $(FLAGS) $(INCLUDE) -c -o util.o util.c
 
 noise.o: noise.c noise.h
 	gcc $(FLAGS) $(INCLUDE) -c -o noise.o noise.c

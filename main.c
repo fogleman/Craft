@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "modern.h"
-#include "plasma.h"
+#include "noise.h"
 
 typedef struct {
     GLint x;
@@ -68,13 +68,11 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
 }
 
 int make_world(Block *world, int width, int height) {
-    int size = width + 1;
-    double p[size * size];
-    plasma(size, 0.5, p);
     int count = 0;
     for (int x = 0; x < width; x++) {
         for (int z = 0; z < width; z++) {
-            int h = p[x * size + z] * (height - 1) + 1;
+            float f = simplex2(x * 0.05, z * 0.05, 3, 0.5, 2);
+            int h = (f + 1) / 2 * (height - 1) + 1;
             for (int y = 0; y < h; y++) {
                 world->x = x;
                 world->y = y;
@@ -182,11 +180,10 @@ int main(int argc, char **argv) {
         if (exclusive) {
             glfwGetMousePos(&mx, &my);
             float m = 0.0025;
-            float t = RADIANS(90);
             rx += (mx - px) * m;
             ry -= (my - py) * m;
-            ry = ry < -t ? -t : ry;
-            ry = ry > t ? t : ry;
+            ry = MAX(ry, -RADIANS(90));
+            ry = MIN(ry, RADIANS(90));
             px = mx;
             py = my;
         }

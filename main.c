@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
     Map _map;
     Map *map = &_map;
     map_alloc(map);
-    make_world(map, 128, 32);
+    make_world(map, 256, 32);
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
@@ -240,13 +240,6 @@ int main(int argc, char **argv) {
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glDrawArrays(GL_TRIANGLES, 0, faces * 9);
-
-        // for (int dx = -1; dx <= 1; dx++) {
-        //     for (int dz = -1; dz <= 1; dz++) {
-        //         glUniform3f(center_loc, x + 64 * dx, y, z + 64 * dz);
-        //         glDrawArraysInstanced(GL_TRIANGLES, 0, 36, count);
-        //     }
-        // }
 
         glfwSwapBuffers();
     }

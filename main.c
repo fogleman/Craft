@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "map.h"
 #include "modern.h"
 #include "noise.h"
 
@@ -67,23 +68,26 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     *dz = sin(rx + strafe) * m;
 }
 
-int make_world(Block *world, int width, int height) {
-    int count = 0;
+void make_world(Map *map, int width, int height) {
     for (int x = 0; x < width; x++) {
         for (int z = 0; z < width; z++) {
-            float f = simplex2(x * 0.05, z * 0.05, 3, 0.5, 2);
+            float f = simplex2(x * 0.02, z * 0.02, 5, 0.5, 2);
             int h = (f + 1) / 2 * (height - 1) + 1;
             for (int y = 0; y < h; y++) {
-                world->x = x;
-                world->y = y;
-                world->z = z;
-                world->w = 0;
-                world++;
-                count++;
+                map_set(map, x, y, z, 1);
             }
         }
     }
-    return count;
+}
+
+int exposed(Map *map, int x, int y, int z) {
+    if (map_get(map, x + 1, y, z) == 0) return 1;
+    if (map_get(map, x - 1, y, z) == 0) return 1;
+    if (map_get(map, x, y + 1, z) == 0) return 1;
+    if (map_get(map, x, y - 1, z) == 0) return 1;
+    if (map_get(map, x, y, z + 1) == 0) return 1;
+    if (map_get(map, x, y, z - 1) == 0) return 1;
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -108,9 +112,28 @@ int main(int argc, char **argv) {
 
     int width = 64;
     int height = 16;
-    Block world_data[width * width * height];
-    int count = make_world(world_data, width, height);
-    printf("%d\n", count);
+    Map _map;
+    Map *map = &_map;
+    map_alloc(map);
+    make_world(map, width, height);
+
+    int count = 0;
+    Block world_data[map->size];
+    for (int i = 0; i <= map->mask; i++) {
+        Entry *entry = map->data + i;
+        if (EMPTY_ENTRY(entry)) {
+            continue;
+        }
+        if (!exposed(map, entry->x, entry->y, entry->z)) {
+            continue;
+        }
+        world_data[count].x = entry->x;
+        world_data[count].y = entry->y;
+        world_data[count].z = entry->z;
+        world_data[count].w = entry->w;
+        count++;
+    }
+    printf("%d exposed / %d total\n", count, map->size);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);

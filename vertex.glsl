@@ -37,5 +37,5 @@ void main() {
     p = matrix * p;
     gl_Position = p;
 
-    fragment_uv = uv + vec2(block.w * 0.125, 0);
+    fragment_uv = uv + vec2((block.w - 1) * 0.125, 0);
 }

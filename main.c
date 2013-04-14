@@ -19,6 +19,13 @@ const static int FACES[6][3] = {
 };
 
 typedef struct {
+    GLuint faces;
+    GLuint vertex_buffer;
+    GLuint normal_buffer;
+    GLuint texture_buffer;
+} Chunk;
+
+typedef struct {
     unsigned int frames;
     double timestamp;
 } FPS;
@@ -117,8 +124,8 @@ void make_world(Map *map, int width, int height) {
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
             int h = (f + 1) / 2 * (height - 1) + 1;
             int w = 1;
-            if (h < 12) {
-                h = 11;
+            if (h < height / 2) {
+                h = height / 2 - 1;
                 w = 2;
             }
             for (int y = 0; y < h; y++) {
@@ -139,6 +146,21 @@ void exposed_faces(Map *map, int x, int y, int z,
     *f6 = map_get(map, x, y, z - 1) == 0;
 }
 
+void draw_chunk(
+    Chunk *chunk, GLuint vertex_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    glEnableVertexAttribArray(vertex_loc);
+    glEnableVertexAttribArray(normal_loc);
+    glEnableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->vertex_buffer);
+    glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->normal_buffer);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->texture_buffer);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 9);
+}
+
 int main(int argc, char **argv) {
     if (!glfwInit()) {
         return -1;
@@ -153,6 +175,10 @@ int main(int argc, char **argv) {
     glfwSwapInterval(1);
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
+
+    GLuint vertex_array;
+    glGenVertexArrays(1, &vertex_array);
+    glBindVertexArray(vertex_array);
 
     Map _map;
     Map *map = &_map;
@@ -170,9 +196,9 @@ int main(int argc, char **argv) {
         faces += total;
     } END_MAP_FOR_EACH;
 
-    GLfloat vertex_data[faces * 18];
-    GLfloat normal_data[faces * 18];
-    GLfloat texture_data[faces * 12];
+    GLfloat *vertex_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *texture_data = malloc(sizeof(GLfloat) * faces * 12);
     int vertex_offset = 0;
     int texture_offset = 0;
     MAP_FOR_EACH(map, e) {
@@ -192,25 +218,26 @@ int main(int argc, char **argv) {
         texture_offset += total * 12;
     } END_MAP_FOR_EACH;
 
-    GLuint vertex_array;
-    glGenVertexArrays(1, &vertex_array);
-    glBindVertexArray(vertex_array);
-
     GLuint vertex_buffer = make_buffer(
         GL_ARRAY_BUFFER,
-        sizeof(vertex_data),
+        sizeof(GLfloat) * faces * 18,
         vertex_data
     );
     GLuint normal_buffer = make_buffer(
         GL_ARRAY_BUFFER,
-        sizeof(normal_data),
+        sizeof(GLfloat) * faces * 18,
         normal_data
     );
     GLuint texture_buffer = make_buffer(
         GL_ARRAY_BUFFER,
-        sizeof(texture_data),
+        sizeof(GLfloat) * faces * 12,
         texture_data
     );
+    free(vertex_data);
+    free(normal_data);
+    free(texture_data);
+
+    Chunk chunk = {faces, vertex_buffer, normal_buffer, texture_buffer};
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -319,16 +346,7 @@ int main(int argc, char **argv) {
         glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
 
-        glEnableVertexAttribArray(position_loc);
-        glEnableVertexAttribArray(normal_loc);
-        glEnableVertexAttribArray(uv_loc);
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
-        glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
-        glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glDrawArrays(GL_TRIANGLES, 0, faces * 9);
+        draw_chunk(&chunk, position_loc, normal_loc, uv_loc);
 
         glfwSwapBuffers();
     }

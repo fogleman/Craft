@@ -205,7 +205,7 @@ float simplex2(
         max += amp;
         total += noise2(x * freq, y * freq) * amp;
     }
-    return total / max;
+    return (1 + total / max) / 2;
 }
 
 float simplex3(
@@ -223,5 +223,5 @@ float simplex3(
         max += amp;
         total += noise3(x * freq, y * freq, z * freq) * amp;
     }
-    return total / max;
+    return (1 + total / max) / 2;
 }

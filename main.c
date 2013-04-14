@@ -129,16 +129,21 @@ int collide(Map *map, int height, float *_x, float *_y, float *_z) {
 
 void make_world(Map *map, int p, int q) {
     int height = 32;
-    for (int dx = 0; dx < CHUNK_SIZE; dx++) {
-        for (int dz = 0; dz < CHUNK_SIZE; dz++) {
+    int pad = 1;
+    for (int dx = -pad; dx < CHUNK_SIZE + pad; dx++) {
+        for (int dz = -pad; dz < CHUNK_SIZE + pad; dz++) {
             int x = p * CHUNK_SIZE + dx;
             int z = q * CHUNK_SIZE + dz;
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
-            int h = (f + 1) / 2 * (height - 1) + 1;
+            int h = f * (height - 1) + 1;
             int w = 1;
-            if (h < height / 2) {
-                h = height / 2 - 1;
+            int t = height * 3 / 8;
+            if (h < t) {
+                h = t - 1;
                 w = 2;
+            }
+            if (dx < 0 || dz < 0 || dx >= CHUNK_SIZE || dz >= CHUNK_SIZE) {
+                w = -1;
             }
             for (int y = 0; y < h; y++) {
                 map_set(map, x, y, z, w);
@@ -165,6 +170,9 @@ void make_chunk(Chunk *chunk, int p, int q) {
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
+        if (e->w < 0) {
+            continue;
+        }
         int f1, f2, f3, f4, f5, f6;
         exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -177,6 +185,9 @@ void make_chunk(Chunk *chunk, int p, int q) {
     int vertex_offset = 0;
     int texture_offset = 0;
     MAP_FOR_EACH(map, e) {
+        if (e->w < 0) {
+            continue;
+        }
         int f1, f2, f3, f4, f5, f6;
         exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -239,10 +250,10 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     int count = *chunk_count;
     for (int i = 0; i < count; i++) {
         Chunk *chunk = chunks + i;
-        int dp = p - chunk->p;
-        int dq = q - chunk->q;
+        int dp = chunk->p - p;
+        int dq = chunk->q - q;
         int n = DELETE_CHUNK_RADIUS;
-        if (dp * dp + dq * dq > n * n) {
+        if (ABS(dp) >= n || ABS(dq) >= n) {
             map_free(&chunk->map);
             glDeleteBuffers(1, &chunk->vertex_buffer);
             glDeleteBuffers(1, &chunk->normal_buffer);
@@ -261,9 +272,6 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     int n = CREATE_CHUNK_RADIUS;
     for (int i = -n; i <= n; i++) {
         for (int j = -n; j <= n; j++) {
-            if (i * i + j * j > n * n) {
-                continue;
-            }
             int a = p + i;
             int b = q + j;
             int create = 1;
@@ -427,10 +435,13 @@ int main(int argc, char **argv) {
         ensure_chunks(chunks, &chunk_count, p, q, 0);
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
-            int dp = p - chunk->p;
-            int dq = q - chunk->q;
+            int dp = chunk->p - p;
+            int dq = chunk->q - q;
+            // if (dp || dq) {
+            //     float angle = atan2(dp, dq);
+            // }
             int n = RENDER_CHUNK_RADIUS;
-            if (dp * dp + dq * dq <= n * n) {
+            if (ABS(dp) <= n && ABS(dq) <= n) {
                 draw_chunk(chunk, position_loc, normal_loc, uv_loc);
             }
         }

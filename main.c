@@ -383,6 +383,9 @@ int main(int argc, char **argv) {
             glfwGetMousePos(&px, &py);
         }
 
+        int p = round(x / CHUNK_SIZE);
+        int q = round(z / CHUNK_SIZE);
+
         int sz = 0;
         int sx = 0;
         if (glfwGetKey('Q')) break;
@@ -417,7 +420,13 @@ int main(int argc, char **argv) {
             y += vy + dy * ut;
             z += vz;
             for (int j = 0; j < chunk_count; j++) {
-                if (collide(&chunks[j].map, 2, &x, &y, &z)) {
+                Chunk *chunk = chunks + j;
+                int dp = chunk->p - p;
+                int dq = chunk->q - q;
+                if (ABS(dp) > 1 || ABS(dq) > 1) {
+                    continue;
+                }
+                if (collide(&chunk->map, 2, &x, &y, &z)) {
                     dy = 0;
                 }
             }
@@ -433,8 +442,6 @@ int main(int argc, char **argv) {
         glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
 
-        int p = round(x / CHUNK_SIZE);
-        int q = round(z / CHUNK_SIZE);
         ensure_chunks(chunks, &chunk_count, p, q, 0);
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;

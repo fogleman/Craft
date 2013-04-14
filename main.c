@@ -13,7 +13,7 @@
 #define MAX_CHUNKS 1024
 #define CREATE_CHUNK_RADIUS 4
 #define RENDER_CHUNK_RADIUS 4
-#define DELETE_CHUNK_RADIUS 6
+#define DELETE_CHUNK_RADIUS 8
 
 const static int FACES[6][3] = {
     { 1, 0, 0},
@@ -235,14 +235,14 @@ void draw_chunk(
     glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 9);
 }
 
-void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q) {
+void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     int count = *chunk_count;
     for (int i = 0; i < count; i++) {
         Chunk *chunk = chunks + i;
         int dp = p - chunk->p;
         int dq = q - chunk->q;
         int n = DELETE_CHUNK_RADIUS;
-        if (ABS(dp) >= n || ABS(dq) >= n) {
+        if (dp * dp + dq * dq > n * n) {
             map_free(&chunk->map);
             glDeleteBuffers(1, &chunk->vertex_buffer);
             glDeleteBuffers(1, &chunk->normal_buffer);
@@ -261,6 +261,9 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q) {
     int n = CREATE_CHUNK_RADIUS;
     for (int i = -n; i <= n; i++) {
         for (int j = -n; j <= n; j++) {
+            if (i * i + j * j > n * n) {
+                continue;
+            }
             int a = p + i;
             int b = q + j;
             int create = 1;
@@ -274,6 +277,10 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q) {
             if (create) {
                 make_chunk(chunks + count, a, b);
                 count++;
+                if (!force) {
+                    *chunk_count = count;
+                    return;
+                }
             }
         }
     }
@@ -301,6 +308,7 @@ int main(int argc, char **argv) {
 
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
+    ensure_chunks(chunks, &chunk_count, 0, 0, 1);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -416,13 +424,13 @@ int main(int argc, char **argv) {
 
         int p = round(x / CHUNK_SIZE);
         int q = round(z / CHUNK_SIZE);
-        ensure_chunks(chunks, &chunk_count, p, q);
+        ensure_chunks(chunks, &chunk_count, p, q, 0);
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             int dp = p - chunk->p;
             int dq = q - chunk->q;
             int n = RENDER_CHUNK_RADIUS;
-            if (ABS(dp) <= n && ABS(dq) <= n) {
+            if (dp * dp + dq * dq <= n * n) {
                 draw_chunk(chunk, position_loc, normal_loc, uv_loc);
             }
         }

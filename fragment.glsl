@@ -13,7 +13,7 @@ void main() {
     vec3 ambient = vec3(0.4);
     vec3 light_color = vec3(1);
     vec3 light = ambient + light_color * diffuse;
-    color = min(color * light, vec3(1.0));
+    color = min(color * light, vec3(1));
 
     vec3 fog = vec3(0.53, 0.81, 0.92);
     float z = gl_FragCoord.z / gl_FragCoord.w;

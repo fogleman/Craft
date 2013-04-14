@@ -10,6 +10,15 @@
 #include "noise.h"
 #include "util.h"
 
+const static int FACES[6][3] = {
+    { 1, 0, 0},
+    {-1, 0, 0},
+    { 0, 1, 0},
+    { 0,-1, 0},
+    { 0, 0, 1},
+    { 0, 0,-1}
+};
+
 typedef struct {
     unsigned int frames;
     double timestamp;
@@ -59,6 +68,47 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
     *dx = cos(rx + strafe) * m;
     *dy = y;
     *dz = sin(rx + strafe) * m;
+}
+
+int collide(Map *map, int height, float *_x, float *_y, float *_z) {
+    int result = 0;
+    float pad = 0.25;
+    float x = *_x;
+    float y = *_y;
+    float z = *_z;
+    int nx = round(x);
+    int ny = round(y);
+    int nz = round(z);
+    float p[3] = {x, y, z};
+    int np[3] = {nx, ny, nz};
+    for (int face = 0; face < 6; face++) {
+        for (int i = 0; i < 3; i++) {
+            int dir = FACES[face][i];
+            if (!dir) {
+                continue;
+            }
+            float dist = (p[i] - np[i]) * dir;
+            if (dist < pad) {
+                continue;
+            }
+            for (int dy = 0; dy < height; dy++) {
+                int op[3] = {nx, ny - dy, nz};
+                op[i] += dir;
+                if (!map_get(map, op[0], op[1], op[2])) {
+                    continue;
+                }
+                p[i] -= (dist - pad) * dir;
+                if (i == 1) {
+                    result = 1;
+                }
+                break;
+            }
+        }
+    }
+    *_x = p[0];
+    *_y = p[1];
+    *_z = p[2];
+    return result;
 }
 
 void make_world(Map *map, int width, int height) {
@@ -186,6 +236,7 @@ int main(int argc, char **argv) {
     float x = width / 2;
     float y = height;
     float z = width / 2;
+    float dy = 0;
     float rx = 0;
     float ry = 0;
     int mx, my, px, py;
@@ -228,12 +279,29 @@ int main(int argc, char **argv) {
         if (glfwGetKey('S')) sz++;
         if (glfwGetKey('A')) sx--;
         if (glfwGetKey('D')) sx++;
-        float dx, dy, dz;
-        get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
-        float speed = 16;
-        x += dx * dt * speed;
-        y += dy * dt * speed;
-        z += dz * dt * speed;
+        if (glfwGetKey(GLFW_KEY_SPACE)) {
+            if (dy == 0) {
+                dy = 0.016;
+            }
+        }
+        float vx, vy, vz;
+        get_motion_vector(sz, sx, rx, ry, &vx, &vy, &vz);
+        float speed = 5;
+        int step = 8;
+        float ut = dt / step;
+        vx = vx * ut * speed;
+        vy = vy * ut * speed;
+        vz = vz * ut * speed;
+        for (int i = 0; i < step; i++) {
+            dy -= ut * 0.044;
+            dy = MAX(dy, -0.5);
+            x += vx;
+            y += vy + dy;
+            z += vz;
+            if (collide(map, 2, &x, &y, &z)) {
+                dy = 0;
+            }
+        }
 
         glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

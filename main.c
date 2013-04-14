@@ -64,7 +64,7 @@ void get_motion_vector(int sz, int sx, float rx, float ry,
 void make_world(Map *map, int width, int height) {
     for (int x = 0; x < width; x++) {
         for (int z = 0; z < width; z++) {
-            float f = simplex2(x * 0.02, z * 0.02, 5, 0.2, 2);
+            float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
             int h = (f + 1) / 2 * (height - 1) + 1;
             int w = 1;
             if (h < 12) {
@@ -122,6 +122,7 @@ int main(int argc, char **argv) {
     } END_MAP_FOR_EACH;
 
     GLfloat vertex_data[faces * 18];
+    GLfloat normal_data[faces * 18];
     GLfloat texture_data[faces * 12];
     int vertex_offset = 0;
     int texture_offset = 0;
@@ -134,6 +135,7 @@ int main(int argc, char **argv) {
         }
         make_cube(
             vertex_data + vertex_offset,
+            normal_data + vertex_offset,
             texture_data + texture_offset,
             f1, f2, f3, f4, f5, f6,
             e->x, e->y, e->z, 0.5, e->w);
@@ -149,6 +151,11 @@ int main(int argc, char **argv) {
         GL_ARRAY_BUFFER,
         sizeof(vertex_data),
         vertex_data
+    );
+    GLuint normal_buffer = make_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(normal_data),
+        normal_data
     );
     GLuint texture_buffer = make_buffer(
         GL_ARRAY_BUFFER,
@@ -170,6 +177,7 @@ int main(int argc, char **argv) {
     GLuint center_loc = glGetUniformLocation(program, "center");
     GLuint sampler_loc = glGetUniformLocation(program, "sampler");
     GLuint position_loc = glGetAttribLocation(program, "position");
+    GLuint normal_loc = glGetAttribLocation(program, "normal");
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
     FPS fps = {0, 0};
@@ -222,7 +230,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey('D')) sx++;
         float dx, dy, dz;
         get_motion_vector(sz, sx, rx, ry, &dx, &dy, &dz);
-        float speed = 8;
+        float speed = 16;
         x += dx * dt * speed;
         y += dy * dt * speed;
         z += dz * dt * speed;
@@ -237,9 +245,12 @@ int main(int argc, char **argv) {
         glUniform1i(sampler_loc, 0);
 
         glEnableVertexAttribArray(position_loc);
+        glEnableVertexAttribArray(normal_loc);
         glEnableVertexAttribArray(uv_loc);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+        glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, texture_buffer);
         glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glDrawArrays(GL_TRIANGLES, 0, faces * 9);

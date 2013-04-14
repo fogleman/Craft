@@ -129,11 +129,12 @@ void perspective_matrix(float *matrix, float fov, float aspect,
     frustum_matrix(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
 }
 
-void make_cube(float *vertex, float *texture,
+void make_cube(float *vertex, float *normal, float *texture,
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
     float *v = vertex;
+    float *d = normal;
     float *t = texture;
     float s = 0.125;
     float a = 0;
@@ -199,6 +200,12 @@ void make_cube(float *vertex, float *texture,
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
+        *(d++) = -1; *(d++) = 0; *(d++) = 0;
+        *(d++) = -1; *(d++) = 0; *(d++) = 0;
+        *(d++) = -1; *(d++) = 0; *(d++) = 0;
+        *(d++) = -1; *(d++) = 0; *(d++) = 0;
+        *(d++) = -1; *(d++) = 0; *(d++) = 0;
+        *(d++) = -1; *(d++) = 0; *(d++) = 0;
     }
     if (right) {
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
@@ -207,6 +214,12 @@ void make_cube(float *vertex, float *texture,
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(d++) = 1; *(d++) = 0; *(d++) = 0;
+        *(d++) = 1; *(d++) = 0; *(d++) = 0;
+        *(d++) = 1; *(d++) = 0; *(d++) = 0;
+        *(d++) = 1; *(d++) = 0; *(d++) = 0;
+        *(d++) = 1; *(d++) = 0; *(d++) = 0;
+        *(d++) = 1; *(d++) = 0; *(d++) = 0;
     }
     if (top) {
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
@@ -215,6 +228,12 @@ void make_cube(float *vertex, float *texture,
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
+        *(d++) = 0; *(d++) = 1; *(d++) = 0;
+        *(d++) = 0; *(d++) = 1; *(d++) = 0;
+        *(d++) = 0; *(d++) = 1; *(d++) = 0;
+        *(d++) = 0; *(d++) = 1; *(d++) = 0;
+        *(d++) = 0; *(d++) = 1; *(d++) = 0;
+        *(d++) = 0; *(d++) = 1; *(d++) = 0;
     }
     if (bottom) {
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
@@ -223,6 +242,12 @@ void make_cube(float *vertex, float *texture,
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
+        *(d++) = 0; *(d++) = -1; *(d++) = 0;
+        *(d++) = 0; *(d++) = -1; *(d++) = 0;
+        *(d++) = 0; *(d++) = -1; *(d++) = 0;
+        *(d++) = 0; *(d++) = -1; *(d++) = 0;
+        *(d++) = 0; *(d++) = -1; *(d++) = 0;
+        *(d++) = 0; *(d++) = -1; *(d++) = 0;
     }
     if (front) {
         *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
@@ -231,6 +256,12 @@ void make_cube(float *vertex, float *texture,
         *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
     }
     if (back) {
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
@@ -239,5 +270,11 @@ void make_cube(float *vertex, float *texture,
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
     }
 }

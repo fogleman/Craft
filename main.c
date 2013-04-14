@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey('2')) flying = 1;
         if (glfwGetKey(GLFW_KEY_SPACE)) {
             if (dy == 0) {
-                dy = 0.015;
+                dy = 8;
             }
         }
         float vx, vy, vz;
@@ -307,11 +307,11 @@ int main(int argc, char **argv) {
                 dy = 0;
             }
             else {
-                dy -= ut * 0.044;
-                dy = MAX(dy, -0.5);
+                dy -= ut * 25;
+                dy = MAX(dy, -250);
             }
             x += vx;
-            y += vy + dy;
+            y += vy + dy * ut;
             z += vz;
             if (collide(map, 2, &x, &y, &z)) {
                 dy = 0;

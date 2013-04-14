@@ -9,6 +9,12 @@
 #include "noise.h"
 #include "util.h"
 
+#define CHUNK_SIZE 32
+#define MAX_CHUNKS 1024
+#define CREATE_CHUNK_RADIUS 4
+#define RENDER_CHUNK_RADIUS 4
+#define DELETE_CHUNK_RADIUS 6
+
 const static int FACES[6][3] = {
     { 1, 0, 0},
     {-1, 0, 0},
@@ -19,7 +25,10 @@ const static int FACES[6][3] = {
 };
 
 typedef struct {
-    GLuint faces;
+    Map map;
+    int p;
+    int q;
+    int faces;
     GLuint vertex_buffer;
     GLuint normal_buffer;
     GLuint texture_buffer;
@@ -118,9 +127,12 @@ int collide(Map *map, int height, float *_x, float *_y, float *_z) {
     return result;
 }
 
-void make_world(Map *map, int width, int height) {
-    for (int x = 0; x < width; x++) {
-        for (int z = 0; z < width; z++) {
+void make_world(Map *map, int p, int q) {
+    int height = 32;
+    for (int dx = 0; dx < CHUNK_SIZE; dx++) {
+        for (int dz = 0; dz < CHUNK_SIZE; dz++) {
+            int x = p * CHUNK_SIZE + dx;
+            int z = q * CHUNK_SIZE + dz;
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
             int h = (f + 1) / 2 * (height - 1) + 1;
             int w = 1;
@@ -146,47 +158,10 @@ void exposed_faces(Map *map, int x, int y, int z,
     *f6 = map_get(map, x, y, z - 1) == 0;
 }
 
-void draw_chunk(
-    Chunk *chunk, GLuint vertex_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    glEnableVertexAttribArray(vertex_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->vertex_buffer);
-    glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->normal_buffer);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->texture_buffer);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 9);
-}
-
-int main(int argc, char **argv) {
-    if (!glfwInit()) {
-        return -1;
-    }
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
-        return -1;
-    }
-    glfwSwapInterval(1);
-    glfwDisable(GLFW_MOUSE_CURSOR);
-    glfwSetWindowTitle("Modern GL");
-
-    GLuint vertex_array;
-    glGenVertexArrays(1, &vertex_array);
-    glBindVertexArray(vertex_array);
-
-    Map _map;
-    Map *map = &_map;
+void make_chunk(Chunk *chunk, int p, int q) {
+    Map *map = &chunk->map;
     map_alloc(map);
-
-    int width = 256;
-    int height = 32;
-    make_world(map, width, height);
+    make_world(map, p, q);
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
@@ -237,13 +212,95 @@ int main(int argc, char **argv) {
     free(normal_data);
     free(texture_data);
 
-    Chunk chunk = {faces, vertex_buffer, normal_buffer, texture_buffer};
+    chunk->p = p;
+    chunk->q = q;
+    chunk->faces = faces;
+    chunk->vertex_buffer = vertex_buffer;
+    chunk->normal_buffer = normal_buffer;
+    chunk->texture_buffer = texture_buffer;
+}
 
-    printf("%d x %d x %d world\n", width, width, height);
-    printf("%d blocks\n", map->size);
-    printf("%d total faces\n", map->size * 6);
-    printf("%d visible faces\n", faces);
-    printf("%d triangles\n", faces * 2);
+void draw_chunk(
+    Chunk *chunk, GLuint vertex_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    glEnableVertexAttribArray(vertex_loc);
+    glEnableVertexAttribArray(normal_loc);
+    glEnableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->vertex_buffer);
+    glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->normal_buffer);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->texture_buffer);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 9);
+}
+
+void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q) {
+    int count = *chunk_count;
+    for (int i = 0; i < count; i++) {
+        Chunk *chunk = chunks + i;
+        int dp = p - chunk->p;
+        int dq = q - chunk->q;
+        int n = DELETE_CHUNK_RADIUS;
+        if (ABS(dp) >= n || ABS(dq) >= n) {
+            map_free(&chunk->map);
+            glDeleteBuffers(1, &chunk->vertex_buffer);
+            glDeleteBuffers(1, &chunk->normal_buffer);
+            glDeleteBuffers(1, &chunk->texture_buffer);
+            Chunk *other = chunks + (count - 1);
+            chunk->map = other->map;
+            chunk->p = other->p;
+            chunk->q = other->q;
+            chunk->faces = other->faces;
+            chunk->vertex_buffer = other->vertex_buffer;
+            chunk->normal_buffer = other->normal_buffer;
+            chunk->texture_buffer = other->texture_buffer;
+            count--;
+        }
+    }
+    int n = CREATE_CHUNK_RADIUS;
+    for (int i = -n; i <= n; i++) {
+        for (int j = -n; j <= n; j++) {
+            int a = p + i;
+            int b = q + j;
+            int create = 1;
+            for (int k = 0; k < count; k++) {
+                Chunk *chunk = chunks + k;
+                if (chunk->p == a && chunk->q == b) {
+                    create = 0;
+                    break;
+                }
+            }
+            if (create) {
+                make_chunk(chunks + count, a, b);
+                count++;
+            }
+        }
+    }
+    *chunk_count = count;
+}
+
+int main(int argc, char **argv) {
+    if (!glfwInit()) {
+        return -1;
+    }
+    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
+        return -1;
+    }
+    glfwSwapInterval(1);
+    glfwDisable(GLFW_MOUSE_CURSOR);
+    glfwSetWindowTitle("Modern GL");
+
+    GLuint vertex_array;
+    glGenVertexArrays(1, &vertex_array);
+    glBindVertexArray(vertex_array);
+
+    Chunk chunks[MAX_CHUNKS];
+    int chunk_count = 0;
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -266,9 +323,9 @@ int main(int argc, char **argv) {
     FPS fps = {0, 0};
     int exclusive = 1;
     float matrix[16];
-    float x = width / 2;
-    float y = height;
-    float z = width / 2;
+    float x = 0;
+    float y = 32;
+    float z = 0;
     float dy = 0;
     float rx = 0;
     float ry = 0;
@@ -282,6 +339,7 @@ int main(int argc, char **argv) {
     while (glfwGetWindowParam(GLFW_OPENED)) {
         double now = glfwGetTime();
         double dt = now - previous;
+        dt = dt > 0.2 ? 0.2 : dt;
         previous = now;
         update_fps(&fps);
         update_matrix(matrix);
@@ -339,8 +397,10 @@ int main(int argc, char **argv) {
             x += vx;
             y += vy + dy * ut;
             z += vz;
-            if (collide(map, 2, &x, &y, &z)) {
-                dy = 0;
+            for (int j = 0; j < chunk_count; j++) {
+                if (collide(&chunks[j].map, 2, &x, &y, &z)) {
+                    dy = 0;
+                }
             }
         }
 
@@ -354,7 +414,18 @@ int main(int argc, char **argv) {
         glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
 
-        draw_chunk(&chunk, position_loc, normal_loc, uv_loc);
+        int p = round(x / CHUNK_SIZE);
+        int q = round(z / CHUNK_SIZE);
+        ensure_chunks(chunks, &chunk_count, p, q);
+        for (int i = 0; i < chunk_count; i++) {
+            Chunk *chunk = chunks + i;
+            int dp = p - chunk->p;
+            int dq = q - chunk->q;
+            int n = RENDER_CHUNK_RADIUS;
+            if (ABS(dp) <= n && ABS(dq) <= n) {
+                draw_chunk(chunk, position_loc, normal_loc, uv_loc);
+            }
+        }
 
         glfwSwapBuffers();
     }

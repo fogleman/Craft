@@ -239,6 +239,12 @@ int main(int argc, char **argv) {
 
     Chunk chunk = {faces, vertex_buffer, normal_buffer, texture_buffer};
 
+    printf("%d x %d x %d world\n", width, width, height);
+    printf("%d blocks\n", map->size);
+    printf("%d total faces\n", map->size * 6);
+    printf("%d visible faces\n", faces);
+    printf("%d triangles\n", faces * 2);
+
     GLuint texture;
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);
@@ -248,6 +254,7 @@ int main(int argc, char **argv) {
     glfwLoadTexture2D("texture.tga", 0);
 
     GLuint program = load_program("vertex.glsl", "fragment.glsl");
+    GLuint timer_loc = glGetUniformLocation(program, "timer");
     GLuint matrix_loc = glGetUniformLocation(program, "matrix");
     GLuint rotation_loc = glGetUniformLocation(program, "rotation");
     GLuint center_loc = glGetUniformLocation(program, "center");
@@ -342,6 +349,7 @@ int main(int argc, char **argv) {
 
         glUseProgram(program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
+        glUniform1f(timer_loc, glfwGetTime());
         glUniform2f(rotation_loc, rx, ry);
         glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);

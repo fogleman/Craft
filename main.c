@@ -128,16 +128,17 @@ int collide(Map *map, int height, float *_x, float *_y, float *_z) {
 }
 
 void make_world(Map *map, int p, int q) {
-    int height = 32;
     int pad = 1;
     for (int dx = -pad; dx < CHUNK_SIZE + pad; dx++) {
         for (int dz = -pad; dz < CHUNK_SIZE + pad; dz++) {
             int x = p * CHUNK_SIZE + dx;
             int z = q * CHUNK_SIZE + dz;
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
-            int h = f * (height - 1) + 1;
+            float g = simplex2(x * 0.01, z * 0.01, 2, 0.9, 2);
+            int mh = g * 32 + 16;
+            int h = f * mh;
             int w = 1;
-            int t = height * 3 / 8;
+            int t = 12;
             if (h < t) {
                 h = t - 1;
                 w = 2;

@@ -5,7 +5,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include "map.h"
 #include "noise.h"
 #include "util.h"
@@ -23,12 +22,6 @@ typedef struct {
     unsigned int frames;
     double timestamp;
 } FPS;
-
-unsigned int randint(unsigned int n) {
-    unsigned int result;
-    while (n <= (result = rand() / (RAND_MAX / n)));
-    return result;
-}
 
 void update_fps(FPS *fps) {
     fps->frames++;
@@ -147,7 +140,6 @@ void exposed_faces(Map *map, int x, int y, int z,
 }
 
 int main(int argc, char **argv) {
-    srand(time(NULL));
     if (!glfwInit()) {
         return -1;
     }

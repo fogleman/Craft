@@ -11,8 +11,8 @@
 
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
-#define CREATE_CHUNK_RADIUS 4
-#define RENDER_CHUNK_RADIUS 4
+#define CREATE_CHUNK_RADIUS 5
+#define RENDER_CHUNK_RADIUS 5
 #define DELETE_CHUNK_RADIUS 8
 
 const static int FACES[6][3] = {
@@ -365,6 +365,8 @@ int main(int argc, char **argv) {
             float m = 0.0025;
             rx += (mx - px) * m;
             ry -= (my - py) * m;
+            if (rx < 0) rx += RADIANS(360);
+            if (rx >= RADIANS(360)) rx -= RADIANS(360);
             ry = MAX(ry, -RADIANS(90));
             ry = MIN(ry, RADIANS(90));
             px = mx;
@@ -438,7 +440,13 @@ int main(int argc, char **argv) {
             int dp = chunk->p - p;
             int dq = chunk->q - q;
             // if (dp || dq) {
-            //     float angle = atan2(dp, dq);
+            //     float a1 = atan2(dp, dq) + RADIANS(180);
+            //     float a2 = -rx;
+            //     float d = ABS(a2 - a1);
+            //     if (d > RADIANS(180)) d-= RADIANS(180);
+            //     if (d < RADIANS(90)) {
+            //         continue;
+            //     }
             // }
             int n = RENDER_CHUNK_RADIUS;
             if (ABS(dp) <= n && ABS(dq) <= n) {

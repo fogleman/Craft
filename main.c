@@ -49,25 +49,32 @@ void update_matrix(float *matrix) {
     perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 128.0);
 }
 
-void get_motion_vector(int sz, int sx, float rx, float ry,
+void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     float *dx, float *dy, float *dz) {
     *dx = 0; *dy = 0; *dz = 0;
     if (!sz && !sx) {
         return;
     }
     float strafe = atan2(sz, sx);
-    float m = cos(ry);
-    float y = sin(ry);
-    if (sx) {
-        y = 0;
-        m = 1;
+    if (flying) {
+        float m = cos(ry);
+        float y = sin(ry);
+        if (sx) {
+            y = 0;
+            m = 1;
+        }
+        if (sz > 0) {
+            y = -y;
+        }
+        *dx = cos(rx + strafe) * m;
+        *dy = y;
+        *dz = sin(rx + strafe) * m;
     }
-    if (sz > 0) {
-        y = -y;
+    else {
+        *dx = cos(rx + strafe);
+        *dy = 0;
+        *dz = sin(rx + strafe);
     }
-    *dx = cos(rx + strafe) * m;
-    *dy = y;
-    *dz = sin(rx + strafe) * m;
 }
 
 int collide(Map *map, int height, float *_x, float *_y, float *_z) {
@@ -239,6 +246,7 @@ int main(int argc, char **argv) {
     float dy = 0;
     float rx = 0;
     float ry = 0;
+    int flying = 0;
     int mx, my, px, py;
     glfwGetMousePos(&px, &py);
     glEnable(GL_CULL_FACE);
@@ -279,22 +287,29 @@ int main(int argc, char **argv) {
         if (glfwGetKey('S')) sz++;
         if (glfwGetKey('A')) sx--;
         if (glfwGetKey('D')) sx++;
+        if (glfwGetKey('1')) flying = 0;
+        if (glfwGetKey('2')) flying = 1;
         if (glfwGetKey(GLFW_KEY_SPACE)) {
             if (dy == 0) {
                 dy = 0.016;
             }
         }
         float vx, vy, vz;
-        get_motion_vector(sz, sx, rx, ry, &vx, &vy, &vz);
-        float speed = 5;
+        get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
+        float speed = flying ? 15 : 5;
         int step = 8;
         float ut = dt / step;
         vx = vx * ut * speed;
         vy = vy * ut * speed;
         vz = vz * ut * speed;
         for (int i = 0; i < step; i++) {
-            dy -= ut * 0.044;
-            dy = MAX(dy, -0.5);
+            if (flying) {
+                dy = 0;
+            }
+            else {
+                dy -= ut * 0.044;
+                dy = MAX(dy, -0.5);
+            }
             x += vx;
             y += vy + dy;
             z += vz;

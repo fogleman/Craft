@@ -291,12 +291,12 @@ int main(int argc, char **argv) {
         if (glfwGetKey('2')) flying = 1;
         if (glfwGetKey(GLFW_KEY_SPACE)) {
             if (dy == 0) {
-                dy = 0.016;
+                dy = 0.015;
             }
         }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
-        float speed = flying ? 15 : 5;
+        float speed = flying ? 20 : 5;
         int step = 8;
         float ut = dt / step;
         vx = vx * ut * speed;

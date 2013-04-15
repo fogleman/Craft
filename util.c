@@ -76,7 +76,87 @@ GLuint load_program(const char *path1, const char *path2) {
     return program;
 }
 
-void frustum_matrix(float *matrix, float left, float right, float bottom,
+void mat_identity(float *matrix) {
+    matrix[0] = 1;
+    matrix[1] = 0;
+    matrix[2] = 0;
+    matrix[3] = 0;
+    matrix[4] = 0;
+    matrix[5] = 1;
+    matrix[6] = 0;
+    matrix[7] = 0;
+    matrix[8] = 0;
+    matrix[9] = 0;
+    matrix[10] = 1;
+    matrix[11] = 0;
+    matrix[12] = 0;
+    matrix[13] = 0;
+    matrix[14] = 0;
+    matrix[15] = 1;
+}
+
+void mat_translate(float *matrix, float dx, float dy, float dz) {
+    matrix[0] = 1;
+    matrix[1] = 0;
+    matrix[2] = 0;
+    matrix[3] = 0;
+    matrix[4] = 0;
+    matrix[5] = 1;
+    matrix[6] = 0;
+    matrix[7] = 0;
+    matrix[8] = 0;
+    matrix[9] = 0;
+    matrix[10] = 1;
+    matrix[11] = 0;
+    matrix[12] = dx;
+    matrix[13] = dy;
+    matrix[14] = dz;
+    matrix[15] = 1;
+}
+
+void mat_rotate(float *matrix, float x, float y, float z, float angle) {
+    // normalize x, y, z?
+    float s = sin(angle);
+    float c = cos(angle);
+    float m = 1 - c;
+    matrix[0] = m * x * x + c;
+    matrix[1] = m * x * y - z * s;
+    matrix[2] = m * z * x + y * s;
+    matrix[3] = 0;
+    matrix[4] = m * x * y + z * s;
+    matrix[5] = m * y * y + c;
+    matrix[6] = m * y * z - x * s;
+    matrix[7] = 0;
+    matrix[8] = m * z * x - y * s;
+    matrix[9] = m * y * z + x * s;
+    matrix[10] = m * z * z + c;
+    matrix[11] = 0;
+    matrix[12] = 0;
+    matrix[13] = 0;
+    matrix[14] = 0;
+    matrix[15] = 1;
+}
+
+void mat_multiply(float *matrix, float *a, float *b) {
+    float result[16];
+    for (int c = 0; c < 4; c++) {
+        for (int r = 0; r < 4; r++) {
+            int index = c * 4 + r;
+            float total = 0;
+            for (int i = 0; i < 4; i++) {
+                int p = i * 4 + r;
+                int q = c * 4 + i;
+                total += a[p] * b[q];
+            }
+            result[index] = total;
+        }
+    }
+    for (int i = 0; i < 16; i++) {
+        matrix[i] = result[i];
+    }
+}
+
+void mat_frustum(float *matrix, float left, float right, float bottom,
     float top, float znear, float zfar)
 {
     float temp, temp2, temp3, temp4;
@@ -102,13 +182,13 @@ void frustum_matrix(float *matrix, float left, float right, float bottom,
     matrix[15] = 0.0;
 }
 
-void perspective_matrix(float *matrix, float fov, float aspect,
+void mat_perspective(float *matrix, float fov, float aspect,
     float znear, float zfar)
 {
     float ymax, xmax;
     ymax = znear * tanf(fov * PI / 360.0);
     xmax = ymax * aspect;
-    frustum_matrix(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
+    mat_frustum(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
 }
 
 void make_cube(float *vertex, float *normal, float *texture,

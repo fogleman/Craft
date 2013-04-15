@@ -16,10 +16,13 @@ GLuint make_shader(GLenum type, const char *source);
 GLuint load_shader(GLenum type, const char *path);
 GLuint make_program(GLuint shader1, GLuint shader2);
 GLuint load_program(const char *path1, const char *path2);
-void identity_matrix(float *matrix);
-void frustum_matrix(float *matrix, float left, float right, float bottom,
+void mat_identity(float *matrix);
+void mat_translate(float *matrix, float dx, float dy, float dz);
+void mat_rotate(float *matrix, float x, float y, float z, float angle);
+void mat_multiply(float *matrix, float *a, float *b);
+void mat_frustum(float *matrix, float left, float right, float bottom,
     float top, float znear, float zfar);
-void perspective_matrix(float *matrix, float fov, float aspect,
+void mat_perspective(float *matrix, float fov, float aspect,
     float near, float far);
 void make_cube(float *vertex, float *normal, float *texture,
     int left, int right, int top, int bottom, int front, int back,

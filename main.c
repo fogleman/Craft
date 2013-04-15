@@ -55,11 +55,26 @@ void update_fps(FPS *fps) {
     }
 }
 
-void update_matrix(float *matrix) {
+void update_matrix(float *matrix,
+    float x, float y, float z, float rx, float ry)
+{
     int width, height;
+    float a[16];
+    float b[16];
     glfwGetWindowSize(&width, &height);
     glViewport(0, 0, width, height);
-    perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 128.0);
+    mat_identity(a);
+    mat_translate(b, -x, -y, -z);
+    mat_multiply(a, b, a);
+    mat_rotate(b, cos(rx), 0, sin(rx), ry);
+    mat_multiply(a, b, a);
+    mat_rotate(b, 0, 1, 0, -rx);
+    mat_multiply(a, b, a);
+    mat_perspective(b, 65.0, (float)width / height, 0.1, 128.0);
+    mat_multiply(a, b, a);
+    for (int i = 0; i < 16; i++) {
+        matrix[i] = a[i];
+    }
 }
 
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
@@ -426,10 +441,8 @@ int main(int argc, char **argv) {
     glfwLoadTexture2D("texture.tga", 0);
 
     GLuint program = load_program("vertex.glsl", "fragment.glsl");
-    GLuint timer_loc = glGetUniformLocation(program, "timer");
     GLuint matrix_loc = glGetUniformLocation(program, "matrix");
-    GLuint rotation_loc = glGetUniformLocation(program, "rotation");
-    GLuint center_loc = glGetUniformLocation(program, "center");
+    GLuint timer_loc = glGetUniformLocation(program, "timer");
     GLuint sampler_loc = glGetUniformLocation(program, "sampler");
     GLuint position_loc = glGetAttribLocation(program, "position");
     GLuint normal_loc = glGetAttribLocation(program, "normal");
@@ -457,7 +470,6 @@ int main(int argc, char **argv) {
         dt = dt > 0.2 ? 0.2 : dt;
         previous = now;
         update_fps(&fps);
-        update_matrix(matrix);
 
         if (exclusive) {
             glfwGetMousePos(&mx, &my);
@@ -533,14 +545,14 @@ int main(int argc, char **argv) {
             }
         }
 
+        update_matrix(matrix, x, y, z, rx, ry);
+
         glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform1f(timer_loc, glfwGetTime());
-        glUniform2f(rotation_loc, rx, ry);
-        glUniform3f(center_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
 
         ensure_chunks(chunks, &chunk_count, p, q, 0);

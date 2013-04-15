@@ -142,7 +142,7 @@ int hit_test(Chunk *chunks, int chunk_count,
     return 0;
 }
 
-int collide(Map *map, int height, float *_x, float *_y, float *_z) {
+int _collide(Map *map, int height, float *_x, float *_y, float *_z) {
     int result = 0;
     float pad = 0.25;
     float x = *_x;
@@ -180,6 +180,24 @@ int collide(Map *map, int height, float *_x, float *_y, float *_z) {
     *_x = p[0];
     *_y = p[1];
     *_z = p[2];
+    return result;
+}
+
+int collide(Chunk *chunks, int chunk_count, float *x, float *y, float *z) {
+    int result = 0;
+    int p = round(*x) / CHUNK_SIZE;
+    int q = round(*z) / CHUNK_SIZE;
+    for (int i = 0; i < chunk_count; i++) {
+        Chunk *chunk = chunks + i;
+        int dp = chunk->p - p;
+        int dq = chunk->q - q;
+        if (ABS(dp) > 1 || ABS(dq) > 1) {
+            continue;
+        }
+        if (_collide(&chunk->map, 2, x, y, z)) {
+            result = 1;
+        }
+    }
     return result;
 }
 
@@ -475,16 +493,8 @@ int main(int argc, char **argv) {
             x += vx;
             y += vy + dy * ut;
             z += vz;
-            for (int j = 0; j < chunk_count; j++) {
-                Chunk *chunk = chunks + j;
-                int dp = chunk->p - p;
-                int dq = chunk->q - q;
-                if (ABS(dp) > 1 || ABS(dq) > 1) {
-                    continue;
-                }
-                if (collide(&chunk->map, 2, &x, &y, &z)) {
-                    dy = 0;
-                }
+            if (collide(chunks, chunk_count, &x, &y, &z)) {
+                dy = 0;
             }
         }
 

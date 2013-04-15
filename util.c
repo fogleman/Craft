@@ -76,6 +76,11 @@ GLuint load_program(const char *path1, const char *path2) {
     return program;
 }
 
+void normalize(float *x, float *y, float *z) {
+    float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
+    *x /= d; *y /= d; *z /= d;
+}
+
 void mat_identity(float *matrix) {
     matrix[0] = 1;
     matrix[1] = 0;
@@ -115,9 +120,9 @@ void mat_translate(float *matrix, float dx, float dy, float dz) {
 }
 
 void mat_rotate(float *matrix, float x, float y, float z, float angle) {
-    // normalize x, y, z?
-    float s = sin(angle);
-    float c = cos(angle);
+    normalize(&x, &y, &z);
+    float s = sinf(angle);
+    float c = cosf(angle);
     float m = 1 - c;
     matrix[0] = m * x * x + c;
     matrix[1] = m * x * y - z * s;

@@ -2,8 +2,10 @@
 
 uniform sampler2D sampler;
 uniform float timer;
+
 in vec2 fragment_uv;
 in vec3 fragment_normal;
+
 out vec3 color;
 
 void main() {
@@ -19,6 +21,6 @@ void main() {
     vec3 fog = vec3(0.53, 0.81, 0.92);
     float z = gl_FragCoord.z / gl_FragCoord.w;
     float f = clamp(z / 128, 0, 1);
-    f = pow(f, 2);
+    f = pow(f, 3);
     color = mix(color, fog, f);
 }

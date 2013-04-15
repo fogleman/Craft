@@ -504,9 +504,6 @@ int main(int argc, char **argv) {
             glfwEnable(GLFW_MOUSE_CURSOR);
         }
 
-        int p = round(x) / CHUNK_SIZE;
-        int q = round(z) / CHUNK_SIZE;
-
         int sz = 0;
         int sx = 0;
         if (glfwGetKey('Q')) break;
@@ -545,6 +542,8 @@ int main(int argc, char **argv) {
             }
         }
 
+        int p = round(x) / CHUNK_SIZE;
+        int q = round(z) / CHUNK_SIZE;
         update_matrix(matrix, x, y, z, rx, ry);
 
         glClearColor(0.53, 0.81, 0.92, 1.00);

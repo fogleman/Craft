@@ -513,17 +513,9 @@ int main(int argc, char **argv) {
             Chunk *chunk = chunks + i;
             int dp = chunk->p - p;
             int dq = chunk->q - q;
-            // if (dp || dq) {
-            //     float a1 = atan2(dp, dq) + RADIANS(180);
-            //     float a2 = -rx;
-            //     float d = ABS(a2 - a1);
-            //     if (d > RADIANS(180)) d-= RADIANS(180);
-            //     if (d < RADIANS(90)) {
-            //         continue;
-            //     }
-            // }
             int n = RENDER_CHUNK_RADIUS;
             if (ABS(dp) <= n && ABS(dq) <= n) {
+                // TODO: check if chunk is behind viewer
                 draw_chunk(chunk, position_loc, normal_loc, uv_loc);
             }
         }

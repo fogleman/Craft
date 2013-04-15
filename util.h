@@ -1,3 +1,7 @@
+#ifdef __MINGW32__
+#include <GL/glew.h>
+#endif
+
 #include <GL/glfw.h>
 
 #define PI 3.14159265359

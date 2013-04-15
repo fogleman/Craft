@@ -136,10 +136,10 @@ int hit_test(Chunk *chunks, int chunk_count,
             continue;
         }
         if (_hit_test(&chunk->map, 8, x, y, z, vx, vy, vz, hx, hy, hz)) {
-            return 1;
+            return i;
         }
     }
-    return 0;
+    return -1;
 }
 
 int _collide(Map *map, int height, float *_x, float *_y, float *_z) {
@@ -238,14 +238,18 @@ void exposed_faces(Map *map, int x, int y, int z,
     *f6 = map_get(map, x, y, z - 1) == 0;
 }
 
-void make_chunk(Chunk *chunk, int p, int q) {
+void update_chunk(Chunk *chunk) {
     Map *map = &chunk->map;
-    map_alloc(map);
-    make_world(map, p, q);
+
+    if (chunk->faces) {
+        glDeleteBuffers(1, &chunk->vertex_buffer);
+        glDeleteBuffers(1, &chunk->normal_buffer);
+        glDeleteBuffers(1, &chunk->texture_buffer);
+    }
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
-        if (e->w < 0) {
+        if (e->w <= 0) {
             continue;
         }
         int f1, f2, f3, f4, f5, f6;
@@ -260,7 +264,7 @@ void make_chunk(Chunk *chunk, int p, int q) {
     int vertex_offset = 0;
     int texture_offset = 0;
     MAP_FOR_EACH(map, e) {
-        if (e->w < 0) {
+        if (e->w <= 0) {
             continue;
         }
         int f1, f2, f3, f4, f5, f6;
@@ -298,12 +302,20 @@ void make_chunk(Chunk *chunk, int p, int q) {
     free(normal_data);
     free(texture_data);
 
-    chunk->p = p;
-    chunk->q = q;
     chunk->faces = faces;
     chunk->vertex_buffer = vertex_buffer;
     chunk->normal_buffer = normal_buffer;
     chunk->texture_buffer = texture_buffer;
+}
+
+void make_chunk(Chunk *chunk, int p, int q) {
+    chunk->p = p;
+    chunk->q = q;
+    chunk->faces = 0;
+    Map *map = &chunk->map;
+    map_alloc(map);
+    make_world(map, p, q);
+    update_chunk(chunk);
 }
 
 void draw_chunk(
@@ -447,14 +459,25 @@ int main(int argc, char **argv) {
             px = mx;
             py = my;
         }
-        if (exclusive && glfwGetKey(GLFW_KEY_ESC)) {
-            exclusive = 0;
-            glfwEnable(GLFW_MOUSE_CURSOR);
-        }
+        // if (exclusive && glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT)) {
+        //     int hx, hy, hz;
+        //     int i = hit_test(chunks, chunk_count, x, y, z, rx, ry,
+        //         &hx, &hy, &hz);
+        //     if (i >= 0) {
+        //         Chunk *chunk = chunks + i;
+        //         Map *map = &chunk->map;
+        //         map_set(map, hx, hy, hz, 0);
+        //         update_chunk(chunk);
+        //     }
+        // }
         if (!exclusive && glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT)) {
             exclusive = 1;
             glfwDisable(GLFW_MOUSE_CURSOR);
             glfwGetMousePos(&px, &py);
+        }
+        if (exclusive && glfwGetKey(GLFW_KEY_ESC)) {
+            exclusive = 0;
+            glfwEnable(GLFW_MOUSE_CURSOR);
         }
 
         int p = round(x) / CHUNK_SIZE;

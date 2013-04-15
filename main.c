@@ -47,7 +47,7 @@ void update_fps(FPS *fps) {
         int result = fps->frames / elapsed;
         fps->frames = 0;
         fps->timestamp = now;
-        printf("%d\n", result);
+        // printf("%d\n", result);
     }
 }
 
@@ -58,9 +58,16 @@ void update_matrix(float *matrix) {
     perspective_matrix(matrix, 65.0, (float)width / height, 0.1, 128.0);
 }
 
+void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
+    float m = cos(ry);
+    *vx = cos(rx - RADIANS(90)) * m;
+    *vy = sin(ry);
+    *vz = sin(rx - RADIANS(90)) * m;
+}
+
 void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
-    float *dx, float *dy, float *dz) {
-    *dx = 0; *dy = 0; *dz = 0;
+    float *vx, float *vy, float *vz) {
+    *vx = 0; *vy = 0; *vz = 0;
     if (!sz && !sx) {
         return;
     }
@@ -75,15 +82,64 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         if (sz > 0) {
             y = -y;
         }
-        *dx = cos(rx + strafe) * m;
-        *dy = y;
-        *dz = sin(rx + strafe) * m;
+        *vx = cos(rx + strafe) * m;
+        *vy = y;
+        *vz = sin(rx + strafe) * m;
     }
     else {
-        *dx = cos(rx + strafe);
-        *dy = 0;
-        *dz = sin(rx + strafe);
+        *vx = cos(rx + strafe);
+        *vy = 0;
+        *vz = sin(rx + strafe);
     }
+}
+
+int _hit_test(Map *map,
+    float max_distance,
+    float x, float y, float z,
+    float vx, float vy, float vz,
+    int *hx, int *hy, int *hz)
+{
+    int m = 8;
+    int px = 0;
+    int py = 0;
+    int pz = 0;
+    for (int i = 0; i < max_distance * m; i++) {
+        int nx = round(x);
+        int ny = round(y);
+        int nz = round(z);
+        if (nx != px || ny != py || nz != pz) {
+            if (map_get(map, nx, ny, nz)) {
+                *hx = nx; *hy = ny; *hz = nz;
+                return 1;
+            }
+        }
+        x += vx / m;
+        y += vy / m;
+        z += vz / m;
+    }
+    return 0;
+}
+
+int hit_test(Chunk *chunks, int chunk_count,
+    float x, float y, float z, float rx, float ry,
+    int *hx, int *hy, int *hz)
+{
+    int p = round(x) / CHUNK_SIZE;
+    int q = round(z) / CHUNK_SIZE;
+    float vx, vy, vz;
+    get_sight_vector(rx, ry, &vx, &vy, &vz);
+    for (int i = 0; i < chunk_count; i++) {
+        Chunk *chunk = chunks + i;
+        int dp = chunk->p - p;
+        int dq = chunk->q - q;
+        if (ABS(dp) > 1 || ABS(dq) > 1) {
+            continue;
+        }
+        if (_hit_test(&chunk->map, 8, x, y, z, vx, vy, vz, hx, hy, hz)) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 int collide(Map *map, int height, float *_x, float *_y, float *_z) {
@@ -383,8 +439,8 @@ int main(int argc, char **argv) {
             glfwGetMousePos(&px, &py);
         }
 
-        int p = round(x / CHUNK_SIZE);
-        int q = round(z / CHUNK_SIZE);
+        int p = round(x) / CHUNK_SIZE;
+        int q = round(z) / CHUNK_SIZE;
 
         int sz = 0;
         int sx = 0;

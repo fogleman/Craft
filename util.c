@@ -142,6 +142,22 @@ void mat_rotate(float *matrix, float x, float y, float z, float angle) {
     matrix[15] = 1;
 }
 
+void mat_vec_multiply(float *vector, float *a, float *b) {
+    float result[4];
+    for (int i = 0; i < 4; i++) {
+        float total = 0;
+        for (int j = 0; j < 4; j++) {
+            int p = j * 4 + i;
+            int q = j;
+            total += a[p] * b[q];
+        }
+        result[i] = total;
+    }
+    for (int i = 0; i < 4; i++) {
+        vector[i] = result[i];
+    }
+}
+
 void mat_multiply(float *matrix, float *a, float *b) {
     float result[16];
     for (int c = 0; c < 4; c++) {

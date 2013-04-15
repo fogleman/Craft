@@ -15,8 +15,8 @@
 
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
-#define CREATE_CHUNK_RADIUS 5
-#define RENDER_CHUNK_RADIUS 5
+#define CREATE_CHUNK_RADIUS 6
+#define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 8
 
 const static int FACES[6][3] = {
@@ -161,17 +161,11 @@ int hit_test(Chunk *chunks, int chunk_count,
     return -1;
 }
 
-int _collide(Map *map, int height, float *_x, float *_y, float *_z) {
+int _collide(Map *map, int height, float *x, float *y, float *z) {
     int result = 0;
     float pad = 0.25;
-    float x = *_x;
-    float y = *_y;
-    float z = *_z;
-    int nx = round(x);
-    int ny = round(y);
-    int nz = round(z);
-    float p[3] = {x, y, z};
-    int np[3] = {nx, ny, nz};
+    float p[3] = {*x, *y, *z};
+    int np[3] = {round(*x), round(*y), round(*z)};
     for (int face = 0; face < 6; face++) {
         for (int i = 0; i < 3; i++) {
             int dir = FACES[face][i];
@@ -183,7 +177,7 @@ int _collide(Map *map, int height, float *_x, float *_y, float *_z) {
                 continue;
             }
             for (int dy = 0; dy < height; dy++) {
-                int op[3] = {nx, ny - dy, nz};
+                int op[3] = {np[0], np[1] - dy, np[2]};
                 op[i] += dir;
                 if (!map_get(map, op[0], op[1], op[2])) {
                     continue;
@@ -196,9 +190,9 @@ int _collide(Map *map, int height, float *_x, float *_y, float *_z) {
             }
         }
     }
-    *_x = p[0];
-    *_y = p[1];
-    *_z = p[2];
+    *x = p[0];
+    *y = p[1];
+    *z = p[2];
     return result;
 }
 
@@ -560,10 +554,28 @@ int main(int argc, char **argv) {
             int dp = chunk->p - p;
             int dq = chunk->q - q;
             int n = RENDER_CHUNK_RADIUS;
-            if (ABS(dp) <= n && ABS(dq) <= n) {
-                // TODO: check if chunk is behind viewer
-                draw_chunk(chunk, position_loc, normal_loc, uv_loc);
+            if (ABS(dp) > n || ABS(dq) > n) {
+                continue;
             }
+            int visible = 0;
+            for (int dp = 0; dp <= 1; dp++) {
+                for (int dq = 0; dq <= 1; dq++) {
+                    float vec[4] = {
+                        (chunk->p + dp) * CHUNK_SIZE,
+                        y,
+                        (chunk->q + dq) * CHUNK_SIZE,
+                        1};
+                    mat_vec_multiply(vec, matrix, vec);
+                    if (vec[3] >= 0) {
+                        visible = 1;
+                        break;
+                    }
+                }
+            }
+            if (!visible) {
+                continue;
+            }
+            draw_chunk(chunk, position_loc, normal_loc, uv_loc);
         }
 
         glfwSwapBuffers();

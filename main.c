@@ -1,8 +1,8 @@
 #ifdef __MINGW32__
-#include <GL/glew.h>
+    #include <GL/glew.h>
 #else
-#define GLFW_INCLUDE_GL3
-#define GLFW_NO_GLU
+    #define GLFW_INCLUDE_GL3
+    #define GLFW_NO_GLU
 #endif
 
 #include <GL/glfw.h>
@@ -400,10 +400,10 @@ int main(int argc, char **argv) {
         return -1;
     }
     #ifdef __APPLE__
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-    glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+        glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
+        glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
         return -1;

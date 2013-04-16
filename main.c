@@ -178,36 +178,35 @@ int hit_test(Chunk *chunks, int chunk_count, int previous,
 
 int _collide(Map *map, int height, float *x, float *y, float *z) {
     int result = 0;
+    int nx = roundf(*x);
+    int ny = roundf(*y);
+    int nz = roundf(*z);
+    float px = *x - nx;
+    float py = *y - ny;
+    float pz = *z - nz;
     float pad = 0.25;
-    float p[3] = {*x, *y, *z};
-    int np[3] = {roundf(*x), roundf(*y), roundf(*z)};
-    for (int face = 0; face < 6; face++) {
-        for (int i = 0; i < 3; i++) {
-            int dir = FACES[face][i];
-            if (!dir) {
-                continue;
-            }
-            float dist = (p[i] - np[i]) * dir;
-            if (dist < pad) {
-                continue;
-            }
-            for (int dy = 0; dy < height; dy++) {
-                int op[3] = {np[0], np[1] - dy, np[2]};
-                op[i] += dir;
-                if (!map_get(map, op[0], op[1], op[2])) {
-                    continue;
-                }
-                p[i] -= (dist - pad) * dir;
-                if (i == 1) {
-                    result = 1;
-                }
-                break;
-            }
+    for (int dy = 0; dy < height; dy++) {
+        if (px < -pad && map_get(map, nx - 1, ny - dy, nz)) {
+            *x = nx - pad;
+        }
+        if (px > pad && map_get(map, nx + 1, ny - dy, nz)) {
+            *x = nx + pad;
+        }
+        if (py < -pad && map_get(map, nx, ny - dy - 1, nz)) {
+            *y = ny - pad;
+            result = 1;
+        }
+        if (py > pad && map_get(map, nx, ny - dy + 1, nz)) {
+            *y = ny + pad;
+            result = 1;
+        }
+        if (pz < -pad && map_get(map, nx, ny - dy, nz - 1)) {
+            *z = nz - pad;
+        }
+        if (pz > pad && map_get(map, nx, ny - dy, nz + 1)) {
+            *z = nz + pad;
         }
     }
-    *x = p[0];
-    *y = p[1];
-    *z = p[2];
     return result;
 }
 

@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "db.h"
 #include "map.h"
 #include "noise.h"
 #include "util.h"
@@ -276,6 +277,7 @@ void make_world(Map *map, int p, int q) {
             }
         }
     }
+    db_apply(map, p, q);
 }
 
 void exposed_faces(Map *map, int x, int y, int z,
@@ -459,7 +461,12 @@ void on_mouse_button(int button, int pressed) {
 }
 
 int main(int argc, char **argv) {
+    if (db_init()) {
+        db_close();
+        return -1;
+    }
     if (!glfwInit()) {
+        db_close();
         return -1;
     }
     #ifdef __APPLE__
@@ -469,6 +476,7 @@ int main(int argc, char **argv) {
         glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
+        db_close();
         return -1;
     }
     glfwSwapInterval(VSYNC);
@@ -479,6 +487,7 @@ int main(int argc, char **argv) {
 
     #ifndef __APPLE__
         if (glewInit() != GLEW_OK) {
+            db_close();
             return -1;
         }
     #endif
@@ -555,6 +564,8 @@ int main(int argc, char **argv) {
             if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
+                int p = floorf((float)hx / CHUNK_SIZE);
+                int q = floorf((float)hz / CHUNK_SIZE);
                 for (int i = 0; i < chunk_count; i++) {
                     Chunk *chunk = chunks + i;
                     Map *map = &chunk->map;
@@ -563,6 +574,7 @@ int main(int argc, char **argv) {
                         update_chunk(chunk);
                     }
                 }
+                db_insert(p, q, hx, hy, hz, 0);
             }
         }
 
@@ -572,14 +584,16 @@ int main(int argc, char **argv) {
             if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
+                int w = 4;
                 int p = floorf((float)hx / CHUNK_SIZE);
                 int q = floorf((float)hz / CHUNK_SIZE);
                 Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
                 if (chunk) {
                     Map *map = &chunk->map;
-                    map_set(map, hx, hy, hz, 1);
+                    map_set(map, hx, hy, hz, w);
                     update_chunk(chunk);
                 }
+                db_insert(p, q, hx, hy, hz, w);
             }
         }
 
@@ -651,5 +665,6 @@ int main(int argc, char **argv) {
         glfwSwapBuffers();
     }
     glfwTerminate();
+    db_close();
     return 0;
 }

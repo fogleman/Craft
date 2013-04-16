@@ -1,3 +1,6 @@
+#ifndef _util_h_
+#define _util_h_
+
 #ifdef __APPLE__
     #define GLFW_INCLUDE_GL3
     #define GLFW_NO_GLU
@@ -41,3 +44,5 @@ void mat_perspective(float *matrix, float fov, float aspect,
 void make_cube(float *vertex, float *normal, float *texture,
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w);
+
+#endif

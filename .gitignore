@@ -1,5 +1,6 @@
 main
 main.exe
+sqlite3
 *.o
 *.dylib
 *.dll

@@ -1,3 +1,6 @@
+#ifndef _map_h_
+#define _map_h_
+
 #define EMPTY_ENTRY(e) (!(e)->x && !(e)->y && !(e)->z && !(e)->w)
 
 #define MAP_FOR_EACH(map, entry) \
@@ -26,3 +29,5 @@ void map_alloc(Map *map);
 void map_free(Map *map);
 void map_set(Map *map, int x, int y, int z, int w);
 int map_get(Map *map, int x, int y, int z);
+
+#endif

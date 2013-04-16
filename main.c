@@ -86,6 +86,16 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     }
 }
 
+Chunk *find_chunk(Chunk *chunks, int chunk_count, int p, int q) {
+    for (int i = 0; i < chunk_count; i++) {
+        Chunk *chunk = chunks + i;
+        if (chunk->p == p && chunk->q == q) {
+            return chunk;
+        }
+    }
+    return 0;
+}
+
 int chunk_distance(Chunk *chunk, int p, int q) {
     int dp = ABS(chunk->p - p);
     int dq = ABS(chunk->q - q);
@@ -211,13 +221,13 @@ void make_world(Map *map, int p, int q) {
             int x = p * CHUNK_SIZE + dx;
             int z = q * CHUNK_SIZE + dz;
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
-            float g = simplex2(x * 0.01, z * 0.01, 2, 0.9, 2);
+            float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
             int mh = g * 32 + 16;
             int h = f * mh;
             int w = 1;
             int t = 12;
-            if (h < t) {
-                h = t - 1;
+            if (h <= t) {
+                h = t;
                 w = 2;
             }
             if (dx < 0 || dz < 0 || dx >= CHUNK_SIZE || dz >= CHUNK_SIZE) {
@@ -361,15 +371,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
         for (int j = -n; j <= n; j++) {
             int a = p + i;
             int b = q + j;
-            int create = 1;
-            for (int k = 0; k < count; k++) {
-                Chunk *chunk = chunks + k;
-                if (chunk->p == a && chunk->q == b) {
-                    create = 0;
-                    break;
-                }
-            }
-            if (create) {
+            if (!find_chunk(chunks, count, a, b)) {
                 make_chunk(chunks + count, a, b);
                 count++;
                 if (!force) {
@@ -526,14 +528,11 @@ int main(int argc, char **argv) {
             {
                 int p = floorf((float)hx / CHUNK_SIZE);
                 int q = floorf((float)hz / CHUNK_SIZE);
-                for (int i = 0; i < chunk_count; i++) {
-                    Chunk *chunk = chunks + i;
-                    if (chunk->p == p && chunk->q == q) {
-                        Map *map = &chunk->map;
-                        map_set(map, hx, hy, hz, 1);
-                        update_chunk(chunk);
-                        break;
-                    }
+                Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+                if (chunk) {
+                    Map *map = &chunk->map;
+                    map_set(map, hx, hy, hz, 1);
+                    update_chunk(chunk);
                 }
             }
         }

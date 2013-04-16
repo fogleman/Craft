@@ -102,6 +102,24 @@ int chunk_distance(Chunk *chunk, int p, int q) {
     return MAX(dp, dq);
 }
 
+int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
+    int result = -1;
+    int nx = roundf(x);
+    int nz = roundf(z);
+    int p = floorf(roundf(x) / CHUNK_SIZE);
+    int q = floorf(roundf(z) / CHUNK_SIZE);
+    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    if (chunk) {
+        Map *map = &chunk->map;
+        MAP_FOR_EACH(map, e) {
+            if (e->x == nx && e->z == nz) {
+                result = MAX(result, e->y);
+            }
+        } END_MAP_FOR_EACH;
+    }
+    return result;
+}
+
 int _hit_test(Map *map,
     float max_distance, int previous,
     float x, float y, float z,
@@ -472,8 +490,8 @@ int main(int argc, char **argv) {
     FPS fps = {0, 0};
     float matrix[16];
     float x = 0;
-    float y = 32;
     float z = 0;
+    float y = highest_block(chunks, chunk_count, x, z) + 2;
     float dy = 0;
     float rx = 0;
     float ry = 0;

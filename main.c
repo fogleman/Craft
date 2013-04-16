@@ -503,11 +503,10 @@ int main(int argc, char **argv) {
     double previous = glfwGetTime();
 
     while (glfwGetWindowParam(GLFW_OPENED)) {
-        double now = glfwGetTime();
-        double dt = now - previous;
-        dt = dt > 0.2 ? 0.2 : dt;
-        previous = now;
         update_fps(&fps);
+        double now = glfwGetTime();
+        double dt = MIN(now - previous, 0.2);
+        previous = now;
 
         if (exclusive) {
             int mx, my;
@@ -515,13 +514,21 @@ int main(int argc, char **argv) {
             float m = 0.0025;
             rx += (mx - px) * m;
             ry -= (my - py) * m;
-            if (rx < 0) rx += RADIANS(360);
-            if (rx >= RADIANS(360)) rx -= RADIANS(360);
+            if (rx < 0) {
+                rx += RADIANS(360);
+            }
+            if (rx >= RADIANS(360)){
+                rx -= RADIANS(360);
+            }
             ry = MAX(ry, -RADIANS(90));
             ry = MIN(ry, RADIANS(90));
             px = mx;
             py = my;
         }
+        else {
+            glfwGetMousePos(&px, &py);
+        }
+
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;
@@ -538,6 +545,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
+
         if (right_click) {
             right_click = 0;
             int hx, hy, hz;
@@ -564,10 +572,8 @@ int main(int argc, char **argv) {
         if (glfwGetKey('D')) sx++;
         if (glfwGetKey('1')) flying = 0;
         if (glfwGetKey('2')) flying = 1;
-        if (glfwGetKey(GLFW_KEY_SPACE)) {
-            if (dy == 0) {
-                dy = 8;
-            }
+        if (dy == 0 && glfwGetKey(GLFW_KEY_SPACE)) {
+            dy = 8;
         }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);

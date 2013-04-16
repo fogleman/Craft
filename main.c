@@ -113,7 +113,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 }
 
 int _hit_test(Map *map,
-    float max_distance,
+    float max_distance, int previous,
     float x, float y, float z,
     float vx, float vy, float vz,
     int *hx, int *hy, int *hz)
@@ -128,18 +128,22 @@ int _hit_test(Map *map,
         int nz = round(z);
         if (nx != px || ny != py || nz != pz) {
             if (map_get(map, nx, ny, nz)) {
-                *hx = nx; *hy = ny; *hz = nz;
+                if (previous) {
+                    *hx = px; *hy = py; *hz = pz;
+                }
+                else {
+                    *hx = nx; *hy = ny; *hz = nz;
+                }
                 return 1;
             }
+            px = nx; py = ny; pz = nz;
         }
-        x += vx / m;
-        y += vy / m;
-        z += vz / m;
+        x += vx / m; y += vy / m; z += vz / m;
     }
     return 0;
 }
 
-int hit_test(Chunk *chunks, int chunk_count,
+int hit_test(Chunk *chunks, int chunk_count, int previous,
     float x, float y, float z, float rx, float ry,
     int *bx, int *by, int *bz)
 {
@@ -157,7 +161,9 @@ int hit_test(Chunk *chunks, int chunk_count,
             continue;
         }
         int hx, hy, hz;
-        if (_hit_test(&chunk->map, 4, x, y, z, vx, vy, vz, &hx, &hy, &hz)) {
+        if (_hit_test(&chunk->map, 4, previous,
+            x, y, z, vx, vy, vz, &hx, &hy, &hz))
+        {
             float d = sqrtf(
                 powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
@@ -406,6 +412,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
 
 static int exclusive = 1;
 static int left_click = 0;
+static int right_click = 0;
 
 void on_key(int key, int pressed) {
     if (!pressed) {
@@ -430,6 +437,11 @@ void on_mouse_button(int button, int pressed) {
         else {
             exclusive = 1;
             glfwDisable(GLFW_MOUSE_CURSOR);
+        }
+    }
+    if (button == 1) {
+        if (exclusive) {
+            right_click = 1;
         }
     }
 }
@@ -521,7 +533,7 @@ int main(int argc, char **argv) {
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;
-            if (hit_test(chunks, chunk_count, x, y, z, rx, ry,
+            if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
                 for (int i = 0; i < chunk_count; i++) {
@@ -530,6 +542,25 @@ int main(int argc, char **argv) {
                     if (map_get(map, hx, hy, hz)) {
                         map_set(map, hx, hy, hz, 0);
                         update_chunk(chunk);
+                    }
+                }
+            }
+        }
+        if (right_click) {
+            right_click = 0;
+            int hx, hy, hz;
+            if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
+                &hx, &hy, &hz))
+            {
+                int p = hx / CHUNK_SIZE;
+                int q = hz / CHUNK_SIZE;
+                for (int i = 0; i < chunk_count; i++) {
+                    Chunk *chunk = chunks + i;
+                    if (chunk->p == p && chunk->q == q) {
+                        Map *map = &chunk->map;
+                        map_set(map, hx, hy, hz, 1);
+                        update_chunk(chunk);
+                        break;
                     }
                 }
             }

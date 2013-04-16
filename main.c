@@ -155,9 +155,7 @@ int hit_test(Chunk *chunks, int chunk_count, int previous,
     get_sight_vector(rx, ry, &vx, &vy, &vz);
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
-        int dp = chunk->p - p;
-        int dq = chunk->q - q;
-        if (ABS(dp) > 1 || ABS(dq) > 1) {
+        if (chunk_distance(chunk, p, q) > 1) {
             continue;
         }
         int hx, hy, hz;
@@ -216,9 +214,7 @@ int collide(Chunk *chunks, int chunk_count, float *x, float *y, float *z) {
     int q = floorf(roundf(*z) / CHUNK_SIZE);
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
-        int dp = chunk->p - p;
-        int dq = chunk->q - q;
-        if (ABS(dp) > 1 || ABS(dq) > 1) {
+        if (chunk_distance(chunk, p, q) > 1) {
             continue;
         }
         if (_collide(&chunk->map, 2, x, y, z)) {
@@ -263,6 +259,12 @@ void exposed_faces(Map *map, int x, int y, int z,
     *f4 = map_get(map, x, y - 1, z) == 0 & y > 0;
     *f5 = map_get(map, x, y, z + 1) == 0;
     *f6 = map_get(map, x, y, z - 1) == 0;
+}
+
+int chunk_distance(Chunk *chunk, int p, int q) {
+    int dp = ABS(chunk->p - p);
+    int dq = ABS(chunk->q - q);
+    return MIN(dp, dq);
 }
 
 void update_chunk(Chunk *chunk) {
@@ -364,10 +366,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     int count = *chunk_count;
     for (int i = 0; i < count; i++) {
         Chunk *chunk = chunks + i;
-        int dp = chunk->p - p;
-        int dq = chunk->q - q;
-        int n = DELETE_CHUNK_RADIUS;
-        if (ABS(dp) >= n || ABS(dq) >= n) {
+        if (chunk_distance(chunk, p, q) >= DELETE_CHUNK_RADIUS) {
             map_free(&chunk->map);
             glDeleteBuffers(1, &chunk->position_buffer);
             glDeleteBuffers(1, &chunk->normal_buffer);
@@ -620,10 +619,7 @@ int main(int argc, char **argv) {
         int rendered_faces = 0;
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
-            int dp = chunk->p - p;
-            int dq = chunk->q - q;
-            int n = RENDER_CHUNK_RADIUS;
-            if (ABS(dp) > n || ABS(dq) > n) {
+            if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
                 continue;
             }
             int visible = 0;

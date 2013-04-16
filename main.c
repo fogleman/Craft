@@ -33,9 +33,9 @@ typedef struct {
     int p;
     int q;
     int faces;
-    GLuint vertex_buffer;
+    GLuint position_buffer;
     GLuint normal_buffer;
-    GLuint texture_buffer;
+    GLuint uv_buffer;
 } Chunk;
 
 typedef struct {
@@ -270,9 +270,9 @@ void update_chunk(Chunk *chunk) {
     Map *map = &chunk->map;
 
     if (chunk->faces) {
-        glDeleteBuffers(1, &chunk->vertex_buffer);
+        glDeleteBuffers(1, &chunk->position_buffer);
         glDeleteBuffers(1, &chunk->normal_buffer);
-        glDeleteBuffers(1, &chunk->texture_buffer);
+        glDeleteBuffers(1, &chunk->uv_buffer);
     }
 
     int faces = 0;
@@ -286,11 +286,11 @@ void update_chunk(Chunk *chunk) {
         faces += total;
     } END_MAP_FOR_EACH;
 
-    GLfloat *vertex_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
     GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *texture_data = malloc(sizeof(GLfloat) * faces * 12);
-    int vertex_offset = 0;
-    int texture_offset = 0;
+    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    int position_offset = 0;
+    int uv_offset = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
             continue;
@@ -302,38 +302,38 @@ void update_chunk(Chunk *chunk) {
             continue;
         }
         make_cube(
-            vertex_data + vertex_offset,
-            normal_data + vertex_offset,
-            texture_data + texture_offset,
+            position_data + position_offset,
+            normal_data + position_offset,
+            uv_data + uv_offset,
             f1, f2, f3, f4, f5, f6,
             e->x, e->y, e->z, 0.5, e->w);
-        vertex_offset += total * 18;
-        texture_offset += total * 12;
+        position_offset += total * 18;
+        uv_offset += total * 12;
     } END_MAP_FOR_EACH;
 
-    GLuint vertex_buffer = make_buffer(
+    GLuint position_buffer = make_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
-        vertex_data
+        position_data
     );
     GLuint normal_buffer = make_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
         normal_data
     );
-    GLuint texture_buffer = make_buffer(
+    GLuint uv_buffer = make_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 12,
-        texture_data
+        uv_data
     );
-    free(vertex_data);
+    free(position_data);
     free(normal_data);
-    free(texture_data);
+    free(uv_data);
 
     chunk->faces = faces;
-    chunk->vertex_buffer = vertex_buffer;
+    chunk->position_buffer = position_buffer;
     chunk->normal_buffer = normal_buffer;
-    chunk->texture_buffer = texture_buffer;
+    chunk->uv_buffer = uv_buffer;
 }
 
 void make_chunk(Chunk *chunk, int p, int q) {
@@ -347,16 +347,16 @@ void make_chunk(Chunk *chunk, int p, int q) {
 }
 
 void draw_chunk(
-    Chunk *chunk, GLuint vertex_loc, GLuint normal_loc, GLuint uv_loc)
+    Chunk *chunk, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
 {
-    glEnableVertexAttribArray(vertex_loc);
+    glEnableVertexAttribArray(position_loc);
     glEnableVertexAttribArray(normal_loc);
     glEnableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->vertex_buffer);
-    glVertexAttribPointer(vertex_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->position_buffer);
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, chunk->normal_buffer);
     glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->texture_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->uv_buffer);
     glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 9);
 }
@@ -370,17 +370,17 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
         int n = DELETE_CHUNK_RADIUS;
         if (ABS(dp) >= n || ABS(dq) >= n) {
             map_free(&chunk->map);
-            glDeleteBuffers(1, &chunk->vertex_buffer);
+            glDeleteBuffers(1, &chunk->position_buffer);
             glDeleteBuffers(1, &chunk->normal_buffer);
-            glDeleteBuffers(1, &chunk->texture_buffer);
+            glDeleteBuffers(1, &chunk->uv_buffer);
             Chunk *other = chunks + (count - 1);
             chunk->map = other->map;
             chunk->p = other->p;
             chunk->q = other->q;
             chunk->faces = other->faces;
-            chunk->vertex_buffer = other->vertex_buffer;
+            chunk->position_buffer = other->position_buffer;
             chunk->normal_buffer = other->normal_buffer;
-            chunk->texture_buffer = other->texture_buffer;
+            chunk->uv_buffer = other->uv_buffer;
             count--;
         }
     }

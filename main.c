@@ -13,6 +13,7 @@
 #include "noise.h"
 #include "util.h"
 
+#define VSYNC 1
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
 #define CREATE_CHUNK_RADIUS 7
@@ -100,6 +101,25 @@ int chunk_distance(Chunk *chunk, int p, int q) {
     int dp = ABS(chunk->p - p);
     int dq = ABS(chunk->q - q);
     return MAX(dp, dq);
+}
+
+int chunk_visible(Chunk *chunk, float *matrix) {
+    for (int dp = 0; dp <= 1; dp++) {
+        for (int dq = 0; dq <= 1; dq++) {
+            for (int y = 0; y < 128; y += 16) {
+                float vec[4] = {
+                    (chunk->p + dp) * CHUNK_SIZE,
+                    y,
+                    (chunk->q + dq) * CHUNK_SIZE,
+                    1};
+                mat_vec_multiply(vec, matrix, vec);
+                if (vec[3] >= 0) {
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
@@ -451,7 +471,7 @@ int main(int argc, char **argv) {
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
         return -1;
     }
-    glfwSwapInterval(1);
+    glfwSwapInterval(VSYNC);
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
     glfwSetKeyCallback(on_key);
@@ -619,23 +639,7 @@ int main(int argc, char **argv) {
             if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
                 continue;
             }
-            int visible = 0;
-            for (int dp = 0; dp <= 1; dp++) {
-                for (int dq = 0; dq <= 1; dq++) {
-                    for (int my = 0; my <= 1; my++) {
-                        float vec[4] = {
-                            (chunk->p + dp) * CHUNK_SIZE,
-                            y * my,
-                            (chunk->q + dq) * CHUNK_SIZE,
-                            1};
-                        mat_vec_multiply(vec, matrix, vec);
-                        if (vec[3] >= 0) {
-                            visible = 1;
-                        }
-                    }
-                }
-            }
-            if (!visible) {
+            if (!chunk_visible(chunk, matrix)) {
                 continue;
             }
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);

@@ -1,8 +1,8 @@
-#ifdef __MINGW32__
-    #include <GL/glew.h>
-#else
+#ifdef __APPLE__
     #define GLFW_INCLUDE_GL3
     #define GLFW_NO_GLU
+#else
+    #include <GL/glew.h>
 #endif
 
 #include <GL/glfw.h>
@@ -465,7 +465,7 @@ int main(int argc, char **argv) {
     glfwSetKeyCallback(on_key);
     glfwSetMouseButtonCallback(on_mouse_button);
 
-    #ifdef __MINGW32__
+    #ifndef __APPLE__
     if (glewInit() != GLEW_OK) {
         return -1;
     }

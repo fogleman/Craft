@@ -1,5 +1,8 @@
-#ifdef __MINGW32__
-#include <GL/glew.h>
+#ifdef __APPLE__
+    #define GLFW_INCLUDE_GL3
+    #define GLFW_NO_GLU
+#else
+    #include <GL/glew.h>
 #endif
 
 #include <GL/glfw.h>

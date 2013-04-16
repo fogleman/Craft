@@ -549,6 +549,8 @@ int main(int argc, char **argv) {
         glUniform1i(sampler_loc, 0);
 
         ensure_chunks(chunks, &chunk_count, p, q, 0);
+        int rendered_chunks = 0;
+        int rendered_faces = 0;
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             int dp = chunk->p - p;
@@ -560,15 +562,16 @@ int main(int argc, char **argv) {
             int visible = 0;
             for (int dp = 0; dp <= 1; dp++) {
                 for (int dq = 0; dq <= 1; dq++) {
-                    float vec[4] = {
-                        (chunk->p + dp) * CHUNK_SIZE,
-                        y,
-                        (chunk->q + dq) * CHUNK_SIZE,
-                        1};
-                    mat_vec_multiply(vec, matrix, vec);
-                    if (vec[3] >= 0) {
-                        visible = 1;
-                        break;
+                    for (int my = 0; my <= 1; my++) {
+                        float vec[4] = {
+                            (chunk->p + dp) * CHUNK_SIZE,
+                            y * my,
+                            (chunk->q + dq) * CHUNK_SIZE,
+                            1};
+                        mat_vec_multiply(vec, matrix, vec);
+                        if (vec[3] / vec[4] >= 0) {
+                            visible = 1;
+                        }
                     }
                 }
             }
@@ -576,7 +579,10 @@ int main(int argc, char **argv) {
                 continue;
             }
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);
+            rendered_chunks += 1;
+            rendered_faces += chunk->faces;
         }
+        // printf("%d chunks, %d faces\n", rendered_chunks, rendered_faces);
 
         glfwSwapBuffers();
     }

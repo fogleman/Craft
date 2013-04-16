@@ -89,7 +89,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 int chunk_distance(Chunk *chunk, int p, int q) {
     int dp = ABS(chunk->p - p);
     int dq = ABS(chunk->q - q);
-    return MIN(dp, dq);
+    return MAX(dp, dq);
 }
 
 int _hit_test(Map *map,

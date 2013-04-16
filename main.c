@@ -123,9 +123,9 @@ int _hit_test(Map *map,
     int py = 0;
     int pz = 0;
     for (int i = 0; i < max_distance * m; i++) {
-        int nx = round(x);
-        int ny = round(y);
-        int nz = round(z);
+        int nx = roundf(x);
+        int ny = roundf(y);
+        int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
             if (map_get(map, nx, ny, nz)) {
                 if (previous) {
@@ -149,8 +149,8 @@ int hit_test(Chunk *chunks, int chunk_count, int previous,
 {
     int result = 0;
     float best = 0;
-    int p = round(x) / CHUNK_SIZE;
-    int q = round(z) / CHUNK_SIZE;
+    int p = floorf(roundf(x) / CHUNK_SIZE);
+    int q = floorf(roundf(z) / CHUNK_SIZE);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
     for (int i = 0; i < chunk_count; i++) {
@@ -180,7 +180,7 @@ int _collide(Map *map, int height, float *x, float *y, float *z) {
     int result = 0;
     float pad = 0.25;
     float p[3] = {*x, *y, *z};
-    int np[3] = {round(*x), round(*y), round(*z)};
+    int np[3] = {roundf(*x), roundf(*y), roundf(*z)};
     for (int face = 0; face < 6; face++) {
         for (int i = 0; i < 3; i++) {
             int dir = FACES[face][i];
@@ -213,8 +213,8 @@ int _collide(Map *map, int height, float *x, float *y, float *z) {
 
 int collide(Chunk *chunks, int chunk_count, float *x, float *y, float *z) {
     int result = 0;
-    int p = round(*x) / CHUNK_SIZE;
-    int q = round(*z) / CHUNK_SIZE;
+    int p = floorf(roundf(*x) / CHUNK_SIZE);
+    int q = floorf(roundf(*z) / CHUNK_SIZE);
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
         int dp = chunk->p - p;
@@ -552,8 +552,8 @@ int main(int argc, char **argv) {
             if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
-                int p = hx / CHUNK_SIZE;
-                int q = hz / CHUNK_SIZE;
+                int p = floorf((float)hx / CHUNK_SIZE);
+                int q = floorf((float)hz / CHUNK_SIZE);
                 for (int i = 0; i < chunk_count; i++) {
                     Chunk *chunk = chunks + i;
                     if (chunk->p == p && chunk->q == q) {
@@ -604,8 +604,8 @@ int main(int argc, char **argv) {
             }
         }
 
-        int p = round(x) / CHUNK_SIZE;
-        int q = round(z) / CHUNK_SIZE;
+        int p = floorf(roundf(x) / CHUNK_SIZE);
+        int q = floorf(roundf(z) / CHUNK_SIZE);
         update_matrix(matrix, x, y, z, rx, ry);
 
         glClearColor(0.53, 0.81, 0.92, 1.00);

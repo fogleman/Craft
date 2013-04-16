@@ -5,6 +5,7 @@
 static sqlite3 *db;
 static sqlite3_stmt *insert_stmt;
 static sqlite3_stmt *select_stmt;
+static sqlite3_stmt *chunk_stmt;
 
 static const char *create_query =
     "create table if not exists block ("
@@ -23,6 +24,9 @@ static const char *insert_query =
     "values (?, ?, ?, ?, ?, ?);";
 
 static const char *select_query =
+    "select w from block where x = ? and y = ? and z = ?;";
+
+static const char *chunk_query =
     "select x, y, z, w from block where p = ? and q = ?;";
 
 int db_init() {
@@ -35,12 +39,15 @@ int db_init() {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, select_query, -1, &select_stmt, NULL);
     if (rc) return rc;
+    rc = sqlite3_prepare_v2(db, chunk_query, -1, &chunk_stmt, NULL);
+    if (rc) return rc;
     return 0;
 }
 
 void db_close() {
     sqlite3_finalize(insert_stmt);
     sqlite3_finalize(select_stmt);
+    sqlite3_finalize(chunk_stmt);
     sqlite3_close(db);
 }
 
@@ -55,15 +62,28 @@ void db_insert(int p, int q, int x, int y, int z, int w) {
     sqlite3_step(insert_stmt);
 }
 
-void db_apply(Map *map, int p, int q) {
+int db_select(int x, int y, int z) {
     sqlite3_reset(select_stmt);
-    sqlite3_bind_int(select_stmt, 1, p);
-    sqlite3_bind_int(select_stmt, 2, q);
-    while (sqlite3_step(select_stmt) == SQLITE_ROW) {
-        int x = sqlite3_column_int(select_stmt, 0);
-        int y = sqlite3_column_int(select_stmt, 1);
-        int z = sqlite3_column_int(select_stmt, 2);
-        int w = sqlite3_column_int(select_stmt, 3);
+    sqlite3_bind_int(select_stmt, 1, x);
+    sqlite3_bind_int(select_stmt, 2, y);
+    sqlite3_bind_int(select_stmt, 3, z);
+    if (sqlite3_step(select_stmt) == SQLITE_ROW) {
+        return sqlite3_column_int(select_stmt, 0);
+    }
+    else {
+        return -1;
+    }
+}
+
+void db_apply(Map *map, int p, int q) {
+    sqlite3_reset(chunk_stmt);
+    sqlite3_bind_int(chunk_stmt, 1, p);
+    sqlite3_bind_int(chunk_stmt, 2, q);
+    while (sqlite3_step(chunk_stmt) == SQLITE_ROW) {
+        int x = sqlite3_column_int(chunk_stmt, 0);
+        int y = sqlite3_column_int(chunk_stmt, 1);
+        int z = sqlite3_column_int(chunk_stmt, 2);
+        int w = sqlite3_column_int(chunk_stmt, 3);
         map_set(map, x, y, z, w);
     }
 }

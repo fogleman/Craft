@@ -15,9 +15,9 @@
 
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
-#define CREATE_CHUNK_RADIUS 6
-#define RENDER_CHUNK_RADIUS 6
-#define DELETE_CHUNK_RADIUS 8
+#define CREATE_CHUNK_RADIUS 7
+#define RENDER_CHUNK_RADIUS 7
+#define DELETE_CHUNK_RADIUS 12
 
 const static int FACES[6][3] = {
     { 1, 0, 0},
@@ -70,7 +70,7 @@ void update_matrix(float *matrix,
     mat_multiply(a, b, a);
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
-    mat_perspective(b, 65.0, (float)width / height, 0.1, 128.0);
+    mat_perspective(b, 65.0, (float)width / height, 0.1, 1024.0);
     mat_multiply(a, b, a);
     for (int i = 0; i < 16; i++) {
         matrix[i] = a[i];

@@ -14,6 +14,13 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+typedef struct {
+    unsigned int frames;
+    double since;
+} FPS;
+
+void update_fps(FPS *fps);
+
 GLuint make_buffer(GLenum target, GLsizei size, const void *data);
 GLuint make_shader(GLenum type, const char *source);
 GLuint load_shader(GLenum type, const char *path);

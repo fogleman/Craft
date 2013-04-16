@@ -3,6 +3,18 @@
 #include <stdlib.h>
 #include "util.h"
 
+void update_fps(FPS *fps) {
+    fps->frames++;
+    double now = glfwGetTime();
+    double elapsed = now - fps->since;
+    if (elapsed >= 1) {
+        int result = fps->frames / elapsed;
+        fps->frames = 0;
+        fps->since = now;
+        // printf("%d\n", result);
+    }
+}
+
 char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");
     fseek(file, 0, SEEK_END);

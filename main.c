@@ -19,15 +19,6 @@
 #define RENDER_CHUNK_RADIUS 7
 #define DELETE_CHUNK_RADIUS 12
 
-const static int FACES[6][3] = {
-    { 1, 0, 0},
-    {-1, 0, 0},
-    { 0, 1, 0},
-    { 0,-1, 0},
-    { 0, 0, 1},
-    { 0, 0,-1}
-};
-
 typedef struct {
     Map map;
     int p;
@@ -37,23 +28,6 @@ typedef struct {
     GLuint normal_buffer;
     GLuint uv_buffer;
 } Chunk;
-
-typedef struct {
-    unsigned int frames;
-    double timestamp;
-} FPS;
-
-void update_fps(FPS *fps) {
-    fps->frames++;
-    double now = glfwGetTime();
-    double elapsed = now - fps->timestamp;
-    if (elapsed >= 1) {
-        int result = fps->frames / elapsed;
-        fps->frames = 0;
-        fps->timestamp = now;
-        // printf("%d\n", result);
-    }
-}
 
 void update_matrix(float *matrix,
     float x, float y, float z, float rx, float ry)
@@ -110,6 +84,12 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         *vy = 0;
         *vz = sinf(rx + strafe);
     }
+}
+
+int chunk_distance(Chunk *chunk, int p, int q) {
+    int dp = ABS(chunk->p - p);
+    int dq = ABS(chunk->q - q);
+    return MIN(dp, dq);
 }
 
 int _hit_test(Map *map,
@@ -259,12 +239,6 @@ void exposed_faces(Map *map, int x, int y, int z,
     *f4 = map_get(map, x, y - 1, z) == 0 & y > 0;
     *f5 = map_get(map, x, y, z + 1) == 0;
     *f6 = map_get(map, x, y, z - 1) == 0;
-}
-
-int chunk_distance(Chunk *chunk, int p, int q) {
-    int dp = ABS(chunk->p - p);
-    int dq = ABS(chunk->q - q);
-    return MIN(dp, dq);
 }
 
 void update_chunk(Chunk *chunk) {
@@ -464,9 +438,9 @@ int main(int argc, char **argv) {
     glfwSetMouseButtonCallback(on_mouse_button);
 
     #ifndef __APPLE__
-    if (glewInit() != GLEW_OK) {
-        return -1;
-    }
+        if (glewInit() != GLEW_OK) {
+            return -1;
+        }
     #endif
 
     GLuint vertex_array;

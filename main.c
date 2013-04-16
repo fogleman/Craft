@@ -66,7 +66,7 @@ void update_matrix(float *matrix,
     mat_identity(a);
     mat_translate(b, -x, -y, -z);
     mat_multiply(a, b, a);
-    mat_rotate(b, cos(rx), 0, sin(rx), ry);
+    mat_rotate(b, cosf(rx), 0, sinf(rx), ry);
     mat_multiply(a, b, a);
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
@@ -78,10 +78,10 @@ void update_matrix(float *matrix,
 }
 
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
-    float m = cos(ry);
-    *vx = cos(rx - RADIANS(90)) * m;
-    *vy = sin(ry);
-    *vz = sin(rx - RADIANS(90)) * m;
+    float m = cosf(ry);
+    *vx = cosf(rx - RADIANS(90)) * m;
+    *vy = sinf(ry);
+    *vz = sinf(rx - RADIANS(90)) * m;
 }
 
 void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
@@ -90,10 +90,10 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     if (!sz && !sx) {
         return;
     }
-    float strafe = atan2(sz, sx);
+    float strafe = atan2f(sz, sx);
     if (flying) {
-        float m = cos(ry);
-        float y = sin(ry);
+        float m = cosf(ry);
+        float y = sinf(ry);
         if (sx) {
             y = 0;
             m = 1;
@@ -101,14 +101,14 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         if (sz > 0) {
             y = -y;
         }
-        *vx = cos(rx + strafe) * m;
+        *vx = cosf(rx + strafe) * m;
         *vy = y;
-        *vz = sin(rx + strafe) * m;
+        *vz = sinf(rx + strafe) * m;
     }
     else {
-        *vx = cos(rx + strafe);
+        *vx = cosf(rx + strafe);
         *vy = 0;
-        *vz = sin(rx + strafe);
+        *vz = sinf(rx + strafe);
     }
 }
 
@@ -141,8 +141,10 @@ int _hit_test(Map *map,
 
 int hit_test(Chunk *chunks, int chunk_count,
     float x, float y, float z, float rx, float ry,
-    int *hx, int *hy, int *hz)
+    int *bx, int *by, int *bz)
 {
+    int result = 0;
+    float best = 0;
     int p = round(x) / CHUNK_SIZE;
     int q = round(z) / CHUNK_SIZE;
     float vx, vy, vz;
@@ -154,11 +156,18 @@ int hit_test(Chunk *chunks, int chunk_count,
         if (ABS(dp) > 1 || ABS(dq) > 1) {
             continue;
         }
-        if (_hit_test(&chunk->map, 8, x, y, z, vx, vy, vz, hx, hy, hz)) {
-            return i;
+        int hx, hy, hz;
+        if (_hit_test(&chunk->map, 4, x, y, z, vx, vy, vz, &hx, &hy, &hz)) {
+            float d = sqrtf(
+                powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
+            if (best == 0 || d < best) {
+                best = d;
+                *bx = hx; *by = hy; *bz = hz;
+            }
+            result = 1;
         }
     }
-    return -1;
+    return result;
 }
 
 int _collide(Map *map, int height, float *x, float *y, float *z) {
@@ -395,6 +404,36 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     *chunk_count = count;
 }
 
+static int exclusive = 1;
+static int left_click = 0;
+
+void on_key(int key, int pressed) {
+    if (!pressed) {
+        return;
+    }
+    if (key == GLFW_KEY_ESC) {
+        if (exclusive) {
+            exclusive = 0;
+            glfwEnable(GLFW_MOUSE_CURSOR);
+        }
+    }
+}
+
+void on_mouse_button(int button, int pressed) {
+    if (!pressed) {
+        return;
+    }
+    if (button == 0) {
+        if (exclusive) {
+            left_click = 1;
+        }
+        else {
+            exclusive = 1;
+            glfwDisable(GLFW_MOUSE_CURSOR);
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     if (!glfwInit()) {
         return -1;
@@ -411,6 +450,8 @@ int main(int argc, char **argv) {
     glfwSwapInterval(1);
     glfwDisable(GLFW_MOUSE_CURSOR);
     glfwSetWindowTitle("Modern GL");
+    glfwSetKeyCallback(on_key);
+    glfwSetMouseButtonCallback(on_mouse_button);
 
     #ifdef __MINGW32__
     if (glewInit() != GLEW_OK) {
@@ -443,7 +484,6 @@ int main(int argc, char **argv) {
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
     FPS fps = {0, 0};
-    int exclusive = 1;
     float matrix[16];
     float x = 0;
     float y = 32;
@@ -452,7 +492,7 @@ int main(int argc, char **argv) {
     float rx = 0;
     float ry = 0;
     int flying = 0;
-    int mx, my, px, py;
+    int px, py;
     glfwGetMousePos(&px, &py);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -466,6 +506,7 @@ int main(int argc, char **argv) {
         update_fps(&fps);
 
         if (exclusive) {
+            int mx, my;
             glfwGetMousePos(&mx, &my);
             float m = 0.0025;
             rx += (mx - px) * m;
@@ -477,25 +518,21 @@ int main(int argc, char **argv) {
             px = mx;
             py = my;
         }
-        // if (exclusive && glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT)) {
-        //     int hx, hy, hz;
-        //     int i = hit_test(chunks, chunk_count, x, y, z, rx, ry,
-        //         &hx, &hy, &hz);
-        //     if (i >= 0) {
-        //         Chunk *chunk = chunks + i;
-        //         Map *map = &chunk->map;
-        //         map_set(map, hx, hy, hz, 0);
-        //         update_chunk(chunk);
-        //     }
-        // }
-        if (!exclusive && glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT)) {
-            exclusive = 1;
-            glfwDisable(GLFW_MOUSE_CURSOR);
-            glfwGetMousePos(&px, &py);
-        }
-        if (exclusive && glfwGetKey(GLFW_KEY_ESC)) {
-            exclusive = 0;
-            glfwEnable(GLFW_MOUSE_CURSOR);
+        if (left_click) {
+            left_click = 0;
+            int hx, hy, hz;
+            if (hit_test(chunks, chunk_count, x, y, z, rx, ry,
+                &hx, &hy, &hz))
+            {
+                for (int i = 0; i < chunk_count; i++) {
+                    Chunk *chunk = chunks + i;
+                    Map *map = &chunk->map;
+                    if (map_get(map, hx, hy, hz)) {
+                        map_set(map, hx, hy, hz, 0);
+                        update_chunk(chunk);
+                    }
+                }
+            }
         }
 
         int sz = 0;
@@ -569,7 +606,7 @@ int main(int argc, char **argv) {
                             (chunk->q + dq) * CHUNK_SIZE,
                             1};
                         mat_vec_multiply(vec, matrix, vec);
-                        if (vec[3] / vec[4] >= 0) {
+                        if (vec[3] >= 0) {
                             visible = 1;
                         }
                     }

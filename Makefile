@@ -1,5 +1,5 @@
-INCLUDE=-I sqlite3 -I C:\Users\mfogleman\Downloads\glfw-2.7.8\include -I C:\Users\mfogleman\Downloads\glew-1.9.0\include
-LIBRARY=-L C:\Users\mfogleman\Downloads\glfw-2.7.8\lib\win32 -L C:\Users\mfogleman\Downloads\glew-1.9.0\lib
+INCLUDE=-I glfw/include -I glew/include -I sqlite3
+LIBRARY=-L glfw/lib/win32 -L glew/lib
 FLAGS=-std=c99 -O3
 
 all: main

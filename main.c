@@ -32,8 +32,8 @@ typedef struct {
     GLuint uv_buffer;
 } Chunk;
 
-void update_matrix(float *matrix,
-    float x, float y, float z, float rx, float ry)
+void update_matrix(
+    float *matrix, float x, float y, float z, float rx, float ry)
 {
     int width, height;
     float a[16];
@@ -142,8 +142,8 @@ int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
     return result;
 }
 
-int _hit_test(Map *map,
-    float max_distance, int previous,
+int _hit_test(
+    Map *map, float max_distance, int previous,
     float x, float y, float z,
     float vx, float vy, float vz,
     int *hx, int *hy, int *hz)
@@ -173,7 +173,8 @@ int _hit_test(Map *map,
     return 0;
 }
 
-int hit_test(Chunk *chunks, int chunk_count, int previous,
+int hit_test(
+    Chunk *chunks, int chunk_count, int previous,
     float x, float y, float z, float rx, float ry,
     int *bx, int *by, int *bz)
 {
@@ -204,8 +205,18 @@ int hit_test(Chunk *chunks, int chunk_count, int previous,
     return result;
 }
 
-int _collide(Map *map, int height, float *x, float *y, float *z) {
+int collide(
+    Chunk *chunks, int chunk_count,
+    int height, float *x, float *y, float *z)
+{
     int result = 0;
+    int p = floorf(roundf(*x) / CHUNK_SIZE);
+    int q = floorf(roundf(*z) / CHUNK_SIZE);
+    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    if (!chunk) {
+        return result;
+    }
+    Map *map = &chunk->map;
     int nx = roundf(*x);
     int ny = roundf(*y);
     int nz = roundf(*z);
@@ -238,12 +249,18 @@ int _collide(Map *map, int height, float *x, float *y, float *z) {
     return result;
 }
 
-int collide(Chunk *chunks, int chunk_count, float *x, float *y, float *z) {
-    int p = floorf(roundf(*x) / CHUNK_SIZE);
-    int q = floorf(roundf(*z) / CHUNK_SIZE);
-    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
-    if (chunk) {
-        return _collide(&chunk->map, 2, x, y, z);
+int player_intersects_block(
+    int height,
+    float x, float y, float z,
+    int hx, int hy, int hz)
+{
+    int nx = roundf(x);
+    int ny = roundf(y);
+    int nz = roundf(z);
+    for (int i = 0; i < height; i++) {
+        if (nx == hx && ny - i == hy && nz == hz) {
+            return 1;
+        }
     }
     return 0;
 }
@@ -275,7 +292,8 @@ void make_world(Map *map, int p, int q) {
     db_apply(map, p, q);
 }
 
-void exposed_faces(Map *map, int x, int y, int z,
+void exposed_faces(
+    Map *map, int x, int y, int z,
     int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
 {
     *f1 = map_get(map, x - 1, y, z) == 0;
@@ -419,7 +437,8 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     *chunk_count = count;
 }
 
-void _set_block(Chunk *chunks, int chunk_count,
+void _set_block(
+    Chunk *chunks, int chunk_count,
     int p, int q, int x, int y, int z, int w)
 {
     Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
@@ -617,7 +636,9 @@ int main(int argc, char **argv) {
             if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
-                set_block(chunks, chunk_count, hx, hy, hz, block_type);
+                if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
+                    set_block(chunks, chunk_count, hx, hy, hz, block_type);
+                }
             }
         }
 
@@ -650,7 +671,7 @@ int main(int argc, char **argv) {
             x += vx;
             y += vy + dy * ut;
             z += vz;
-            if (collide(chunks, chunk_count, &x, &y, &z)) {
+            if (collide(chunks, chunk_count, 2, &x, &y, &z)) {
                 dy = 0;
             }
         }

@@ -133,7 +133,7 @@ int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
     if (chunk) {
         Map *map = &chunk->map;
         MAP_FOR_EACH(map, e) {
-            if (e->x == nx && e->z == nz) {
+            if (e->w && e->x == nx && e->z == nz) {
                 result = MAX(result, e->y);
             }
         } END_MAP_FOR_EACH;
@@ -238,19 +238,13 @@ int _collide(Map *map, int height, float *x, float *y, float *z) {
 }
 
 int collide(Chunk *chunks, int chunk_count, float *x, float *y, float *z) {
-    int result = 0;
     int p = floorf(roundf(*x) / CHUNK_SIZE);
     int q = floorf(roundf(*z) / CHUNK_SIZE);
-    for (int i = 0; i < chunk_count; i++) {
-        Chunk *chunk = chunks + i;
-        if (chunk_distance(chunk, p, q) > 1) {
-            continue;
-        }
-        if (_collide(&chunk->map, 2, x, y, z)) {
-            result = 1;
-        }
+    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    if (chunk) {
+        return _collide(&chunk->map, 2, x, y, z);
     }
-    return result;
+    return 0;
 }
 
 void make_world(Map *map, int p, int q) {
@@ -424,6 +418,53 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     *chunk_count = count;
 }
 
+void _set_block(Chunk *chunks, int chunk_count,
+    int p, int q, int x, int y, int z, int w)
+{
+    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    if (chunk) {
+        Map *map = &chunk->map;
+        map_set(map, x, y, z, w);
+        update_chunk(chunk);
+    }
+    db_insert(p, q, x, y, z, w);
+}
+
+void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {
+    int p = floorf((float)x / CHUNK_SIZE);
+    int q = floorf((float)z / CHUNK_SIZE);
+    _set_block(chunks, chunk_count, p, q, x, y, z, w);
+    w = w ? -1 : 0;
+    int x0 = x == p * CHUNK_SIZE;
+    int z0 = z == q * CHUNK_SIZE;
+    int x1 = x == p * CHUNK_SIZE + CHUNK_SIZE - 1;
+    int z1 = z == q * CHUNK_SIZE + CHUNK_SIZE - 1;
+    if (x0) {
+        _set_block(chunks, chunk_count, p - 1, q + 0, x, y, z, w);
+    }
+    if (z0) {
+        _set_block(chunks, chunk_count, p + 0, q - 1, x, y, z, w);
+    }
+    if (x1) {
+        _set_block(chunks, chunk_count, p + 1, q + 0, x, y, z, w);
+    }
+    if (z1) {
+        _set_block(chunks, chunk_count, p + 0, q + 1, x, y, z, w);
+    }
+    if (x0 && z0) {
+        _set_block(chunks, chunk_count, p - 1, q - 1, x, y, z, w);
+    }
+    if (x0 && z1) {
+        _set_block(chunks, chunk_count, p - 1, q + 1, x, y, z, w);
+    }
+    if (x1 && z0) {
+        _set_block(chunks, chunk_count, p + 1, q - 1, x, y, z, w);
+    }
+    if (x1 && z1) {
+        _set_block(chunks, chunk_count, p + 1, q + 1, x, y, z, w);
+    }
+}
+
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
@@ -564,17 +605,7 @@ int main(int argc, char **argv) {
             if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
-                int p = floorf((float)hx / CHUNK_SIZE);
-                int q = floorf((float)hz / CHUNK_SIZE);
-                for (int i = 0; i < chunk_count; i++) {
-                    Chunk *chunk = chunks + i;
-                    Map *map = &chunk->map;
-                    if (map_get(map, hx, hy, hz)) {
-                        map_set(map, hx, hy, hz, 0);
-                        update_chunk(chunk);
-                    }
-                }
-                db_insert(p, q, hx, hy, hz, 0);
+                set_block(chunks, chunk_count, hx, hy, hz, 0);
             }
         }
 
@@ -584,16 +615,7 @@ int main(int argc, char **argv) {
             if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
-                int w = 4;
-                int p = floorf((float)hx / CHUNK_SIZE);
-                int q = floorf((float)hz / CHUNK_SIZE);
-                Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
-                if (chunk) {
-                    Map *map = &chunk->map;
-                    map_set(map, hx, hy, hz, w);
-                    update_chunk(chunk);
-                }
-                db_insert(p, q, hx, hy, hz, w);
+                set_block(chunks, chunk_count, hx, hy, hz, 4);
             }
         }
 

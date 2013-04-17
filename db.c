@@ -17,7 +17,8 @@ static const char *create_query =
     "    w int not null"
     ");"
     "create index if not exists block_pq_idx on block(p, q);"
-    "create unique index if not exists block_xyz_idx on block (x, y, z);";
+    "create index if not exists block_xyz_idx on block (x, y, z);"
+    "create unique index if not exists block_pqxyz_idx on block (p, q, x, y, z);";
 
 static const char *insert_query =
     "insert or replace into block (p, q, x, y, z, w) "

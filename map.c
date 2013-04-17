@@ -45,7 +45,7 @@ void map_set(Map *map, int x, int y, int z, int w) {
     if (overwrite) {
         entry->w = w;
     }
-    else {
+    else if (w) {
         entry->x = x;
         entry->y = y;
         entry->z = z;

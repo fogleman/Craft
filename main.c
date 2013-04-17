@@ -16,6 +16,7 @@
 #include "util.h"
 
 #define VSYNC 1
+#define SHOW_FPS 0
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
 #define CREATE_CHUNK_RADIUS 7
@@ -636,7 +637,7 @@ int main(int argc, char **argv) {
     glfwGetMousePos(&px, &py);
     double previous = glfwGetTime();
     while (glfwGetWindowParam(GLFW_OPENED)) {
-        update_fps(&fps);
+        update_fps(&fps, SHOW_FPS);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;

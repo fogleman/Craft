@@ -13,7 +13,7 @@ double rand_double() {
     return (double)rand() / (double)RAND_MAX;
 }
 
-void update_fps(FPS *fps) {
+void update_fps(FPS *fps, int show) {
     fps->frames++;
     double now = glfwGetTime();
     double elapsed = now - fps->since;
@@ -21,7 +21,9 @@ void update_fps(FPS *fps) {
         int result = fps->frames / elapsed;
         fps->frames = 0;
         fps->since = now;
-        // printf("%d\n", result);
+        if (show) {
+            printf("%d\n", result);
+        }
     }
 }
 

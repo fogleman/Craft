@@ -436,6 +436,15 @@ void draw_chunk(
     glDisableVertexAttribArray(uv_loc);
 }
 
+void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
+    glEnableVertexAttribArray(position_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glVertexAttribPointer(position_loc, size, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_LINES, 0, count);
+    glDisableVertexAttribArray(position_loc);
+}
+
 void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
     int count = *chunk_count;
     for (int i = 0; i < count; i++) {
@@ -753,13 +762,7 @@ int main(int argc, char **argv) {
         int hx, hy, hz;
         if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz)) {
             GLuint buffer = make_cube_buffer(hx, hy, hz, 0.51);
-            glEnableVertexAttribArray(line_position_loc);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer);
-            glVertexAttribPointer(
-                line_position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glDrawArrays(GL_LINES, 0, 48);
-            glDisableVertexAttribArray(line_position_loc);
+            draw_lines(buffer, line_position_loc, 3, 48);
             glDeleteBuffers(1, &buffer);
         }
 
@@ -769,12 +772,7 @@ int main(int argc, char **argv) {
         glUseProgram(line_program);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
         GLuint buffer = make_line_buffer();
-        glEnableVertexAttribArray(line_position_loc);
-        glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glVertexAttribPointer(line_position_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glDrawArrays(GL_LINES, 0, 4);
-        glDisableVertexAttribArray(line_position_loc);
+        draw_lines(buffer, line_position_loc, 2, 4);
         glDeleteBuffers(1, &buffer);
 
         glfwSwapBuffers();

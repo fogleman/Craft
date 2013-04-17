@@ -719,18 +719,20 @@ int main(int argc, char **argv) {
             }
         }
 
+        int p = floorf(roundf(x) / CHUNK_SIZE);
+        int q = floorf(roundf(z) / CHUNK_SIZE);
+        ensure_chunks(chunks, &chunk_count, p, q, 0);
+
+        // clear window
         glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // render chunks
         glUseProgram(block_program);
         update_matrix_3d(matrix, x, y, z, rx, ry);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform1f(timer_loc, glfwGetTime());
         glUniform1i(sampler_loc, 0);
-
-        int p = floorf(roundf(x) / CHUNK_SIZE);
-        int q = floorf(roundf(z) / CHUNK_SIZE);
-        ensure_chunks(chunks, &chunk_count, p, q, 0);
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
@@ -742,6 +744,7 @@ int main(int argc, char **argv) {
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);
         }
 
+        // render focused block wireframe
         glUseProgram(line_program);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
         int hx, hy, hz;
@@ -757,6 +760,7 @@ int main(int argc, char **argv) {
             glDeleteBuffers(1, &buffer);
         }
 
+        // render crosshairs
         glUseProgram(line_program);
         update_matrix_2d(matrix);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);

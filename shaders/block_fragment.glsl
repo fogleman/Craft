@@ -2,7 +2,9 @@
 
 uniform sampler2D sampler;
 uniform float timer;
+uniform vec3 camera;
 
+in vec4 fragment_position;
 in vec2 fragment_uv;
 in vec3 fragment_normal;
 
@@ -19,8 +21,8 @@ void main() {
     color = min(color * light, vec3(1));
 
     vec3 fog = vec3(0.53, 0.81, 0.92);
-    float z = gl_FragCoord.z / gl_FragCoord.w;
+    float z = distance(camera, vec3(fragment_position));
     float f = clamp(z / 192, 0, 1);
-    f = pow(f, 3);
+    f = pow(f, 4);
     color = mix(color, fog, f);
 }

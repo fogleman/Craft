@@ -43,9 +43,9 @@ void update_matrix_2d(float *matrix) {
 void update_matrix_3d(
     float *matrix, float x, float y, float z, float rx, float ry)
 {
-    int width, height;
     float a[16];
     float b[16];
+    int width, height;
     glfwGetWindowSize(&width, &height);
     glViewport(0, 0, width, height);
     mat_identity(a);
@@ -143,9 +143,9 @@ int chunk_visible(Chunk *chunk, float *matrix) {
         for (int dq = 0; dq <= 1; dq++) {
             for (int y = 0; y < 128; y += 16) {
                 float vec[4] = {
-                    (chunk->p + dp) * CHUNK_SIZE,
+                    (chunk->p + dp) * CHUNK_SIZE - dp,
                     y,
-                    (chunk->q + dq) * CHUNK_SIZE,
+                    (chunk->q + dq) * CHUNK_SIZE - dq,
                     1};
                 mat_vec_multiply(vec, matrix, vec);
                 if (vec[3] >= 0) {
@@ -601,6 +601,7 @@ int main(int argc, char **argv) {
     GLuint block_program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
+    GLuint camera_loc = glGetUniformLocation(block_program, "camera");
     GLuint timer_loc = glGetUniformLocation(block_program, "timer");
     GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
     GLuint position_loc = glGetAttribLocation(block_program, "position");
@@ -723,14 +724,16 @@ int main(int argc, char **argv) {
         int q = floorf(roundf(z) / CHUNK_SIZE);
         ensure_chunks(chunks, &chunk_count, p, q, 0);
 
+        update_matrix_3d(matrix, x, y, z, rx, ry);
+
         // clear window
         glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render chunks
         glUseProgram(block_program);
-        update_matrix_3d(matrix, x, y, z, rx, ry);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
+        glUniform3f(camera_loc, x, y, z);
         glUniform1f(timer_loc, glfwGetTime());
         glUniform1i(sampler_loc, 0);
         for (int i = 0; i < chunk_count; i++) {
@@ -760,9 +763,10 @@ int main(int argc, char **argv) {
             glDeleteBuffers(1, &buffer);
         }
 
+        update_matrix_2d(matrix);
+
         // render crosshairs
         glUseProgram(line_program);
-        update_matrix_2d(matrix);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
         GLuint buffer = make_line_buffer();
         glEnableVertexAttribArray(line_position_loc);

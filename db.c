@@ -5,7 +5,7 @@
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *select_block_stmt;
-static sqlite3_stmt *apply_chunk_stmt;
+static sqlite3_stmt *update_chunk_stmt;
 
 int db_init() {
     static const char *create_query =
@@ -35,7 +35,7 @@ int db_init() {
     static const char *select_block_query =
         "select w from block where x = ? and y = ? and z = ?;";
 
-    static const char *apply_chunk_query =
+    static const char *update_chunk_query =
         "select x, y, z, w from block where p = ? and q = ?;";
 
     int rc;
@@ -47,7 +47,7 @@ int db_init() {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, select_block_query, -1, &select_block_stmt, NULL);
     if (rc) return rc;
-    rc = sqlite3_prepare_v2(db, apply_chunk_query, -1, &apply_chunk_stmt, NULL);
+    rc = sqlite3_prepare_v2(db, update_chunk_query, -1, &update_chunk_stmt, NULL);
     if (rc) return rc;
     return 0;
 }
@@ -55,7 +55,7 @@ int db_init() {
 void db_close() {
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(select_block_stmt);
-    sqlite3_finalize(apply_chunk_stmt);
+    sqlite3_finalize(update_chunk_stmt);
     sqlite3_close(db);
 }
 
@@ -92,7 +92,7 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
     return result;
 }
 
-void db_insert(int p, int q, int x, int y, int z, int w) {
+void db_insert_block(int p, int q, int x, int y, int z, int w) {
     sqlite3_reset(insert_block_stmt);
     sqlite3_bind_int(insert_block_stmt, 1, p);
     sqlite3_bind_int(insert_block_stmt, 2, q);
@@ -103,7 +103,7 @@ void db_insert(int p, int q, int x, int y, int z, int w) {
     sqlite3_step(insert_block_stmt);
 }
 
-int db_select(int x, int y, int z) {
+int db_select_block(int x, int y, int z) {
     sqlite3_reset(select_block_stmt);
     sqlite3_bind_int(select_block_stmt, 1, x);
     sqlite3_bind_int(select_block_stmt, 2, y);
@@ -116,15 +116,15 @@ int db_select(int x, int y, int z) {
     }
 }
 
-void db_apply(Map *map, int p, int q) {
-    sqlite3_reset(apply_chunk_stmt);
-    sqlite3_bind_int(apply_chunk_stmt, 1, p);
-    sqlite3_bind_int(apply_chunk_stmt, 2, q);
-    while (sqlite3_step(apply_chunk_stmt) == SQLITE_ROW) {
-        int x = sqlite3_column_int(apply_chunk_stmt, 0);
-        int y = sqlite3_column_int(apply_chunk_stmt, 1);
-        int z = sqlite3_column_int(apply_chunk_stmt, 2);
-        int w = sqlite3_column_int(apply_chunk_stmt, 3);
+void db_update_chunk(Map *map, int p, int q) {
+    sqlite3_reset(update_chunk_stmt);
+    sqlite3_bind_int(update_chunk_stmt, 1, p);
+    sqlite3_bind_int(update_chunk_stmt, 2, q);
+    while (sqlite3_step(update_chunk_stmt) == SQLITE_ROW) {
+        int x = sqlite3_column_int(update_chunk_stmt, 0);
+        int y = sqlite3_column_int(update_chunk_stmt, 1);
+        int z = sqlite3_column_int(update_chunk_stmt, 2);
+        int w = sqlite3_column_int(update_chunk_stmt, 3);
         map_set(map, x, y, z, w);
     }
 }

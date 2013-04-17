@@ -289,7 +289,7 @@ void make_world(Map *map, int p, int q) {
             }
         }
     }
-    db_apply(map, p, q);
+    db_update_chunk(map, p, q);
 }
 
 void exposed_faces(
@@ -447,7 +447,7 @@ void _set_block(
         map_set(map, x, y, z, w);
         update_chunk(chunk);
     }
-    db_insert(p, q, x, y, z, w);
+    db_insert_block(p, q, x, y, z, w);
 }
 
 void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {

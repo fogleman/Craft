@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "db.h"
 #include "map.h"
 #include "noise.h"
@@ -488,6 +489,8 @@ void on_mouse_button(int button, int pressed) {
 }
 
 int main(int argc, char **argv) {
+    srand(time(NULL));
+    rand();
     if (!glfwInit()) {
         return -1;
     }
@@ -544,8 +547,8 @@ int main(int argc, char **argv) {
 
     FPS fps = {0, 0};
     float matrix[16];
-    float x = 0;
-    float z = 0;
+    float x = (rand_double() - 0.5) * 10000;
+    float z = (rand_double() - 0.5) * 10000;
     float y = 0;
     float dy = 0;
     float rx = 0;

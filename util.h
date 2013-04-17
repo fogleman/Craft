@@ -22,6 +22,8 @@ typedef struct {
     double since;
 } FPS;
 
+int rand_int(int n);
+double rand_double();
 void update_fps(FPS *fps);
 
 GLuint make_buffer(GLenum target, GLsizei size, const void *data);

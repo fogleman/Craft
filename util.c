@@ -3,6 +3,16 @@
 #include <stdlib.h>
 #include "util.h"
 
+int rand_int(int n) {
+    int result;
+    while (n <= (result = rand() / (RAND_MAX / n)));
+    return result;
+}
+
+double rand_double() {
+    return (double)rand() / (double)RAND_MAX;
+}
+
 void update_fps(FPS *fps) {
     fps->frames++;
     double now = glfwGetTime();

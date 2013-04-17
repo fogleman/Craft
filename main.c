@@ -488,12 +488,7 @@ void on_mouse_button(int button, int pressed) {
 }
 
 int main(int argc, char **argv) {
-    if (db_init()) {
-        db_close();
-        return -1;
-    }
     if (!glfwInit()) {
-        db_close();
         return -1;
     }
     #ifdef __APPLE__
@@ -503,7 +498,6 @@ int main(int argc, char **argv) {
         glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
     if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
-        db_close();
         return -1;
     }
     glfwSwapInterval(VSYNC);
@@ -514,18 +508,20 @@ int main(int argc, char **argv) {
 
     #ifndef __APPLE__
         if (glewInit() != GLEW_OK) {
-            db_close();
             return -1;
         }
     #endif
 
+    if (db_init()) {
+        return -1;
+    }
+
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
     glBindVertexArray(vertex_array);
-
-    Chunk chunks[MAX_CHUNKS];
-    int chunk_count = 0;
-    ensure_chunks(chunks, &chunk_count, 0, 0, 1);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -543,22 +539,31 @@ int main(int argc, char **argv) {
     GLuint normal_loc = glGetAttribLocation(program, "normal");
     GLuint uv_loc = glGetAttribLocation(program, "uv");
 
+    Chunk chunks[MAX_CHUNKS];
+    int chunk_count = 0;
+
     FPS fps = {0, 0};
     float matrix[16];
     float x = 0;
     float z = 0;
-    float y = highest_block(chunks, chunk_count, x, z) + 2;
+    float y = 0;
     float dy = 0;
     float rx = 0;
     float ry = 0;
+    int px = 0;
+    int py = 0;
     int flying = 0;
-    int px, py;
-    glfwGetMousePos(&px, &py);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    db_load_state(&x, &y, &z, &rx, &ry);
-    double previous = glfwGetTime();
 
+    int loaded = db_load_state(&x, &y, &z, &rx, &ry);
+    ensure_chunks(chunks, &chunk_count,
+        floorf(roundf(x) / CHUNK_SIZE),
+        floorf(roundf(z) / CHUNK_SIZE), 1);
+    if (!loaded) {
+        y = highest_block(chunks, chunk_count, x, z) + 2;
+    }
+
+    glfwGetMousePos(&px, &py);
+    double previous = glfwGetTime();
     while (glfwGetWindowParam(GLFW_OPENED)) {
         update_fps(&fps);
         double now = glfwGetTime();

@@ -74,9 +74,10 @@ void db_save_state(float x, float y, float z, float rx, float ry) {
     sqlite3_finalize(stmt);
 }
 
-void db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
+int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
     static const char *query =
         "select x, y, z, rx, ry from state;";
+    int result = 0;
     sqlite3_stmt *stmt;
     sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
     if (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -85,8 +86,10 @@ void db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
         *z = sqlite3_column_double(stmt, 2);
         *rx = sqlite3_column_double(stmt, 3);
         *ry = sqlite3_column_double(stmt, 4);
+        result = 1;
     }
     sqlite3_finalize(stmt);
+    return result;
 }
 
 void db_insert(int p, int q, int x, int y, int z, int w) {

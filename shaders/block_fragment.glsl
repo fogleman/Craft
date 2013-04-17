@@ -1,7 +1,6 @@
 #version 330 core
 
 uniform sampler2D sampler;
-uniform float timer;
 
 flat in vec3 fragment_position;
 flat in vec3 fragment_normal;

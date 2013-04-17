@@ -611,7 +611,6 @@ int main(int argc, char **argv) {
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
     GLuint camera_loc = glGetUniformLocation(block_program, "camera");
-    GLuint timer_loc = glGetUniformLocation(block_program, "timer");
     GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
     GLuint position_loc = glGetAttribLocation(block_program, "position");
     GLuint normal_loc = glGetAttribLocation(block_program, "normal");
@@ -745,7 +744,6 @@ int main(int argc, char **argv) {
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform3f(camera_loc, x, y, z);
-        glUniform1f(timer_loc, glfwGetTime());
         glUniform1i(sampler_loc, 0);
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;

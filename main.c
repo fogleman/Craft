@@ -667,7 +667,7 @@ int main(int argc, char **argv) {
             left_click = 0;
             int hx, hy, hz;
             if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
-                &hx, &hy, &hz))
+                &hx, &hy, &hz) && hy > 0)
             {
                 set_block(chunks, chunk_count, hx, hy, hz, 0);
             }

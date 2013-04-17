@@ -19,9 +19,9 @@
 #define SHOW_FPS 0
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
-#define CREATE_CHUNK_RADIUS 7
-#define RENDER_CHUNK_RADIUS 7
-#define DELETE_CHUNK_RADIUS 12
+#define CREATE_CHUNK_RADIUS 6
+#define RENDER_CHUNK_RADIUS 6
+#define DELETE_CHUNK_RADIUS 8
 
 typedef struct {
     Map map;
@@ -677,9 +677,11 @@ int main(int argc, char **argv) {
             left_click = 0;
             int hx, hy, hz;
             if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
-                &hx, &hy, &hz) && hy > 0)
+                &hx, &hy, &hz))
             {
-                set_block(chunks, chunk_count, hx, hy, hz, 0);
+                if (hy > 0) {
+                    set_block(chunks, chunk_count, hx, hy, hz, 0);
+                }
             }
         }
 
@@ -757,10 +759,10 @@ int main(int argc, char **argv) {
         }
 
         // render focused block wireframe
-        glUseProgram(line_program);
-        glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
         int hx, hy, hz;
         if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz)) {
+            glUseProgram(line_program);
+            glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
             GLuint buffer = make_cube_buffer(hx, hy, hz, 0.51);
             draw_lines(buffer, line_position_loc, 3, 48);
             glDeleteBuffers(1, &buffer);

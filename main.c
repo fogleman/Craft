@@ -435,33 +435,19 @@ void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {
     int q = floorf((float)z / CHUNK_SIZE);
     _set_block(chunks, chunk_count, p, q, x, y, z, w);
     w = w ? -1 : 0;
-    int x0 = x == p * CHUNK_SIZE;
-    int z0 = z == q * CHUNK_SIZE;
-    int x1 = x == p * CHUNK_SIZE + CHUNK_SIZE - 1;
-    int z1 = z == q * CHUNK_SIZE + CHUNK_SIZE - 1;
-    if (x0) {
-        _set_block(chunks, chunk_count, p - 1, q + 0, x, y, z, w);
-    }
-    if (z0) {
-        _set_block(chunks, chunk_count, p + 0, q - 1, x, y, z, w);
-    }
-    if (x1) {
-        _set_block(chunks, chunk_count, p + 1, q + 0, x, y, z, w);
-    }
-    if (z1) {
-        _set_block(chunks, chunk_count, p + 0, q + 1, x, y, z, w);
-    }
-    if (x0 && z0) {
-        _set_block(chunks, chunk_count, p - 1, q - 1, x, y, z, w);
-    }
-    if (x0 && z1) {
-        _set_block(chunks, chunk_count, p - 1, q + 1, x, y, z, w);
-    }
-    if (x1 && z0) {
-        _set_block(chunks, chunk_count, p + 1, q - 1, x, y, z, w);
-    }
-    if (x1 && z1) {
-        _set_block(chunks, chunk_count, p + 1, q + 1, x, y, z, w);
+    int p0 = x == p * CHUNK_SIZE;
+    int q0 = z == q * CHUNK_SIZE;
+    int p1 = x == p * CHUNK_SIZE + CHUNK_SIZE - 1;
+    int q1 = z == q * CHUNK_SIZE + CHUNK_SIZE - 1;
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            if (dp == 0 && dq == 0) continue;
+            if (dp < 0 && !p0) continue;
+            if (dp > 0 && !p1) continue;
+            if (dq < 0 && !q0) continue;
+            if (dq > 0 && !q1) continue;
+            _set_block(chunks, chunk_count, p + dp, q + dq, x, y, z, w);
+        }
     }
 }
 

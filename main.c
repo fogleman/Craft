@@ -61,6 +61,22 @@ void update_matrix_3d(
     }
 }
 
+GLuint make_line_buffer() {
+    int width, height;
+    glfwGetWindowSize(&width, &height);
+    int x = width / 2;
+    int y = height / 2;
+    int p = 10;
+    float line_data[] = {
+        x, y - p, x, y + p,
+        x - p, y, x + p, y
+    };
+    GLuint line_buffer = make_buffer(
+        GL_ARRAY_BUFFER, sizeof(line_data), line_data
+    );
+    return line_buffer;
+}
+
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
     float m = cosf(ry);
     *vx = cosf(rx - RADIANS(90)) * m;
@@ -404,7 +420,7 @@ void draw_chunk(
     glBindBuffer(GL_ARRAY_BUFFER, chunk->uv_buffer);
     glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 9);
+    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 6);
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(normal_loc);
     glDisableVertexAttribArray(uv_loc);
@@ -581,6 +597,11 @@ int main(int argc, char **argv) {
     GLuint normal_loc = glGetAttribLocation(block_program, "normal");
     GLuint uv_loc = glGetAttribLocation(block_program, "uv");
 
+    GLuint line_program = load_program(
+        "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
+    GLuint line_matrix_loc = glGetUniformLocation(line_program, "matrix");
+    GLuint line_position_loc = glGetAttribLocation(line_program, "position");
+
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
 
@@ -688,18 +709,17 @@ int main(int argc, char **argv) {
             }
         }
 
-        int p = floorf(roundf(x) / CHUNK_SIZE);
-        int q = floorf(roundf(z) / CHUNK_SIZE);
-        update_matrix_3d(matrix, x, y, z, rx, ry);
-
         glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(block_program);
+        update_matrix_3d(matrix, x, y, z, rx, ry);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform1f(timer_loc, glfwGetTime());
         glUniform1i(sampler_loc, 0);
 
+        int p = floorf(roundf(x) / CHUNK_SIZE);
+        int q = floorf(roundf(z) / CHUNK_SIZE);
         ensure_chunks(chunks, &chunk_count, p, q, 0);
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
@@ -711,6 +731,20 @@ int main(int argc, char **argv) {
             }
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);
         }
+
+        glUseProgram(line_program);
+        update_matrix_2d(matrix);
+        glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
+
+        // TODO: update line_buffer on window resize only
+        GLuint line_buffer = make_line_buffer();
+        glEnableVertexAttribArray(line_position_loc);
+        glBindBuffer(GL_ARRAY_BUFFER, line_buffer);
+        glVertexAttribPointer(line_position_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDrawArrays(GL_LINES, 0, 4);
+        glDisableVertexAttribArray(line_position_loc);
+        glDeleteBuffers(1, &line_buffer);
 
         glfwSwapBuffers();
     }

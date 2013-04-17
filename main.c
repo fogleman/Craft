@@ -32,7 +32,14 @@ typedef struct {
     GLuint uv_buffer;
 } Chunk;
 
-void update_matrix(
+void update_matrix_2d(float *matrix) {
+    int width, height;
+    glfwGetWindowSize(&width, &height);
+    glViewport(0, 0, width, height);
+    mat_ortho(matrix, 0, width, 0, height, -1, 1);
+}
+
+void update_matrix_3d(
     float *matrix, float x, float y, float z, float rx, float ry)
 {
     int width, height;
@@ -565,13 +572,14 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glfwLoadTexture2D("texture.tga", 0);
 
-    GLuint program = load_program("vertex.glsl", "fragment.glsl");
-    GLuint matrix_loc = glGetUniformLocation(program, "matrix");
-    GLuint timer_loc = glGetUniformLocation(program, "timer");
-    GLuint sampler_loc = glGetUniformLocation(program, "sampler");
-    GLuint position_loc = glGetAttribLocation(program, "position");
-    GLuint normal_loc = glGetAttribLocation(program, "normal");
-    GLuint uv_loc = glGetAttribLocation(program, "uv");
+    GLuint block_program = load_program(
+        "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
+    GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
+    GLuint timer_loc = glGetUniformLocation(block_program, "timer");
+    GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
+    GLuint position_loc = glGetAttribLocation(block_program, "position");
+    GLuint normal_loc = glGetAttribLocation(block_program, "normal");
+    GLuint uv_loc = glGetAttribLocation(block_program, "uv");
 
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
@@ -682,12 +690,12 @@ int main(int argc, char **argv) {
 
         int p = floorf(roundf(x) / CHUNK_SIZE);
         int q = floorf(roundf(z) / CHUNK_SIZE);
-        update_matrix(matrix, x, y, z, rx, ry);
+        update_matrix_3d(matrix, x, y, z, rx, ry);
 
         glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(program);
+        glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform1f(timer_loc, glfwGetTime());
         glUniform1i(sampler_loc, 0);

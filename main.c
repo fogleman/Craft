@@ -689,8 +689,6 @@ int main(int argc, char **argv) {
         glUniform1i(sampler_loc, 0);
 
         ensure_chunks(chunks, &chunk_count, p, q, 0);
-        int rendered_chunks = 0;
-        int rendered_faces = 0;
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
@@ -700,10 +698,7 @@ int main(int argc, char **argv) {
                 continue;
             }
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);
-            rendered_chunks += 1;
-            rendered_faces += chunk->faces;
         }
-        // printf("%d chunks, %d faces\n", rendered_chunks, rendered_faces);
 
         glfwSwapBuffers();
     }

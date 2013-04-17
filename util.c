@@ -199,7 +199,8 @@ void mat_multiply(float *matrix, float *a, float *b) {
     }
 }
 
-void mat_frustum(float *matrix, float left, float right, float bottom,
+void mat_frustum(
+    float *matrix, float left, float right, float bottom,
     float top, float znear, float zfar)
 {
     float temp, temp2, temp3, temp4;
@@ -225,7 +226,8 @@ void mat_frustum(float *matrix, float left, float right, float bottom,
     matrix[15] = 0.0;
 }
 
-void mat_perspective(float *matrix, float fov, float aspect,
+void mat_perspective(
+    float *matrix, float fov, float aspect,
     float znear, float zfar)
 {
     float ymax, xmax;
@@ -234,7 +236,30 @@ void mat_perspective(float *matrix, float fov, float aspect,
     mat_frustum(matrix, -xmax, xmax, -ymax, ymax, znear, zfar);
 }
 
-void make_cube(float *vertex, float *normal, float *texture,
+void mat_ortho(
+    float *matrix,
+    float left, float right, float bottom, float top, float near, float far)
+{
+    matrix[0] = 2 / (right - left);
+    matrix[1] = 0;
+    matrix[2] = 0;
+    matrix[3] = 0;
+    matrix[4] = 0;
+    matrix[5] = 2 / (top - bottom);
+    matrix[6] = 0;
+    matrix[7] = 0;
+    matrix[8] = 0;
+    matrix[9] = 0;
+    matrix[10] = -2 / (far - near);
+    matrix[11] = 0;
+    matrix[12] = -(right + left) / (right - left);
+    matrix[13] = -(top + bottom) / (top - bottom);
+    matrix[14] = -(far + near) / (far - near);
+    matrix[15] = 1;
+}
+
+void make_cube(
+    float *vertex, float *normal, float *texture,
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {

@@ -4,9 +4,9 @@ uniform sampler2D sampler;
 uniform float timer;
 uniform vec3 camera;
 
-in vec4 fragment_position;
+flat in vec4 fragment_position;
+flat in vec3 fragment_normal;
 in vec2 fragment_uv;
-in vec3 fragment_normal;
 
 out vec3 color;
 

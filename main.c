@@ -67,14 +67,23 @@ GLuint make_line_buffer() {
     int x = width / 2;
     int y = height / 2;
     int p = 10;
-    float line_data[] = {
+    float data[] = {
         x, y - p, x, y + p,
         x - p, y, x + p, y
     };
-    GLuint line_buffer = make_buffer(
-        GL_ARRAY_BUFFER, sizeof(line_data), line_data
+    GLuint buffer = make_buffer(
+        GL_ARRAY_BUFFER, sizeof(data), data
     );
-    return line_buffer;
+    return buffer;
+}
+
+GLuint make_cube_buffer(float x, float y, float z, float n) {
+    float data[144];
+    make_cube_wireframe(data, x, y, z, n);
+    GLuint buffer = make_buffer(
+        GL_ARRAY_BUFFER, sizeof(data), data
+    );
+    return buffer;
 }
 
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
@@ -733,18 +742,31 @@ int main(int argc, char **argv) {
         }
 
         glUseProgram(line_program);
+        glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
+        int hx, hy, hz;
+        if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz)) {
+            GLuint buffer = make_cube_buffer(hx, hy, hz, 0.51);
+            glEnableVertexAttribArray(line_position_loc);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glVertexAttribPointer(
+                line_position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glDrawArrays(GL_LINES, 0, 48);
+            glDisableVertexAttribArray(line_position_loc);
+            glDeleteBuffers(1, &buffer);
+        }
+
+        glUseProgram(line_program);
         update_matrix_2d(matrix);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-
-        // TODO: update line_buffer on window resize only
-        GLuint line_buffer = make_line_buffer();
+        GLuint buffer = make_line_buffer();
         glEnableVertexAttribArray(line_position_loc);
-        glBindBuffer(GL_ARRAY_BUFFER, line_buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
         glVertexAttribPointer(line_position_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDrawArrays(GL_LINES, 0, 4);
         glDisableVertexAttribArray(line_position_loc);
-        glDeleteBuffers(1, &line_buffer);
+        glDeleteBuffers(1, &buffer);
 
         glfwSwapBuffers();
     }

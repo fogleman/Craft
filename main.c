@@ -556,6 +556,7 @@ int main(int argc, char **argv) {
     glfwGetMousePos(&px, &py);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
+    db_load_state(&x, &y, &z, &rx, &ry);
     double previous = glfwGetTime();
 
     while (glfwGetWindowParam(GLFW_OPENED)) {
@@ -672,7 +673,8 @@ int main(int argc, char **argv) {
 
         glfwSwapBuffers();
     }
-    glfwTerminate();
+    db_save_state(x, y, z, rx, ry);
     db_close();
+    glfwTerminate();
     return 0;
 }

@@ -455,6 +455,8 @@ void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
+static int flying = 0;
+static int block_type = 1;
 
 void on_key(int key, int pressed) {
     if (!pressed) {
@@ -465,6 +467,12 @@ void on_key(int key, int pressed) {
             exclusive = 0;
             glfwEnable(GLFW_MOUSE_CURSOR);
         }
+    }
+    if (key == GLFW_KEY_TAB) {
+        flying = !flying;
+    }
+    if (key >= '1' && key <= '4') {
+        block_type = key - '1' + 1;
     }
 }
 
@@ -555,7 +563,6 @@ int main(int argc, char **argv) {
     float ry = 0;
     int px = 0;
     int py = 0;
-    int flying = 0;
 
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
     ensure_chunks(chunks, &chunk_count,
@@ -610,7 +617,7 @@ int main(int argc, char **argv) {
             if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
                 &hx, &hy, &hz))
             {
-                set_block(chunks, chunk_count, hx, hy, hz, 4);
+                set_block(chunks, chunk_count, hx, hy, hz, block_type);
             }
         }
 
@@ -621,8 +628,6 @@ int main(int argc, char **argv) {
         if (glfwGetKey('S')) sz++;
         if (glfwGetKey('A')) sx--;
         if (glfwGetKey('D')) sx++;
-        if (glfwGetKey('1')) flying = 0;
-        if (glfwGetKey('2')) flying = 1;
         if (dy == 0 && glfwGetKey(GLFW_KEY_SPACE)) {
             dy = 8;
         }

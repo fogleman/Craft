@@ -23,6 +23,13 @@
 #define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 8
 
+static int exclusive = 1;
+static int left_click = 0;
+static int right_click = 0;
+static int flying = 0;
+static int block_type = 1;
+static int ortho = 0;
+
 typedef struct {
     Map map;
     int p;
@@ -55,7 +62,12 @@ void update_matrix_3d(
     mat_multiply(a, b, a);
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
-    mat_perspective(b, 65.0, (float)width / height, 0.1, 1024.0);
+    if (ortho) {
+        mat_ortho(b, -64, 64, -64, 64, -256, 256);
+    }
+    else {
+        mat_perspective(b, 65.0, (float)width / height, 0.1, 1024.0);
+    }
     mat_multiply(a, b, a);
     for (int i = 0; i < 16; i++) {
         matrix[i] = a[i];
@@ -517,12 +529,6 @@ void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {
     }
 }
 
-static int exclusive = 1;
-static int left_click = 0;
-static int right_click = 0;
-static int flying = 0;
-static int block_type = 1;
-
 void on_key(int key, int pressed) {
     if (!pressed) {
         return;
@@ -596,6 +602,7 @@ int main(int argc, char **argv) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LINE_SMOOTH);
     glLogicOp(GL_INVERT);
+    glClearColor(0.53, 0.81, 0.92, 1.00);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -701,6 +708,7 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
+        ortho = glfwGetKey(GLFW_KEY_LSHIFT);
         if (glfwGetKey('Q')) break;
         if (glfwGetKey('W')) sz--;
         if (glfwGetKey('S')) sz++;
@@ -738,9 +746,6 @@ int main(int argc, char **argv) {
         ensure_chunks(chunks, &chunk_count, p, q, 0);
 
         update_matrix_3d(matrix, x, y, z, rx, ry);
-
-        // clear window
-        glClearColor(0.53, 0.81, 0.92, 1.00);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render chunks
@@ -767,7 +772,7 @@ int main(int argc, char **argv) {
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-            GLuint buffer = make_cube_buffer(hx, hy, hz, 0.50);
+            GLuint buffer = make_cube_buffer(hx, hy, hz, 0.51);
             draw_lines(buffer, line_position_loc, 3, 48);
             glDeleteBuffers(1, &buffer);
             glDisable(GL_COLOR_LOGIC_OP);

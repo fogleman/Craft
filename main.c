@@ -55,6 +55,7 @@ void update_matrix_3d(
     int width, height;
     glfwGetWindowSize(&width, &height);
     glViewport(0, 0, width, height);
+    float aspect = (float)width / height;
     mat_identity(a);
     mat_translate(b, -x, -y, -z);
     mat_multiply(a, b, a);
@@ -63,10 +64,11 @@ void update_matrix_3d(
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
     if (ortho) {
-        mat_ortho(b, -64, 64, -64, 64, -256, 256);
+        int size = 32;
+        mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, 65.0, (float)width / height, 0.1, 1024.0);
+        mat_perspective(b, 65.0, aspect, 0.1, 1024.0);
     }
     mat_multiply(a, b, a);
     for (int i = 0; i < 16; i++) {

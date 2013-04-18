@@ -223,7 +223,7 @@ int hit_test(
             continue;
         }
         int hx, hy, hz;
-        if (_hit_test(&chunk->map, 4, previous,
+        if (_hit_test(&chunk->map, 5, previous,
             x, y, z, vx, vy, vz, &hx, &hy, &hz))
         {
             float d = sqrtf(
@@ -594,6 +594,8 @@ int main(int argc, char **argv) {
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LINE_SMOOTH);
+    glLogicOp(GL_INVERT);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -760,20 +762,26 @@ int main(int argc, char **argv) {
         int hx, hy, hz;
         if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz)) {
             glUseProgram(line_program);
+            glLineWidth(1);
+            glEnable(GL_COLOR_LOGIC_OP);
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-            GLuint buffer = make_cube_buffer(hx, hy, hz, 0.51);
+            GLuint buffer = make_cube_buffer(hx, hy, hz, 0.50);
             draw_lines(buffer, line_position_loc, 3, 48);
             glDeleteBuffers(1, &buffer);
+            glDisable(GL_COLOR_LOGIC_OP);
         }
 
         update_matrix_2d(matrix);
 
         // render crosshairs
         glUseProgram(line_program);
+        glLineWidth(4);
+        glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
         GLuint buffer = make_line_buffer();
         draw_lines(buffer, line_position_loc, 2, 4);
         glDeleteBuffers(1, &buffer);
+        glDisable(GL_COLOR_LOGIC_OP);
 
         glfwSwapBuffers();
     }

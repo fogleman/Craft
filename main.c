@@ -614,6 +614,7 @@ int main(int argc, char **argv) {
     GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
     GLuint camera_loc = glGetUniformLocation(block_program, "camera");
     GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
+    GLuint timer_loc = glGetUniformLocation(block_program, "timer");
     GLuint position_loc = glGetAttribLocation(block_program, "position");
     GLuint normal_loc = glGetAttribLocation(block_program, "normal");
     GLuint uv_loc = glGetAttribLocation(block_program, "uv");
@@ -747,6 +748,7 @@ int main(int argc, char **argv) {
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform3f(camera_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
+        glUniform1f(timer_loc, glfwGetTime());
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {

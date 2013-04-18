@@ -21,7 +21,9 @@
 #define MAX_CHUNKS 1024
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6
+#define SHADOW_CHUNK_RADIUS 2
 #define DELETE_CHUNK_RADIUS 8
+#define SHADOW_TEXTURE_SIZE 2048
 
 static int exclusive = 1;
 static int left_click = 0;
@@ -70,6 +72,25 @@ void update_matrix_3d(
     else {
         mat_perspective(b, 65.0, aspect, 0.1, 1024.0);
     }
+    mat_multiply(a, b, a);
+    for (int i = 0; i < 16; i++) {
+        matrix[i] = a[i];
+    }
+}
+
+void update_matrix_shadow(
+    float *matrix, float x, float y, float z, float rx, float ry)
+{
+    float a[16];
+    float b[16];
+    mat_identity(a);
+    mat_translate(b, -x, -y, -z);
+    mat_multiply(a, b, a);
+    mat_rotate(b, cosf(rx), 0, sinf(rx), ry);
+    mat_multiply(a, b, a);
+    mat_rotate(b, 0, 1, 0, -rx);
+    mat_multiply(a, b, a);
+    mat_ortho(b, -16, 16, -16, 16, -256, 256);
     mat_multiply(a, b, a);
     for (int i = 0; i < 16; i++) {
         matrix[i] = a[i];
@@ -450,6 +471,17 @@ void draw_chunk(
     glDisableVertexAttribArray(uv_loc);
 }
 
+void draw_shadow_chunk(
+    Chunk *chunk, GLuint position_loc)
+{
+    glEnableVertexAttribArray(position_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->position_buffer);
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 6);
+    glDisableVertexAttribArray(position_loc);
+}
+
 void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
     glEnableVertexAttribArray(position_loc);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -623,6 +655,8 @@ int main(int argc, char **argv) {
     GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
     GLuint camera_loc = glGetUniformLocation(block_program, "camera");
     GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
+    GLuint shadow_map_loc = glGetUniformLocation(block_program, "shadow_map");
+    GLuint shadow_map_matrix_loc = glGetUniformLocation(block_program, "shadow_map_matrix");
     GLuint timer_loc = glGetUniformLocation(block_program, "timer");
     GLuint position_loc = glGetAttribLocation(block_program, "position");
     GLuint normal_loc = glGetAttribLocation(block_program, "normal");
@@ -633,11 +667,38 @@ int main(int argc, char **argv) {
     GLuint line_matrix_loc = glGetUniformLocation(line_program, "matrix");
     GLuint line_position_loc = glGetAttribLocation(line_program, "position");
 
+    GLuint shadow_program = load_program(
+        "shaders/shadow_vertex.glsl", "shaders/shadow_fragment.glsl");
+    GLuint shadow_matrix_loc = glGetUniformLocation(shadow_program, "matrix");
+    GLuint shadow_position_loc = glGetAttribLocation(shadow_program, "position");
+
+    GLuint shadow_texture;
+    glGenTextures(1, &shadow_texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, shadow_texture);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+        SHADOW_TEXTURE_SIZE, SHADOW_TEXTURE_SIZE,
+        0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    GLuint shadow_frame_buffer;
+    glGenFramebuffers(1, &shadow_frame_buffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, shadow_frame_buffer);
+    glFramebufferTexture(
+        GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadow_texture, 0);
+    glDrawBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
 
     FPS fps = {0, 0};
     float matrix[16];
+    float shadow_matrix[16];
     float x = (rand_double() - 0.5) * 10000;
     float z = (rand_double() - 0.5) * 10000;
     float y = 0;
@@ -747,14 +808,35 @@ int main(int argc, char **argv) {
         int q = floorf(roundf(z) / CHUNK_SIZE);
         ensure_chunks(chunks, &chunk_count, p, q, 0);
 
+        // shadow mapping
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_frame_buffer);
+        glViewport(0, 0, SHADOW_TEXTURE_SIZE, SHADOW_TEXTURE_SIZE);
+        update_matrix_shadow(shadow_matrix, x, y, z,
+            RADIANS(30), -RADIANS(30));
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        glUseProgram(shadow_program);
+        glUniformMatrix4fv(shadow_matrix_loc, 1, GL_FALSE, shadow_matrix);
+        for (int i = 0; i < chunk_count; i++) {
+            Chunk *chunk = chunks + i;
+            if (chunk_distance(chunk, p, q) > SHADOW_CHUNK_RADIUS) {
+                continue;
+            }
+            draw_shadow_chunk(chunk, shadow_position_loc);
+        }
+
+        // normal rendering
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         update_matrix_3d(matrix, x, y, z, rx, ry);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render chunks
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
+        glUniformMatrix4fv(shadow_map_matrix_loc, 1, GL_FALSE, shadow_matrix);
         glUniform3f(camera_loc, x, y, z);
         glUniform1i(sampler_loc, 0);
+        glUniform1i(shadow_map_loc, 1);
         glUniform1f(timer_loc, glfwGetTime());
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;

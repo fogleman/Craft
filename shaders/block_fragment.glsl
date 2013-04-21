@@ -1,11 +1,13 @@
 #version 330 core
 
 uniform sampler2D sampler;
-uniform sampler2D shadow_map;
+uniform sampler2D shadow_map1;
+uniform sampler2D shadow_map2;
 uniform float timer;
 
 in vec2 fragment_uv;
-in vec4 shadow_coord;
+in vec4 shadow_coord1;
+in vec4 shadow_coord2;
 flat in float camera_distance;
 flat in float fog_factor;
 flat in float diffuse;
@@ -16,8 +18,7 @@ const vec3 light_color = vec3(0.6);
 const vec3 ambient = vec3(0.4);
 const vec3 fog_color = vec3(0.53, 0.81, 0.92);
 
-float lookup(vec4 coord, vec2 offset) {
-    float bias = 0.0001;
+float lookup(sampler2D shadow_map, vec4 coord, vec2 offset, float bias) {
     float z = texture(shadow_map, coord.xy + offset / 4096).r;
     return float(z > coord.z - bias);
 }
@@ -37,9 +38,13 @@ void main() {
         int count = 4;
         for (int i = 0; i < count; i++) {
             vec2 offset = random_offset(vec4(gl_FragCoord.xyz, i));
-            sum += lookup(shadow_coord, offset);
+            sum += lookup(shadow_map1, shadow_coord1, offset, 0.0001);
         }
         visibility = 0.5 + sum / count / 2;
+    }
+    else if (camera_distance < 128) {
+        float sum = lookup(shadow_map2, shadow_coord2, vec2(0), 0.0008);
+        visibility = 0.5 + sum / 2;
     }
 
     vec3 light = (ambient + light_color * diffuse) * visibility;

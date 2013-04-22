@@ -32,6 +32,10 @@ GLuint load_shader(GLenum type, const char *path);
 GLuint make_program(GLuint shader1, GLuint shader2);
 GLuint load_program(const char *path1, const char *path2);
 
+void cross(
+    float x1, float y1, float z1,
+    float x2, float y2, float z2,
+    float *x, float *y, float *z);
 void normalize(float *x, float *y, float *z);
 void mat_identity(float *matrix);
 void mat_translate(float *matrix, float dx, float dy, float dz);

@@ -100,6 +100,19 @@ GLuint load_program(const char *path1, const char *path2) {
     return program;
 }
 
+void cross(
+    float x1, float y1, float z1,
+    float x2, float y2, float z2,
+    float *x, float *y, float *z)
+{
+    normalize(&x1, &y1, &z1);
+    normalize(&x2, &y2, &z2);
+    *x = y1 * z2 - z1 * y2;
+    *y = z1 * x2 - x1 * z2;
+    *z = x1 * y2 - y1 * x2;
+    normalize(x, y, z);
+}
+
 void normalize(float *x, float *y, float *z) {
     float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
     *x /= d; *y /= d; *z /= d;

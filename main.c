@@ -20,8 +20,10 @@
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
-static int flying = 1;
+static int flying = 0;
 static int ortho = 0;
+
+static float grid[SIZE * SIZE];
 
 void update_matrix_2d(float *matrix) {
     int width, height;
@@ -97,23 +99,26 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 void make_mesh(GLuint *position_buffer, GLuint *normal_buffer) {
     int width = SIZE;
     int depth = SIZE;
-    int size = width * depth * 6 * 3;
-    float *position = malloc(sizeof(float) * size);
+    int count = width * depth * 6 * 3;
+    float *position = malloc(sizeof(float) * count);
     float *p = position;
-    float *normal = malloc(sizeof(float) * size);
+    float *normal = malloc(sizeof(float) * count);
     float *n = normal;
     float amplitude = 32;
-    float m = 0.01;
+    float persistence = 0.25;
+    float m = 0.02;
     for (int z = 0; z < depth; z++) {
         for (int x = 0; x < width; x++) {
             float x1 = x;
             float x2 = x + 1;
             float z1 = z;
             float z2 = z + 1;
-            float y1 = simplex2(x1 * m, z1 * m, 6, 0.5, 2) * amplitude;
-            float y2 = simplex2(x2 * m, z1 * m, 6, 0.5, 2) * amplitude;
-            float y3 = simplex2(x1 * m, z2 * m, 6, 0.5, 2) * amplitude;
-            float y4 = simplex2(x2 * m, z2 * m, 6, 0.5, 2) * amplitude;
+            float y1 = simplex2(x1 * m, z1 * m, 6, persistence, 2) * amplitude;
+            float y2 = simplex2(x2 * m, z1 * m, 6, persistence, 2) * amplitude;
+            float y3 = simplex2(x1 * m, z2 * m, 6, persistence, 2) * amplitude;
+            float y4 = simplex2(x2 * m, z2 * m, 6, persistence, 2) * amplitude;
+            float y = (y1 + y2 + y3 + y4) / 4;
+            grid[z * SIZE + x] = y;
             *(p++) = x2; *(p++) = y2; *(p++) = z1;
             *(p++) = x1; *(p++) = y1; *(p++) = z1;
             *(p++) = x1; *(p++) = y3; *(p++) = z2;
@@ -134,11 +139,11 @@ void make_mesh(GLuint *position_buffer, GLuint *normal_buffer) {
         }
     }
     *position_buffer = make_buffer(
-        GL_ARRAY_BUFFER, size * sizeof(float), position
+        GL_ARRAY_BUFFER, count * sizeof(float), position
     );
     free(position);
     *normal_buffer = make_buffer(
-        GL_ARRAY_BUFFER, size * sizeof(float), normal
+        GL_ARRAY_BUFFER, count * sizeof(float), normal
     );
     free(normal);
 }
@@ -314,6 +319,19 @@ int main(int argc, char **argv) {
             y += vy + dy * ut;
             z += vz;
         }
+
+        int nx = x;
+        int nz = z;
+        float x0 = x - nx;
+        float z0 = z - nz;
+        float f00 = grid[(nz + 0) * SIZE + (nx + 0)];
+        float f01 = grid[(nz + 1) * SIZE + (nx + 0)];
+        float f10 = grid[(nz + 0) * SIZE + (nx + 1)];
+        float f11 = grid[(nz + 1) * SIZE + (nx + 1)];
+        float ty =
+            f00 + (f10 - f00) * x0 + (f01 - f00) * z0 +
+            (f00 - f10 - f01 + f11) * x0 * z0;
+        y = MAX(y, ty + 2);
 
         update_matrix_3d(matrix, x, y, z, rx, ry);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

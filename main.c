@@ -320,6 +320,10 @@ int main(int argc, char **argv) {
             z += vz;
         }
 
+        x = MAX(x, 0);
+        z = MAX(z, 0);
+        x = MIN(x, SIZE - 1);
+        z = MIN(z, SIZE - 1);
         int nx = x;
         int nz = z;
         float x0 = x - nx;

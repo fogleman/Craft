@@ -577,7 +577,7 @@ void on_key(int key, int pressed) {
     if (key == GLFW_KEY_TAB) {
         flying = !flying;
     }
-    if (key >= '1' && key <= '4') {
+    if (key >= '1' && key <= '5') {
         block_type = key - '1' + 1;
     }
 }
@@ -614,12 +614,12 @@ int main(int argc, char **argv) {
         glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
-    if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
+    if (!glfwOpenWindow(1024, 768, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
         return -1;
     }
     glfwSwapInterval(VSYNC);
     glfwDisable(GLFW_MOUSE_CURSOR);
-    glfwSetWindowTitle("Modern GL");
+    glfwSetWindowTitle("Minecraft");
     glfwSetKeyCallback(on_key);
     glfwSetMouseButtonCallback(on_mouse_button);
 

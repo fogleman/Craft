@@ -3,7 +3,7 @@
 
 #include "map.h"
 
-#define DB_NAME "mine.db"
+#define DB_NAME "craft.db"
 
 int db_init();
 void db_close();

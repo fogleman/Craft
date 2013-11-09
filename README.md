@@ -14,3 +14,7 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 * GLFW 2.x
 * GLEW (not needed on Mac OS X)
 * sqlite3
+
+### Screenshot
+
+![](https://raw.github.com/fogleman/Craft/master/screenshot.png)

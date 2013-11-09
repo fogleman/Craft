@@ -555,7 +555,12 @@ void on_mouse_button(int button, int pressed) {
     }
     if (button == 0) {
         if (exclusive) {
-            left_click = 1;
+            if (glfwGetKey(GLFW_KEY_LSUPER)) {
+                right_click = 1;
+            }
+            else {
+                left_click = 1;
+            }
         }
         else {
             exclusive = 1;

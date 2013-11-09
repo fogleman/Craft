@@ -544,7 +544,7 @@ void on_key(int key, int pressed) {
     if (key == GLFW_KEY_TAB) {
         flying = !flying;
     }
-    if (key >= '1' && key <= '5') {
+    if (key >= '1' && key <= '8') {
         block_type = key - '1' + 1;
     }
 }

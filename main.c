@@ -259,7 +259,7 @@ int hit_test(
             continue;
         }
         int hx, hy, hz;
-        if (_hit_test(&chunk->map, 5, previous,
+        if (_hit_test(&chunk->map, 8, previous,
             x, y, z, vx, vy, vz, &hx, &hy, &hz))
         {
             float d = sqrtf(
@@ -619,7 +619,7 @@ int main(int argc, char **argv) {
     }
     glfwSwapInterval(VSYNC);
     glfwDisable(GLFW_MOUSE_CURSOR);
-    glfwSetWindowTitle("Minecraft");
+    glfwSetWindowTitle("Craft");
     glfwSetKeyCallback(on_key);
     glfwSetMouseButtonCallback(on_mouse_button);
 

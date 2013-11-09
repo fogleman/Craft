@@ -1,9 +1,15 @@
-Modern GL
-=========
+## Craft
 
-Attempting to do OpenGL the "modern" way.
+A simple Minecraft clone written in C using modern OpenGL (shaders).
 
-Modern OpenGL deprecates a lot of what we're used to. The new way seems to
-require writing a lot of boilerplate or using lots of additional libraries
-just to get simple stuff on the screen. I'm attempting to implement some of
-this boilerplate in a nice reusable package.
+### Features
+
+* World changes persisted in a sqlite3 database.
+* Simple but nice looking terrain generation using perlin / simplex noise.
+* Eight types of blocks, but more can be added easily.
+
+### Dependencies
+
+* GLFW 2.x
+* GLEW (not needed on Mac OS X)
+* sqlite3

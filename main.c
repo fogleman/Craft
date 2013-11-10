@@ -336,7 +336,6 @@ void make_world(Map *map, int p, int q) {
             }
         }
     }
-    db_update_chunk(map, p, q);
 }
 
 void exposed_faces(
@@ -428,6 +427,7 @@ void make_chunk(Chunk *chunk, int p, int q) {
     Map *map = &chunk->map;
     map_alloc(map);
     make_world(map, p, q);
+    db_update_chunk(map, p, q);
     update_chunk(chunk);
 }
 

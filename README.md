@@ -11,7 +11,7 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 
 ### Dependencies
 
-* GLFW 2.x
+* GLFW 3
 * GLEW (not needed on Mac OS X)
 * sqlite3
 

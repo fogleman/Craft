@@ -670,7 +670,7 @@ int main(int argc, char **argv) {
         double dt = MIN(now - previous, 0.2);
         previous = now;
 
-        if (exclusive) {
+        if (exclusive && (px || py)) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
             float m = 0.0025;

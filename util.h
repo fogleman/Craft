@@ -54,4 +54,6 @@ void make_cube(
     float x, float y, float z, float n, int w);
 void make_cube_wireframe(float *vertex, float x, float y, float z, float n);
 
+void load_png_texture(const char *file_name);
+
 #endif

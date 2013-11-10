@@ -621,7 +621,7 @@ int main(int argc, char **argv) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glfwLoadTexture2D("texture.tga", 0);
+    load_png_texture("texture.png");
 
     GLuint block_program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");

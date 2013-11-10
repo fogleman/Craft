@@ -2,13 +2,12 @@
 #define _util_h_
 
 #ifdef __APPLE__
-    #define GLFW_INCLUDE_GL3
-    #define GLFW_NO_GLU
+    #define GLFW_INCLUDE_GLCOREARB
 #else
     #include <GL/glew.h>
 #endif
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 
 #define PI 3.14159265359
 #define DEGREES(radians) ((radians) * 180 / PI)
@@ -53,5 +52,7 @@ void make_cube(
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w);
 void make_cube_wireframe(float *vertex, float x, float y, float z, float n);
+
+void load_png_texture(const char *file_name);
 
 #endif

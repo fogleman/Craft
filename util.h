@@ -2,13 +2,12 @@
 #define _util_h_
 
 #ifdef __APPLE__
-    #define GLFW_INCLUDE_GL3
-    #define GLFW_NO_GLU
+    #define GLFW_INCLUDE_GLCOREARB
 #else
     #include <GL/glew.h>
 #endif
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 
 #define PI 3.14159265359
 #define DEGREES(radians) ((radians) * 180 / PI)

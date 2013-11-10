@@ -1,11 +1,10 @@
 #ifdef __APPLE__
-    #define GLFW_INCLUDE_GL3
-    #define GLFW_NO_GLU
+    #define GLFW_INCLUDE_GLCOREARB
 #else
     #include <GL/glew.h>
 #endif
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +22,7 @@
 #define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 8
 
+static GLFWwindow *window;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
@@ -42,7 +42,7 @@ typedef struct {
 
 void update_matrix_2d(float *matrix) {
     int width, height;
-    glfwGetWindowSize(&width, &height);
+    glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
     mat_ortho(matrix, 0, width, 0, height, -1, 1);
 }
@@ -53,7 +53,7 @@ void update_matrix_3d(
     float a[16];
     float b[16];
     int width, height;
-    glfwGetWindowSize(&width, &height);
+    glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
     float aspect = (float)width / height;
     mat_identity(a);
@@ -78,7 +78,7 @@ void update_matrix_3d(
 
 GLuint make_line_buffer() {
     int width, height;
-    glfwGetWindowSize(&width, &height);
+    glfwGetWindowSize(window, &width, &height);
     int x = width / 2;
     int y = height / 2;
     int p = 10;
@@ -531,14 +531,14 @@ void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {
     }
 }
 
-void on_key(int key, int pressed) {
-    if (!pressed) {
+void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (action != GLFW_PRESS) {
         return;
     }
-    if (key == GLFW_KEY_ESC) {
+    if (key == GLFW_KEY_ESCAPE) {
         if (exclusive) {
             exclusive = 0;
-            glfwEnable(GLFW_MOUSE_CURSOR);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
     if (key == GLFW_KEY_TAB) {
@@ -549,13 +549,13 @@ void on_key(int key, int pressed) {
     }
 }
 
-void on_mouse_button(int button, int pressed) {
-    if (!pressed) {
+void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
+    if (action != GLFW_PRESS) {
         return;
     }
     if (button == 0) {
         if (exclusive) {
-            if (glfwGetKey(GLFW_KEY_LSUPER)) {
+            if (mods & GLFW_MOD_SUPER) {
                 right_click = 1;
             }
             else {
@@ -564,7 +564,7 @@ void on_mouse_button(int button, int pressed) {
         }
         else {
             exclusive = 1;
-            glfwDisable(GLFW_MOUSE_CURSOR);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
     if (button == 1) {
@@ -581,19 +581,21 @@ int main(int argc, char **argv) {
         return -1;
     }
     #ifdef __APPLE__
-        glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-        glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-        glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-        glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
-    if (!glfwOpenWindow(1024, 768, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
+    window = glfwCreateWindow(1024, 768, "Craft", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
         return -1;
     }
+    glfwMakeContextCurrent(window);
     glfwSwapInterval(VSYNC);
-    glfwDisable(GLFW_MOUSE_CURSOR);
-    glfwSetWindowTitle("Craft");
-    glfwSetKeyCallback(on_key);
-    glfwSetMouseButtonCallback(on_mouse_button);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetKeyCallback(window, on_key);
+    glfwSetMouseButtonCallback(window, on_mouse_button);
 
     #ifndef __APPLE__
         if (glewInit() != GLEW_OK) {
@@ -649,8 +651,8 @@ int main(int argc, char **argv) {
     float dy = 0;
     float rx = 0;
     float ry = 0;
-    int px = 0;
-    int py = 0;
+    double px = 0;
+    double py = 0;
 
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
     ensure_chunks(chunks, &chunk_count,
@@ -660,17 +662,17 @@ int main(int argc, char **argv) {
         y = highest_block(chunks, chunk_count, x, z) + 2;
     }
 
-    glfwGetMousePos(&px, &py);
+    glfwGetCursorPos(window, &px, &py);
     double previous = glfwGetTime();
-    while (glfwGetWindowParam(GLFW_OPENED)) {
+    while (!glfwWindowShouldClose(window)) {
         update_fps(&fps, SHOW_FPS);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
 
         if (exclusive) {
-            int mx, my;
-            glfwGetMousePos(&mx, &my);
+            double mx, my;
+            glfwGetCursorPos(window, &mx, &my);
             float m = 0.0025;
             rx += (mx - px) * m;
             ry -= (my - py) * m;
@@ -686,7 +688,7 @@ int main(int argc, char **argv) {
             py = my;
         }
         else {
-            glfwGetMousePos(&px, &py);
+            glfwGetCursorPos(window, &px, &py);
         }
 
         if (left_click) {
@@ -715,13 +717,13 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
-        ortho = glfwGetKey(GLFW_KEY_LSHIFT);
-        if (glfwGetKey('Q')) break;
-        if (glfwGetKey('W')) sz--;
-        if (glfwGetKey('S')) sz++;
-        if (glfwGetKey('A')) sx--;
-        if (glfwGetKey('D')) sx++;
-        if (dy == 0 && glfwGetKey(GLFW_KEY_SPACE)) {
+        ortho = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
+        if (glfwGetKey(window, 'Q')) break;
+        if (glfwGetKey(window, 'W')) sz--;
+        if (glfwGetKey(window, 'S')) sz++;
+        if (glfwGetKey(window, 'A')) sx--;
+        if (glfwGetKey(window, 'D')) sx++;
+        if (dy == 0 && glfwGetKey(window, GLFW_KEY_SPACE)) {
             dy = 8;
         }
         float vx, vy, vz;
@@ -797,7 +799,8 @@ int main(int argc, char **argv) {
         glDeleteBuffers(1, &buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
-        glfwSwapBuffers();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
     db_save_state(x, y, z, rx, ry);
     db_close();

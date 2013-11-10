@@ -1,5 +1,5 @@
 INCLUDE=-I glfw/include -I sqlite3 -I /usr/X11/include
-LIBRARY=-L glfw/lib/cocoa -L /usr/X11/lib
+LIBRARY=-L glfw/src -L /usr/X11/lib
 FLAGS=-std=c99 -O3
 
 all: main

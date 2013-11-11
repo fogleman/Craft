@@ -632,6 +632,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key >= '1' && key <= '8') {
         block_type = key - '1' + 1;
     }
+    if (key == 'E') {
+        block_type = block_type % 8 + 1;
+    }
 }
 
 void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {

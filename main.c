@@ -364,16 +364,10 @@ void make_world(Map *map, int p, int q) {
 void make_single_cube(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer, int w)
 {
-    if (*position_buffer) {
-        glDeleteBuffers(1, position_buffer);
-    }
-    if (*normal_buffer) {
-        glDeleteBuffers(1, normal_buffer);
-    }
-    if (*uv_buffer) {
-        glDeleteBuffers(1, uv_buffer);
-    }
     int faces = 6;
+    glDeleteBuffers(1, position_buffer);
+    glDeleteBuffers(1, normal_buffer);
+    glDeleteBuffers(1, uv_buffer);
     GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
     GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
     GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);

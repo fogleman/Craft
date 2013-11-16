@@ -29,6 +29,7 @@ static int right_click = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
+static float fov = 65.0;
 
 typedef struct {
     Map map;
@@ -68,7 +69,7 @@ void update_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, 65.0, aspect, 0.1, 1024.0);
+        mat_perspective(b, fov, aspect, 0.1, 1024.0);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);
@@ -804,7 +805,8 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
-        ortho = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
+        ortho = glfwGetKey(window, 'F');
+        fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
         if (glfwGetKey(window, 'Q')) break;
         if (glfwGetKey(window, 'W')) sz--;
         if (glfwGetKey(window, 'S')) sz++;
@@ -815,6 +817,24 @@ int main(int argc, char **argv) {
         }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
+        if (glfwGetKey(window, 'Z')) {
+            vx = -1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, 'X')) {
+            vx = 1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, 'C')) {
+            vx = 0; vy = -1; vz = 0;
+        }
+        if (glfwGetKey(window, 'V')) {
+            vx = 0; vy = 1; vz = 0;
+        }
+        if (glfwGetKey(window, 'B')) {
+            vx = 0; vy = 0; vz = -1;
+        }
+        if (glfwGetKey(window, 'N')) {
+            vx = 0; vy = 0; vz = 1;
+        }
         float speed = flying ? 20 : 5;
         int step = 8;
         float ut = dt / step;

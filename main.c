@@ -14,6 +14,7 @@
 #include "noise.h"
 #include "util.h"
 
+#define FULLSCREEN 1
 #define VSYNC 1
 #define SHOW_FPS 0
 #define CHUNK_SIZE 32
@@ -657,19 +658,33 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
 }
 
-int main(int argc, char **argv) {
-    srand(time(NULL));
-    rand();
-    if (!glfwInit()) {
-        return -1;
-    }
+void create_window() {
     #ifdef __APPLE__
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
-    window = glfwCreateWindow(1024, 768, "Craft", NULL, NULL);
+    int width = 1024;
+    int height = 768;
+    GLFWmonitor *monitor = NULL;
+    if (FULLSCREEN) {
+        int mode_count;
+        monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
+        width = modes[mode_count - 1].width;
+        height = modes[mode_count - 1].height;
+    }
+    window = glfwCreateWindow(width, height, "Craft", monitor, NULL);
+}
+
+int main(int argc, char **argv) {
+    srand(time(NULL));
+    rand();
+    if (!glfwInit()) {
+        return -1;
+    }
+    create_window();
     if (!window) {
         glfwTerminate();
         return -1;

@@ -1,5 +1,5 @@
-INCLUDE=-I glfw/include
-LIBRARY=-L glfw/lib/cocoa
+INCLUDE=-I glfw/include -I /usr/X11/include
+LIBRARY=-L glfw/src -L /usr/X11/lib
 FLAGS=-std=c99 -O3
 
 all: main
@@ -11,7 +11,7 @@ clean:
 	rm *.o
 
 main: main.o util.o noise.o
-	gcc $(FLAGS) main.o util.o noise.o -o main $(LIBRARY) -lglfw -framework OpenGL
+	gcc $(FLAGS) main.o util.o noise.o -o main $(LIBRARY) -lglfw -lpng -framework OpenGL
 
 main.o: main.c
 	gcc $(FLAGS) $(INCLUDE) -c -o main.o main.c

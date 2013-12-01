@@ -1,11 +1,10 @@
 #ifdef __APPLE__
-    #define GLFW_INCLUDE_GL3
-    #define GLFW_NO_GLU
+    #define GLFW_INCLUDE_GLCOREARB
 #else
     #include <GL/glew.h>
 #endif
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,21 +12,23 @@
 #include "noise.h"
 #include "util.h"
 
+#define FULLSCREEN 1
 #define VSYNC 1
 #define SHOW_FPS 0
 #define SIZE 200
 
+static GLFWwindow *window;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
 static int flying = 0;
 static int ortho = 0;
-
+static float fov = 65.0;
 static float grid[SIZE * SIZE];
 
 void update_matrix_2d(float *matrix) {
     int width, height;
-    glfwGetWindowSize(&width, &height);
+    glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
     mat_ortho(matrix, 0, width, 0, height, -1, 1);
 }
@@ -38,7 +39,7 @@ void update_matrix_3d(
     float a[16];
     float b[16];
     int width, height;
-    glfwGetWindowSize(&width, &height);
+    glfwGetWindowSize(window, &width, &height);
     glViewport(0, 0, width, height);
     float aspect = (float)width / height;
     mat_identity(a);
@@ -53,19 +54,11 @@ void update_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, 65.0, aspect, 0.1, 1024.0);
+        mat_perspective(b, fov, aspect, 0.1, 1024.0);
     }
     mat_multiply(a, b, a);
-    for (int i = 0; i < 16; i++) {
-        matrix[i] = a[i];
-    }
-}
-
-void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
-    float m = cosf(ry);
-    *vx = cosf(rx - RADIANS(90)) * m;
-    *vy = sinf(ry);
-    *vz = sinf(rx - RADIANS(90)) * m;
+    mat_identity(matrix);
+    mat_multiply(matrix, a, matrix);
 }
 
 void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
@@ -164,14 +157,14 @@ void draw_triangles(
     glDisableVertexAttribArray(normal_loc);
 }
 
-void on_key(int key, int pressed) {
-    if (!pressed) {
+void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (action != GLFW_PRESS) {
         return;
     }
-    if (key == GLFW_KEY_ESC) {
+    if (key == GLFW_KEY_ESCAPE) {
         if (exclusive) {
             exclusive = 0;
-            glfwEnable(GLFW_MOUSE_CURSOR);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
     if (key == GLFW_KEY_TAB) {
@@ -179,17 +172,22 @@ void on_key(int key, int pressed) {
     }
 }
 
-void on_mouse_button(int button, int pressed) {
-    if (!pressed) {
+void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
+    if (action != GLFW_PRESS) {
         return;
     }
     if (button == 0) {
         if (exclusive) {
-            left_click = 1;
+            if (mods & GLFW_MOD_SUPER) {
+                right_click = 1;
+            }
+            else {
+                left_click = 1;
+            }
         }
         else {
             exclusive = 1;
-            glfwDisable(GLFW_MOUSE_CURSOR);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
     if (button == 1) {
@@ -199,24 +197,40 @@ void on_mouse_button(int button, int pressed) {
     }
 }
 
+void create_window() {
+    #ifdef __APPLE__
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    #endif
+    int width = 1024;
+    int height = 768;
+    GLFWmonitor *monitor = NULL;
+    if (FULLSCREEN) {
+        int mode_count;
+        monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
+        width = modes[mode_count - 1].width;
+        height = modes[mode_count - 1].height;
+    }
+    window = glfwCreateWindow(width, height, "Craft", monitor, NULL);
+}
+
 int main(int argc, char **argv) {
     if (!glfwInit()) {
         return -1;
     }
-    #ifdef __APPLE__
-        glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-        glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
-        glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-        glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #endif
-    if (!glfwOpenWindow(800, 600, 8, 8, 8, 0, 24, 0, GLFW_WINDOW)) {
+    create_window();
+    if (!window) {
+        glfwTerminate();
         return -1;
     }
+    glfwMakeContextCurrent(window);
     glfwSwapInterval(VSYNC);
-    glfwDisable(GLFW_MOUSE_CURSOR);
-    glfwSetWindowTitle("Terrain");
-    glfwSetKeyCallback(on_key);
-    glfwSetMouseButtonCallback(on_mouse_button);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetKeyCallback(window, on_key);
+    glfwSetMouseButtonCallback(window, on_mouse_button);
 
     #ifndef __APPLE__
         if (glewInit() != GLEW_OK) {
@@ -251,20 +265,20 @@ int main(int argc, char **argv) {
     float dy = 0;
     float rx = 0;
     float ry = -RADIANS(45);
-    int px = 0;
-    int py = 0;
+    double px = 0;
+    double py = 0;
 
-    glfwGetMousePos(&px, &py);
+    glfwGetCursorPos(window, &px, &py);
     double previous = glfwGetTime();
-    while (glfwGetWindowParam(GLFW_OPENED)) {
+    while (!glfwWindowShouldClose(window)) {
         update_fps(&fps, SHOW_FPS);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
 
-        if (exclusive) {
-            int mx, my;
-            glfwGetMousePos(&mx, &my);
+        if (exclusive && (px || py)) {
+            double mx, my;
+            glfwGetCursorPos(window, &mx, &my);
             float m = 0.0025;
             rx += (mx - px) * m;
             ry -= (my - py) * m;
@@ -280,7 +294,7 @@ int main(int argc, char **argv) {
             py = my;
         }
         else {
-            glfwGetMousePos(&px, &py);
+            glfwGetCursorPos(window, &px, &py);
         }
 
         if (left_click) {
@@ -293,15 +307,37 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
-        ortho = glfwGetKey(GLFW_KEY_LSHIFT);
-        if (glfwGetKey('Q')) break;
-        if (glfwGetKey('W')) sz--;
-        if (glfwGetKey('S')) sz++;
-        if (glfwGetKey('A')) sx--;
-        if (glfwGetKey('D')) sx++;
+        ortho = glfwGetKey(window, 'F');
+        fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
+        if (glfwGetKey(window, 'Q')) break;
+        if (glfwGetKey(window, 'W')) sz--;
+        if (glfwGetKey(window, 'S')) sz++;
+        if (glfwGetKey(window, 'A')) sx--;
+        if (glfwGetKey(window, 'D')) sx++;
+        if (dy == 0 && glfwGetKey(window, GLFW_KEY_SPACE)) {
+            dy = 8;
+        }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
-        float speed = flying ? 10 : 5;
+        if (glfwGetKey(window, 'Z')) {
+            vx = -1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, 'X')) {
+            vx = 1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, 'C')) {
+            vx = 0; vy = -1; vz = 0;
+        }
+        if (glfwGetKey(window, 'V')) {
+            vx = 0; vy = 1; vz = 0;
+        }
+        if (glfwGetKey(window, 'B')) {
+            vx = 0; vy = 0; vz = -1;
+        }
+        if (glfwGetKey(window, 'N')) {
+            vx = 0; vy = 0; vz = 1;
+        }
+        float speed = flying ? 20 : 5;
         int step = 8;
         float ut = dt / step;
         vx = vx * ut * speed;
@@ -337,15 +373,19 @@ int main(int argc, char **argv) {
             (f00 - f10 - f01 + f11) * x0 * z0;
         y = MAX(y, ty + 2);
 
-        update_matrix_3d(matrix, x, y, z, rx, ry);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        update_matrix_3d(matrix, x, y, z, rx, ry);
+
+        // render chunks
         glUseProgram(program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
         glUniform3f(camera_loc, x, y, z);
         draw_triangles(position_buffer, normal_buffer,
             position_loc, normal_loc, 3, SIZE * SIZE * 6);
 
-        glfwSwapBuffers();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
     glfwTerminate();
     return 0;

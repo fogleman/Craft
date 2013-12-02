@@ -6,7 +6,7 @@ uniform vec3 camera;
 in vec4 position;
 in vec3 normal;
 
-flat out float diffuse;
+out float diffuse;
 flat out float camera_distance;
 flat out float fog_factor;
 

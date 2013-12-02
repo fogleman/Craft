@@ -8,11 +8,12 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "noise.h"
 #include "util.h"
 
-#define FULLSCREEN 1
+#define FULLSCREEN 0
 #define VSYNC 1
 #define SHOW_FPS 0
 #define SIZE 200
@@ -100,6 +101,8 @@ void make_mesh(GLuint *position_buffer, GLuint *normal_buffer) {
     float amplitude = 32;
     float persistence = 0.25;
     float m = 0.02;
+    float lookup[width + 1][depth + 1][3];
+    memset(lookup, 0, (width + 1) * (depth + 1) * 3 * sizeof(float));
     for (int z = 0; z < depth; z++) {
         for (int x = 0; x < width; x++) {
             float x1 = x;
@@ -121,13 +124,36 @@ void make_mesh(GLuint *position_buffer, GLuint *normal_buffer) {
             float nx, ny, nz;
             cross(x1 - x2, y3 - y2, z2 - z1, x1 - x2, y1 - y2, z1 - z1,
                 &nx, &ny, &nz);
-            *(n++) = nx; *(n++) = ny; *(n++) = nz;
-            *(n++) = nx; *(n++) = ny; *(n++) = nz;
-            *(n++) = nx; *(n++) = ny; *(n++) = nz;
+            lookup[x + 1][z + 0][0] += nx; lookup[x + 1][z + 0][1] += ny; lookup[x + 1][z + 0][2] += nz;
+            lookup[x + 0][z + 0][0] += nx; lookup[x + 0][z + 0][1] += ny; lookup[x + 0][z + 0][2] += nz;
+            lookup[x + 0][z + 1][0] += nx; lookup[x + 0][z + 1][1] += ny; lookup[x + 0][z + 1][2] += nz;
             cross(x2 - x2, y4 - y2, z2 - z1, x1 - x2, y3 - y2, z2 - z1,
                 &nx, &ny, &nz);
+            lookup[x + 1][z + 0][0] += nx; lookup[x + 1][z + 0][1] += ny; lookup[x + 1][z + 0][2] += nz;
+            lookup[x + 0][z + 1][0] += nx; lookup[x + 0][z + 1][1] += ny; lookup[x + 0][z + 1][2] += nz;
+            lookup[x + 1][z + 1][0] += nx; lookup[x + 1][z + 1][1] += ny; lookup[x + 1][z + 1][2] += nz;
+        }
+    }
+    for (int z = 0; z < depth; z++) {
+        for (int x = 0; x < width; x++) {
+            float nx, ny, nz;
+            nx = lookup[x + 1][z + 0][0]; ny = lookup[x + 1][z + 0][1]; nz = lookup[x + 1][z + 0][2];
+            normalize(&nx, &ny, &nz);
             *(n++) = nx; *(n++) = ny; *(n++) = nz;
+            nx = lookup[x + 0][z + 0][0]; ny = lookup[x + 0][z + 0][1]; nz = lookup[x + 0][z + 0][2];
+            normalize(&nx, &ny, &nz);
             *(n++) = nx; *(n++) = ny; *(n++) = nz;
+            nx = lookup[x + 0][z + 1][0]; ny = lookup[x + 0][z + 1][1]; nz = lookup[x + 0][z + 1][2];
+            normalize(&nx, &ny, &nz);
+            *(n++) = nx; *(n++) = ny; *(n++) = nz;
+            nx = lookup[x + 1][z + 0][0]; ny = lookup[x + 1][z + 0][1]; nz = lookup[x + 1][z + 0][2];
+            normalize(&nx, &ny, &nz);
+            *(n++) = nx; *(n++) = ny; *(n++) = nz;
+            nx = lookup[x + 0][z + 1][0]; ny = lookup[x + 0][z + 1][1]; nz = lookup[x + 0][z + 1][2];
+            normalize(&nx, &ny, &nz);
+            *(n++) = nx; *(n++) = ny; *(n++) = nz;
+            nx = lookup[x + 1][z + 1][0]; ny = lookup[x + 1][z + 1][1]; nz = lookup[x + 1][z + 1][2];
+            normalize(&nx, &ny, &nz);
             *(n++) = nx; *(n++) = ny; *(n++) = nz;
         }
     }

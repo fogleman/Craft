@@ -2,7 +2,7 @@
 
 out vec3 color;
 
-flat in float diffuse;
+in float diffuse;
 flat in float camera_distance;
 flat in float fog_factor;
 

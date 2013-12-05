@@ -238,7 +238,7 @@ int _hit_test(
         int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
             int hw = map_get(map, nx, ny, nz);
-            if (hw) {
+            if (hw > 0) {
                 if (previous) {
                     *hx = px; *hy = py; *hz = pz;
                 }
@@ -273,7 +273,7 @@ int hit_test(
         int hx, hy, hz;
         int hw = _hit_test(&chunk->map, 8, previous,
             x, y, z, vx, vy, vz, &hx, &hy, &hz);
-        if (hw) {
+        if (hw > 0) {
             float d = sqrtf(
                 powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
@@ -490,11 +490,12 @@ void update_chunk(Chunk *chunk) {
             continue;
         }
         if (is_plant(e->w)) {
+            float rotation = simplex3(e->x, e->y, e->z, 4, 0.5, 2) * 360;
             make_plant(
                 position_data + position_offset,
                 normal_data + position_offset,
                 uv_data + uv_offset,
-                e->x, e->y, e->z, 0.5, e->w);
+                e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
             make_cube(

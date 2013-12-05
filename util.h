@@ -49,7 +49,7 @@ void mat_ortho(
 
 void make_plant(
     float *vertex, float *normal, float *texture,
-    float x, float y, float z, float n, int w);
+    float x, float y, float z, float n, int w, float rotation);
 void make_cube(
     float *vertex, float *normal, float *texture,
     int left, int right, int top, int bottom, int front, int back,

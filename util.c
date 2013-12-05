@@ -263,7 +263,7 @@ void mat_ortho(
 
 void make_plant(
     float *vertex, float *normal, float *texture,
-    float x, float y, float z, float n, int w)
+    float x, float y, float z, float n, int w, float rotation)
 {
     float *v = vertex;
     float *d = normal;
@@ -351,6 +351,24 @@ void make_plant(
     *(t++) = a + du; *(t++) = a + dv;
     *(t++) = a + du; *(t++) = b + dv;
     *(t++) = b + du; *(t++) = b + dv;
+    // rotate the plant
+    float mat[16];
+    float vec[4] = {0};
+    mat_rotate(mat, 0, 1, 0, RADIANS(rotation));
+    for (int i = 0; i < 24; i++) {
+        // vertex
+        v = vertex + i * 3;
+        vec[0] = *(v++) - x; vec[1] = *(v++) - y; vec[2] = *(v++) - z;
+        mat_vec_multiply(vec, mat, vec);
+        v = vertex + i * 3;
+        *(v++) = vec[0] + x; *(v++) = vec[1] + y; *(v++) = vec[2] + z;
+        // normal
+        d = normal + i * 3;
+        vec[0] = *(d++); vec[1] = *(d++); vec[2] = *(d++);
+        mat_vec_multiply(vec, mat, vec);
+        d = normal + i * 3;
+        *(d++) = vec[0]; *(d++) = vec[1]; *(d++) = vec[2];
+    }
 }
 
 void make_cube(

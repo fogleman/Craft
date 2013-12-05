@@ -368,8 +368,13 @@ void make_world(Map *map, int p, int q) {
             for (int y = 0; y < h; y++) {
                 map_set(map, x, y, z, w);
             }
-            if (w == 1 && simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
-                map_set(map, x, h, z, 17);
+            if (w == 1) {
+                if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                    map_set(map, x, h, z, 17);
+                }
+                if (simplex2(-x * 0.05, z * 0.05, 4, 0.8, 2) > 0.6) {
+                    map_set(map, x, h, z, 18);
+                }
             }
         }
     }

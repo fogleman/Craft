@@ -1,8 +1,10 @@
-glew
+Makefile
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+craft
 glfw
-main
-main.exe
-sqlite3
+sqlite
 *.o
-*.dylib
-*.dll
+*.db
+

@@ -269,13 +269,16 @@ void make_cube(
     float *v = vertex;
     float *d = normal;
     float *t = texture;
-    float s = 0.125;
+    float s = 0.0625;
     float a = 0;
     float b = s;
     float du, dv;
+    float ou, ov;
     w--;
+    ou = (w % 16) * s;
+    ov = (w / 16 * 3) * s;
     if (left) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
@@ -296,7 +299,7 @@ void make_cube(
         *(t++) = b + du; *(t++) = b + dv;
     }
     if (right) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
@@ -317,7 +320,7 @@ void make_cube(
         *(t++) = a + du; *(t++) = b + dv;
     }
     if (top) {
-        du = w * s; dv = s + s;
+        du = ou; dv = ov + s + s;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
@@ -338,7 +341,7 @@ void make_cube(
         *(t++) = b + du; *(t++) = b + dv;
     }
     if (bottom) {
-        du = w * s; dv = 0;
+        du = ou; dv = ov + 0;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
@@ -359,7 +362,7 @@ void make_cube(
         *(t++) = a + du; *(t++) = b + dv;
     }
     if (front) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
@@ -380,7 +383,7 @@ void make_cube(
         *(t++) = b + du; *(t++) = b + dv;
     }
     if (back) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;

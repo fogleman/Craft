@@ -621,11 +621,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_TAB) {
         flying = !flying;
     }
-    if (key >= '1' && key <= '8') {
+    if (key >= '1' && key <= '9') {
         block_type = key - '1' + 1;
     }
     if (key == 'E') {
-        block_type = block_type % 8 + 1;
+        block_type = block_type % 9 + 1;
     }
 }
 

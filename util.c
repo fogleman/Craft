@@ -261,10 +261,6 @@ void mat_ortho(
     matrix[15] = 1;
 }
 
-int is_plant(int w) {
-    return w > 16;
-}
-
 void make_plant(
     float *vertex, float *normal, float *texture,
     float x, float y, float z, float n, int w)

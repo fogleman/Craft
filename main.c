@@ -210,6 +210,18 @@ int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
     return result;
 }
 
+int is_plant(int w) {
+    return w > 16;
+}
+
+int is_obstacle(int w) {
+    return w >= 1 && w <= 16;
+}
+
+int is_transparent(int w) {
+    return w == 0 || w == 10 || is_plant(w);
+}
+
 int _hit_test(
     Map *map, float max_distance, int previous,
     float x, float y, float z,
@@ -274,11 +286,6 @@ int hit_test(
     return result;
 }
 
-int _collide(Map *map, int x, int y, int z) {
-    int w = map_get(map, x, y, z);
-    return w && !is_plant(w);
-}
-
 int collide(
     Chunk *chunks, int chunk_count,
     int height, float *x, float *y, float *z)
@@ -299,24 +306,24 @@ int collide(
     float pz = *z - nz;
     float pad = 0.25;
     for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && _collide(map, nx - 1, ny - dy, nz)) {
+        if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
             *x = nx - pad;
         }
-        if (px > pad && _collide(map, nx + 1, ny - dy, nz)) {
+        if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {
             *x = nx + pad;
         }
-        if (py < -pad && _collide(map, nx, ny - dy - 1, nz)) {
+        if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {
             *y = ny - pad;
             result = 1;
         }
-        if (py > pad && _collide(map, nx, ny - dy + 1, nz)) {
+        if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {
             *y = ny + pad;
             result = 1;
         }
-        if (pz < -pad && _collide(map, nx, ny - dy, nz - 1)) {
+        if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {
             *z = nz - pad;
         }
-        if (pz > pad && _collide(map, nx, ny - dy, nz + 1)) {
+        if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
             *z = nz + pad;
         }
     }
@@ -424,21 +431,16 @@ void draw_single_cube(
     glDisableVertexAttribArray(uv_loc);
 }
 
-int exposed_face(Map *map, int x, int y, int z) {
-    int w = map_get(map, x, y, z);
-    return (w == 0) || is_plant(w);
-}
-
 void exposed_faces(
     Map *map, int x, int y, int z,
     int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
 {
-    *f1 = exposed_face(map, x - 1, y, z);
-    *f2 = exposed_face(map, x + 1, y, z);
-    *f3 = exposed_face(map, x, y + 1, z);
-    *f4 = exposed_face(map, x, y - 1, z) & (y > 0);
-    *f5 = exposed_face(map, x, y, z + 1);
-    *f6 = exposed_face(map, x, y, z - 1);
+    *f1 = is_transparent(map_get(map, x - 1, y, z));
+    *f2 = is_transparent(map_get(map, x + 1, y, z));
+    *f3 = is_transparent(map_get(map, x, y + 1, z));
+    *f4 = is_transparent(map_get(map, x, y - 1, z)) & (y > 0);
+    *f5 = is_transparent(map_get(map, x, y, z + 1));
+    *f6 = is_transparent(map_get(map, x, y, z - 1));
 }
 
 void update_chunk(Chunk *chunk) {
@@ -654,7 +656,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         block_type = key - '1' + 1;
     }
     if (key == 'E') {
-        block_type = block_type % 9 + 1;
+        block_type = block_type % 10 + 1;
     }
 }
 
@@ -925,7 +927,7 @@ int main(int argc, char **argv) {
         // render focused block wireframe
         int hx, hy, hz;
         int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
-        if (hw && !is_plant(hw)) {
+        if (is_obstacle(hw)) {
             glUseProgram(line_program);
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);

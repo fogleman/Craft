@@ -43,7 +43,7 @@ int is_plant(int w) {
 }
 
 int is_obstacle(int w) {
-    return w >= 1 && w < 16;
+    return w != 0 && w < 16;
 }
 
 int is_transparent(int w) {

@@ -1,8 +1,4 @@
-#ifdef __APPLE__
-    #define GLFW_INCLUDE_GLCOREARB
-#else
-    #include <GL/glew.h>
-#endif
+#define GLFW_INCLUDE_GLCOREARB
 
 #include <GLFW/glfw3.h>
 #include <math.h>

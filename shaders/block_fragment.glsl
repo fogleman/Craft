@@ -10,16 +10,19 @@ flat in float diffuse;
 
 out vec3 color;
 
-const vec3 light_color = vec3(0.6);
-const vec3 ambient = vec3(0.4);
 const vec3 fog_color = vec3(0.53, 0.81, 0.92);
+vec3 light_color = vec3(0.6);
+vec3 ambient = vec3(0.4);
 
 void main() {
     color = vec3(texture(sampler, fragment_uv));
     if (color == vec3(1, 0, 1)) {
         discard;
     }
-
+    if (color == vec3(1)) {
+        light_color = vec3(0.3);
+        ambient = vec3(0.7);
+    }
     vec3 light = ambient + light_color * diffuse;
     color = min(color * light, vec3(1));
     color = mix(color, fog_color, fog_factor);

@@ -38,6 +38,18 @@ typedef struct {
     GLuint uv_buffer;
 } Chunk;
 
+int is_plant(int w) {
+    return w > 16;
+}
+
+int is_obstacle(int w) {
+    return w >= 1 && w < 16;
+}
+
+int is_transparent(int w) {
+    return w == 0 || w == 10 || is_plant(w);
+}
+
 void update_matrix_2d(float *matrix) {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -202,24 +214,12 @@ int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
     if (chunk) {
         Map *map = &chunk->map;
         MAP_FOR_EACH(map, e) {
-            if (e->w && e->x == nx && e->z == nz) {
+            if (is_obstacle(e->w) && e->x == nx && e->z == nz) {
                 result = MAX(result, e->y);
             }
         } END_MAP_FOR_EACH;
     }
     return result;
-}
-
-int is_plant(int w) {
-    return w > 16;
-}
-
-int is_obstacle(int w) {
-    return w >= 1 && w < 16;
-}
-
-int is_transparent(int w) {
-    return w == 0 || w == 10 || is_plant(w);
 }
 
 int _hit_test(

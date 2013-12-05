@@ -14,6 +14,7 @@
 #include "noise.h"
 #include "util.h"
 
+#define FULLSCREEN 1
 #define VSYNC 1
 #define SHOW_FPS 0
 #define CHUNK_SIZE 32
@@ -32,6 +33,7 @@ static int right_click = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
+static float fov = 65.0;
 
 typedef struct {
     Map map;
@@ -71,7 +73,7 @@ void update_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, 65.0, aspect, 0.1, 1024.0);
+        mat_perspective(b, fov, aspect, 0.1, 1024.0);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);
@@ -689,19 +691,33 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
 }
 
-int main(int argc, char **argv) {
-    srand(time(NULL));
-    rand();
-    if (!glfwInit()) {
-        return -1;
-    }
+void create_window() {
     #ifdef __APPLE__
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     #endif
-    window = glfwCreateWindow(1024, 768, "Craft", NULL, NULL);
+    int width = 1024;
+    int height = 768;
+    GLFWmonitor *monitor = NULL;
+    if (FULLSCREEN) {
+        int mode_count;
+        monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
+        width = modes[mode_count - 1].width;
+        height = modes[mode_count - 1].height;
+    }
+    window = glfwCreateWindow(width, height, "Craft", monitor, NULL);
+}
+
+int main(int argc, char **argv) {
+    srand(time(NULL));
+    rand();
+    if (!glfwInit()) {
+        return -1;
+    }
+    create_window();
     if (!window) {
         glfwTerminate();
         return -1;
@@ -875,7 +891,8 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
-        ortho = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
+        ortho = glfwGetKey(window, 'F');
+        fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
         if (glfwGetKey(window, 'Q')) break;
         if (glfwGetKey(window, 'W')) sz--;
         if (glfwGetKey(window, 'S')) sz++;
@@ -886,6 +903,24 @@ int main(int argc, char **argv) {
         }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
+        if (glfwGetKey(window, 'Z')) {
+            vx = -1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, 'X')) {
+            vx = 1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, 'C')) {
+            vx = 0; vy = -1; vz = 0;
+        }
+        if (glfwGetKey(window, 'V')) {
+            vx = 0; vy = 1; vz = 0;
+        }
+        if (glfwGetKey(window, 'B')) {
+            vx = 0; vy = 0; vz = -1;
+        }
+        if (glfwGetKey(window, 'N')) {
+            vx = 0; vy = 0; vz = 1;
+        }
         float speed = flying ? 20 : 5;
         int step = 8;
         float ut = dt / step;

@@ -215,7 +215,7 @@ int is_plant(int w) {
 }
 
 int is_obstacle(int w) {
-    return w >= 1 && w <= 16;
+    return w >= 1 && w < 16;
 }
 
 int is_transparent(int w) {
@@ -374,6 +374,11 @@ void make_world(Map *map, int p, int q) {
                 }
                 if (simplex2(-x * 0.05, z * 0.05, 4, 0.8, 2) > 0.6) {
                     map_set(map, x, h, z, 18);
+                }
+            }
+            for (int y = 64; y < 72; y++) {
+                if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75) {
+                    map_set(map, x, y, z, 16);
                 }
             }
         }

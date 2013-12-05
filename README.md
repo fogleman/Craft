@@ -6,7 +6,9 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 
 * World changes persisted in a sqlite3 database.
 * Simple but nice looking terrain generation using perlin / simplex noise.
-* Eight types of blocks, but more can be added easily.
+* Nine types of blocks, but more can be added easily.
+* Supports plants (grass, flowers, etc.) and transparency (glass).
+* Simple clouds in the sky (they don't move).
 * Shadow mapping for nice looking shadows (on the shadow branch).
 
 ### How to Run

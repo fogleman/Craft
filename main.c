@@ -841,9 +841,9 @@ int main(int argc, char **argv) {
         if (right_click) {
             right_click = 0;
             int hx, hy, hz;
-            if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
-                &hx, &hy, &hz))
-            {
+            int hw = hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
+                &hx, &hy, &hz);
+            if (is_obstacle(hw)) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
                     set_block(chunks, chunk_count, hx, hy, hz, block_type);
                 }

@@ -225,14 +225,15 @@ int _hit_test(
         int ny = roundf(y);
         int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
-            if (map_get(map, nx, ny, nz)) {
+            int hw = map_get(map, nx, ny, nz);
+            if (hw) {
                 if (previous) {
                     *hx = px; *hy = py; *hz = pz;
                 }
                 else {
                     *hx = nx; *hy = ny; *hz = nz;
                 }
-                return 1;
+                return hw;
             }
             px = nx; py = ny; pz = nz;
         }
@@ -258,19 +259,24 @@ int hit_test(
             continue;
         }
         int hx, hy, hz;
-        if (_hit_test(&chunk->map, 8, previous,
-            x, y, z, vx, vy, vz, &hx, &hy, &hz))
-        {
+        int hw = _hit_test(&chunk->map, 8, previous,
+            x, y, z, vx, vy, vz, &hx, &hy, &hz);
+        if (hw) {
             float d = sqrtf(
                 powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
                 best = d;
                 *bx = hx; *by = hy; *bz = hz;
+                result = hw;
             }
-            result = 1;
         }
     }
     return result;
+}
+
+int _collide(Map *map, int x, int y, int z) {
+    int w = map_get(map, x, y, z);
+    return w && !is_plant(w);
 }
 
 int collide(
@@ -293,24 +299,24 @@ int collide(
     float pz = *z - nz;
     float pad = 0.25;
     for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && map_get(map, nx - 1, ny - dy, nz)) {
+        if (px < -pad && _collide(map, nx - 1, ny - dy, nz)) {
             *x = nx - pad;
         }
-        if (px > pad && map_get(map, nx + 1, ny - dy, nz)) {
+        if (px > pad && _collide(map, nx + 1, ny - dy, nz)) {
             *x = nx + pad;
         }
-        if (py < -pad && map_get(map, nx, ny - dy - 1, nz)) {
+        if (py < -pad && _collide(map, nx, ny - dy - 1, nz)) {
             *y = ny - pad;
             result = 1;
         }
-        if (py > pad && map_get(map, nx, ny - dy + 1, nz)) {
+        if (py > pad && _collide(map, nx, ny - dy + 1, nz)) {
             *y = ny + pad;
             result = 1;
         }
-        if (pz < -pad && map_get(map, nx, ny - dy, nz - 1)) {
+        if (pz < -pad && _collide(map, nx, ny - dy, nz - 1)) {
             *z = nz - pad;
         }
-        if (pz > pad && map_get(map, nx, ny - dy, nz + 1)) {
+        if (pz > pad && _collide(map, nx, ny - dy, nz + 1)) {
             *z = nz + pad;
         }
     }
@@ -354,6 +360,9 @@ void make_world(Map *map, int p, int q) {
             }
             for (int y = 0; y < h; y++) {
                 map_set(map, x, y, z, w);
+            }
+            if (w == 1 && simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                map_set(map, x, h, z, 17);
             }
         }
     }
@@ -415,16 +424,21 @@ void draw_single_cube(
     glDisableVertexAttribArray(uv_loc);
 }
 
+int exposed_face(Map *map, int x, int y, int z) {
+    int w = map_get(map, x, y, z);
+    return (w == 0) || is_plant(w);
+}
+
 void exposed_faces(
     Map *map, int x, int y, int z,
     int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
 {
-    *f1 = map_get(map, x - 1, y, z) == 0;
-    *f2 = map_get(map, x + 1, y, z) == 0;
-    *f3 = map_get(map, x, y + 1, z) == 0;
-    *f4 = map_get(map, x, y - 1, z) == 0 & y > 0;
-    *f5 = map_get(map, x, y, z + 1) == 0;
-    *f6 = map_get(map, x, y, z - 1) == 0;
+    *f1 = exposed_face(map, x - 1, y, z);
+    *f2 = exposed_face(map, x + 1, y, z);
+    *f3 = exposed_face(map, x, y + 1, z);
+    *f4 = exposed_face(map, x, y - 1, z) & (y > 0);
+    *f5 = exposed_face(map, x, y, z + 1);
+    *f6 = exposed_face(map, x, y, z - 1);
 }
 
 void update_chunk(Chunk *chunk) {
@@ -444,6 +458,9 @@ void update_chunk(Chunk *chunk) {
         int f1, f2, f3, f4, f5, f6;
         exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
+        if (is_plant(e->w)) {
+            total = total ? 4 : 0;
+        }
         faces += total;
     } END_MAP_FOR_EACH;
 
@@ -459,15 +476,27 @@ void update_chunk(Chunk *chunk) {
         int f1, f2, f3, f4, f5, f6;
         exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
+        if (is_plant(e->w)) {
+            total = total ? 4 : 0;
+        }
         if (total == 0) {
             continue;
         }
-        make_cube(
-            position_data + position_offset,
-            normal_data + position_offset,
-            uv_data + uv_offset,
-            f1, f2, f3, f4, f5, f6,
-            e->x, e->y, e->z, 0.5, e->w);
+        if (is_plant(e->w)) {
+            make_plant(
+                position_data + position_offset,
+                normal_data + position_offset,
+                uv_data + uv_offset,
+                e->x, e->y, e->z, 0.5, e->w);
+        }
+        else {
+            make_cube(
+                position_data + position_offset,
+                normal_data + position_offset,
+                uv_data + uv_offset,
+                f1, f2, f3, f4, f5, f6,
+                e->x, e->y, e->z, 0.5, e->w);
+        }
         position_offset += total * 18;
         uv_offset += total * 12;
     } END_MAP_FOR_EACH;
@@ -895,7 +924,8 @@ int main(int argc, char **argv) {
 
         // render focused block wireframe
         int hx, hy, hz;
-        if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz)) {
+        int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
+        if (hw && !is_plant(hw)) {
             glUseProgram(line_program);
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);

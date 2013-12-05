@@ -14,7 +14,7 @@
 #include "noise.h"
 #include "util.h"
 
-#define FULLSCREEN 1
+#define FULLSCREEN 0
 #define VSYNC 1
 #define SHOW_FPS 0
 #define CHUNK_SIZE 32

@@ -369,11 +369,12 @@ void make_world(Map *map, int p, int q) {
                 map_set(map, x, y, z, w);
             }
             if (w == 1) {
-                if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
                     map_set(map, x, h, z, 17);
                 }
-                if (simplex2(-x * 0.05, z * 0.05, 4, 0.8, 2) > 0.6) {
-                    map_set(map, x, h, z, 18);
+                if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                    int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
+                    map_set(map, x, h, z, w);
                 }
             }
             for (int y = 64; y < 72; y++) {

@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "client.h"
 #include "db.h"
 #include "map.h"
 #include "noise.h"
@@ -49,10 +48,6 @@ int is_obstacle(int w) {
 
 int is_transparent(int w) {
     return w == 0 || w == 10 || is_plant(w);
-}
-
-int is_destructable(int w) {
-    return w > 0 && w != 16;
 }
 
 void update_matrix_2d(float *matrix) {
@@ -546,9 +541,6 @@ void update_chunk(Chunk *chunk) {
 }
 
 void make_chunk(Chunk *chunk, int p, int q) {
-    char buffer[1024];
-    snprintf(buffer, 1024, "C,%d,%d\n", p, q);
-    client_send(buffer);
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
@@ -638,17 +630,9 @@ void _set_block(
     db_insert_block(p, q, x, y, z, w);
 }
 
-void set_block(
-    Chunk *chunks, int chunk_count,
-    int x, int y, int z, int w, int post)
-{
+void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {
     int p = floorf((float)x / CHUNK_SIZE);
     int q = floorf((float)z / CHUNK_SIZE);
-    if (post) {
-        char buffer[1024];
-        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
-        client_send(buffer);
-    }
     _set_block(chunks, chunk_count, p, q, x, y, z, w);
     w = w ? -1 : 0;
     int p0 = x == p * CHUNK_SIZE;
@@ -736,17 +720,6 @@ void create_window() {
 int main(int argc, char **argv) {
     srand(time(NULL));
     rand();
-    if (argc == 2 || argc == 3) {
-        char *hostname = argv[1];
-        int port = 4000;
-        if (argc == 3) {
-            port = atoi(argv[2]);
-        }
-        db_disable();
-        client_enable();
-        client_connect(hostname, port);
-        client_start();
-    }
     if (!glfwInit()) {
         return -1;
     }
@@ -824,11 +797,9 @@ int main(int argc, char **argv) {
     double py = 0;
 
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
-    if (!get_client_enabled()) {
-        ensure_chunks(chunks, &chunk_count,
-            floorf(roundf(x) / CHUNK_SIZE),
-            floorf(roundf(z) / CHUNK_SIZE), 1);
-    }
+    ensure_chunks(chunks, &chunk_count,
+        floorf(roundf(x) / CHUNK_SIZE),
+        floorf(roundf(z) / CHUNK_SIZE), 1);
     if (!loaded) {
         y = highest_block(chunks, chunk_count, x, z) + 2;
     }
@@ -865,10 +836,12 @@ int main(int argc, char **argv) {
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;
-            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
-                &hx, &hy, &hz);
-            if (hy > 0 && is_destructable(hw)) {
-                set_block(chunks, chunk_count, hx, hy, hz, 0, 1);
+            if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
+                &hx, &hy, &hz))
+            {
+                if (hy > 0) {
+                    set_block(chunks, chunk_count, hx, hy, hz, 0);
+                }
             }
         }
 
@@ -879,7 +852,7 @@ int main(int argc, char **argv) {
                 &hx, &hy, &hz);
             if (is_obstacle(hw)) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(chunks, chunk_count, hx, hy, hz, block_type, 1);
+                    set_block(chunks, chunk_count, hx, hy, hz, block_type);
                 }
             }
         }
@@ -938,23 +911,6 @@ int main(int argc, char **argv) {
             }
         }
 
-        // TODO: P,x,y,z
-        char buffer[1024];
-        while (client_recv(buffer)) {
-            if (buffer[0] == 'U') {
-                sscanf(buffer, "U,%*d,%f,%f,%f", &x, &y, &z);
-                ensure_chunks(chunks, &chunk_count,
-                    floorf(roundf(x) / CHUNK_SIZE),
-                    floorf(roundf(z) / CHUNK_SIZE), 1);
-                y = highest_block(chunks, chunk_count, x, z) + 2;
-            }
-            if (buffer[0] == 'B') {
-                int bx, by, bz, bw;
-                sscanf(buffer, "B,%*d,%*d,%d,%d,%d,%d", &bx, &by, &bz, &bw);
-                set_block(chunks, chunk_count, bx, by, bz, bw, 0);
-            }
-        }
-
         int p = floorf(roundf(x) / CHUNK_SIZE);
         int q = floorf(roundf(z) / CHUNK_SIZE);
         ensure_chunks(chunks, &chunk_count, p, q, 0);
@@ -988,9 +944,9 @@ int main(int argc, char **argv) {
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-            GLuint cube_buffer = make_cube_buffer(hx, hy, hz, 0.51);
-            draw_lines(cube_buffer, line_position_loc, 3, 48);
-            glDeleteBuffers(1, &cube_buffer);
+            GLuint buffer = make_cube_buffer(hx, hy, hz, 0.51);
+            draw_lines(buffer, line_position_loc, 3, 48);
+            glDeleteBuffers(1, &buffer);
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
@@ -1001,9 +957,9 @@ int main(int argc, char **argv) {
         glLineWidth(4);
         glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-        GLuint line_buffer = make_line_buffer();
-        draw_lines(line_buffer, line_position_loc, 2, 4);
-        glDeleteBuffers(1, &line_buffer);
+        GLuint buffer = make_line_buffer();
+        draw_lines(buffer, line_position_loc, 2, 4);
+        glDeleteBuffers(1, &buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
         // render selected item
@@ -1028,7 +984,6 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    client_stop();
     db_save_state(x, y, z, rx, ry);
     db_close();
     glfwTerminate();

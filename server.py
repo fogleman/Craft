@@ -107,6 +107,23 @@ class Model(object):
             other.send('BLOCK', p, q, x, y, z, w)
 
 def main():
+    queries = [
+        'create table if not exists block ('
+        '    p int not null,'
+        '    q int not null,'
+        '    x int not null,'
+        '    y int not null,'
+        '    z int not null,'
+        '    w int not null'
+        ');',
+        'create index if not exists block_pq_idx on block(p, q);',
+        'create index if not exists block_xyz_idx on block (x, y, z);',
+        'create unique index if not exists block_pqxyz_idx on '
+        '    block (p, q, x, y, z);',
+    ]
+    with session() as sql:
+        for query in queries:
+            sql.execute(query)
     server = Server((HOST, PORT), Handler)
     server.model = Model()
     server.serve_forever()

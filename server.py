@@ -6,7 +6,6 @@ import SocketServer
 HOST = ''
 PORT = 5000
 RECV_SIZE = 1024
-CHUNK_SIZE = 32
 ENGINE = 'sqlite:///craft.db'
 
 Session = sessionmaker(bind=create_engine(ENGINE))

@@ -147,6 +147,7 @@ void client_stop() {
     if (!client_enabled) {
         return;
     }
+    close(sd);
     // if (pthread_join(send_thread, NULL)) {
     //     perror("pthread_join");
     //     exit(1);

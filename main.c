@@ -638,12 +638,17 @@ void _set_block(
     db_insert_block(p, q, x, y, z, w);
 }
 
-void set_block(Chunk *chunks, int chunk_count, int x, int y, int z, int w) {
+void set_block(
+    Chunk *chunks, int chunk_count,
+    int x, int y, int z, int w, int post)
+{
     int p = floorf((float)x / CHUNK_SIZE);
     int q = floorf((float)z / CHUNK_SIZE);
-    char buffer[1024];
-    snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
-    client_send(buffer);
+    if (post) {
+        char buffer[1024];
+        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
+        client_send(buffer);
+    }
     _set_block(chunks, chunk_count, p, q, x, y, z, w);
     w = w ? -1 : 0;
     int p0 = x == p * CHUNK_SIZE;
@@ -733,7 +738,10 @@ int main(int argc, char **argv) {
     rand();
     if (argc == 2 || argc == 3) {
         char *hostname = argv[1];
-        int port = atoi(argv[2]);
+        int port = 4000;
+        if (argc == 3) {
+            port = atoi(argv[2]);
+        }
         db_disable();
         client_enable();
         client_connect(hostname, port);
@@ -860,7 +868,7 @@ int main(int argc, char **argv) {
             int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (hy > 0 && is_destructable(hw)) {
-                set_block(chunks, chunk_count, hx, hy, hz, 0);
+                set_block(chunks, chunk_count, hx, hy, hz, 0, 1);
             }
         }
 
@@ -871,7 +879,7 @@ int main(int argc, char **argv) {
                 &hx, &hy, &hz);
             if (is_obstacle(hw)) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(chunks, chunk_count, hx, hy, hz, block_type);
+                    set_block(chunks, chunk_count, hx, hy, hz, block_type, 1);
                 }
             }
         }
@@ -943,7 +951,7 @@ int main(int argc, char **argv) {
             if (buffer[0] == 'B') {
                 int bx, by, bz, bw;
                 sscanf(buffer, "B,%*d,%*d,%d,%d,%d,%d", &bx, &by, &bz, &bw);
-                set_block(chunks, chunk_count, bx, by, bz, bw);
+                set_block(chunks, chunk_count, bx, by, bz, bw, 0);
             }
         }
 
@@ -1020,6 +1028,7 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    client_stop();
     db_save_state(x, y, z, rx, ry);
     db_close();
     glfwTerminate();

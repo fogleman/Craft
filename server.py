@@ -3,8 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import SocketServer
 
-HOST = ''
-PORT = 5000
+HOST = '0.0.0.0'
+PORT = 4000
 RECV_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
 

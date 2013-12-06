@@ -2,12 +2,28 @@
 #include "db.h"
 #include "sqlite3.h"
 
+static int db_enabled = 1;
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *select_block_stmt;
 static sqlite3_stmt *update_chunk_stmt;
 
+void db_enable() {
+    db_enabled = 1;
+}
+
+void db_disable() {
+    db_enabled = 0;
+}
+
+int get_db_enabled() {
+    return db_enabled;
+}
+
 int db_init() {
+    if (!db_enabled) {
+        return 0;
+    }
     static const char *create_query =
         "create table if not exists state ("
         "   x float not null,"
@@ -53,6 +69,9 @@ int db_init() {
 }
 
 void db_close() {
+    if (!db_enabled) {
+        return;
+    }
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(select_block_stmt);
     sqlite3_finalize(update_chunk_stmt);
@@ -60,6 +79,9 @@ void db_close() {
 }
 
 void db_save_state(float x, float y, float z, float rx, float ry) {
+    if (!db_enabled) {
+        return;
+    }
     static const char *query =
         "insert into state (x, y, z, rx, ry) values (?, ?, ?, ?, ?);";
     sqlite3_stmt *stmt;
@@ -75,6 +97,9 @@ void db_save_state(float x, float y, float z, float rx, float ry) {
 }
 
 int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
+    if (!db_enabled) {
+        return 0;
+    }
     static const char *query =
         "select x, y, z, rx, ry from state;";
     int result = 0;
@@ -93,6 +118,9 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
 }
 
 void db_insert_block(int p, int q, int x, int y, int z, int w) {
+    if (!db_enabled) {
+        return;
+    }
     sqlite3_reset(insert_block_stmt);
     sqlite3_bind_int(insert_block_stmt, 1, p);
     sqlite3_bind_int(insert_block_stmt, 2, q);
@@ -104,6 +132,9 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
 }
 
 int db_select_block(int x, int y, int z) {
+    if (!db_enabled) {
+        return -1;
+    }
     sqlite3_reset(select_block_stmt);
     sqlite3_bind_int(select_block_stmt, 1, x);
     sqlite3_bind_int(select_block_stmt, 2, y);
@@ -117,6 +148,9 @@ int db_select_block(int x, int y, int z) {
 }
 
 void db_update_chunk(Map *map, int p, int q) {
+    if (!db_enabled) {
+        return;
+    }
     sqlite3_reset(update_chunk_stmt);
     sqlite3_bind_int(update_chunk_stmt, 1, p);
     sqlite3_bind_int(update_chunk_stmt, 2, q);

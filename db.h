@@ -5,6 +5,9 @@
 
 #define DB_NAME "craft.db"
 
+void db_enable();
+void db_disable();
+int get_db_enabled();
 int db_init();
 void db_close();
 void db_save_state(float x, float y, float z, float rx, float ry);

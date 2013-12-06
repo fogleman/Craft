@@ -8,6 +8,11 @@ PORT = 5000
 RECV_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
 
+YOU = 'U'
+BLOCK = 'B'
+CHUNK = 'C'
+POSITION = 'P'
+
 Session = sessionmaker(bind=create_engine(ENGINE))
 
 @contextmanager
@@ -35,7 +40,7 @@ class Handler(SocketServer.BaseRequestHandler):
             if not data:
                 break
             buf.extend(data.replace('\r', ''))
-            if '\n' in buf:
+            while '\n' in buf:
                 index = buf.index('\n')
                 line = ''.join(buf[:index])
                 buf = buf[index + 1:]
@@ -52,16 +57,16 @@ class Model(object):
         self.next_client_id = 0
         self.clients = []
         self.commands = {
-            'CHUNK': self.on_chunk,
-            'BLOCK': self.on_block,
-            'POSITION': self.on_position,
+            CHUNK: self.on_chunk,
+            BLOCK: self.on_block,
+            POSITION: self.on_position,
         }
     def on_connect(self, client):
         client.client_id = self.next_client_id
         client.position = (0, 0, 0)
         self.next_client_id += 1
         self.clients.append(client)
-        client.send('YOU', client.client_id, *client.position)
+        client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
         self.send_positions(client)
     def on_data(self, client, data):
@@ -78,7 +83,7 @@ class Model(object):
             query = 'select x, y, z, w from block where p = :p and q = :q;'
             rows = sql.execute(query, dict(p=p, q=q))
             for x, y, z, w in rows:
-                client.send('BLOCK', p, q, x, y, z, w)
+                client.send(BLOCK, p, q, x, y, z, w)
     def on_block(self, client, p, q, x, y, z, w):
         with session() as sql:
             query = (
@@ -94,17 +99,17 @@ class Model(object):
         for other in self.clients:
             if other == client:
                 continue
-            client.send('POSITION', other.client_id, *other.position)
+            client.send(POSITION, other.client_id, *other.position)
     def send_position(self, client):
         for other in self.clients:
             if other == client:
                 continue
-            other.send('POSITION', client.client_id, *client.position)
+            other.send(POSITION, client.client_id, *client.position)
     def send_block(self, client, p, q, x, y, z, w):
         for other in self.clients:
             if other == client:
                 continue
-            other.send('BLOCK', p, q, x, y, z, w)
+            other.send(BLOCK, p, q, x, y, z, w)
 
 def main():
     queries = [

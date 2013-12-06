@@ -16,6 +16,10 @@ void db_disable() {
     db_enabled = 0;
 }
 
+int get_db_enabled() {
+    return db_enabled;
+}
+
 int db_init() {
     if (!db_enabled) {
         return 0;

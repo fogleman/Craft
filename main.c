@@ -50,6 +50,10 @@ int is_transparent(int w) {
     return w == 0 || w == 10 || is_plant(w);
 }
 
+int is_destructable(int w) {
+    return w > 0 && w != 16;
+}
+
 void update_matrix_2d(float *matrix) {
     int width, height;
     glfwGetWindowSize(window, &width, &height);
@@ -836,12 +840,10 @@ int main(int argc, char **argv) {
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;
-            if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
-                &hx, &hy, &hz))
-            {
-                if (hy > 0) {
-                    set_block(chunks, chunk_count, hx, hy, hz, 0);
-                }
+            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
+                &hx, &hy, &hz);
+            if (hy > 0 && is_destructable(hw)) {
+                set_block(chunks, chunk_count, hx, hy, hz, 0);
             }
         }
 

@@ -11,10 +11,11 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 * Simple clouds in the sky (they don't move).
 * Shadow mapping for nice looking shadows (on the shadow branch).
 
-### How to Run
+### How to Build and Run
 
-- Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
-- Download [GLFW](http://www.glfw.org/) and unzip into a relative directory named "glfw"
+- Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) and [Git](http://git-scm.com/downloads) if you don't already have them.
+- From the terminal/command prompt, run `git clone --recursive https://github.com/fogleman/Craft.git`
+    - You cannot download the ZIP; it will not work
 - Download [sqlite3](http://www.sqlite.org/download.html) and unzip into a relative directory named "sqlite"
 
 Then, run the following commands in your terminal.

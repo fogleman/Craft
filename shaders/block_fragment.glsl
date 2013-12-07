@@ -14,9 +14,9 @@ flat in float diffuse;
 
 out vec3 color;
 
-const vec3 light_color = vec3(0.6);
-const vec3 ambient = vec3(0.4);
 const vec3 fog_color = vec3(0.53, 0.81, 0.92);
+vec3 light_color = vec3(0.6);
+vec3 ambient = vec3(0.4);
 
 float lookup(sampler2D shadow_map, vec4 coord, vec2 offset, float bias) {
     float z = texture(shadow_map, coord.xy + offset / 4096).r;
@@ -31,6 +31,9 @@ vec2 random_offset(vec4 seed) {
 
 void main() {
     color = vec3(texture(sampler, fragment_uv));
+    if (color == vec3(1, 0, 1)) {
+        discard;
+    }
 
     float visibility = 1;
     if (camera_distance < 16) {
@@ -48,6 +51,11 @@ void main() {
     }
 
     vec3 light = (ambient + light_color * diffuse) * visibility;
+    if (color == vec3(1)) {
+        light_color = vec3(0.3);
+        ambient = vec3(0.7);
+    }
+
     color = min(color * light, vec3(1));
     color = mix(color, fog_color, fog_factor);
 }

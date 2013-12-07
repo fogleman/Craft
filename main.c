@@ -1,8 +1,4 @@
-#ifdef __APPLE__
-    #define GLFW_INCLUDE_GLCOREARB
-#else
-    #include <GL/glew.h>
-#endif
+#define GLFW_INCLUDE_GLCOREARB
 
 #include <GLFW/glfw3.h>
 #include <math.h>
@@ -14,7 +10,7 @@
 #include "noise.h"
 #include "util.h"
 
-#define FULLSCREEN 1
+#define FULLSCREEN 0
 #define VSYNC 1
 #define SHOW_FPS 0
 #define CHUNK_SIZE 32
@@ -44,6 +40,22 @@ typedef struct {
     GLuint normal_buffer;
     GLuint uv_buffer;
 } Chunk;
+
+int is_plant(int w) {
+    return w > 16;
+}
+
+int is_obstacle(int w) {
+    return w != 0 && w < 16;
+}
+
+int is_transparent(int w) {
+    return w == 0 || w == 10 || is_plant(w);
+}
+
+int is_destructable(int w) {
+    return w > 0 && w != 16;
+}
 
 void update_matrix_2d(float *matrix) {
     int width, height;
@@ -228,7 +240,7 @@ int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
     if (chunk) {
         Map *map = &chunk->map;
         MAP_FOR_EACH(map, e) {
-            if (e->w && e->x == nx && e->z == nz) {
+            if (is_obstacle(e->w) && e->x == nx && e->z == nz) {
                 result = MAX(result, e->y);
             }
         } END_MAP_FOR_EACH;
@@ -251,14 +263,15 @@ int _hit_test(
         int ny = roundf(y);
         int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
-            if (map_get(map, nx, ny, nz)) {
+            int hw = map_get(map, nx, ny, nz);
+            if (hw > 0) {
                 if (previous) {
                     *hx = px; *hy = py; *hz = pz;
                 }
                 else {
                     *hx = nx; *hy = ny; *hz = nz;
                 }
-                return 1;
+                return hw;
             }
             px = nx; py = ny; pz = nz;
         }
@@ -284,16 +297,16 @@ int hit_test(
             continue;
         }
         int hx, hy, hz;
-        if (_hit_test(&chunk->map, 8, previous,
-            x, y, z, vx, vy, vz, &hx, &hy, &hz))
-        {
+        int hw = _hit_test(&chunk->map, 8, previous,
+            x, y, z, vx, vy, vz, &hx, &hy, &hz);
+        if (hw > 0) {
             float d = sqrtf(
                 powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
                 best = d;
                 *bx = hx; *by = hy; *bz = hz;
+                result = hw;
             }
-            result = 1;
         }
     }
     return result;
@@ -319,24 +332,24 @@ int collide(
     float pz = *z - nz;
     float pad = 0.25;
     for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && map_get(map, nx - 1, ny - dy, nz)) {
+        if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
             *x = nx - pad;
         }
-        if (px > pad && map_get(map, nx + 1, ny - dy, nz)) {
+        if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {
             *x = nx + pad;
         }
-        if (py < -pad && map_get(map, nx, ny - dy - 1, nz)) {
+        if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {
             *y = ny - pad;
             result = 1;
         }
-        if (py > pad && map_get(map, nx, ny - dy + 1, nz)) {
+        if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {
             *y = ny + pad;
             result = 1;
         }
-        if (pz < -pad && map_get(map, nx, ny - dy, nz - 1)) {
+        if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {
             *z = nz - pad;
         }
-        if (pz > pad && map_get(map, nx, ny - dy, nz + 1)) {
+        if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
             *z = nz + pad;
         }
     }
@@ -380,6 +393,20 @@ void make_world(Map *map, int p, int q) {
             }
             for (int y = 0; y < h; y++) {
                 map_set(map, x, y, z, w);
+            }
+            if (w == 1) {
+                if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
+                    map_set(map, x, h, z, 17);
+                }
+                if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                    int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
+                    map_set(map, x, h, z, w);
+                }
+            }
+            for (int y = 64; y < 72; y++) {
+                if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75) {
+                    map_set(map, x, y, z, 16);
+                }
             }
         }
     }
@@ -445,12 +472,12 @@ void exposed_faces(
     Map *map, int x, int y, int z,
     int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
 {
-    *f1 = map_get(map, x - 1, y, z) == 0;
-    *f2 = map_get(map, x + 1, y, z) == 0;
-    *f3 = map_get(map, x, y + 1, z) == 0;
-    *f4 = map_get(map, x, y - 1, z) == 0 & y > 0;
-    *f5 = map_get(map, x, y, z + 1) == 0;
-    *f6 = map_get(map, x, y, z - 1) == 0;
+    *f1 = is_transparent(map_get(map, x - 1, y, z));
+    *f2 = is_transparent(map_get(map, x + 1, y, z));
+    *f3 = is_transparent(map_get(map, x, y + 1, z));
+    *f4 = is_transparent(map_get(map, x, y - 1, z)) && (y > 0);
+    *f5 = is_transparent(map_get(map, x, y, z + 1));
+    *f6 = is_transparent(map_get(map, x, y, z - 1));
 }
 
 void update_chunk(Chunk *chunk) {
@@ -470,6 +497,9 @@ void update_chunk(Chunk *chunk) {
         int f1, f2, f3, f4, f5, f6;
         exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
+        if (is_plant(e->w)) {
+            total = total ? 4 : 0;
+        }
         faces += total;
     } END_MAP_FOR_EACH;
 
@@ -485,15 +515,28 @@ void update_chunk(Chunk *chunk) {
         int f1, f2, f3, f4, f5, f6;
         exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
+        if (is_plant(e->w)) {
+            total = total ? 4 : 0;
+        }
         if (total == 0) {
             continue;
         }
-        make_cube(
-            position_data + position_offset,
-            normal_data + position_offset,
-            uv_data + uv_offset,
-            f1, f2, f3, f4, f5, f6,
-            e->x, e->y, e->z, 0.5, e->w);
+        if (is_plant(e->w)) {
+            float rotation = simplex3(e->x, e->y, e->z, 4, 0.5, 2) * 360;
+            make_plant(
+                position_data + position_offset,
+                normal_data + position_offset,
+                uv_data + uv_offset,
+                e->x, e->y, e->z, 0.5, e->w, rotation);
+        }
+        else {
+            make_cube(
+                position_data + position_offset,
+                normal_data + position_offset,
+                uv_data + uv_offset,
+                f1, f2, f3, f4, f5, f6,
+                e->x, e->y, e->z, 0.5, e->w);
+        }
         position_offset += total * 18;
         uv_offset += total * 12;
     } END_MAP_FOR_EACH;
@@ -658,11 +701,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_TAB) {
         flying = !flying;
     }
-    if (key >= '1' && key <= '8') {
+    if (key >= '1' && key <= '9') {
         block_type = key - '1' + 1;
     }
     if (key == 'E') {
-        block_type = block_type % 8 + 1;
+        block_type = block_type % 10 + 1;
     }
 }
 
@@ -868,21 +911,19 @@ int main(int argc, char **argv) {
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;
-            if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
-                &hx, &hy, &hz))
-            {
-                if (hy > 0) {
-                    set_block(chunks, chunk_count, hx, hy, hz, 0);
-                }
+            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
+                &hx, &hy, &hz);
+            if (hy > 0 && is_destructable(hw)) {
+                set_block(chunks, chunk_count, hx, hy, hz, 0);
             }
         }
 
         if (right_click) {
             right_click = 0;
             int hx, hy, hz;
-            if (hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
-                &hx, &hy, &hz))
-            {
+            int hw = hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
+                &hx, &hy, &hz);
+            if (is_obstacle(hw)) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
                     set_block(chunks, chunk_count, hx, hy, hz, block_type);
                 }
@@ -996,7 +1037,8 @@ int main(int argc, char **argv) {
 
         // render focused block wireframe
         int hx, hy, hz;
-        if (hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz)) {
+        int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
+        if (is_obstacle(hw)) {
             glUseProgram(line_program);
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);

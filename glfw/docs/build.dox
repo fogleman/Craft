@@ -1,0 +1,211 @@
+/*!
+
+@page build Building programs using GLFW
+
+@tableofcontents
+
+This is about compiling and linking programs that use GLFW.  For information on
+how to *write* such programs, start with the [introductory tutorial](@ref quick).
+
+
+@section build_include Including the GLFW header file
+
+In the files of your program where you use OpenGL or GLFW, you should include
+the GLFW 3 header file, i.e.:
+
+@code
+#include <GLFW/glfw3.h>
+@endcode
+
+This defines all the constants, types and function prototypes of the GLFW API.
+It also includes the chosen client API header files (by default OpenGL), and
+defines all the constants and types necessary for those headers to work on that
+platform.
+
+For example, under Windows you are normally required to include `windows.h`
+before including `GL/gl.h`.  This would make your source file tied to Windows
+and pollute your code's namespace with the whole Win32 API.
+
+Instead, the GLFW header takes care of this for you, not by including
+`windows.h`, but rather by itself duplicating only the necessary parts of it.
+It does this only where needed, so if `windows.h` *is* included, the GLFW header
+does not try to redefine those symbols.
+
+In other words:
+
+ - Do *not* include the OpenGL headers yourself, as GLFW does this for you
+ - Do *not* include `windows.h` or other platform-specific headers unless you
+   plan on using those APIs directly
+ - If you *do* need to include such headers, do it *before* including
+   the GLFW one and it will detect this
+
+If you are using an OpenGL extension loading library such as
+[GLEW](http://glew.sourceforge.net/), the GLEW header should also be included
+*before* the GLFW one.  The GLEW header defines macros that disable any OpenGL
+header that the GLFW header includes and GLEW will work as expected.
+
+
+@subsection build_macros GLFW header option macros
+
+These macros may be defined before the inclusion of the GLFW header and affect
+how that header behaves.
+
+`GLFW_INCLUDE_GLCOREARB` makes the header include the modern `GL/glcorearb.h`
+header (`OpenGL/gl3.h` on OS X) instead of the regular OpenGL header.
+
+`GLFW_INCLUDE_ES1` makes the header include the OpenGL ES 1.x `GLES/gl.h` header
+instead of the regular OpenGL header.
+
+`GLFW_INCLUDE_ES2` makes the header include the OpenGL ES 2.0 `GLES2/gl2.h`
+header instead of the regular OpenGL header.
+
+`GLFW_INCLUDE_ES3` makes the header include the OpenGL ES 3.0 `GLES3/gl3.h`
+header instead of the regular OpenGL header.
+
+`GLFW_INCLUDE_NONE` makes the header not include any client API header.
+
+`GLFW_INCLUDE_GLU` makes the header include the GLU header *in addition to* the
+OpenGL header.  This should only be used with the default `GL/gl.h` header
+(`OpenGL/gl.h` on OS X), i.e. if you are not using any of the above macros.
+
+`GLFW_DLL` is necessary when using the GLFW DLL on Windows, in order to explain
+to the compiler that the GLFW functions will be coming from another executable.
+It has no function on other platforms.
+
+
+@section build_link Link with the right libraries
+
+@subsection build_link_win32 With MinGW or Visual C++ on Windows
+
+The static version of the GLFW library is named `glfw3`.  When using this
+version, it is also necessary to link with some libraries that GLFW uses.
+
+When linking a program under Windows that uses the static version of GLFW, you
+must link with `opengl32`.  If you are using GLU, you must also link with
+`glu32`.
+
+The link library for the GLFW DLL is named `glfw3dll`.  When compiling a program
+that uses the DLL version of GLFW, you need to define the `GLFW_DLL` macro
+*before* any inclusion of the GLFW header.  This can be done either with
+a compiler switch or by defining it in your source code.
+
+A program using the GLFW DLL does not need to link against any of its
+dependencies, but you still have to link against `opengl32` if your program uses
+OpenGL and `glu32` if it uses GLU.
+
+
+@subsection build_link_cmake_source With CMake and GLFW source
+
+You can use the GLFW source tree directly from a project that uses CMake.  This
+way, GLFW will be built along with your application as needed.
+
+Firstly, add the root directory of the GLFW source tree to your project.  This
+will add the `glfw` target and the necessary cache variables to your project.
+
+    add_subdirectory(path/to/glfw)
+
+To be able to include the GLFW header from your code, you need to tell the
+compiler where to find it.
+
+    include_directories(path/to/glfw/include)
+
+Once GLFW has been added to the project, the `GLFW_LIBRARIES` cache variable
+contains all link-time dependencies of GLFW as it is currently configured.  To
+link against GLFW, link against them and the `glfw` target.
+
+    target_link_libraries(myapp glfw ${GLFW_LIBRARIES})
+
+Note that `GLFW_LIBRARIES` does not include GLU, as GLFW does not use it.  If
+your application needs GLU, you can add it to the list of dependencies with the
+`OPENGL_glu_LIBRARY` cache variable, which is implicitly created when the GLFW
+CMake files look for OpenGL.
+
+    target_link_libraries(myapp glfw ${OPENGL_glu_LIBRARY} ${GLFW_LIBRARIES})
+
+
+@subsection build_link_cmake_pkgconfig With CMake on Unix and installed GLFW binaries
+
+CMake can import settings from pkg-config, which GLFW supports.  When you
+installed GLFW, the pkg-config file `glfw3.pc` was installed along with it.
+
+First you need to find the PkgConfig package.  If this fails, you may need to
+install the pkg-config package for your distribution.
+
+    find_package(PkgConfig REQUIRED)
+
+This creates the CMake commands to find pkg-config packages.  Then you need to
+find the GLFW package.
+
+    pkg_search_module(GLFW REQUIRED glfw3)
+
+This creates the CMake variables you need to use GLFW.  To be able to include
+the GLFW header, you need to tell your compiler where it is.
+
+    include_directories(${GLFW_INCLUDE_DIRS})
+
+You also need to link against the correct libraries.  If you are using the
+shared library version of GLFW, use the `GLFW_LIBRARIES` variable.
+
+    target_link_libraries(simple ${GLFW_LIBRARIES})
+
+
+If you are using the static library version of GLFW, use the
+`GLFW_STATIC_LIBRARIES` variable instead.
+
+    target_link_libraries(simple ${GLFW_STATIC_LIBRARIES})
+
+
+@subsection build_link_pkgconfig With pkg-config on OS X or other Unix
+
+GLFW supports [pkg-config](http://www.freedesktop.org/wiki/Software/pkg-config/),
+and `glfw3.pc` file is generated when the GLFW library is built and installed
+along with it.  
+
+A typical compile and link command-line when using the static may look like this:
+
+    cc `pkg-config --cflags glfw3` -o myprog myprog.c `pkg-config --static --libs glfw3`
+
+If you are using the shared library, simply omit the `--static` flag.
+
+    cc `pkg-config --cflags glfw3` -o myprog myprog.c `pkg-config --libs glfw3`
+
+You can also use the `glfw3.pc` file without installing it first, by using the
+`PKG_CONFIG_PATH` environment variable.
+
+    env PKG_CONFIG_PATH=path/to/glfw/src cc `pkg-config --cflags glfw3` -o myprog myprog.c `pkg-config --static --libs glfw3`
+
+The dependencies do not include GLU, as GLFW does not need it.  On OS X, GLU is
+built into the OpenGL framework, so if you need GLU you don't need to do
+anything extra.  If you need GLU and are using Linux or BSD, you should add
+`-lGLU` to your link flags.
+
+See the manpage and other documentation for pkg-config and your compiler and
+linker for more information on how to link programs.
+
+
+@subsection build_link_xcode With Xcode on OS X
+
+If you are using the dynamic library version of GLFW, simply add it to the
+project dependencies.
+
+If you are using the static library version of GLFW, add it and the Cocoa,
+OpenGL and IOKit frameworks to the project as dependencies.
+
+
+@subsection build_link_osx With command-line on OS X
+
+If you do not wish to use pkg-config, you need to add the required frameworks
+and libraries to your command-line using the `-l` and `-framework` switches,
+i.e.:
+
+    cc -o myprog myprog.c -lglfw -framework Cocoa -framework OpenGL -framework IOKit
+
+Note that you do not add the `.framework` extension to a framework when adding
+it from the command-line.
+
+The OpenGL framework contains both the OpenGL and GLU APIs, so there is nothing
+special to do when using GLU.  Also note that even though your machine may have
+`libGL`-style OpenGL libraries, they are for use with the X Window System and
+will *not* work with the OS X native version of GLFW.
+
+*/

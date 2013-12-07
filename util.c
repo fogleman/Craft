@@ -1,7 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "png.h"
+#include "lodepng.h"
 #include "util.h"
 
 int rand_int(int n) {
@@ -261,6 +261,116 @@ void mat_ortho(
     matrix[15] = 1;
 }
 
+void make_plant(
+    float *vertex, float *normal, float *texture,
+    float x, float y, float z, float n, int w, float rotation)
+{
+    float *v = vertex;
+    float *d = normal;
+    float *t = texture;
+    float s = 0.0625;
+    float a = 0;
+    float b = s;
+    float du, dv;
+    w--;
+    du = (w % 16) * s;
+    dv = (w / 16 * 3) * s;
+    // left
+    *(v++) = x; *(v++) = y - n; *(v++) = z - n;
+    *(v++) = x; *(v++) = y + n; *(v++) = z + n;
+    *(v++) = x; *(v++) = y + n; *(v++) = z - n;
+    *(v++) = x; *(v++) = y - n; *(v++) = z - n;
+    *(v++) = x; *(v++) = y - n; *(v++) = z + n;
+    *(v++) = x; *(v++) = y + n; *(v++) = z + n;
+    *(d++) = -1; *(d++) = 0; *(d++) = 0;
+    *(d++) = -1; *(d++) = 0; *(d++) = 0;
+    *(d++) = -1; *(d++) = 0; *(d++) = 0;
+    *(d++) = -1; *(d++) = 0; *(d++) = 0;
+    *(d++) = -1; *(d++) = 0; *(d++) = 0;
+    *(d++) = -1; *(d++) = 0; *(d++) = 0;
+    *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = b + du; *(t++) = b + dv;
+    *(t++) = a + du; *(t++) = b + dv;
+    *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = b + du; *(t++) = a + dv;
+    *(t++) = b + du; *(t++) = b + dv;
+    // right
+    *(v++) = x; *(v++) = y - n; *(v++) = z - n;
+    *(v++) = x; *(v++) = y + n; *(v++) = z + n;
+    *(v++) = x; *(v++) = y - n; *(v++) = z + n;
+    *(v++) = x; *(v++) = y - n; *(v++) = z - n;
+    *(v++) = x; *(v++) = y + n; *(v++) = z - n;
+    *(v++) = x; *(v++) = y + n; *(v++) = z + n;
+    *(d++) = 1; *(d++) = 0; *(d++) = 0;
+    *(d++) = 1; *(d++) = 0; *(d++) = 0;
+    *(d++) = 1; *(d++) = 0; *(d++) = 0;
+    *(d++) = 1; *(d++) = 0; *(d++) = 0;
+    *(d++) = 1; *(d++) = 0; *(d++) = 0;
+    *(d++) = 1; *(d++) = 0; *(d++) = 0;
+    *(t++) = b + du; *(t++) = a + dv;
+    *(t++) = a + du; *(t++) = b + dv;
+    *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = b + du; *(t++) = a + dv;
+    *(t++) = b + du; *(t++) = b + dv;
+    *(t++) = a + du; *(t++) = b + dv;
+    // front
+    *(v++) = x - n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
+    *(v++) = x - n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
+    *(v++) = x - n; *(v++) = y + n; *(v++) = z;
+    *(d++) = 0; *(d++) = 0; *(d++) = -1;
+    *(d++) = 0; *(d++) = 0; *(d++) = -1;
+    *(d++) = 0; *(d++) = 0; *(d++) = -1;
+    *(d++) = 0; *(d++) = 0; *(d++) = -1;
+    *(d++) = 0; *(d++) = 0; *(d++) = -1;
+    *(d++) = 0; *(d++) = 0; *(d++) = -1;
+    *(t++) = b + du; *(t++) = a + dv;
+    *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = a + du; *(t++) = b + dv;
+    *(t++) = b + du; *(t++) = a + dv;
+    *(t++) = a + du; *(t++) = b + dv;
+    *(t++) = b + du; *(t++) = b + dv;
+    // back
+    *(v++) = x - n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x - n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x - n; *(v++) = y + n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
+    *(d++) = 0; *(d++) = 0; *(d++) = 1;
+    *(d++) = 0; *(d++) = 0; *(d++) = 1;
+    *(d++) = 0; *(d++) = 0; *(d++) = 1;
+    *(d++) = 0; *(d++) = 0; *(d++) = 1;
+    *(d++) = 0; *(d++) = 0; *(d++) = 1;
+    *(d++) = 0; *(d++) = 0; *(d++) = 1;
+    *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = b + du; *(t++) = b + dv;
+    *(t++) = b + du; *(t++) = a + dv;
+    *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = a + du; *(t++) = b + dv;
+    *(t++) = b + du; *(t++) = b + dv;
+    // rotate the plant
+    float mat[16];
+    float vec[4] = {0};
+    mat_rotate(mat, 0, 1, 0, RADIANS(rotation));
+    for (int i = 0; i < 24; i++) {
+        // vertex
+        v = vertex + i * 3;
+        vec[0] = *(v++) - x; vec[1] = *(v++) - y; vec[2] = *(v++) - z;
+        mat_vec_multiply(vec, mat, vec);
+        v = vertex + i * 3;
+        *(v++) = vec[0] + x; *(v++) = vec[1] + y; *(v++) = vec[2] + z;
+        // normal
+        d = normal + i * 3;
+        vec[0] = *(d++); vec[1] = *(d++); vec[2] = *(d++);
+        mat_vec_multiply(vec, mat, vec);
+        d = normal + i * 3;
+        *(d++) = vec[0]; *(d++) = vec[1]; *(d++) = vec[2];
+    }
+}
+
 void make_cube(
     float *vertex, float *normal, float *texture,
     int left, int right, int top, int bottom, int front, int back,
@@ -269,13 +379,16 @@ void make_cube(
     float *v = vertex;
     float *d = normal;
     float *t = texture;
-    float s = 0.125;
+    float s = 0.0625;
     float a = 0;
     float b = s;
     float du, dv;
+    float ou, ov;
     w--;
+    ou = (w % 16) * s;
+    ov = (w / 16 * 3) * s;
     if (left) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
@@ -296,7 +409,7 @@ void make_cube(
         *(t++) = b + du; *(t++) = b + dv;
     }
     if (right) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
@@ -317,7 +430,7 @@ void make_cube(
         *(t++) = a + du; *(t++) = b + dv;
     }
     if (top) {
-        du = w * s; dv = s + s;
+        du = ou; dv = ov + s + s;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
@@ -338,7 +451,7 @@ void make_cube(
         *(t++) = b + du; *(t++) = b + dv;
     }
     if (bottom) {
-        du = w * s; dv = 0;
+        du = ou; dv = ov + 0;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
@@ -359,7 +472,7 @@ void make_cube(
         *(t++) = a + du; *(t++) = b + dv;
     }
     if (front) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
@@ -380,7 +493,7 @@ void make_cube(
         *(t++) = b + du; *(t++) = b + dv;
     }
     if (back) {
-        du = w * s; dv = s;
+        du = ou; dv = ov + s;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
@@ -457,132 +570,14 @@ void make_cube_wireframe(float *vertex, float x, float y, float z, float n) {
 }
 
 void load_png_texture(const char *file_name) {
-    png_byte header[8];
-
-    FILE *fp = fopen(file_name, "rb");
-    if (fp == 0) {
-        perror(file_name);
-        return;
+    unsigned error;
+    unsigned char *image;
+    unsigned width, height;
+    error = lodepng_decode32_file(&image, &width, &height, file_name);
+    if (error) {
+        fprintf(stderr, "error %u: %s\n", error, lodepng_error_text(error));
     }
-
-    // read the header
-    fread(header, 1, 8, fp);
-
-    if (png_sig_cmp(header, 0, 8)) {
-        fprintf(stderr, "error: %s is not a PNG.\n", file_name);
-        fclose(fp);
-        return;
-    }
-
-    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    if (!png_ptr) {
-        fprintf(stderr, "error: png_create_read_struct returned 0.\n");
-        fclose(fp);
-        return;
-    }
-
-    // create png info struct
-    png_infop info_ptr = png_create_info_struct(png_ptr);
-    if (!info_ptr) {
-        fprintf(stderr, "error: png_create_info_struct returned 0.\n");
-        png_destroy_read_struct(&png_ptr, NULL, NULL);
-        fclose(fp);
-        return;
-    }
-
-    // create png info struct
-    png_infop end_info = png_create_info_struct(png_ptr);
-    if (!end_info) {
-        fprintf(stderr, "error: png_create_info_struct returned 0.\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-        fclose(fp);
-        return;
-    }
-
-    // the code in this if statement gets called if libpng encounters an error
-    if (setjmp(png_jmpbuf(png_ptr))) {
-        fprintf(stderr, "error from libpng\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        fclose(fp);
-        return;
-    }
-
-    // init png reading
-    png_init_io(png_ptr, fp);
-
-    // let libpng know you already read the first 8 bytes
-    png_set_sig_bytes(png_ptr, 8);
-
-    // read all the info up to the image data
-    png_read_info(png_ptr, info_ptr);
-
-    // variables to pass to get info
-    int bit_depth, color_type;
-    png_uint_32 width, height;
-
-    // get info about png
-    png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
-
-    if (bit_depth != 8) {
-        fprintf(stderr, "%s: Unsupported bit depth %d.  Must be 8.\n", file_name, bit_depth);
-        return;
-    }
-
-    GLint format;
-    switch(color_type) {
-        case PNG_COLOR_TYPE_RGB:
-            format = GL_RGB;
-            break;
-        case PNG_COLOR_TYPE_RGB_ALPHA:
-            format = GL_RGBA;
-            break;
-        default:
-            fprintf(stderr, "%s: Unknown libpng color type %d.\n", file_name, color_type);
-            return;
-    }
-
-    // Update the png info struct.
-    png_read_update_info(png_ptr, info_ptr);
-
-    // Row size in bytes.
-    int rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-
-    // glTexImage2d requires rows to be 4-byte aligned
-    rowbytes += 3 - ((rowbytes - 1) % 4);
-
-    // Allocate the image_data as a big block, to be given to opengl
-    png_byte * image_data = (png_byte *)malloc(rowbytes * height * sizeof(png_byte) + 15);
-    if (image_data == NULL) {
-        fprintf(stderr, "error: could not allocate memory for PNG image data\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        fclose(fp);
-        return;
-    }
-
-    // row_pointers is for pointing to image_data for reading the png with libpng
-    png_byte ** row_pointers = (png_byte **)malloc(height * sizeof(png_byte *));
-    if (row_pointers == NULL) {
-        fprintf(stderr, "error: could not allocate memory for PNG row pointers\n");
-        png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-        free(image_data);
-        fclose(fp);
-        return;
-    }
-
-    // set the individual row_pointers to point at the correct offsets of image_data
-    for (unsigned int i = 0; i < height; i++) {
-        row_pointers[height - 1 - i] = image_data + i * rowbytes;
-    }
-
-    // read the png into image_data through row_pointers
-    png_read_image(png_ptr, row_pointers);
-
-    // submit the texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image_data);
-
-    // clean up
-    png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
-    free(image_data);
-    free(row_pointers);
-    fclose(fp);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, image);
+    free(image);
 }

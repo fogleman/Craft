@@ -4,8 +4,8 @@ from sqlalchemy.orm import sessionmaker
 import SocketServer
 
 HOST = '0.0.0.0'
-PORT = 4000
-RECV_SIZE = 1024
+PORT = 4080
+BUFFER_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
 
 YOU = 'U'
@@ -36,7 +36,7 @@ class Handler(SocketServer.BaseRequestHandler):
         model.on_connect(self)
         buf = []
         while True:
-            data = self.request.recv(RECV_SIZE)
+            data = self.request.recv(BUFFER_SIZE)
             if not data:
                 break
             buf.extend(data.replace('\r', ''))

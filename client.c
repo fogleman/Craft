@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-#define BUFFER_SIZE 8192
+#define BUFFER_SIZE 1024
 
 static int client_enabled = 0;
 static int sd;

@@ -738,7 +738,7 @@ int main(int argc, char **argv) {
     rand();
     if (argc == 2 || argc == 3) {
         char *hostname = argv[1];
-        int port = 4000;
+        int port = DEFAULT_PORT;
         if (argc == 3) {
             port = atoi(argv[2]);
         }

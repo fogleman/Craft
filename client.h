@@ -1,3 +1,5 @@
+#define DEFAULT_PORT 4080
+
 void client_enable();
 void client_disable();
 int get_client_enabled();

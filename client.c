@@ -69,7 +69,7 @@ void client_position(float x, float y, float z, float rx, float ry) {
     }
     px = x; py = y; pz = z; prx = rx; pry = ry;
     char buffer[1024];
-    snprintf(buffer, 1024, "P,%f,%f,%f,%f,%f\n", x, y, z, rx, ry);
+    snprintf(buffer, 1024, "P,%.2f,%.2f,%.2f,%.2f,%.2f\n", x, y, z, rx, ry);
     client_send(buffer);
 }
 

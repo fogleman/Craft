@@ -540,7 +540,6 @@ void update_chunk(Chunk *chunk) {
     free(normal_data);
     free(uv_data);
 
-    chunk->dirty = 0;
     chunk->faces = faces;
     chunk->position_buffer = position_buffer;
     chunk->normal_buffer = normal_buffer;
@@ -551,11 +550,11 @@ void make_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
-    chunk->dirty = 1;
     Map *map = &chunk->map;
     map_alloc(map);
     make_world(map, p, q);
     db_update_chunk(map, p, q);
+    update_chunk(chunk);
     char buffer[1024];
     snprintf(buffer, 1024, "C,%d,%d\n", p, q);
     client_send(buffer);
@@ -602,7 +601,6 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
             chunk->map = other->map;
             chunk->p = other->p;
             chunk->q = other->q;
-            chunk->dirty = other->dirty;
             chunk->faces = other->faces;
             chunk->position_buffer = other->position_buffer;
             chunk->normal_buffer = other->normal_buffer;
@@ -865,28 +863,6 @@ int main(int argc, char **argv) {
             glfwGetCursorPos(window, &px, &py);
         }
 
-        if (left_click) {
-            left_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
-                &hx, &hy, &hz);
-            if (hy > 0 && is_destructable(hw)) {
-                set_block(chunks, chunk_count, hx, hy, hz, 0, 1);
-            }
-        }
-
-        if (right_click) {
-            right_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
-                &hx, &hy, &hz);
-            if (is_obstacle(hw)) {
-                if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(chunks, chunk_count, hx, hy, hz, block_type, 1);
-                }
-            }
-        }
-
         int sz = 0;
         int sx = 0;
         ortho = glfwGetKey(window, 'F');
@@ -941,6 +917,33 @@ int main(int argc, char **argv) {
             }
         }
 
+        for (int i = 0; i < chunk_count; i++) {
+            Chunk *chunk = chunks + i;
+            chunk->dirty = 0;
+        }
+
+        if (left_click) {
+            left_click = 0;
+            int hx, hy, hz;
+            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
+                &hx, &hy, &hz);
+            if (hy > 0 && is_destructable(hw)) {
+                set_block(chunks, chunk_count, hx, hy, hz, 0, 1);
+            }
+        }
+
+        if (right_click) {
+            right_click = 0;
+            int hx, hy, hz;
+            int hw = hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
+                &hx, &hy, &hz);
+            if (is_obstacle(hw)) {
+                if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
+                    set_block(chunks, chunk_count, hx, hy, hz, block_type, 1);
+                }
+            }
+        }
+
         // TODO: P,x,y,z
         char buffer[1024];
         while (client_recv(buffer)) {
@@ -967,6 +970,13 @@ int main(int argc, char **argv) {
             }
         }
 
+        for (int i = 0; i < chunk_count; i++) {
+            Chunk *chunk = chunks + i;
+            if (chunk->dirty) {
+                update_chunk(chunk);
+            }
+        }
+
         int p = floorf(roundf(x) / CHUNK_SIZE);
         int q = floorf(roundf(z) / CHUNK_SIZE);
         ensure_chunks(chunks, &chunk_count, p, q, 0);
@@ -988,9 +998,6 @@ int main(int argc, char **argv) {
             }
             if (!chunk_visible(chunk, matrix)) {
                 continue;
-            }
-            if (chunk->dirty) {
-                update_chunk(chunk);
             }
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);
         }

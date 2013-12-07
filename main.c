@@ -630,7 +630,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
 
 void _set_block(
     Chunk *chunks, int chunk_count,
-    int p, int q, int x, int y, int z, int w)
+    int p, int q, int x, int y, int z, int w, int post)
 {
     Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
     if (chunk) {
@@ -639,6 +639,11 @@ void _set_block(
         chunk->dirty = 1;
     }
     db_insert_block(p, q, x, y, z, w);
+    if (post) {
+        char buffer[1024];
+        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
+        client_send(buffer);
+    }
 }
 
 void set_block(
@@ -647,7 +652,7 @@ void set_block(
 {
     int p = floorf((float)x / CHUNK_SIZE);
     int q = floorf((float)z / CHUNK_SIZE);
-    _set_block(chunks, chunk_count, p, q, x, y, z, w);
+    _set_block(chunks, chunk_count, p, q, x, y, z, w, post);
     w = w ? -1 : 0;
     int p0 = x == p * CHUNK_SIZE;
     int q0 = z == q * CHUNK_SIZE;
@@ -660,13 +665,8 @@ void set_block(
             if (dp > 0 && !p1) continue;
             if (dq < 0 && !q0) continue;
             if (dq > 0 && !q1) continue;
-            _set_block(chunks, chunk_count, p + dp, q + dq, x, y, z, w);
+            _set_block(chunks, chunk_count, p + dp, q + dq, x, y, z, w, post);
         }
-    }
-    if (post) {
-        char buffer[1024];
-        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
-        client_send(buffer);
     }
 }
 
@@ -960,6 +960,9 @@ int main(int argc, char **argv) {
                     &bx, &by, &bz, &bw) == 4)
                 {
                     set_block(chunks, chunk_count, bx, by, bz, bw, 0);
+                    if ((int)roundf(x) == bx && (int)roundf(z) == bz) {
+                        y = highest_block(chunks, chunk_count, x, z) + 2;
+                    }
                 }
             }
         }

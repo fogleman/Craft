@@ -28,6 +28,9 @@ int get_client_enabled() {
 }
 
 int client_sendall(int sd, char *data, int length) {
+    if (!client_enabled) {
+        return 0;
+    }
     int count = 0;
     while (count < length) {
         int n = send(sd, data + count, length, 0);
@@ -51,6 +54,9 @@ void client_send(char *data) {
 }
 
 void client_position(float x, float y, float z, float rx, float ry) {
+    if (!client_enabled) {
+        return;
+    }
     static float px, py, pz, prx, pry = 0;
     float distance =
         (px - x) * (px - x) +
@@ -68,12 +74,18 @@ void client_position(float x, float y, float z, float rx, float ry) {
 }
 
 void client_chunk(int p, int q) {
+    if (!client_enabled) {
+        return;
+    }
     char buffer[1024];
     snprintf(buffer, 1024, "C,%d,%d\n", p, q);
     client_send(buffer);
 }
 
 void client_block(int p, int q, int x, int y, int z, int w) {
+    if (!client_enabled) {
+        return;
+    }
     char buffer[1024];
     snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
     client_send(buffer);

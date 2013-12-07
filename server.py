@@ -86,6 +86,7 @@ class Model(object):
     def on_disconnect(self, client):
         self.clients.remove(client)
     def on_chunk(self, client, p, q):
+        p, q = map(int, (p, q))
         with session() as sql:
             query = (
                 'select x, y, z, w from block where w >= 0 and '
@@ -95,6 +96,7 @@ class Model(object):
             for x, y, z, w in rows:
                 client.send(BLOCK, p, q, x, y, z, w)
     def on_block(self, client, p, q, x, y, z, w):
+        p, q, x, y, z, w = map(int, (p, q, x, y, z, w))
         with session() as sql:
             query = (
                 'insert or replace into block (p, q, x, y, z, w) '
@@ -104,6 +106,7 @@ class Model(object):
         if w >= 0:
             self.send_block(client, p, q, x, y, z, w)
     def on_position(self, client, x, y, z):
+        x, y, z = map(float, (x, y, z))
         client.position = (x, y, z)
         self.send_position(client)
     def send_positions(self, client):

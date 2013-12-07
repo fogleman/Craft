@@ -9,12 +9,13 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-#define BUFFER_SIZE 1024
+#define QUEUE_SIZE 65536
+#define BUFFER_SIZE 4096
 
 static int client_enabled = 0;
 static int sd;
-static char send_buffer[BUFFER_SIZE] = {0};
-static char recv_buffer[BUFFER_SIZE] = {0};
+static char send_buffer[QUEUE_SIZE] = {0};
+static char recv_buffer[QUEUE_SIZE] = {0};
 // static pthread_t send_thread;
 static pthread_t recv_thread;
 static pthread_mutex_t mutex;
@@ -117,13 +118,23 @@ int client_recv(char *data) {
 void *recv_worker(void *arg) {
     while (1) {
         char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE, 0) == -1) {
+        if (recv(sd, data, BUFFER_SIZE - 1, 0) == -1) {
             perror("recv");
             exit(1);
         }
-        pthread_mutex_lock(&mutex);
-        strcat(recv_buffer, data);
-        pthread_mutex_unlock(&mutex);
+        while (1) {
+            int done = 0;
+            pthread_mutex_lock(&mutex);
+            if (strlen(recv_buffer) + strlen(data) < QUEUE_SIZE) {
+                strcat(recv_buffer, data);
+                done = 1;
+            }
+            pthread_mutex_unlock(&mutex);
+            if (done) {
+                break;
+            }
+            sleep(0);
+        }
     }
     return NULL;
 }

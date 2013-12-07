@@ -83,7 +83,10 @@ class Model(object):
         self.clients.remove(client)
     def on_chunk(self, client, p, q):
         with session() as sql:
-            query = 'select x, y, z, w from block where p = :p and q = :q;'
+            query = (
+                'select x, y, z, w from block where w >= 0 and '
+                'p = :p and q = :q;'
+            )
             rows = sql.execute(query, dict(p=p, q=q))
             for x, y, z, w in rows:
                 client.send(BLOCK, p, q, x, y, z, w)

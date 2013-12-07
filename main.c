@@ -34,6 +34,7 @@ typedef struct {
     int p;
     int q;
     int faces;
+    int dirty;
     GLuint position_buffer;
     GLuint normal_buffer;
     GLuint uv_buffer;
@@ -539,6 +540,7 @@ void update_chunk(Chunk *chunk) {
     free(normal_data);
     free(uv_data);
 
+    chunk->dirty = 0;
     chunk->faces = faces;
     chunk->position_buffer = position_buffer;
     chunk->normal_buffer = normal_buffer;
@@ -546,17 +548,17 @@ void update_chunk(Chunk *chunk) {
 }
 
 void make_chunk(Chunk *chunk, int p, int q) {
-    char buffer[1024];
-    snprintf(buffer, 1024, "C,%d,%d\n", p, q);
-    client_send(buffer);
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
+    chunk->dirty = 1;
     Map *map = &chunk->map;
     map_alloc(map);
     make_world(map, p, q);
     db_update_chunk(map, p, q);
-    update_chunk(chunk);
+    char buffer[1024];
+    snprintf(buffer, 1024, "C,%d,%d\n", p, q);
+    client_send(buffer);
 }
 
 void draw_chunk(
@@ -600,6 +602,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
             chunk->map = other->map;
             chunk->p = other->p;
             chunk->q = other->q;
+            chunk->dirty = other->dirty;
             chunk->faces = other->faces;
             chunk->position_buffer = other->position_buffer;
             chunk->normal_buffer = other->normal_buffer;
@@ -633,7 +636,7 @@ void _set_block(
     if (chunk) {
         Map *map = &chunk->map;
         map_set(map, x, y, z, w);
-        update_chunk(chunk);
+        chunk->dirty = 1;
     }
     db_insert_block(p, q, x, y, z, w);
 }
@@ -644,11 +647,6 @@ void set_block(
 {
     int p = floorf((float)x / CHUNK_SIZE);
     int q = floorf((float)z / CHUNK_SIZE);
-    if (post) {
-        char buffer[1024];
-        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
-        client_send(buffer);
-    }
     _set_block(chunks, chunk_count, p, q, x, y, z, w);
     w = w ? -1 : 0;
     int p0 = x == p * CHUNK_SIZE;
@@ -664,6 +662,11 @@ void set_block(
             if (dq > 0 && !q1) continue;
             _set_block(chunks, chunk_count, p + dp, q + dq, x, y, z, w);
         }
+    }
+    if (post) {
+        char buffer[1024];
+        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
+        client_send(buffer);
     }
 }
 
@@ -942,16 +945,22 @@ int main(int argc, char **argv) {
         char buffer[1024];
         while (client_recv(buffer)) {
             if (buffer[0] == 'U') {
-                sscanf(buffer, "U,%*d,%f,%f,%f", &x, &y, &z);
-                ensure_chunks(chunks, &chunk_count,
-                    floorf(roundf(x) / CHUNK_SIZE),
-                    floorf(roundf(z) / CHUNK_SIZE), 1);
-                y = highest_block(chunks, chunk_count, x, z) + 2;
+                float ux, uy, uz;
+                if (sscanf(buffer, "U,%*d,%f,%f,%f", &ux, &uy, &uz) == 3) {
+                    x = ux; y = uy; z = uz;
+                    ensure_chunks(chunks, &chunk_count,
+                        floorf(roundf(x) / CHUNK_SIZE),
+                        floorf(roundf(z) / CHUNK_SIZE), 1);
+                    y = highest_block(chunks, chunk_count, x, z) + 2;
+                }
             }
             if (buffer[0] == 'B') {
                 int bx, by, bz, bw;
-                sscanf(buffer, "B,%*d,%*d,%d,%d,%d,%d", &bx, &by, &bz, &bw);
-                set_block(chunks, chunk_count, bx, by, bz, bw, 0);
+                if (sscanf(buffer, "B,%*d,%*d,%d,%d,%d,%d",
+                    &bx, &by, &bz, &bw) == 4)
+                {
+                    set_block(chunks, chunk_count, bx, by, bz, bw, 0);
+                }
             }
         }
 
@@ -976,6 +985,9 @@ int main(int argc, char **argv) {
             }
             if (!chunk_visible(chunk, matrix)) {
                 continue;
+            }
+            if (chunk->dirty) {
+                update_chunk(chunk);
             }
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);
         }

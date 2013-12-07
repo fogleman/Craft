@@ -23,6 +23,23 @@ Then, run the following commands in your terminal.
     make
     ./craft
 
+### Multiplayer
+
+Multiplayer support is being developed on the "socket" branch. You can run your own server or connect to mine.
+
+#### Client
+
+    git checkout socket
+    cmake .
+    make
+    ./craft 199.115.118.225 16018
+
+#### Server
+
+    git checkout socket
+    pip install sqlalchemy
+    python server.py [HOST [PORT]]
+
 ### Screenshot
 
 ![](https://raw.github.com/fogleman/Craft/master/screenshot.png)

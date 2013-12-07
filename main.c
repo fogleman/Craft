@@ -601,6 +601,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
             chunk->map = other->map;
             chunk->p = other->p;
             chunk->q = other->q;
+            chunk->dirty = other->dirty;
             chunk->faces = other->faces;
             chunk->position_buffer = other->position_buffer;
             chunk->normal_buffer = other->normal_buffer;

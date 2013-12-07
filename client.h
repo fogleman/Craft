@@ -11,6 +11,7 @@ void client_start();
 void client_stop();
 void client_send(char *data);
 int client_recv(char *data);
+void client_position(float x, float y, float z, float rx, float ry);
 void client_chunk(int p, int q);
 void client_block(int p, int q, int x, int y, int z, int w);
 

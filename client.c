@@ -50,6 +50,23 @@ void client_send(char *data) {
     }
 }
 
+void client_position(float x, float y, float z, float rx, float ry) {
+    static float px, py, pz, prx, pry = 0;
+    float distance =
+        (px - x) * (px - x) +
+        (py - y) * (py - y) +
+        (pz - z) * (pz - z) +
+        (prx - rx) * (prx - rx) +
+        (pry - ry) * (pry - ry);
+    if (distance < 0.1) {
+        return;
+    }
+    px = x; py = y; pz = z; prx = rx; pry = ry;
+    char buffer[1024];
+    snprintf(buffer, 1024, "P,%f,%f,%f,%f,%f\n", x, y, z, rx, ry);
+    client_send(buffer);
+}
+
 void client_chunk(int p, int q) {
     char buffer[1024];
     snprintf(buffer, 1024, "C,%d,%d\n", p, q);

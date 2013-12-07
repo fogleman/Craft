@@ -69,9 +69,10 @@ class Model(object):
             query = 'select x, y, z from block order by random() limit 1;'
             rows = list(sql.execute(query))
             if rows:
-                client.position = rows[0]
+                x, y, z = rows[0]
+                client.position = (x, y, z, 0, 0)
             else:
-                client.position = (0, 0, 0)
+                client.position = (0, 0, 0, 0, 0)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
@@ -105,9 +106,9 @@ class Model(object):
             sql.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
         if w >= 0:
             self.send_block(client, p, q, x, y, z, w)
-    def on_position(self, client, x, y, z):
-        x, y, z = map(float, (x, y, z))
-        client.position = (x, y, z)
+    def on_position(self, client, x, y, z, rx, ry):
+        x, y, z = map(float, (x, y, z, rx, ry))
+        client.position = (x, y, z, rx, ry)
         self.send_position(client)
     def send_positions(self, client):
         for other in self.clients:

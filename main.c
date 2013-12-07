@@ -16,6 +16,7 @@
 #define SHOW_FPS 0
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
+#define MAX_PLAYERS 128
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 8
@@ -39,6 +40,13 @@ typedef struct {
     GLuint normal_buffer;
     GLuint uv_buffer;
 } Chunk;
+
+typedef struct {
+    int id;
+    GLuint position_buffer;
+    GLuint normal_buffer;
+    GLuint uv_buffer;
+} Player;
 
 int is_plant(int w) {
     return w > 16;
@@ -173,6 +181,76 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         *vy = 0;
         *vz = sinf(rx + strafe);
     }
+}
+
+void make_single_cube(
+    GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
+    float x, float y, float z, float n, int w)
+{
+    int faces = 6;
+    glDeleteBuffers(1, position_buffer);
+    glDeleteBuffers(1, normal_buffer);
+    glDeleteBuffers(1, uv_buffer);
+    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    make_cube(
+        position_data,
+        normal_data,
+        uv_data,
+        1, 1, 1, 1, 1, 1,
+        x, y, z, n, w);
+    *position_buffer = make_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 18,
+        position_data
+    );
+    *normal_buffer = make_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 18,
+        normal_data
+    );
+    *uv_buffer = make_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 12,
+        uv_data
+    );
+    free(position_data);
+    free(normal_data);
+    free(uv_data);
+}
+
+Player *find_player(Player *players, int player_count, int id) {
+    for (int i = 0; i < player_count; i++) {
+        Player *player = players + i;
+        if (player->id == id) {
+            return player;
+        }
+    }
+    return 0;
+}
+
+void update_player(Player *player,
+    float x, float y, float z, float rx, float ry)
+{
+    make_single_cube(
+        &player->position_buffer, &player->normal_buffer, &player->uv_buffer,
+        x, y, z, 0.4, 16);
+}
+
+void delete_player(Player *players, int *player_count, int id) {
+    Player *player = find_player(players, *player_count, id);
+    if (!player) {
+        return;
+    }
+    int count = *player_count;
+    Player *other = players + (count - 1);
+    player->id = other->id;
+    player->position_buffer = other->position_buffer;
+    player->normal_buffer = other->normal_buffer;
+    player->uv_buffer = other->uv_buffer;
+    count--;
+    *player_count = count;
 }
 
 Chunk *find_chunk(Chunk *chunks, int chunk_count, int p, int q) {
@@ -392,62 +470,6 @@ void make_world(Map *map, int p, int q) {
     }
 }
 
-void make_single_cube(
-    GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer, int w)
-{
-    int faces = 6;
-    glDeleteBuffers(1, position_buffer);
-    glDeleteBuffers(1, normal_buffer);
-    glDeleteBuffers(1, uv_buffer);
-    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
-    make_cube(
-        position_data,
-        normal_data,
-        uv_data,
-        1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0.5, w);
-    *position_buffer = make_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        position_data
-    );
-    *normal_buffer = make_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        normal_data
-    );
-    *uv_buffer = make_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 12,
-        uv_data
-    );
-    free(position_data);
-    free(normal_data);
-    free(uv_data);
-}
-
-void draw_single_cube(
-    GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
-    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
-    glDisableVertexAttribArray(position_loc);
-    glDisableVertexAttribArray(normal_loc);
-    glDisableVertexAttribArray(uv_loc);
-}
-
 void exposed_faces(
     Map *map, int x, int y, int z,
     int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
@@ -575,6 +597,34 @@ void draw_chunk(
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(normal_loc);
     glDisableVertexAttribArray(uv_loc);
+}
+
+void draw_single_cube(
+    GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
+    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    glEnableVertexAttribArray(position_loc);
+    glEnableVertexAttribArray(normal_loc);
+    glEnableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
+    glDisableVertexAttribArray(position_loc);
+    glDisableVertexAttribArray(normal_loc);
+    glDisableVertexAttribArray(uv_loc);
+}
+
+void draw_player(
+    Player *player, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    draw_single_cube(
+        player->position_buffer, player->normal_buffer, player->uv_buffer,
+        position_loc, normal_loc, uv_loc);
 }
 
 void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
@@ -810,6 +860,9 @@ int main(int argc, char **argv) {
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
 
+    Player players[MAX_PLAYERS];
+    int player_count = 0;
+
     FPS fps = {0, 0};
     float matrix[16];
     float x = (rand_double() - 0.5) * 10000;
@@ -941,14 +994,14 @@ int main(int argc, char **argv) {
             }
         }
 
-        // TODO: P,x,y,z
+        client_position(x, y, z, rx, ry);
         char buffer[1024];
         while (client_recv(buffer)) {
-            float ux, uy, uz;
-            if (sscanf(buffer, "U,%*d,%f,%f,%f",
-                &ux, &uy, &uz) == 3)
+            float ux, uy, uz, urx, ury;
+            if (sscanf(buffer, "U,%*d,%f,%f,%f,%f,%f",
+                &ux, &uy, &uz, &urx, &ury) == 5)
             {
-                x = ux; y = uy; z = uz;
+                x = ux; y = uy; z = uz; rx = urx; ry = ury;
                 ensure_chunks(chunks, &chunk_count,
                     floorf(roundf(x) / CHUNK_SIZE),
                     floorf(roundf(z) / CHUNK_SIZE), 1);
@@ -962,6 +1015,19 @@ int main(int argc, char **argv) {
                 if ((int)roundf(x) == bx && (int)roundf(z) == bz) {
                     y = highest_block(chunks, chunk_count, x, z) + 2;
                 }
+            }
+            int pid;
+            float px, py, pz, prx, pry;
+            if (sscanf(buffer, "P,%d,%f,%f,%f,%f,%f",
+                &pid, &px, &py, &pz, &prx, &pry) == 6)
+            {
+                Player *player = find_player(players, player_count, pid);
+                if (!player) {
+                    // TODO: avoid overflow
+                    player = players + player_count;
+                    player_count++;
+                }
+                update_player(player, x, y, z, rx, ry);
             }
         }
 
@@ -997,6 +1063,12 @@ int main(int argc, char **argv) {
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);
         }
 
+        // render players
+        for (int i = 0; i < player_count; i++) {
+            Player *player = players + i;
+            draw_player(player, position_loc, normal_loc, uv_loc);
+        }
+
         // render focused block wireframe
         int hx, hy, hz;
         int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
@@ -1029,7 +1101,7 @@ int main(int argc, char **argv) {
             previous_block_type = block_type;
             make_single_cube(
                 &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                block_type);
+                0, 0, 0, 0.5, block_type);
         }
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);

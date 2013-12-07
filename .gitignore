@@ -3,7 +3,6 @@ CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
 craft
-glfw
 sqlite
 *.o
 *.db

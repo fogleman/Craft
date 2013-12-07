@@ -1026,8 +1026,12 @@ int main(int argc, char **argv) {
                     // TODO: avoid overflow
                     player = players + player_count;
                     player_count++;
+                    player->id = pid;
+                    player->position_buffer = 0;
+                    player->normal_buffer = 0;
+                    player->uv_buffer = 0;
                 }
-                update_player(player, x, y, z, rx, ry);
+                update_player(player, px, py, pz, prx, pry);
             }
         }
 

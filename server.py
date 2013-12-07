@@ -67,7 +67,11 @@ class Model(object):
         self.next_client_id += 1
         with session() as sql:
             query = 'select x, y, z from block order by random() limit 1;'
-            client.position = list(sql.execute(query))[0]
+            rows = list(sql.execute(query))
+            if rows:
+                client.position = rows[0]
+            else:
+                client.position = (0, 0, 0)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
@@ -97,7 +101,8 @@ class Model(object):
                 'values (:p, :q, :x, :y, :z, :w);'
             )
             sql.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
-        self.send_block(client, p, q, x, y, z, w)
+        if w >= 0:
+            self.send_block(client, p, q, x, y, z, w)
     def on_position(self, client, x, y, z):
         client.position = (x, y, z)
         self.send_position(client)

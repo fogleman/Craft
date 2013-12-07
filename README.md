@@ -40,6 +40,19 @@ Multiplayer support is being developed on the "socket" branch. You can run your 
     pip install sqlalchemy
     python server.py [HOST [PORT]]
 
+### Controls
+
+- WASD to move forward, left, backward, right.
+- Space to jump.
+- Left Click to destroy a block.
+- Right Click or Cmd + Left Click to create a block.
+- 1-9 to select the block type to create.
+- E to cycle through the block types.
+- Tab to toggle between walking and flying.
+- ZXCVBN to move in exact directions along the XYZ axes.
+- Left shift to zoom.
+- F to show the scene in orthographic mode.
+
 ### Screenshot
 
 ![](https://raw.github.com/fogleman/Craft/master/screenshot.png)

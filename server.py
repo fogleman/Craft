@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import SocketServer
+import sys
 
 HOST = '0.0.0.0'
 PORT = 4080
@@ -129,7 +130,12 @@ def main():
     with session() as sql:
         for query in queries:
             sql.execute(query)
-    server = Server((HOST, PORT), Handler)
+    host, port = HOST, PORT
+    if len(sys.argv) > 1:
+        host = sys.argv[1]
+    if len(sys.argv) > 2:
+        port = int(sys.argv[2])
+    server = Server((host, port), Handler)
     server.model = Model()
     server.serve_forever()
 

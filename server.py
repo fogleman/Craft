@@ -64,8 +64,10 @@ class Model(object):
         }
     def on_connect(self, client):
         client.client_id = self.next_client_id
-        client.position = (0, 0, 0)
         self.next_client_id += 1
+        with session() as sql:
+            query = 'select x, y, z from block order by random() limit 1;'
+            client.position = list(sql.execute(query))[0]
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)

@@ -555,9 +555,7 @@ void make_chunk(Chunk *chunk, int p, int q) {
     make_world(map, p, q);
     db_update_chunk(map, p, q);
     update_chunk(chunk);
-    char buffer[1024];
-    snprintf(buffer, 1024, "C,%d,%d\n", p, q);
-    client_send(buffer);
+    client_chunk(p, q);
 }
 
 void draw_chunk(
@@ -639,9 +637,7 @@ void _set_block(
     }
     db_insert_block(p, q, x, y, z, w);
     if (post) {
-        char buffer[1024];
-        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
-        client_send(buffer);
+        client_block(p, q, x, y, z, w);
     }
 }
 
@@ -948,25 +944,23 @@ int main(int argc, char **argv) {
         // TODO: P,x,y,z
         char buffer[1024];
         while (client_recv(buffer)) {
-            if (buffer[0] == 'U') {
-                float ux, uy, uz;
-                if (sscanf(buffer, "U,%*d,%f,%f,%f", &ux, &uy, &uz) == 3) {
-                    x = ux; y = uy; z = uz;
-                    ensure_chunks(chunks, &chunk_count,
-                        floorf(roundf(x) / CHUNK_SIZE),
-                        floorf(roundf(z) / CHUNK_SIZE), 1);
-                    y = highest_block(chunks, chunk_count, x, z) + 2;
-                }
+            float ux, uy, uz;
+            if (sscanf(buffer, "U,%*d,%f,%f,%f",
+                &ux, &uy, &uz) == 3)
+            {
+                x = ux; y = uy; z = uz;
+                ensure_chunks(chunks, &chunk_count,
+                    floorf(roundf(x) / CHUNK_SIZE),
+                    floorf(roundf(z) / CHUNK_SIZE), 1);
+                y = highest_block(chunks, chunk_count, x, z) + 2;
             }
-            if (buffer[0] == 'B') {
-                int bx, by, bz, bw;
-                if (sscanf(buffer, "B,%*d,%*d,%d,%d,%d,%d",
-                    &bx, &by, &bz, &bw) == 4)
-                {
-                    set_block(chunks, chunk_count, bx, by, bz, bw, 0);
-                    if ((int)roundf(x) == bx && (int)roundf(z) == bz) {
-                        y = highest_block(chunks, chunk_count, x, z) + 2;
-                    }
+            int bx, by, bz, bw;
+            if (sscanf(buffer, "B,%*d,%*d,%d,%d,%d,%d",
+                &bx, &by, &bz, &bw) == 4)
+            {
+                set_block(chunks, chunk_count, bx, by, bz, bw, 0);
+                if ((int)roundf(x) == bx && (int)roundf(z) == bz) {
+                    y = highest_block(chunks, chunk_count, x, z) + 2;
                 }
             }
         }

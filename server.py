@@ -107,7 +107,7 @@ class Model(object):
         if w >= 0:
             self.send_block(client, p, q, x, y, z, w)
     def on_position(self, client, x, y, z, rx, ry):
-        x, y, z = map(float, (x, y, z, rx, ry))
+        x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
     def send_positions(self, client):

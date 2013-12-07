@@ -14,11 +14,11 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 ### How to Run
 
 - Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
-- Download [GLFW](http://www.glfw.org/) and unzip into a relative directory named "glfw"
-- Download [sqlite3](http://www.sqlite.org/download.html) and unzip into a relative directory named "sqlite"
+- All other dependencies are included in the repository.
 
 Then, run the following commands in your terminal.
 
+    git clone https://github.com/fogleman/Craft.git
     cmake .
     make
     ./craft

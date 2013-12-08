@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import SocketServer
+import datetime
 import sys
 
 HOST = '0.0.0.0'
@@ -28,6 +29,10 @@ def session():
     finally:
         session.close()
 
+def log(*args):
+    now = datetime.datetime.utcnow()
+    print now, ' '.join(map(str, args))
+
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     daemon_threads = True
 
@@ -49,7 +54,7 @@ class Handler(SocketServer.BaseRequestHandler):
         model.on_disconnect(self)
     def send(self, *args):
         data = ','.join(str(x) for x in args)
-        print 'SEND', self.client_id, data
+        log('SEND', self.client_id, data)
         data = '%s\n' % data
         self.request.sendall(data)
 
@@ -65,6 +70,7 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id
         self.next_client_id += 1
+        log('CONN', client.client_id, *client.client_address)
         with session() as sql:
             query = 'select x, y, z from block order by random() limit 1;'
             rows = list(sql.execute(query))
@@ -78,13 +84,14 @@ class Model(object):
         self.send_position(client)
         self.send_positions(client)
     def on_data(self, client, data):
-        print 'RECV', client.client_id, data
+        log('RECV', client.client_id, data)
         args = data.split(',')
         command, args = args[0], args[1:]
         if command in self.commands:
             func = self.commands[command]
             func(client, *args)
     def on_disconnect(self, client):
+        log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
     def on_chunk(self, client, p, q):
         p, q = map(int, (p, q))
@@ -149,6 +156,7 @@ def main():
         host = sys.argv[1]
     if len(sys.argv) > 2:
         port = int(sys.argv[2])
+    log('SERV', host, port)
     server = Server((host, port), Handler)
     server.model = Model()
     server.serve_forever()

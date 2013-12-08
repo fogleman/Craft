@@ -732,7 +732,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         block_type = key - '1' + 1;
     }
     if (key == 'E') {
-        block_type = block_type % 10 + 1;
+        block_type = block_type % 11 + 1;
     }
 }
 

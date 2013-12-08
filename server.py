@@ -42,18 +42,20 @@ class Handler(SocketServer.BaseRequestHandler):
     def handle(self):
         model = self.server.model
         model.enqueue(model.on_connect, self)
-        buf = []
-        while True:
-            data = self.request.recv(BUFFER_SIZE)
-            if not data:
-                break
-            buf.extend(data.replace('\r', ''))
-            while '\n' in buf:
-                index = buf.index('\n')
-                line = ''.join(buf[:index])
-                buf = buf[index + 1:]
-                model.enqueue(model.on_data, self, line)
-        model.enqueue(model.on_disconnect, self)
+        try:
+            buf = []
+            while True:
+                data = self.request.recv(BUFFER_SIZE)
+                if not data:
+                    break
+                buf.extend(data.replace('\r', ''))
+                while '\n' in buf:
+                    index = buf.index('\n')
+                    line = ''.join(buf[:index])
+                    buf = buf[index + 1:]
+                    model.enqueue(model.on_data, self, line)
+        finally:
+            model.enqueue(model.on_disconnect, self)
     def send(self, *args):
         data = ','.join(str(x) for x in args)
         log('SEND', self.client_id, data)
@@ -61,7 +63,6 @@ class Handler(SocketServer.BaseRequestHandler):
         try:
             self.request.sendall(data)
         except Exception:
-            self.request.shutdown(2)
             self.request.close()
 
 class Model(object):

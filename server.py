@@ -61,6 +61,7 @@ class Handler(SocketServer.BaseRequestHandler):
         try:
             self.request.sendall(data)
         except Exception:
+            self.request.shutdown(2)
             self.request.close()
 
 class Model(object):

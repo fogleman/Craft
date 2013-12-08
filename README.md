@@ -2,7 +2,7 @@
 
 A simple Minecraft clone written in C using modern OpenGL (shaders).
 
-![](https://raw.github.com/fogleman/Craft/master/screenshot.png)
+![](https://raw.github.com/fogleman/Craft/master/screenshot1.png)
 
 ### Features
 
@@ -54,3 +54,7 @@ Multiplayer support is being developed on the "socket" branch. You can run your 
 - ZXCVBN to move in exact directions along the XYZ axes.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
+
+### Screenshot
+
+![](https://raw.github.com/fogleman/Craft/master/screenshot2.png)

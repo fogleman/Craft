@@ -1,9 +1,11 @@
 from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+import Queue
 import SocketServer
 import datetime
 import sys
+import threading
 
 HOST = '0.0.0.0'
 PORT = 4080
@@ -39,7 +41,7 @@ class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 class Handler(SocketServer.BaseRequestHandler):
     def handle(self):
         model = self.server.model
-        model.on_connect(self)
+        model.enqueue(model.on_connect, self)
         buf = []
         while True:
             data = self.request.recv(BUFFER_SIZE)
@@ -50,23 +52,39 @@ class Handler(SocketServer.BaseRequestHandler):
                 index = buf.index('\n')
                 line = ''.join(buf[:index])
                 buf = buf[index + 1:]
-                model.on_data(self, line)
-        model.on_disconnect(self)
+                model.enqueue(model.on_data, self, line)
+        model.enqueue(model.on_disconnect, self)
     def send(self, *args):
         data = ','.join(str(x) for x in args)
         log('SEND', self.client_id, data)
         data = '%s\n' % data
-        self.request.sendall(data)
+        try:
+            self.request.sendall(data)
+        except Exception:
+            self.request.close()
 
 class Model(object):
     def __init__(self):
         self.next_client_id = 0
         self.clients = []
+        self.queue = Queue.Queue()
         self.commands = {
             CHUNK: self.on_chunk,
             BLOCK: self.on_block,
             POSITION: self.on_position,
         }
+    def start(self):
+        thread = threading.Thread(target=self.run)
+        thread.setDaemon(True)
+        thread.start()
+    def run(self):
+        while True:
+            self.dequeue()
+    def enqueue(self, func, *args, **kwargs):
+        self.queue.put((func, args, kwargs))
+    def dequeue(self):
+        func, args, kwargs = self.queue.get()
+        func(*args, **kwargs)
     def on_connect(self, client):
         client.client_id = self.next_client_id
         self.next_client_id += 1
@@ -157,8 +175,10 @@ def main():
     if len(sys.argv) > 2:
         port = int(sys.argv[2])
     log('SERV', host, port)
+    model = Model()
+    model.start()
     server = Server((host, port), Handler)
-    server.model = Model()
+    server.model = model
     server.serve_forever()
 
 if __name__ == '__main__':

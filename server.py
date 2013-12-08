@@ -6,6 +6,7 @@ import SocketServer
 import datetime
 import sys
 import threading
+import traceback
 
 HOST = '0.0.0.0'
 PORT = 4080
@@ -81,7 +82,10 @@ class Model(object):
         thread.start()
     def run(self):
         while True:
-            self.dequeue()
+            try:
+                self.dequeue()
+            except Exception:
+                traceback.print_exc()
     def enqueue(self, func, *args, **kwargs):
         self.queue.put((func, args, kwargs))
     def dequeue(self):

@@ -748,6 +748,14 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_TAB) {
         flying = !flying;
     }
+    if (key == GLFW_KEY_ENTER) {
+        if (mods & GLFW_MOD_SUPER) {
+            right_click = 1;
+        }
+        else {
+            left_click = 1;
+        }
+    }
     if (key >= '1' && key <= '9') {
         block_type = key - '1' + 1;
     }
@@ -942,6 +950,11 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'S')) sz++;
         if (glfwGetKey(window, 'A')) sx--;
         if (glfwGetKey(window, 'D')) sx++;
+        float m = 0.02;
+        if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
+        if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
+        if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
+        if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
         if (dy == 0 && glfwGetKey(window, GLFW_KEY_SPACE)) {
             dy = 8;
         }

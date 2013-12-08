@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "client.h"
 #include "db.h"
@@ -244,12 +245,11 @@ void delete_player(Player *players, int *player_count, int id) {
         return;
     }
     int count = *player_count;
-    Player *other = players + (count - 1);
-    player->id = other->id;
-    player->position_buffer = other->position_buffer;
-    player->normal_buffer = other->normal_buffer;
-    player->uv_buffer = other->uv_buffer;
-    count--;
+    glDeleteBuffers(1, &player->position_buffer);
+    glDeleteBuffers(1, &player->normal_buffer);
+    glDeleteBuffers(1, &player->uv_buffer);
+    Player *other = players + (--count);
+    memcpy(player, other, sizeof(Player));
     *player_count = count;
 }
 
@@ -475,7 +475,8 @@ void make_world(Map *map, int p, int q) {
                     for (int y = h + 3; y < h + 8; y++) {
                         for (int ox = -3; ox <= 3; ox++) {
                             for (int oz = -3; oz <= 3; oz++) {
-                                int d = (ox * ox) + (oz * oz) + (y - (h + 4)) * (y - (h + 4));
+                                int d = (ox * ox) + (oz * oz) +
+                                    (y - (h + 4)) * (y - (h + 4));
                                 if (d < 11) {
                                     map_set(map, x + ox, y, z + oz, 15);
                                 }
@@ -672,16 +673,8 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
             glDeleteBuffers(1, &chunk->position_buffer);
             glDeleteBuffers(1, &chunk->normal_buffer);
             glDeleteBuffers(1, &chunk->uv_buffer);
-            Chunk *other = chunks + (count - 1);
-            chunk->map = other->map;
-            chunk->p = other->p;
-            chunk->q = other->q;
-            chunk->dirty = other->dirty;
-            chunk->faces = other->faces;
-            chunk->position_buffer = other->position_buffer;
-            chunk->normal_buffer = other->normal_buffer;
-            chunk->uv_buffer = other->uv_buffer;
-            count--;
+            Chunk *other = chunks + (--count);
+            memcpy(chunk, other, sizeof(Chunk));
         }
     }
     int n = CREATE_CHUNK_RADIUS;
@@ -1102,7 +1095,8 @@ int main(int argc, char **argv) {
 
         // render focused block wireframe
         int hx, hy, hz;
-        int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
+        int hw = hit_test(
+            chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
         if (is_obstacle(hw)) {
             glUseProgram(line_program);
             glLineWidth(1);

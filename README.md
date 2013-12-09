@@ -11,7 +11,7 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 * Supports plants (grass, flowers, trees, etc.) and transparency (glass).
 * Simple clouds in the sky (they don't move).
 * World changes persisted in a sqlite3 database.
-* Multiplayer support (in the "socket" branch).
+* Multiplayer support.
 * Shadow mapping for nice looking shadows (in the "shadow" branch).
 
 ### How to Run
@@ -28,18 +28,14 @@ Then, run the following commands in your terminal.
 
 ### Multiplayer
 
-Multiplayer support is being developed on the "socket" branch. You can run your own server or connect to mine.
+You can run your own server or connect to mine.
 
 #### Client
 
-    git checkout socket
-    cmake .
-    make
     ./craft 199.115.118.225 16018
 
 #### Server
 
-    git checkout socket
     pip install sqlalchemy
     python server.py [HOST [PORT]]
 

@@ -144,7 +144,7 @@ void client_connect(char *hostname, int port) {
     }
     memset(&address, 0, sizeof(address));
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = ((struct in_addr *)(host->h_addr))->s_addr;
+    address.sin_addr.s_addr = ((struct in_addr *)(host->h_addr_list[0]))->s_addr;
     address.sin_port = htons(port);
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         perror("socket");

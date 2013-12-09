@@ -1,5 +1,5 @@
-#define GLFW_INCLUDE_GLCOREARB
-
+//#define GLFW_INCLUDE_GLCOREARB
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
@@ -853,9 +853,9 @@ int main(int argc, char **argv) {
     glLogicOp(GL_INVERT);
     glClearColor(0.53, 0.81, 0.92, 1.00);
 
-    GLuint vertex_array;
-    glGenVertexArrays(1, &vertex_array);
-    glBindVertexArray(vertex_array);
+    //GLuint vertex_array;
+    //glGenVertexArrays(1, &vertex_array);
+    //glBindVertexArray(vertex_array);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -923,7 +923,8 @@ int main(int argc, char **argv) {
         if (exclusive && (px || py)) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
-            float m = 0.0025;
+            printf("%.2f, %.2f\n", mx, my);
+            float m = 0.0025 / 10;
             rx += (mx - px) * m;
             ry -= (my - py) * m;
             if (rx < 0) {
@@ -950,7 +951,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'S')) sz++;
         if (glfwGetKey(window, 'A')) sx--;
         if (glfwGetKey(window, 'D')) sx++;
-        float m = 0.02;
+        float m = 1.0 * dt;
         if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
         if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
         if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;

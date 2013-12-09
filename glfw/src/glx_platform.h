@@ -28,6 +28,8 @@
 #ifndef _glx_platform_h_
 #define _glx_platform_h_
 
+#include <pthread.h>
+
 #define GLX_GLXEXT_LEGACY
 #include <GL/glx.h>
 

@@ -10,5 +10,5 @@ add_subdirectory(glfw)
 include_directories(glfw/include)
 include_directories(sqlite)
 include_directories(lodepng)
-
-target_link_libraries(craft glfw ${GLFW_LIBRARIES})
+find_package(GLEW REQUIRED)
+target_link_libraries(craft glfw dl ${GLEW_LIBRARIES} ${GLFW_LIBRARIES})

@@ -69,7 +69,7 @@ int is_destructable(int w) {
 
 void update_matrix_2d(float *matrix) {
     int width, height;
-    glfwGetWindowSize(window, &width, &height);
+    glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     mat_ortho(matrix, 0, width, 0, height, -1, 1);
 }
@@ -80,7 +80,7 @@ void update_matrix_3d(
     float a[16];
     float b[16];
     int width, height;
-    glfwGetWindowSize(window, &width, &height);
+    glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     float aspect = (float)width / height;
     mat_identity(a);
@@ -106,7 +106,7 @@ void update_matrix_item(float *matrix) {
     float a[16];
     float b[16];
     int width, height;
-    glfwGetWindowSize(window, &width, &height);
+    glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     float aspect = (float)width / height;
     float size = 64;
@@ -128,7 +128,7 @@ void update_matrix_item(float *matrix) {
 
 GLuint make_line_buffer() {
     int width, height;
-    glfwGetWindowSize(window, &width, &height);
+    glfwGetFramebufferSize(window, &width, &height);
     int x = width / 2;
     int y = height / 2;
     int p = 10;

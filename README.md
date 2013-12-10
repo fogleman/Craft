@@ -19,6 +19,11 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
 
+You may use [Homebrew](http://brew.sh) to simplify the installation:
+
+    brew install cmake
+
+
 #### Linux (Ubuntu)
 
     sudo apt-get install cmake libglew-dev xorg-dev

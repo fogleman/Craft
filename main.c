@@ -927,11 +927,9 @@ int main(int argc, char **argv) {
     double py = 0;
 
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
-    if (!get_client_enabled()) {
-        ensure_chunks(chunks, &chunk_count,
-            floorf(roundf(x) / CHUNK_SIZE),
-            floorf(roundf(z) / CHUNK_SIZE), 1);
-    }
+    ensure_chunks(chunks, &chunk_count,
+        floorf(roundf(x) / CHUNK_SIZE),
+        floorf(roundf(z) / CHUNK_SIZE), 1);
     if (!loaded) {
         y = highest_block(chunks, chunk_count, x, z) + 2;
     }

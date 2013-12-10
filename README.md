@@ -55,16 +55,18 @@ You can run your own server or connect to mine. The server uses the same SQLite 
 
 ### Controls
 
-- WASD to move forward, left, backward, right.
-- Space to jump.
 - Left Click to destroy a block.
 - Right Click or Cmd + Left Click to create a block.
+- Middle Click to change the current block selection to the targeted block
+- WASD to move forward, left, backward, right.
+- Space to jump.
 - 1-9 to select the block type to create.
-- E to cycle through the block types.
+- E, or the scrollwheel to cycle through the block types.
 - Tab to toggle between walking and flying.
 - ZXCVBN to move in exact directions along the XYZ axes.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
+- When in orthographic mode, use the scrollwheel or '+', '-' keys to zoom in and out
 - P to teleport to another online player (random).
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.

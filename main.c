@@ -1,3 +1,7 @@
+#ifndef __APPLE_CC__
+    #include <GL/glew.h>
+#endif
+
 #include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>

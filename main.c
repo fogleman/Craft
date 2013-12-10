@@ -28,6 +28,7 @@ static GLFWwindow *window;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
+static int middle_click = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
@@ -65,6 +66,10 @@ int is_transparent(int w) {
 
 int is_destructable(int w) {
     return w > 0 && w != 16;
+}
+
+int is_selectable(int w) {
+    return w > 0 && w <= 11;
 }
 
 void update_matrix_2d(float *matrix) {
@@ -770,7 +775,7 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     if (action != GLFW_PRESS) {
         return;
     }
-    if (button == 0) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (exclusive) {
             if (mods & GLFW_MOD_SUPER) {
                 right_click = 1;
@@ -784,9 +789,14 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
-    if (button == 1) {
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (exclusive) {
             right_click = 1;
+        }
+    }
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+        if (exclusive) {
+            middle_click = 1;
         }
     }
 }
@@ -1016,6 +1026,16 @@ int main(int argc, char **argv) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
                     set_block(chunks, chunk_count, hx, hy, hz, block_type, 1);
                 }
+            }
+        }
+
+        if (middle_click) {
+            middle_click = 0;
+            int hx, hy, hz;
+            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
+                &hx, &hy, &hz);
+            if (is_selectable(hw)) {
+                block_type = hw;
             }
         }
 

@@ -977,11 +977,16 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
         if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
         if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
-        if (dy == 0 && glfwGetKey(window, GLFW_KEY_SPACE)) {
-            dy = 8;
-        }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
+        if (glfwGetKey(window, GLFW_KEY_SPACE)) {
+            if (flying) {
+                vy = 1;
+            }
+            else if (dy == 0) {
+                dy = 8;
+            }
+        }
         if (glfwGetKey(window, 'Z')) {
             vx = -1; vy = 0; vz = 0;
         }

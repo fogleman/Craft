@@ -911,8 +911,7 @@ int main(int argc, char **argv) {
         if (exclusive && (px || py)) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
-            printf("%.2f, %.2f\n", mx, my);
-            float m = 0.0025 / 10;
+            float m = 0.0025;
             rx += (mx - px) * m;
             ry -= (my - py) * m;
             if (rx < 0) {
@@ -939,7 +938,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'S')) sz++;
         if (glfwGetKey(window, 'A')) sx--;
         if (glfwGetKey(window, 'D')) sx++;
-        float m = 1.0 * dt;
+        float m = dt * 1.0;
         if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
         if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
         if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;

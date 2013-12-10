@@ -734,6 +734,16 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == 'E') {
         block_type = block_type % 11 + 1;
     }
+
+    if (ortho) {
+        if (key == '-') {
+            change_ortho_zoom(-1.0);
+        }
+
+        else if (key == '=' || key == '+') {
+            change_ortho_zoom(1.0);
+        }
+    }
 }
 
 void _on_scroll_blockselect(double ydelta)
@@ -757,7 +767,7 @@ void _on_scroll_blockselect(double ydelta)
     }
 }
 
-void _on_scroll_orthozoom(double ydelta)
+void change_ortho_zoom(double ydelta)
 {
     ortho_zoom += ydelta;
 
@@ -778,7 +788,7 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
 
     if(ortho)
     {
-        _on_scroll_orthozoom(ydelta);
+        change_ortho_zoom(ydelta);
     }
     else
     {

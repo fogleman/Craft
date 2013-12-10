@@ -11,8 +11,7 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 * Supports plants (grass, flowers, trees, etc.) and transparency (glass).
 * Simple clouds in the sky (they don't move).
 * World changes persisted in a sqlite3 database.
-* Multiplayer support.
-* Shadow mapping for nice looking shadows (in the "shadow" branch).
+* Multiplayer support!
 
 ### Install Dependencies
 
@@ -41,7 +40,7 @@ Once you have the dependencies (see above), run the following commands in your t
 
 ### Multiplayer
 
-You can run your own server or connect to mine.
+You can run your own server or connect to mine. The server uses the same SQLite database format as the client running standalone.
 
 #### Client
 
@@ -64,6 +63,8 @@ You can run your own server or connect to mine.
 - ZXCVBN to move in exact directions along the XYZ axes.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
+- Arrow keys emulate mouse movement.
+- Enter emulates mouse click.
 
 ### Screenshot
 

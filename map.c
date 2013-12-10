@@ -28,8 +28,6 @@ void map_free(Map *map) {
     free(map->data);
 }
 
-void map_grow(Map *map);
-
 void map_set(Map *map, int x, int y, int z, int w) {
     unsigned int index = hash(x, y, z) & map->mask;
     Entry *entry = map->data + index;

@@ -24,6 +24,7 @@
 #define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 8
 #define SCROLL_THRESHOLD 0.1
+#define RECV_BUFFER_SIZE 1024
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -1061,8 +1062,8 @@ int main(int argc, char **argv) {
         }
 
         client_position(x, y, z, rx, ry);
-        char buffer[1024];
-        while (client_recv(buffer)) {
+        char buffer[RECV_BUFFER_SIZE];
+        while (client_recv(buffer, RECV_BUFFER_SIZE)) {
             float ux, uy, uz, urx, ury;
             if (sscanf(buffer, "U,%*d,%f,%f,%f,%f,%f",
                 &ux, &uy, &uz, &urx, &ury) == 5)

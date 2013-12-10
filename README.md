@@ -14,14 +14,27 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 * Multiplayer support.
 * Shadow mapping for nice looking shadows (in the "shadow" branch).
 
-### How to Run
+### Install Dependencies
 
-- Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
-- All other dependencies are included in the repository.
+#### Mac OS X
 
-Then, run the following commands in your terminal.
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
+
+#### Linux (Ubuntu)
+
+    sudo apt-get install cmake libglew-dev xorg-dev
+    sudo apt-get build-dep glfw
+
+#### Windows
+
+It should be able to run on Windows, but I don't have a Windows machine to test on at the moment. Let me know if and how you get it to run and I will update the README.
+
+### Compile and Run
+
+Once you have the dependencies (see above), run the following commands in your terminal.
 
     git clone https://github.com/fogleman/Craft.git
+    cd Craft
     cmake .
     make
     ./craft

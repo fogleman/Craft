@@ -23,6 +23,7 @@
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 8
+#define SCROLL_THRESHOLD 0.1
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -767,30 +768,21 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
 }
 
 void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
-    // 0.1 is ~ a single tick of the scroll wheel on a mouse
-    const double SCROLL_THRESH = 0.1;
-    static double ypos = 0.0;
-
+    static double ypos = 0;
     ypos += ydelta;
-
-    if(ypos < -SCROLL_THRESH)
-    {
-        block_type--;
-        ypos = 0;
-    }
-    else if(ypos > SCROLL_THRESH)
-    {
+    if (ypos < -SCROLL_THRESHOLD) {
         block_type++;
+        if (block_type > 11) {
+            block_type = 1;
+        }
         ypos = 0;
     }
-
-    if(block_type > 11)
-    {
-        block_type = 1;
-    }
-    else if(block_type < 1)
-    {
-        block_type = 11;
+    if (ypos > SCROLL_THRESHOLD) {
+        block_type--;
+        if (block_type < 1) {
+            block_type = 11;
+        }
+        ypos = 0;
     }
 }
 

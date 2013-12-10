@@ -982,25 +982,28 @@ int main(int argc, char **argv) {
             dy = 8;
         }
         float vx, vy, vz;
+        vx = vy = vz = 0.0;
+
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
         if (glfwGetKey(window, 'Z')) {
-            vx = -1; vy = 0; vz = 0;
+            vx = -1;
         }
         if (glfwGetKey(window, 'X')) {
-            vx = 1; vy = 0; vz = 0;
+            vx = 1;
         }
         if (glfwGetKey(window, 'C')) {
-            vx = 0; vy = -1; vz = 0;
+            vy = -1;
         }
         if (glfwGetKey(window, 'V')) {
-            vx = 0; vy = 1; vz = 0;
+            vy = 1;
         }
         if (glfwGetKey(window, 'B')) {
-            vx = 0; vy = 0; vz = -1;
+            vz = -1;
         }
         if (glfwGetKey(window, 'N')) {
-            vx = 0; vy = 0; vz = 1;
+            vz = 1;
         }
+
         float speed = flying ? 20 : 5;
         int step = 8;
         float ut = dt / step;

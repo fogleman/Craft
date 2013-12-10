@@ -1,12 +1,6 @@
 #ifndef _util_h_
 #define _util_h_
 
-#ifdef __APPLE__
-    #define GLFW_INCLUDE_GLCOREARB
-#else
-    #include <GL/glew.h>
-#endif
-
 #include <GLFW/glfw3.h>
 
 #define PI 3.14159265359

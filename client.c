@@ -1,8 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <string.h>
+#ifdef WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#define snprintf _snprintf
+#define sleep _sleep
+#else
+#include <netdb.h>
 #include <unistd.h>
+#endif
 #include "client.h"
 #include "tinycthread.h"
 

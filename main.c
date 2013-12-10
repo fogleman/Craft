@@ -766,6 +766,34 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     }
 }
 
+void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
+    // 0.1 is ~ a single tick of the scroll wheel on a mouse
+    const double SCROLL_THRESH = 0.1;
+    static double ypos = 0.0;
+
+    ypos += ydelta;
+
+    if(ypos < -SCROLL_THRESH)
+    {
+        block_type--;
+        ypos = 0;
+    }
+    else if(ypos > SCROLL_THRESH)
+    {
+        block_type++;
+        ypos = 0;
+    }
+
+    if(block_type > 11)
+    {
+        block_type = 1;
+    }
+    else if(block_type < 1)
+    {
+        block_type = 11;
+    }
+}
+
 void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     if (action != GLFW_PRESS) {
         return;
@@ -832,6 +860,7 @@ int main(int argc, char **argv) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, on_key);
     glfwSetMouseButtonCallback(window, on_mouse_button);
+    glfwSetScrollCallback(window, on_scroll);
 
     #ifndef __APPLE__
         if (glewInit() != GLEW_OK) {

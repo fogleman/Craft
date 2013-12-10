@@ -6,13 +6,19 @@ add_executable(
     craft main.c client.c db.c map.c noise.c util.c
     sqlite/sqlite3.c lodepng/lodepng.c tinycthread/tinycthread.c)
 
-add_definitions(-std=c99 -O3)
+add_definitions(-std=c99 -O3 -DPREFIX=\"${CMAKE_INSTALL_PREFIX}\")
 
 add_subdirectory(glfw)
 include_directories(glfw/include)
 include_directories(sqlite)
 include_directories(lodepng)
 include_directories(tinycthread)
+include_directories("/usr/local/include")
+
+install_programs(/bin FILES craft)
+install_files(/share/craft/shaders FILES shaders/block_fragment.glsl shaders/block_vertex.glsl
+        shaders/line_fragment.glsl shaders/line_vertex.glsl)
+install_files(/share/craft FILES texture.png)
 
 if (APPLE)
     target_link_libraries(craft glfw ${GLFW_LIBRARIES})

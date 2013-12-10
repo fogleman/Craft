@@ -855,10 +855,11 @@ int main(int argc, char **argv) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    load_png_texture("texture.png");
+    load_png_texture(PREFIX"/share/craft/texture.png");
 
     GLuint block_program = load_program(
-        "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
+        PREFIX"/share/craft/shaders/block_vertex.glsl", 
+		PREFIX"/share/craft/shaders/block_fragment.glsl");
     GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
     GLuint camera_loc = glGetUniformLocation(block_program, "camera");
     GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
@@ -868,7 +869,8 @@ int main(int argc, char **argv) {
     GLuint uv_loc = glGetAttribLocation(block_program, "uv");
 
     GLuint line_program = load_program(
-        "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
+        PREFIX"/share/craft/shaders/line_vertex.glsl",
+		PREFIX"/share/craft/shaders/line_fragment.glsl");
     GLuint line_matrix_loc = glGetUniformLocation(line_program, "matrix");
     GLuint line_position_loc = glGetAttribLocation(line_program, "position");
 

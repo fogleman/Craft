@@ -17,6 +17,7 @@ YOU = 'U'
 BLOCK = 'B'
 CHUNK = 'C'
 POSITION = 'P'
+DISCONNECT = 'D'
 
 Session = sessionmaker(bind=create_engine(ENGINE))
 
@@ -117,6 +118,7 @@ class Model(object):
     def on_disconnect(self, client):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
+        self.send_disconnect(client)
     def on_chunk(self, client, p, q):
         p, q = map(int, (p, q))
         with session() as sql:
@@ -151,6 +153,11 @@ class Model(object):
             if other == client:
                 continue
             other.send(POSITION, client.client_id, *client.position)
+    def send_disconnect(self, client):
+        for other in self.clients:
+            if other == client:
+                continue
+            other.send(DISCONNECT, client.client_id)
     def send_block(self, client, p, q, x, y, z, w):
         for other in self.clients:
             if other == client:

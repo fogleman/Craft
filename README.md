@@ -61,6 +61,7 @@ You can run your own server or connect to mine. The server uses the same SQLite 
 - E to cycle through the block types.
 - Tab to toggle between walking and flying.
 - ZXCVBN to move in exact directions along the XYZ axes.
+- I to toggle the inversion of the mouse Y axis.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
 - Arrow keys emulate mouse movement.

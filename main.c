@@ -32,6 +32,7 @@ static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
 static float fov = 65.0;
+static int invert_mouse_y = 0;
 
 typedef struct {
     Map map;
@@ -764,6 +765,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == 'E') {
         block_type = block_type % 11 + 1;
     }
+    if (key == 'I') {
+        invert_mouse_y = !invert_mouse_y;
+    }
 }
 
 void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
@@ -917,7 +921,13 @@ int main(int argc, char **argv) {
             glfwGetCursorPos(window, &mx, &my);
             float m = 0.0025;
             rx += (mx - px) * m;
-            ry -= (my - py) * m;
+            
+            if (invert_mouse_y) {
+                ry += (my - py) * m;
+            } else {
+                ry -= (my - py) * m;
+            }
+            
             if (rx < 0) {
                 rx += RADIANS(360);
             }

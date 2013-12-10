@@ -1087,8 +1087,7 @@ int main(int argc, char **argv) {
                 &pid, &px, &py, &pz, &prx, &pry) == 6)
             {
                 Player *player = find_player(players, player_count, pid);
-                if (!player) {
-                    // TODO: avoid overflow
+                if (!player && player_count < MAX_PLAYERS) {
                     player = players + player_count;
                     player_count++;
                     player->id = pid;
@@ -1096,7 +1095,12 @@ int main(int argc, char **argv) {
                     player->normal_buffer = 0;
                     player->uv_buffer = 0;
                 }
-                update_player(player, px, py, pz, prx, pry);
+                if (player) {
+                    update_player(player, px, py, pz, prx, pry);
+                }
+            }
+            if (sscanf(buffer, "D,%d", &pid) == 1) {
+                delete_player(players, &player_count, pid);
             }
         }
 

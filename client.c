@@ -6,6 +6,9 @@
 #include "client.h"
 #include "tinycthread.h"
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 #define QUEUE_SIZE 65536
 #define BUFFER_SIZE 4096
 

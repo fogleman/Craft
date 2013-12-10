@@ -3,8 +3,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 #include "client.h"
+#include "tinycthread.h"
 
 #define QUEUE_SIZE 65536
 #define BUFFER_SIZE 4096
@@ -12,8 +12,8 @@
 static int client_enabled = 0;
 static int sd = 0;
 static char recv_buffer[QUEUE_SIZE] = {0};
-static pthread_t recv_thread;
-static pthread_mutex_t mutex;
+static thrd_t recv_thread;
+static mtx_t mutex;
 
 void client_enable() {
     client_enabled = 1;
@@ -96,7 +96,7 @@ int client_recv(char *data) {
         return 0;
     }
     int result = 0;
-    pthread_mutex_lock(&mutex);
+    mtx_lock(&mutex);
     char *p = strstr(recv_buffer, "\n");
     if (p) {
         *p = '\0';
@@ -104,11 +104,11 @@ int client_recv(char *data) {
         memmove(recv_buffer, p + 1, strlen(p + 1) + 1);
         result = 1;
     }
-    pthread_mutex_unlock(&mutex);
+    mtx_unlock(&mutex);
     return result;
 }
 
-void *recv_worker(void *arg) {
+int recv_worker(void *arg) {
     while (1) {
         char data[BUFFER_SIZE] = {0};
         if (recv(sd, data, BUFFER_SIZE - 1, 0) == -1) {
@@ -117,19 +117,19 @@ void *recv_worker(void *arg) {
         }
         while (1) {
             int done = 0;
-            pthread_mutex_lock(&mutex);
+            mtx_lock(&mutex);
             if (strlen(recv_buffer) + strlen(data) < QUEUE_SIZE) {
                 strcat(recv_buffer, data);
                 done = 1;
             }
-            pthread_mutex_unlock(&mutex);
+            mtx_unlock(&mutex);
             if (done) {
                 break;
             }
             sleep(0);
         }
     }
-    return NULL;
+    return 0;
 }
 
 void client_connect(char *hostname, int port) {
@@ -160,9 +160,9 @@ void client_start() {
     if (!client_enabled) {
         return;
     }
-    pthread_mutex_init(&mutex, NULL);
-    if (pthread_create(&recv_thread, NULL, recv_worker, NULL)) {
-        perror("pthread_create");
+    mtx_init(&mutex, mtx_plain);
+    if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
+        perror("thrd_create");
         exit(1);
     }
 }
@@ -172,9 +172,9 @@ void client_stop() {
         return;
     }
     close(sd);
-    if (pthread_join(recv_thread, NULL)) {
-        perror("pthread_join");
+    if (thrd_join(recv_thread, NULL) != thrd_success) {
+        perror("thrd_join");
         exit(1);
     }
-    pthread_mutex_destroy(&mutex);
+    mtx_destroy(&mutex);
 }

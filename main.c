@@ -1,5 +1,3 @@
-//#define GLFW_INCLUDE_GLCOREARB
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
@@ -790,12 +788,6 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
 }
 
 void create_window() {
-    #ifdef __APPLE__
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #endif
     int width = 1024;
     int height = 768;
     GLFWmonitor *monitor = NULL;
@@ -852,10 +844,6 @@ int main(int argc, char **argv) {
     glEnable(GL_LINE_SMOOTH);
     glLogicOp(GL_INVERT);
     glClearColor(0.53, 0.81, 0.92, 1.00);
-
-    //GLuint vertex_array;
-    //glGenVertexArrays(1, &vertex_array);
-    //glBindVertexArray(vertex_array);
 
     GLuint texture;
     glGenTextures(1, &texture);

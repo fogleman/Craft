@@ -1,4 +1,4 @@
-//#version 330 core
+#version 120
 
 uniform mat4 matrix;
 uniform vec3 camera;
@@ -12,7 +12,7 @@ varying float camera_distance;
 varying float fog_factor;
 varying float diffuse;
 
-vec3 light_direction = normalize(vec3(-1, 1, -1));
+const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
 
 void main() {
     gl_Position = matrix * position;

@@ -12,6 +12,7 @@
 #include "db.h"
 #include "map.h"
 #include "noise.h"
+#include "keys.h"
 #include "util.h"
 
 #define FULLSCREEN 0
@@ -753,7 +754,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
-    if (key == GLFW_KEY_TAB) {
+    if (key == CRAFT_KEY_FLY ) {
         flying = !flying;
     }
     if (key == GLFW_KEY_ENTER) {
@@ -767,7 +768,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key >= '1' && key <= '9') {
         block_type = key - '1' + 1;
     }
-    if (key == 'E') {
+    if (key == CRAFT_KEY_BTYPE ) {
         block_type = block_type % 11 + 1;
     }
 }
@@ -966,39 +967,39 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
-        ortho = glfwGetKey(window, 'F');
-        fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
-        if (glfwGetKey(window, 'Q')) break;
-        if (glfwGetKey(window, 'W')) sz--;
-        if (glfwGetKey(window, 'S')) sz++;
-        if (glfwGetKey(window, 'A')) sx--;
-        if (glfwGetKey(window, 'D')) sx++;
+        ortho = glfwGetKey(window, CRAFT_KEY_ORTHO );
+        fov = glfwGetKey(window, CRAFT_KEY_ZOOM ) ? 15.0 : 65.0;
+        if (glfwGetKey(window, CRAFT_KEY_QUIT )) break;
+        if (glfwGetKey(window, CRAFT_KEY_FWD )) sz--;
+        if (glfwGetKey(window, CRAFT_KEY_BACK )) sz++;
+        if (glfwGetKey(window, CRAFT_KEY_LEFT )) sx--;
+        if (glfwGetKey(window, CRAFT_KEY_RIGHT )) sx++;
         float m = dt * 1.0;
         if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
         if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
         if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
         if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
-        if (dy == 0 && glfwGetKey(window, GLFW_KEY_SPACE)) {
+        if (dy == 0 && glfwGetKey(window, CRAFT_KEY_JUMP )) {
             dy = 8;
         }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
-        if (glfwGetKey(window, 'Z')) {
+        if (glfwGetKey(window, CRAFT_KEY_XM )) {
             vx = -1; vy = 0; vz = 0;
         }
-        if (glfwGetKey(window, 'X')) {
+        if (glfwGetKey(window, CRAFT_KEY_XP )) {
             vx = 1; vy = 0; vz = 0;
         }
-        if (glfwGetKey(window, 'C')) {
+        if (glfwGetKey(window, CRAFT_KEY_YM )) {
             vx = 0; vy = -1; vz = 0;
         }
-        if (glfwGetKey(window, 'V')) {
+        if (glfwGetKey(window, CRAFT_KEY_YP )) {
             vx = 0; vy = 1; vz = 0;
         }
-        if (glfwGetKey(window, 'B')) {
+        if (glfwGetKey(window, CRAFT_KEY_ZM )) {
             vx = 0; vy = 0; vz = -1;
         }
-        if (glfwGetKey(window, 'N')) {
+        if (glfwGetKey(window, CRAFT_KEY_ZP )) {
             vx = 0; vy = 0; vz = 1;
         }
         float speed = flying ? 20 : 5;

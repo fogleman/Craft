@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "main.h"
 #include "client.h"
 #include "db.h"
 #include "map.h"
@@ -36,29 +37,6 @@ static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
 static float fov = 65.0;
-
-typedef struct {
-    Map map;
-    int p;
-    int q;
-    int faces;
-    int dirty;
-    GLuint position_buffer;
-    GLuint normal_buffer;
-    GLuint uv_buffer;
-} Chunk;
-
-typedef struct {
-    int id;
-    float x;
-    float y;
-    float z;
-    float rx;
-    float ry;
-    GLuint position_buffer;
-    GLuint normal_buffer;
-    GLuint uv_buffer;
-} Player;
 
 int is_plant(int w) {
     return w > 16;
@@ -519,18 +497,38 @@ void make_world(Map *map, int p, int q) {
 }
 
 void exposed_faces(
-    Map *map, int x, int y, int z,
+    Chunk *chunk,
+    Chunk *chunks, int chunk_count,
+    int x, int y, int z,
     int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
 {
-    *f1 = is_transparent(map_get(map, x - 1, y, z));
-    *f2 = is_transparent(map_get(map, x + 1, y, z));
-    *f3 = is_transparent(map_get(map, x, y + 1, z));
-    *f4 = is_transparent(map_get(map, x, y - 1, z)) && (y > 0);
-    *f5 = is_transparent(map_get(map, x, y, z + 1));
-    *f6 = is_transparent(map_get(map, x, y, z - 1));
+    Map* chunk_map = &chunk->map;
+    int chunk_p = chunk->p;
+    int chunk_q = chunk->q;
+
+    *f1 = (x - 1) / CHUNK_SIZE != chunk_p ?
+        is_transparent(map_get(chunk_map, x - 1, y, z)) :
+        is_transparent(get_block(chunks, chunk_count, x - 1, y, z));
+
+    *f2 = (x + 1) / CHUNK_SIZE == chunk_p ?
+        is_transparent(map_get(chunk_map, x + 1, y, z)) :
+        is_transparent(get_block(chunks, chunk_count, x + 1, y, z));
+
+    *f3 = is_transparent(map_get(chunk_map, x, y + 1, z));
+    *f4 = (y > 0) &&
+          is_transparent(map_get(chunk_map, x, y - 1, z));
+
+    *f5 = ((z + 1) / CHUNK_SIZE == chunk_q) ?
+        is_transparent(map_get(chunk_map, x, y, z + 1)) :
+        is_transparent(get_block(chunks, chunk_count, x, y, z + 1));
+
+    *f6 = ((z - 1) / CHUNK_SIZE == chunk_q) ?
+        is_transparent(map_get(chunk_map, x, y, z - 1)) :
+        is_transparent(get_block(chunks, chunk_count, x, y, z - 1));
+
 }
 
-void update_chunk(Chunk *chunk) {
+void update_chunk(Chunk *chunk, Chunk *chunks, int chunk_count) {
     Map *map = &chunk->map;
 
     if (chunk->faces) {
@@ -545,7 +543,7 @@ void update_chunk(Chunk *chunk) {
             continue;
         }
         int f1, f2, f3, f4, f5, f6;
-        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        exposed_faces(chunk, chunks, chunk_count, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
@@ -563,7 +561,7 @@ void update_chunk(Chunk *chunk) {
             continue;
         }
         int f1, f2, f3, f4, f5, f6;
-        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        exposed_faces(chunk, chunks, chunk_count, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
@@ -616,7 +614,7 @@ void update_chunk(Chunk *chunk) {
     chunk->uv_buffer = uv_buffer;
 }
 
-void make_chunk(Chunk *chunk, int p, int q) {
+void make_chunk(Chunk *chunk, Chunk *chunks, int chunk_count, int p, int q) {
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
@@ -624,7 +622,7 @@ void make_chunk(Chunk *chunk, int p, int q) {
     map_alloc(map);
     make_world(map, p, q);
     db_update_chunk(map, p, q);
-    update_chunk(chunk);
+    update_chunk(chunk, chunks, chunk_count);
     client_chunk(p, q);
 }
 
@@ -708,7 +706,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
                 int a = p + dp;
                 int b = q + dq;
                 if (!find_chunk(chunks, count, a, b)) {
-                    make_chunk(chunks + count, a, b);
+                    make_chunk(chunks + count, chunks, count, a, b);
                     count++;
                     if (!force) {
                         *chunk_count = count;
@@ -1153,7 +1151,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             if (chunk->dirty) {
-                update_chunk(chunk);
+                update_chunk(chunk, chunks, chunk_count);
             }
         }
 

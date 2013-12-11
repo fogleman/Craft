@@ -21,7 +21,7 @@ include_directories(tinycthread)
 if (APPLE)
     target_link_libraries(craft glfw ${GLFW_LIBRARIES})
 elseif (WIN32)
-    set(glew_INSTALL_ROOT glew-1.10.0)
+    set(glew_INSTALL_ROOT ${PROJECT_SOURCE_DIR}/glew-1.10.0)
     set(CMAKE_PREFIX_PATH ${glew_INSTALL_ROOT})
     set(CMAKE_LIBRARY_PATH ${glew_INSTALL_ROOT}/lib/Release/Win32)
     find_package(GLEW REQUIRED)
@@ -30,7 +30,8 @@ elseif (WIN32)
 
     add_custom_command(TARGET craft POST_BUILD
                        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       shaders $<TARGET_FILE_DIR:craft>/shaders)
+                       "${PROJECT_SOURCE_DIR}/shaders"
+                       $<TARGET_FILE_DIR:craft>/shaders)
     add_custom_command(TARGET craft POST_BUILD
                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
                        "${PROJECT_SOURCE_DIR}/texture.png"

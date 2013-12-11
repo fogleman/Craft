@@ -31,6 +31,7 @@ static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
 static int middle_click = 0;
+static int teleport = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
@@ -49,6 +50,11 @@ typedef struct {
 
 typedef struct {
     int id;
+    float x;
+    float y;
+    float z;
+    float rx;
+    float ry;
     GLuint position_buffer;
     GLuint normal_buffer;
     GLuint uv_buffer;
@@ -243,6 +249,11 @@ Player *find_player(Player *players, int player_count, int id) {
 void update_player(Player *player,
     float x, float y, float z, float rx, float ry)
 {
+    player->x = x;
+    player->y = y;
+    player->z = z;
+    player->rx = rx;
+    player->ry = ry;
     make_single_cube(
         &player->position_buffer, &player->normal_buffer, &player->uv_buffer,
         x, y, z, 0.4, 16);
@@ -686,17 +697,23 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
             memcpy(chunk, other, sizeof(Chunk));
         }
     }
-    int n = CREATE_CHUNK_RADIUS;
-    for (int i = -n; i <= n; i++) {
-        for (int j = -n; j <= n; j++) {
-            int a = p + i;
-            int b = q + j;
-            if (!find_chunk(chunks, count, a, b)) {
-                make_chunk(chunks + count, a, b);
-                count++;
-                if (!force) {
-                    *chunk_count = count;
-                    return;
+    int n = force ? 1 : CREATE_CHUNK_RADIUS;
+    for (int i = 0; i <= n; i++) {
+        for (int dp = -n; dp <= n; dp++) {
+            for (int dq = -n; dq <= n; dq++) {
+                int j = MAX(ABS(dp), ABS(dq));
+                if (i != j) {
+                    continue;
+                }
+                int a = p + dp;
+                int b = q + dq;
+                if (!find_chunk(chunks, count, a, b)) {
+                    make_chunk(chunks + count, a, b);
+                    count++;
+                    if (!force) {
+                        *chunk_count = count;
+                        return;
+                    }
                 }
             }
         }
@@ -764,6 +781,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         else {
             left_click = 1;
         }
+    }
+    if (key == 'P') {
+        teleport = 1;
     }
     if (key >= '1' && key <= '9') {
         block_type = key - '1' + 1;
@@ -1026,6 +1046,9 @@ int main(int argc, char **argv) {
                 dy = 0;
             }
         }
+        if (y < 0) {
+            y = highest_block(chunks, chunk_count, x, z) + 2;
+        }
 
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
@@ -1064,6 +1087,22 @@ int main(int argc, char **argv) {
             }
         }
 
+        if (teleport) {
+            teleport = 0;
+            if (player_count) {
+                int index = rand_int(player_count);
+                Player *player = players + index;
+                x = player->x;
+                y = player->y;
+                z = player->z;
+                rx = player->rx;
+                ry = player->ry;
+                ensure_chunks(chunks, &chunk_count,
+                    floorf(roundf(x) / CHUNK_SIZE),
+                    floorf(roundf(z) / CHUNK_SIZE), 1);
+            }
+        }
+
         client_position(x, y, z, rx, ry);
         char buffer[RECV_BUFFER_SIZE];
         while (client_recv(buffer, RECV_BUFFER_SIZE)) {
@@ -1099,6 +1138,7 @@ int main(int argc, char **argv) {
                     player->position_buffer = 0;
                     player->normal_buffer = 0;
                     player->uv_buffer = 0;
+                    printf("%d other players are online\n", player_count);
                 }
                 if (player) {
                     update_player(player, px, py, pz, prx, pry);
@@ -1106,6 +1146,7 @@ int main(int argc, char **argv) {
             }
             if (sscanf(buffer, "D,%d", &pid) == 1) {
                 delete_player(players, &player_count, pid);
+                printf("%d other players are online\n", player_count);
             }
         }
 

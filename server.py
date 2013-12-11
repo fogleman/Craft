@@ -38,6 +38,7 @@ def log(*args):
     print now, ' '.join(map(str, args))
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+    allow_reuse_address = True
     daemon_threads = True
 
 class Handler(SocketServer.BaseRequestHandler):

@@ -36,7 +36,10 @@ static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
 static float fov = 65.0;
-
+static float walking_speed = 5;
+static int sz = 0;
+static int sx = 0;
+float acc = 0;
 typedef struct {
     Map map;
     int p;
@@ -983,15 +986,34 @@ int main(int argc, char **argv) {
             glfwGetCursorPos(window, &px, &py);
         }
 
-        int sz = 0;
-        int sx = 0;
+        int szlast = sz;
+        int sxlast = sx;
+        sz = 0;
+        sx = 0;
         ortho = glfwGetKey(window, 'F');
         fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
         if (glfwGetKey(window, 'Q')) break;
-        if (glfwGetKey(window, 'W')) sz--;
+        if (glfwGetKey(window, 'W')) sz--; 
         if (glfwGetKey(window, 'S')) sz++;
         if (glfwGetKey(window, 'A')) sx--;
         if (glfwGetKey(window, 'D')) sx++;
+	if (sx != 0 || sz !=0 ){
+            acc = walking_speed > acc && acc > 0 ? acc + (acc - .2)  : walking_speed; printf("0\n");}
+        else{
+            if(sx == 0 && sz == 0){
+		printf("1\n");
+                if(acc > 1 && acc > 0){
+			printf("2\n");
+                    acc = acc - (acc / 3);
+                    if(szlast != 0){sz = szlast; printf("szlast:%i\n", szlast);};
+                    if(sxlast != 0){sx = sxlast; printf("sxlast:%i\n", sxlast);};}		
+                else{
+                    acc = .5;
+                }
+
+                }
+            }
+       
         float m = dt * 1.0;
         if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
         if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
@@ -1025,7 +1047,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'N')) {
             vx = 0; vy = 0; vz = 1;
         }
-        float speed = flying ? 20 : 5;
+        float speed = flying ? 20 : acc;
         int step = 8;
         float ut = dt / step;
         vx = vx * ut * speed;

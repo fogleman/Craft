@@ -175,7 +175,6 @@ def main():
         '    z int not null,'
         '    w int not null'
         ');',
-        'create index if not exists block_pq_idx on block(p, q);',
         'create index if not exists block_xyz_idx on block (x, y, z);',
         'create unique index if not exists block_pqxyz_idx on '
         '    block (p, q, x, y, z);',

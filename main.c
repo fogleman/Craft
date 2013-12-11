@@ -1105,7 +1105,7 @@ int main(int argc, char **argv) {
             if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
                 continue;
             }
-            if (!chunk_visible(chunk, matrix)) {
+            if (y < 100 && !chunk_visible(chunk, matrix)) {
                 continue;
             }
             draw_chunk(chunk, position_loc, normal_loc, uv_loc);

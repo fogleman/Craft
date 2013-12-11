@@ -17,6 +17,7 @@
 #include "noise.h"
 #include "util.h"
 #include "world.h"
+#include "main.h"
 
 #define FULLSCREEN 0
 #define VSYNC 1
@@ -1134,7 +1135,7 @@ int main(int argc, char **argv) {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        set_matrix_3d(matrix, width, height, x, y, z, rx, ry, fov, ortho);
+        set_matrix_3d(matrix, width, height, x, y, z, rx, ry, fov, ortho, ortho_zoom);
 
         // render chunks
         glUseProgram(block_program);

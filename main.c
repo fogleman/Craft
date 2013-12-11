@@ -643,6 +643,7 @@ void update_chunk(Chunk *chunk) {
     free(uv_data);
 
     chunk->faces = faces;
+    chunk->dirty = 0;
     chunk->position_buffer = position_buffer;
     chunk->normal_buffer = normal_buffer;
     chunk->uv_buffer = uv_buffer;
@@ -652,6 +653,7 @@ void make_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
+    chunk->dirty = 1;
     Map *map = &chunk->map;
     map_alloc(map);
     make_world(map, p, q);

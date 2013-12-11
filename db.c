@@ -147,7 +147,7 @@ int db_select_block(int x, int y, int z) {
     }
 }
 
-void db_update_chunk(Map *map, int p, int q) {
+void db_load_map(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
     }

@@ -80,14 +80,14 @@ int is_selectable(int w) {
     return w > 0 && w <= 11;
 }
 
-void update_matrix_2d(float *matrix) {
+void set_matrix_2d(float *matrix) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     mat_ortho(matrix, 0, width, 0, height, -1, 1);
 }
 
-void update_matrix_3d(
+void set_matrix_3d(
     float *matrix, float x, float y, float z, float rx, float ry)
 {
     float a[16];
@@ -115,7 +115,7 @@ void update_matrix_3d(
     mat_multiply(matrix, a, matrix);
 }
 
-void update_matrix_item(float *matrix) {
+void set_matrix_item(float *matrix) {
     float a[16];
     float b[16];
     int width, height;
@@ -137,31 +137,6 @@ void update_matrix_item(float *matrix) {
     mat_multiply(a, b, a);
     mat_identity(matrix);
     mat_multiply(matrix, a, matrix);
-}
-
-GLuint make_crosshair_buffer() {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    int x = width / 2;
-    int y = height / 2;
-    int p = 10;
-    float data[] = {
-        x, y - p, x, y + p,
-        x - p, y, x + p, y
-    };
-    GLuint buffer = make_buffer(
-        GL_ARRAY_BUFFER, sizeof(data), data
-    );
-    return buffer;
-}
-
-GLuint make_wireframe_buffer(float x, float y, float z, float n) {
-    float data[144];
-    make_cube_wireframe(data, x, y, z, n);
-    GLuint buffer = make_buffer(
-        GL_ARRAY_BUFFER, sizeof(data), data
-    );
-    return buffer;
 }
 
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
@@ -199,7 +174,32 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     }
 }
 
-void make_item_buffers(
+GLuint gen_crosshair_buffer() {
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    int x = width / 2;
+    int y = height / 2;
+    int p = 10;
+    float data[] = {
+        x, y - p, x, y + p,
+        x - p, y, x + p, y
+    };
+    GLuint buffer = gen_buffer(
+        GL_ARRAY_BUFFER, sizeof(data), data
+    );
+    return buffer;
+}
+
+GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
+    float data[144];
+    make_cube_wireframe(data, x, y, z, n);
+    GLuint buffer = gen_buffer(
+        GL_ARRAY_BUFFER, sizeof(data), data
+    );
+    return buffer;
+}
+
+void gen_item_buffers(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
     int w)
 {
@@ -214,17 +214,17 @@ void make_item_buffers(
         position_data, normal_data, uv_data,
         1, 1, 1, 1, 1, 1,
         0, 0, 0, 0.5, w);
-    *position_buffer = make_buffer(
+    *position_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
         position_data
     );
-    *normal_buffer = make_buffer(
+    *normal_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
         normal_data
     );
-    *uv_buffer = make_buffer(
+    *uv_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 12,
         uv_data
@@ -234,7 +234,7 @@ void make_item_buffers(
     free(uv_data);
 }
 
-void make_player_buffers(
+void gen_player_buffers(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
     float x, float y, float z, float rx, float ry)
 {
@@ -248,17 +248,17 @@ void make_player_buffers(
     make_player(
         position_data, normal_data, uv_data,
         x, y, z, rx, ry);
-    *position_buffer = make_buffer(
+    *position_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
         position_data
     );
-    *normal_buffer = make_buffer(
+    *normal_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
         normal_data
     );
-    *uv_buffer = make_buffer(
+    *uv_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 12,
         uv_data
@@ -266,6 +266,62 @@ void make_player_buffers(
     free(position_data);
     free(normal_data);
     free(uv_data);
+}
+
+void draw_chunk(
+    Chunk *chunk, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    glEnableVertexAttribArray(position_loc);
+    glEnableVertexAttribArray(normal_loc);
+    glEnableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->position_buffer);
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->normal_buffer);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, chunk->uv_buffer);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 6);
+    glDisableVertexAttribArray(position_loc);
+    glDisableVertexAttribArray(normal_loc);
+    glDisableVertexAttribArray(uv_loc);
+}
+
+void draw_cube(
+    GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
+    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    glEnableVertexAttribArray(position_loc);
+    glEnableVertexAttribArray(normal_loc);
+    glEnableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
+    glDisableVertexAttribArray(position_loc);
+    glDisableVertexAttribArray(normal_loc);
+    glDisableVertexAttribArray(uv_loc);
+}
+
+void draw_player(
+    Player *player, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    draw_cube(
+        player->position_buffer, player->normal_buffer, player->uv_buffer,
+        position_loc, normal_loc, uv_loc);
+}
+
+void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
+    glEnableVertexAttribArray(position_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glVertexAttribPointer(position_loc, size, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_LINES, 0, count);
+    glDisableVertexAttribArray(position_loc);
 }
 
 Player *find_player(Player *players, int player_count, int id) {
@@ -286,7 +342,7 @@ void update_player(Player *player,
     player->z = z;
     player->rx = rx;
     player->ry = ry;
-    make_player_buffers(
+    gen_player_buffers(
         &player->position_buffer, &player->normal_buffer, &player->uv_buffer,
         x, y, z, rx, ry);
 }
@@ -482,7 +538,7 @@ int player_intersects_block(
     return 0;
 }
 
-void make_world(Map *map, int p, int q) {
+void create_world(Map *map, int p, int q) {
     int pad = 1;
     for (int dx = -pad; dx < CHUNK_SIZE + pad; dx++) {
         for (int dz = -pad; dz < CHUNK_SIZE + pad; dz++) {
@@ -562,14 +618,12 @@ void exposed_faces(
     *f6 = is_transparent(map_get(map, x, y, z - 1));
 }
 
-void update_chunk(Chunk *chunk) {
+void gen_chunk_buffers(Chunk *chunk) {
     Map *map = &chunk->map;
 
-    if (chunk->faces) {
-        glDeleteBuffers(1, &chunk->position_buffer);
-        glDeleteBuffers(1, &chunk->normal_buffer);
-        glDeleteBuffers(1, &chunk->uv_buffer);
-    }
+    glDeleteBuffers(1, &chunk->position_buffer);
+    glDeleteBuffers(1, &chunk->normal_buffer);
+    glDeleteBuffers(1, &chunk->uv_buffer);
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
@@ -623,17 +677,17 @@ void update_chunk(Chunk *chunk) {
         uv_offset += total * 12;
     } END_MAP_FOR_EACH;
 
-    GLuint position_buffer = make_buffer(
+    GLuint position_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
         position_data
     );
-    GLuint normal_buffer = make_buffer(
+    GLuint normal_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
         normal_data
     );
-    GLuint uv_buffer = make_buffer(
+    GLuint uv_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 12,
         uv_data
@@ -649,73 +703,20 @@ void update_chunk(Chunk *chunk) {
     chunk->uv_buffer = uv_buffer;
 }
 
-void make_chunk(Chunk *chunk, int p, int q) {
+void create_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
     chunk->dirty = 1;
+    chunk->position_buffer = 0;
+    chunk->normal_buffer = 0;
+    chunk->uv_buffer = 0;
     Map *map = &chunk->map;
     map_alloc(map);
-    make_world(map, p, q);
-    db_update_chunk(map, p, q);
-    update_chunk(chunk);
+    create_world(map, p, q);
+    db_load_map(map, p, q);
+    gen_chunk_buffers(chunk);
     client_chunk(p, q);
-}
-
-void draw_chunk(
-    Chunk *chunk, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->position_buffer);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->normal_buffer);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->uv_buffer);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 6);
-    glDisableVertexAttribArray(position_loc);
-    glDisableVertexAttribArray(normal_loc);
-    glDisableVertexAttribArray(uv_loc);
-}
-
-void draw_single_cube(
-    GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
-    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
-    glDisableVertexAttribArray(position_loc);
-    glDisableVertexAttribArray(normal_loc);
-    glDisableVertexAttribArray(uv_loc);
-}
-
-void draw_player(
-    Player *player, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    draw_single_cube(
-        player->position_buffer, player->normal_buffer, player->uv_buffer,
-        position_loc, normal_loc, uv_loc);
-}
-
-void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
-    glEnableVertexAttribArray(position_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glVertexAttribPointer(position_loc, size, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_LINES, 0, count);
-    glDisableVertexAttribArray(position_loc);
 }
 
 void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
@@ -742,7 +743,7 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
                 int a = p + dp;
                 int b = q + dq;
                 if (!find_chunk(chunks, count, a, b)) {
-                    make_chunk(chunks + count, a, b);
+                    create_chunk(chunks + count, a, b);
                     count++;
                     if (!force) {
                         *chunk_count = count;
@@ -1205,7 +1206,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             if (chunk->dirty) {
-                update_chunk(chunk);
+                gen_chunk_buffers(chunk);
             }
         }
 
@@ -1215,7 +1216,7 @@ int main(int argc, char **argv) {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        update_matrix_3d(matrix, x, y, z, rx, ry);
+        set_matrix_3d(matrix, x, y, z, rx, ry);
 
         // render chunks
         glUseProgram(block_program);
@@ -1249,29 +1250,29 @@ int main(int argc, char **argv) {
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-            GLuint wireframe_buffer = make_wireframe_buffer(hx, hy, hz, 0.51);
+            GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.51);
             draw_lines(wireframe_buffer, line_position_loc, 3, 48);
             glDeleteBuffers(1, &wireframe_buffer);
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
-        update_matrix_2d(matrix);
+        set_matrix_2d(matrix);
 
         // render crosshairs
         glUseProgram(line_program);
         glLineWidth(4);
         glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-        GLuint crosshair_buffer = make_crosshair_buffer();
+        GLuint crosshair_buffer = gen_crosshair_buffer();
         draw_lines(crosshair_buffer, line_position_loc, 2, 4);
         glDeleteBuffers(1, &crosshair_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
         // render selected item
-        update_matrix_item(matrix);
+        set_matrix_item(matrix);
         if (block_type != previous_block_type) {
             previous_block_type = block_type;
-            make_item_buffers(
+            gen_item_buffers(
                 &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
                 block_type);
         }
@@ -1281,7 +1282,7 @@ int main(int argc, char **argv) {
         glUniform1i(sampler_loc, 0);
         glUniform1f(timer_loc, glfwGetTime());
         glDisable(GL_DEPTH_TEST);
-        draw_single_cube(
+        draw_cube(
             item_position_buffer, item_normal_buffer, item_uv_buffer,
             position_loc, normal_loc, uv_loc);
         glEnable(GL_DEPTH_TEST);

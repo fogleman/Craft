@@ -39,7 +39,7 @@ char *load_file(const char *path) {
     return data;
 }
 
-GLuint make_buffer(GLenum target, GLsizei size, const void *data) {
+GLuint gen_buffer(GLenum target, GLsizei size, const void *data) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(target, buffer);

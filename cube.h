@@ -14,7 +14,7 @@ void make_cube(
 
 void make_plant(
     float *vertex, float *normal, float *texture,
-    float x, float y, float z, float n, int w, float rotation);
+    float px, float py, float pz, float n, int w, float rotation);
 
 void make_player(
     float *vertex, float *normal, float *texture,

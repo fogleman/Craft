@@ -103,6 +103,17 @@ void mat_multiply(float *matrix, float *a, float *b) {
     }
 }
 
+void mat_apply(float *data, float *matrix, int count) {
+    float vec[4] = {0, 0, 0, 1};
+    for (int i = 0; i < count; i++) {
+        float *d = data + i * 3;
+        vec[0] = *(d++); vec[1] = *(d++); vec[2] = *(d++);
+        mat_vec_multiply(vec, matrix, vec);
+        d = data + i * 3;
+        *(d++) = vec[0]; *(d++) = vec[1]; *(d++) = vec[2];
+    }
+}
+
 void mat_frustum(
     float *matrix, float left, float right, float bottom,
     float top, float znear, float zfar)

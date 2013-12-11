@@ -759,6 +759,23 @@ void set_block(
     }
 }
 
+int get_block(
+    Chunk *chunks, int chunk_count,
+    int x, int y, int z)
+{
+    int p = floorf((float)x / CHUNK_SIZE);
+    int q = floorf((float)z / CHUNK_SIZE);
+
+    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    if(chunk)
+    {
+        Map *map = &chunk->map;
+        return map_get(map, x, y, z);
+    }
+
+    return 0;
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action != GLFW_PRESS) {
         return;
@@ -1060,6 +1077,12 @@ int main(int argc, char **argv) {
                 &hx, &hy, &hz);
             if (hy > 0 && is_destructable(hw)) {
                 set_block(chunks, chunk_count, hx, hy, hz, 0, 1);
+                int above = get_block(chunks, chunk_count, hx, hy+1, hz);
+
+                if(is_plant(above))
+                {
+                    set_block(chunks, chunk_count, hx, hy+1, hz, 0, 1);
+                }
             }
         }
 

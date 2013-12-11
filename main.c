@@ -1006,7 +1006,7 @@ int main(int argc, char **argv) {
                     if(szlast != 0){sz = szlast; };
                     if(sxlast != 0){sx = sxlast; };}		
                 else{
-                    acc = .5;
+                    acc = .8;
                 }
 
                 }

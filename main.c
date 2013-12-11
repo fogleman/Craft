@@ -83,6 +83,10 @@ int is_selectable(int w) {
     return w > 0 && w <= 11;
 }
 
+int chunked(float x) {
+    return floorf(roundf(x) / CHUNK_SIZE);
+}
+
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
     float m = cosf(ry);
     *vx = cosf(rx - RADIANS(90)) * m;
@@ -342,8 +346,8 @@ int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
     int result = -1;
     int nx = roundf(x);
     int nz = roundf(z);
-    int p = floorf(roundf(x) / CHUNK_SIZE);
-    int q = floorf(roundf(z) / CHUNK_SIZE);
+    int p = chunked(x);
+    int q = chunked(z);
     Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
     if (chunk) {
         Map *map = &chunk->map;
@@ -395,8 +399,8 @@ int hit_test(
 {
     int result = 0;
     float best = 0;
-    int p = floorf(roundf(x) / CHUNK_SIZE);
-    int q = floorf(roundf(z) / CHUNK_SIZE);
+    int p = chunked(x);
+    int q = chunked(z);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
     for (int i = 0; i < chunk_count; i++) {
@@ -425,8 +429,8 @@ int collide(
     int height, float *x, float *y, float *z)
 {
     int result = 0;
-    int p = floorf(roundf(*x) / CHUNK_SIZE);
-    int q = floorf(roundf(*z) / CHUNK_SIZE);
+    int p = chunked(*x);
+    int q = chunked(*z);
     Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
     if (!chunk) {
         return result;
@@ -593,7 +597,12 @@ void create_chunk(Chunk *chunk, int p, int q) {
     client_chunk(p, q);
 }
 
-void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
+void ensure_chunks(
+    Chunk *chunks, int *chunk_count,
+    float x, float y, float z, int force)
+{
+    int p = chunked(x);
+    int q = chunked(z);
     int count = *chunk_count;
     for (int i = 0; i < count; i++) {
         Chunk *chunk = chunks + i;
@@ -616,7 +625,17 @@ void ensure_chunks(Chunk *chunks, int *chunk_count, int p, int q, int force) {
                 }
                 int a = p + dp;
                 int b = q + dq;
-                if (!find_chunk(chunks, count, a, b)) {
+                Chunk *chunk = find_chunk(chunks, count, a, b);
+                if (chunk) {
+                    if (chunk->dirty) {
+                        gen_chunk_buffers(chunk);
+                        if (!force) {
+                            *chunk_count = count;
+                            return;
+                        }
+                    }
+                }
+                else {
                     create_chunk(chunks + count, a, b);
                     count++;
                     if (!force) {
@@ -650,8 +669,8 @@ void set_block(
     Chunk *chunks, int chunk_count,
     int x, int y, int z, int w, int post)
 {
-    int p = floorf((float)x / CHUNK_SIZE);
-    int q = floorf((float)z / CHUNK_SIZE);
+    int p = chunked(x);
+    int q = chunked(z);
     _set_block(chunks, chunk_count, p, q, x, y, z, w, post);
     w = w ? -1 : 0;
     int p0 = x == p * CHUNK_SIZE;
@@ -674,8 +693,8 @@ int get_block(
     Chunk *chunks, int chunk_count,
     int x, int y, int z)
 {
-    int p = floorf((float)x / CHUNK_SIZE);
-    int q = floorf((float)z / CHUNK_SIZE);
+    int p = chunked(x);
+    int q = chunked(z);
     Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
     if (chunk) {
         Map *map = &chunk->map;
@@ -870,9 +889,7 @@ int main(int argc, char **argv) {
     double py = 0;
 
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
-    ensure_chunks(chunks, &chunk_count,
-        floorf(roundf(x) / CHUNK_SIZE),
-        floorf(roundf(z) / CHUNK_SIZE), 1);
+    ensure_chunks(chunks, &chunk_count, x, y, z, 1);
     if (!loaded) {
         y = highest_block(chunks, chunk_count, x, z) + 2;
     }
@@ -977,11 +994,6 @@ int main(int argc, char **argv) {
             y = highest_block(chunks, chunk_count, x, z) + 2;
         }
 
-        for (int i = 0; i < chunk_count; i++) {
-            Chunk *chunk = chunks + i;
-            chunk->dirty = 0;
-        }
-
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;
@@ -1023,14 +1035,9 @@ int main(int argc, char **argv) {
             if (player_count) {
                 int index = rand_int(player_count);
                 Player *player = players + index;
-                x = player->x;
-                y = player->y;
-                z = player->z;
-                rx = player->rx;
-                ry = player->ry;
-                ensure_chunks(chunks, &chunk_count,
-                    floorf(roundf(x) / CHUNK_SIZE),
-                    floorf(roundf(z) / CHUNK_SIZE), 1);
+                x = player->x; y = player->y; z = player->z;
+                rx = player->rx; ry = player->ry;
+                ensure_chunks(chunks, &chunk_count, x, y, z, 1);
             }
         }
 
@@ -1042,9 +1049,7 @@ int main(int argc, char **argv) {
                 &ux, &uy, &uz, &urx, &ury) == 5)
             {
                 x = ux; y = uy; z = uz; rx = urx; ry = ury;
-                ensure_chunks(chunks, &chunk_count,
-                    floorf(roundf(x) / CHUNK_SIZE),
-                    floorf(roundf(z) / CHUNK_SIZE), 1);
+                ensure_chunks(chunks, &chunk_count, x, y, z, 1);
                 y = highest_block(chunks, chunk_count, x, z) + 2;
             }
             int bx, by, bz, bw;
@@ -1081,16 +1086,9 @@ int main(int argc, char **argv) {
             }
         }
 
-        for (int i = 0; i < chunk_count; i++) {
-            Chunk *chunk = chunks + i;
-            if (chunk->dirty) {
-                gen_chunk_buffers(chunk);
-            }
-        }
-
-        int p = floorf(roundf(x) / CHUNK_SIZE);
-        int q = floorf(roundf(z) / CHUNK_SIZE);
-        ensure_chunks(chunks, &chunk_count, p, q, 0);
+        int p = chunked(x);
+        int q = chunked(z);
+        ensure_chunks(chunks, &chunk_count, x, y, z, 0);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

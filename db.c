@@ -5,7 +5,6 @@
 static int db_enabled = 1;
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
-static sqlite3_stmt *select_block_stmt;
 static sqlite3_stmt *update_chunk_stmt;
 
 void db_enable() {
@@ -48,9 +47,6 @@ int db_init() {
         "insert or replace into block (p, q, x, y, z, w) "
         "values (?, ?, ?, ?, ?, ?);";
 
-    static const char *select_block_query =
-        "select w from block where x = ? and y = ? and z = ?;";
-
     static const char *update_chunk_query =
         "select x, y, z, w from block where p = ? and q = ?;";
 
@@ -60,8 +56,6 @@ int db_init() {
     rc = sqlite3_exec(db, create_query, NULL, NULL, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, insert_block_query, -1, &insert_block_stmt, NULL);
-    if (rc) return rc;
-    rc = sqlite3_prepare_v2(db, select_block_query, -1, &select_block_stmt, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, update_chunk_query, -1, &update_chunk_stmt, NULL);
     if (rc) return rc;
@@ -73,7 +67,6 @@ void db_close() {
         return;
     }
     sqlite3_finalize(insert_block_stmt);
-    sqlite3_finalize(select_block_stmt);
     sqlite3_finalize(update_chunk_stmt);
     sqlite3_close(db);
 }
@@ -129,22 +122,6 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
     sqlite3_bind_int(insert_block_stmt, 5, z);
     sqlite3_bind_int(insert_block_stmt, 6, w);
     sqlite3_step(insert_block_stmt);
-}
-
-int db_select_block(int x, int y, int z) {
-    if (!db_enabled) {
-        return -1;
-    }
-    sqlite3_reset(select_block_stmt);
-    sqlite3_bind_int(select_block_stmt, 1, x);
-    sqlite3_bind_int(select_block_stmt, 2, y);
-    sqlite3_bind_int(select_block_stmt, 3, z);
-    if (sqlite3_step(select_block_stmt) == SQLITE_ROW) {
-        return sqlite3_column_int(select_block_stmt, 0);
-    }
-    else {
-        return -1;
-    }
 }
 
 void db_load_map(Map *map, int p, int q) {

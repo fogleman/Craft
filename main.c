@@ -25,7 +25,7 @@
 #define MAX_PLAYERS 128
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6
-#define DELETE_CHUNK_RADIUS 8
+#define DELETE_CHUNK_RADIUS 12
 #define SCROLL_THRESHOLD 0.1
 #define RECV_BUFFER_SIZE 1024
 
@@ -636,11 +636,13 @@ void ensure_chunks(
                     }
                 }
                 else {
-                    create_chunk(chunks + count, a, b);
-                    count++;
-                    if (!force) {
-                        *chunk_count = count;
-                        return;
+                    if (count < MAX_CHUNKS) {
+                        create_chunk(chunks + count, a, b);
+                        count++;
+                        if (!force) {
+                            *chunk_count = count;
+                            return;
+                        }
                     }
                 }
             }

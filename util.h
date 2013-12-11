@@ -52,6 +52,12 @@ void make_cube(
     float *vertex, float *normal, float *texture,
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w);
+void make_rotated_cube(
+    float *vertex, float *normal, float *texture,
+    float x, float y, float z, float n, int w, float rx, float ry);
+void make_player(
+    float *vertex, float *normal, float *texture,
+    float x, float y, float z, float rx, float ry);
 void make_cube_wireframe(float *vertex, float x, float y, float z, float n);
 
 void load_png_texture(const char *file_name);

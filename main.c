@@ -139,7 +139,7 @@ void update_matrix_item(float *matrix) {
     mat_multiply(matrix, a, matrix);
 }
 
-GLuint make_line_buffer() {
+GLuint make_crosshair_buffer() {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     int x = width / 2;
@@ -155,7 +155,7 @@ GLuint make_line_buffer() {
     return buffer;
 }
 
-GLuint make_cube_buffer(float x, float y, float z, float n) {
+GLuint make_wireframe_buffer(float x, float y, float z, float n) {
     float data[144];
     make_cube_wireframe(data, x, y, z, n);
     GLuint buffer = make_buffer(
@@ -199,9 +199,9 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     }
 }
 
-void make_single_cube(
+void make_item_buffers(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
-    float x, float y, float z, float n, int w, float rx, float ry)
+    int w)
 {
     int faces = 6;
     glDeleteBuffers(1, position_buffer);
@@ -210,11 +210,44 @@ void make_single_cube(
     GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
     GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
     GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
-    make_rotated_cube(
-        position_data,
-        normal_data,
-        uv_data,
-        x, y, z, n, w, rx, ry);
+    make_cube(
+        position_data, normal_data, uv_data,
+        1, 1, 1, 1, 1, 1,
+        0, 0, 0, 0.5, w);
+    *position_buffer = make_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 18,
+        position_data
+    );
+    *normal_buffer = make_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 18,
+        normal_data
+    );
+    *uv_buffer = make_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 12,
+        uv_data
+    );
+    free(position_data);
+    free(normal_data);
+    free(uv_data);
+}
+
+void make_player_buffers(
+    GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
+    float x, float y, float z, float rx, float ry)
+{
+    int faces = 6;
+    glDeleteBuffers(1, position_buffer);
+    glDeleteBuffers(1, normal_buffer);
+    glDeleteBuffers(1, uv_buffer);
+    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    make_player(
+        position_data, normal_data, uv_data,
+        x, y, z, rx, ry);
     *position_buffer = make_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
@@ -253,9 +286,9 @@ void update_player(Player *player,
     player->z = z;
     player->rx = rx;
     player->ry = ry;
-    make_single_cube(
+    make_player_buffers(
         &player->position_buffer, &player->normal_buffer, &player->uv_buffer,
-        x, y, z, 0.4, 14, rx, ry);
+        x, y, z, rx, ry);
 }
 
 void delete_player(Player *players, int *player_count, int id) {
@@ -1196,9 +1229,9 @@ int main(int argc, char **argv) {
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-            GLuint cube_buffer = make_cube_buffer(hx, hy, hz, 0.51);
-            draw_lines(cube_buffer, line_position_loc, 3, 48);
-            glDeleteBuffers(1, &cube_buffer);
+            GLuint wireframe_buffer = make_wireframe_buffer(hx, hy, hz, 0.51);
+            draw_lines(wireframe_buffer, line_position_loc, 3, 48);
+            glDeleteBuffers(1, &wireframe_buffer);
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
@@ -1209,18 +1242,18 @@ int main(int argc, char **argv) {
         glLineWidth(4);
         glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-        GLuint line_buffer = make_line_buffer();
-        draw_lines(line_buffer, line_position_loc, 2, 4);
-        glDeleteBuffers(1, &line_buffer);
+        GLuint crosshair_buffer = make_crosshair_buffer();
+        draw_lines(crosshair_buffer, line_position_loc, 2, 4);
+        glDeleteBuffers(1, &crosshair_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
         // render selected item
         update_matrix_item(matrix);
         if (block_type != previous_block_type) {
             previous_block_type = block_type;
-            make_single_cube(
+            make_item_buffers(
                 &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                0, 0, 0, 0.5, block_type, 0, 0);
+                block_type);
         }
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);

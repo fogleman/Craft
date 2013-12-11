@@ -28,22 +28,6 @@ GLuint make_shader(GLenum type, const char *source);
 GLuint load_shader(GLenum type, const char *path);
 GLuint make_program(GLuint shader1, GLuint shader2);
 GLuint load_program(const char *path1, const char *path2);
-
-void make_plant(
-    float *vertex, float *normal, float *texture,
-    float x, float y, float z, float n, int w, float rotation);
-void make_cube(
-    float *vertex, float *normal, float *texture,
-    int left, int right, int top, int bottom, int front, int back,
-    float x, float y, float z, float n, int w);
-void make_rotated_cube(
-    float *vertex, float *normal, float *texture,
-    float x, float y, float z, float n, int w, float rx, float ry);
-void make_player(
-    float *vertex, float *normal, float *texture,
-    float x, float y, float z, float rx, float ry);
-void make_cube_wireframe(float *vertex, float x, float y, float z, float n);
-
 void load_png_texture(const char *file_name);
 
 #endif

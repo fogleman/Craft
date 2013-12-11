@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include "client.h"
+#include "cube.h"
 #include "db.h"
 #include "map.h"
 #include "matrix.h"

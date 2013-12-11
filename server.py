@@ -61,7 +61,7 @@ class Handler(SocketServer.BaseRequestHandler):
             model.enqueue(model.on_disconnect, self)
     def send(self, *args):
         data = ','.join(str(x) for x in args)
-        log('SEND', self.client_id, data)
+        #log('SEND', self.client_id, data)
         data = '%s\n' % data
         try:
             self.request.sendall(data)
@@ -110,7 +110,7 @@ class Model(object):
         self.send_position(client)
         self.send_positions(client)
     def on_data(self, client, data):
-        log('RECV', client.client_id, data)
+        #log('RECV', client.client_id, data)
         args = data.split(',')
         command, args = args[0], args[1:]
         if command in self.commands:

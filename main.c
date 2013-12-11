@@ -35,6 +35,7 @@ static int teleport = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
+static float ortho_zoom = 32;
 static float fov = 65.0;
 
 typedef struct {
@@ -104,8 +105,8 @@ void update_matrix_3d(
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
     if (ortho) {
-        int size = 32;
-        mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
+        float ortho_aspect = ortho_zoom * aspect;
+        mat_ortho(b, -ortho_aspect, ortho_aspect, -ortho_zoom, ortho_zoom, -256, 256);
     }
     else {
         mat_perspective(b, fov, aspect, 0.1, 1024.0);
@@ -839,8 +840,10 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     }
 }
 
-void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
+void _on_scroll_blockselect(double ydelta)
+{
     static double ypos = 0;
+
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
         block_type++;
@@ -855,6 +858,35 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
             block_type = 11;
         }
         ypos = 0;
+    }
+}
+
+void _on_scroll_orthozoom(double ydelta)
+{
+    ortho_zoom += ydelta;
+
+    const float ZOOM_MIN = 8;
+    const float ZOOM_MAX = 128;
+
+    if(ortho_zoom > ZOOM_MAX)
+    {
+        ortho_zoom = ZOOM_MAX;
+    }
+    else if(ortho_zoom < ZOOM_MIN)
+    {
+        ortho_zoom = ZOOM_MIN;
+    }
+}
+
+void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
+
+    if(ortho)
+    {
+        _on_scroll_orthozoom(ydelta);
+    }
+    else
+    {
+        _on_scroll_blockselect(ydelta);
     }
 }
 
@@ -1044,6 +1076,8 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
         if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
         float vx, vy, vz;
+        vx = vy = vz = 0.0;
+
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
         if (glfwGetKey(window, GLFW_KEY_SPACE)) {
             if (flying) {
@@ -1054,23 +1088,24 @@ int main(int argc, char **argv) {
             }
         }
         if (glfwGetKey(window, 'Z')) {
-            vx = -1; vy = 0; vz = 0;
+            vx = -1;
         }
         if (glfwGetKey(window, 'X')) {
-            vx = 1; vy = 0; vz = 0;
+            vx = 1;
         }
         if (glfwGetKey(window, 'C')) {
-            vx = 0; vy = -1; vz = 0;
+            vy = -1;
         }
         if (glfwGetKey(window, 'V')) {
-            vx = 0; vy = 1; vz = 0;
+            vy = 1;
         }
         if (glfwGetKey(window, 'B')) {
-            vx = 0; vy = 0; vz = -1;
+            vz = -1;
         }
         if (glfwGetKey(window, 'N')) {
-            vx = 0; vy = 0; vz = 1;
+            vz = 1;
         }
+
         float speed = flying ? 20 : 5;
         int step = 8;
         float ut = dt / step;

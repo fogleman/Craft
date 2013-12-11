@@ -16,7 +16,7 @@
 
 #define FULLSCREEN 0
 #define VSYNC 1
-#define SHOW_FPS 0
+#define SHOW_FPS 1
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
@@ -998,11 +998,11 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'A')) sx--;
         if (glfwGetKey(window, 'D')) sx++;
 	if (sx != 0 || sz !=0 && flying == 0){
-            acc = walking_speed > acc && acc > 0 ? acc + (acc - .2)  : walking_speed; }
+            acc = walking_speed > acc && acc > 0 ? acc + (acc - (acc / 3))  : walking_speed; }
         else{
             if(sx == 0 && sz == 0 && flying == 0){
-                if(acc > 1 && acc > 0){
-                    acc = acc - (acc / 3);
+                if(acc > 1.6 && acc > 0){
+                    acc = acc - (acc / 3.2);
                     if(szlast != 0){sz = szlast; };
                     if(sxlast != 0){sx = sxlast; };}		
                 else{

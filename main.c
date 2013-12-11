@@ -9,17 +9,18 @@
 #include <string.h>
 #include <time.h>
 #include "client.h"
+#include "common.h"
 #include "cube.h"
 #include "db.h"
 #include "map.h"
 #include "matrix.h"
 #include "noise.h"
 #include "util.h"
+#include "world.h"
 
 #define FULLSCREEN 0
 #define VSYNC 1
 #define SHOW_FPS 0
-#define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
 #define CREATE_CHUNK_RADIUS 6
@@ -82,65 +83,6 @@ int is_selectable(int w) {
     return w > 0 && w <= 11;
 }
 
-void set_matrix_2d(float *matrix) {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
-    mat_ortho(matrix, 0, width, 0, height, -1, 1);
-}
-
-void set_matrix_3d(
-    float *matrix, float x, float y, float z, float rx, float ry)
-{
-    float a[16];
-    float b[16];
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
-    float aspect = (float)width / height;
-    mat_identity(a);
-    mat_translate(b, -x, -y, -z);
-    mat_multiply(a, b, a);
-    mat_rotate(b, cosf(rx), 0, sinf(rx), ry);
-    mat_multiply(a, b, a);
-    mat_rotate(b, 0, 1, 0, -rx);
-    mat_multiply(a, b, a);
-    if (ortho) {
-        int size = 32;
-        mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
-    }
-    else {
-        mat_perspective(b, fov, aspect, 0.1, 1024.0);
-    }
-    mat_multiply(a, b, a);
-    mat_identity(matrix);
-    mat_multiply(matrix, a, matrix);
-}
-
-void set_matrix_item(float *matrix) {
-    float a[16];
-    float b[16];
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
-    float aspect = (float)width / height;
-    float size = 64;
-    float box = height / size / 2;
-    float xoffset = 1 - size / width * 2;
-    float yoffset = 1 - size / height * 2;
-    mat_identity(a);
-    mat_rotate(b, 0, 1, 0, PI / 4);
-    mat_multiply(a, b, a);
-    mat_rotate(b, 1, 0, 0, -PI / 10);
-    mat_multiply(a, b, a);
-    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 1);
-    mat_multiply(a, b, a);
-    mat_translate(b, -xoffset, -yoffset, 0);
-    mat_multiply(a, b, a);
-    mat_identity(matrix);
-    mat_multiply(matrix, a, matrix);
-}
-
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
     float m = cosf(ry);
     *vx = cosf(rx - RADIANS(90)) * m;
@@ -176,9 +118,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     }
 }
 
-GLuint gen_crosshair_buffer() {
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
+GLuint gen_crosshair_buffer(int width, int height) {
     int x = width / 2;
     int y = height / 2;
     int p = 10;
@@ -538,74 +478,6 @@ int player_intersects_block(
         }
     }
     return 0;
-}
-
-void create_world(Map *map, int p, int q) {
-    int pad = 1;
-    for (int dx = -pad; dx < CHUNK_SIZE + pad; dx++) {
-        for (int dz = -pad; dz < CHUNK_SIZE + pad; dz++) {
-            int x = p * CHUNK_SIZE + dx;
-            int z = q * CHUNK_SIZE + dz;
-            float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
-            float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
-            int mh = g * 32 + 16;
-            int h = f * mh;
-            int w = 1;
-            int t = 12;
-            if (h <= t) {
-                h = t;
-                w = 2;
-            }
-            if (dx < 0 || dz < 0 || dx >= CHUNK_SIZE || dz >= CHUNK_SIZE) {
-                w = -1;
-            }
-            // sand and grass terrain
-            for (int y = 0; y < h; y++) {
-                map_set(map, x, y, z, w);
-            }
-            // TODO: w = -1 if outside of chunk
-            if (w == 1) {
-                // grass
-                if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
-                    map_set(map, x, h, z, 17);
-                }
-                // flowers
-                if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
-                    int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
-                    map_set(map, x, h, z, w);
-                }
-                // trees
-                int ok = 1;
-                if (dx - 4 < 0 || dz - 4 < 0 ||
-                    dx + 4 >= CHUNK_SIZE || dz + 4 >= CHUNK_SIZE)
-                {
-                    ok = 0;
-                }
-                if (ok && simplex2(x, z, 6, 0.5, 2) > 0.84) {
-                    for (int y = h + 3; y < h + 8; y++) {
-                        for (int ox = -3; ox <= 3; ox++) {
-                            for (int oz = -3; oz <= 3; oz++) {
-                                int d = (ox * ox) + (oz * oz) +
-                                    (y - (h + 4)) * (y - (h + 4));
-                                if (d < 11) {
-                                    map_set(map, x + ox, y, z + oz, 15);
-                                }
-                            }
-                        }
-                    }
-                    for (int y = h; y < h + 7; y++) {
-                        map_set(map, x, y, z, 5);
-                    }
-                }
-            }
-            // clouds
-            for (int y = 64; y < 72; y++) {
-                if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75) {
-                    map_set(map, x, y, z, 16);
-                }
-            }
-        }
-    }
 }
 
 void exposed_faces(
@@ -1008,6 +880,10 @@ int main(int argc, char **argv) {
     glfwGetCursorPos(window, &px, &py);
     double previous = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        glViewport(0, 0, width, height);
+
         update_fps(&fps, SHOW_FPS);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
@@ -1218,7 +1094,7 @@ int main(int argc, char **argv) {
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        set_matrix_3d(matrix, x, y, z, rx, ry);
+        set_matrix_3d(matrix, width, height, x, y, z, rx, ry, fov, ortho);
 
         // render chunks
         glUseProgram(block_program);
@@ -1258,20 +1134,20 @@ int main(int argc, char **argv) {
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
-        set_matrix_2d(matrix);
+        set_matrix_2d(matrix, width, height);
 
         // render crosshairs
         glUseProgram(line_program);
         glLineWidth(4);
         glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-        GLuint crosshair_buffer = gen_crosshair_buffer();
+        GLuint crosshair_buffer = gen_crosshair_buffer(width, height);
         draw_lines(crosshair_buffer, line_position_loc, 2, 4);
         glDeleteBuffers(1, &crosshair_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
         // render selected item
-        set_matrix_item(matrix);
+        set_matrix_item(matrix, width, height);
         if (block_type != previous_block_type) {
             previous_block_type = block_type;
             gen_item_buffers(

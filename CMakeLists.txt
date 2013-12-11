@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(craft)
 
 add_executable(
-    craft main.c client.c db.c map.c noise.c util.c
+    craft main.c client.c db.c map.c matrix.c noise.c util.c
     sqlite/sqlite3.c lodepng/lodepng.c tinycthread/tinycthread.c)
 
 add_definitions(-std=c99 -O3)

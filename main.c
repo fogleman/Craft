@@ -11,6 +11,7 @@
 #include "client.h"
 #include "db.h"
 #include "map.h"
+#include "matrix.h"
 #include "noise.h"
 #include "util.h"
 

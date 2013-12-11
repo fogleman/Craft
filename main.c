@@ -998,15 +998,13 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'A')) sx--;
         if (glfwGetKey(window, 'D')) sx++;
 	if (sx != 0 || sz !=0 ){
-            acc = walking_speed > acc && acc > 0 ? acc + (acc - .2)  : walking_speed; printf("0\n");}
+            acc = walking_speed > acc && acc > 0 ? acc + (acc - .2)  : walking_speed; }
         else{
             if(sx == 0 && sz == 0){
-		printf("1\n");
                 if(acc > 1 && acc > 0){
-			printf("2\n");
                     acc = acc - (acc / 3);
-                    if(szlast != 0){sz = szlast; printf("szlast:%i\n", szlast);};
-                    if(sxlast != 0){sx = sxlast; printf("sxlast:%i\n", sxlast);};}		
+                    if(szlast != 0){sz = szlast; };
+                    if(sxlast != 0){sx = sxlast; };}		
                 else{
                     acc = .5;
                 }

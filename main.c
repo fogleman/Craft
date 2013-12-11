@@ -997,10 +997,10 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'S')) sz++;
         if (glfwGetKey(window, 'A')) sx--;
         if (glfwGetKey(window, 'D')) sx++;
-	if (sx != 0 || sz !=0 ){
+	if (sx != 0 || sz !=0 && flying == 0){
             acc = walking_speed > acc && acc > 0 ? acc + (acc - .2)  : walking_speed; }
         else{
-            if(sx == 0 && sz == 0){
+            if(sx == 0 && sz == 0 && flying == 0){
                 if(acc > 1 && acc > 0){
                     acc = acc - (acc / 3);
                     if(szlast != 0){sz = szlast; };

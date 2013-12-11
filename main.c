@@ -201,7 +201,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 
 void make_single_cube(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
-    float x, float y, float z, float n, int w)
+    float x, float y, float z, float n, int w, float rx, float ry)
 {
     int faces = 6;
     glDeleteBuffers(1, position_buffer);
@@ -210,12 +210,11 @@ void make_single_cube(
     GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
     GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
     GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
-    make_cube(
+    make_rotated_cube(
         position_data,
         normal_data,
         uv_data,
-        1, 1, 1, 1, 1, 1,
-        x, y, z, n, w);
+        x, y, z, n, w, rx, ry);
     *position_buffer = make_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
@@ -256,7 +255,7 @@ void update_player(Player *player,
     player->ry = ry;
     make_single_cube(
         &player->position_buffer, &player->normal_buffer, &player->uv_buffer,
-        x, y, z, 0.4, 16);
+        x, y, z, 0.4, 14, rx, ry);
 }
 
 void delete_player(Player *players, int *player_count, int id) {
@@ -1221,7 +1220,7 @@ int main(int argc, char **argv) {
             previous_block_type = block_type;
             make_single_cube(
                 &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                0, 0, 0, 0.5, block_type);
+                0, 0, 0, 0.5, block_type, 0, 0);
         }
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);

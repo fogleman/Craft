@@ -73,11 +73,9 @@ void map_grow(Map *map) {
     new_map.mask = (map->mask << 1) | 1;
     new_map.size = 0;
     new_map.data = (Entry *)calloc(new_map.mask + 1, sizeof(Entry));
-
     MAP_FOR_EACH(map, entry) {
         map_set(&new_map, entry->x, entry->y, entry->z, entry->w);
-    } END_MAP_FOR_EACH
-
+    } END_MAP_FOR_EACH;
     free(map->data);
     map->mask = new_map.mask;
     map->size = new_map.size;

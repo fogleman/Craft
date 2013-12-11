@@ -16,7 +16,7 @@
 
 #define FULLSCREEN 0
 #define VSYNC 1
-#define SHOW_FPS 1
+#define SHOW_FPS 0
 #define CHUNK_SIZE 32
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128

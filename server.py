@@ -42,6 +42,10 @@ class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     daemon_threads = True
 
 class Handler(SocketServer.BaseRequestHandler):
+    def setup(self):
+        self.queue = Queue.Queue()
+        self.running = True
+        self.start()
     def handle(self):
         model = self.server.model
         model.enqueue(model.on_connect, self)
@@ -59,14 +63,28 @@ class Handler(SocketServer.BaseRequestHandler):
                     model.enqueue(model.on_data, self, line)
         finally:
             model.enqueue(model.on_disconnect, self)
+    def finish(self):
+        self.running = False
+    def start(self):
+        thread = threading.Thread(target=self.run)
+        thread.setDaemon(True)
+        thread.start()
+    def run(self):
+        while self.running:
+            try:
+                try:
+                    data = self.queue.get(timeout=5)
+                except Queue.Empty:
+                    continue
+                self.request.sendall(data)
+            except Exception:
+                self.request.close()
+                raise
     def send(self, *args):
         data = ','.join(str(x) for x in args)
         #log('SEND', self.client_id, data)
         data = '%s\n' % data
-        try:
-            self.request.sendall(data)
-        except Exception:
-            self.request.close()
+        self.queue.put(data)
 
 class Model(object):
     def __init__(self):

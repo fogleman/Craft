@@ -108,44 +108,44 @@ void make_cube_faces(
     if (front) {
         w = wfront;
         du = (w % 16) * s; dv = (w / 16) * s;
-        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
-        *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
-        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
-        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
-        *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
-        *(d++) = 0; *(d++) = 0; *(d++) = -1;
-        *(d++) = 0; *(d++) = 0; *(d++) = -1;
-        *(d++) = 0; *(d++) = 0; *(d++) = -1;
-        *(d++) = 0; *(d++) = 0; *(d++) = -1;
-        *(d++) = 0; *(d++) = 0; *(d++) = -1;
-        *(d++) = 0; *(d++) = 0; *(d++) = -1;
-        *(t++) = b + du; *(t++) = a + dv;
-        *(t++) = a + du; *(t++) = a + dv;
-        *(t++) = a + du; *(t++) = b + dv;
-        *(t++) = b + du; *(t++) = a + dv;
-        *(t++) = a + du; *(t++) = b + dv;
-        *(t++) = b + du; *(t++) = b + dv;
-    }
-    if (back) {
-        w = wback;
-        du = (w % 16) * s; dv = (w / 16) * s;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y - n; *(v++) = z - n;
         *(v++) = x - n; *(v++) = y + n; *(v++) = z - n;
         *(v++) = x + n; *(v++) = y + n; *(v++) = z - n;
-        *(d++) = 0; *(d++) = 0; *(d++) = 1;
-        *(d++) = 0; *(d++) = 0; *(d++) = 1;
-        *(d++) = 0; *(d++) = 0; *(d++) = 1;
-        *(d++) = 0; *(d++) = 0; *(d++) = 1;
-        *(d++) = 0; *(d++) = 0; *(d++) = 1;
-        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
+        *(d++) = 0; *(d++) = 0; *(d++) = -1;
         *(t++) = a + du; *(t++) = a + dv;
         *(t++) = b + du; *(t++) = b + dv;
         *(t++) = b + du; *(t++) = a + dv;
         *(t++) = a + du; *(t++) = a + dv;
+        *(t++) = a + du; *(t++) = b + dv;
+        *(t++) = b + du; *(t++) = b + dv;
+    }
+    if (back) {
+        w = wback;
+        du = (w % 16) * s; dv = (w / 16) * s;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
+        *(v++) = x + n; *(v++) = y + n; *(v++) = z + n;
+        *(v++) = x - n; *(v++) = y + n; *(v++) = z + n;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(d++) = 0; *(d++) = 0; *(d++) = 1;
+        *(t++) = b + du; *(t++) = a + dv;
+        *(t++) = a + du; *(t++) = a + dv;
+        *(t++) = a + du; *(t++) = b + dv;
+        *(t++) = b + du; *(t++) = a + dv;
         *(t++) = a + du; *(t++) = b + dv;
         *(t++) = b + du; *(t++) = b + dv;
     }
@@ -224,49 +224,48 @@ void make_plant(
     *(t++) = a + du; *(t++) = b + dv;
     // front
     *(v++) = x - n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
     *(v++) = x + n; *(v++) = y - n; *(v++) = z;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
     *(v++) = x - n; *(v++) = y - n; *(v++) = z;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
     *(v++) = x - n; *(v++) = y + n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
+    *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = b + du; *(t++) = b + dv;
     *(t++) = b + du; *(t++) = a + dv;
     *(t++) = a + du; *(t++) = a + dv;
-    *(t++) = a + du; *(t++) = b + dv;
-    *(t++) = b + du; *(t++) = a + dv;
     *(t++) = a + du; *(t++) = b + dv;
     *(t++) = b + du; *(t++) = b + dv;
     // back
     *(v++) = x - n; *(v++) = y - n; *(v++) = z;
-    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
     *(v++) = x + n; *(v++) = y - n; *(v++) = z;
-    *(v++) = x - n; *(v++) = y - n; *(v++) = z;
-    *(v++) = x - n; *(v++) = y + n; *(v++) = z;
     *(v++) = x + n; *(v++) = y + n; *(v++) = z;
+    *(v++) = x - n; *(v++) = y - n; *(v++) = z;
+    *(v++) = x + n; *(v++) = y + n; *(v++) = z;
+    *(v++) = x - n; *(v++) = y + n; *(v++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
-    *(t++) = a + du; *(t++) = a + dv;
-    *(t++) = b + du; *(t++) = b + dv;
     *(t++) = b + du; *(t++) = a + dv;
     *(t++) = a + du; *(t++) = a + dv;
+    *(t++) = a + du; *(t++) = b + dv;
+    *(t++) = b + du; *(t++) = a + dv;
     *(t++) = a + du; *(t++) = b + dv;
     *(t++) = b + du; *(t++) = b + dv;
     float ma[16];
     float mb[16];
-    mat_rotate(mb, 0, 1, 0, RADIANS(-rotation));
-    mat_apply(normal, mb, 24);
     mat_identity(ma);
     mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
     mat_multiply(ma, mb, ma);
+    mat_apply(normal, ma, 24);
     mat_translate(mb, px, py, pz);
     mat_multiply(ma, mb, ma);
     mat_apply(vertex, ma, 24);
@@ -279,21 +278,16 @@ void make_player(
     make_cube_faces(
         vertex, normal, texture,
         1, 1, 1, 1, 1, 1,
-        13, 13, 13 + 32, 13, 13, 13 + 16,
+        226, 224, 241, 209, 225, 227,
         0, 0, 0, 0.4);
     float ma[16];
     float mb[16];
-    mat_identity(ma);
-    mat_rotate(mb, 0, 1, 0, -rx);
-    mat_multiply(ma, mb, ma);
-    mat_rotate(mb, cosf(rx), 0, sinf(-rx), ry);
-    mat_multiply(ma, mb, ma);
-    mat_apply(normal, ma, 36);
     mat_identity(ma);
     mat_rotate(mb, 0, 1, 0, rx);
     mat_multiply(ma, mb, ma);
     mat_rotate(mb, cosf(rx), 0, sinf(rx), -ry);
     mat_multiply(ma, mb, ma);
+    mat_apply(normal, ma, 36);
     mat_translate(mb, x, y, z);
     mat_multiply(ma, mb, ma);
     mat_apply(vertex, ma, 36);

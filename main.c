@@ -492,8 +492,8 @@ void exposed_faces(
     *f2 = is_transparent(map_get(map, x + 1, y, z));
     *f3 = is_transparent(map_get(map, x, y + 1, z));
     *f4 = is_transparent(map_get(map, x, y - 1, z)) && (y > 0);
-    *f5 = is_transparent(map_get(map, x, y, z + 1));
-    *f6 = is_transparent(map_get(map, x, y, z - 1));
+    *f5 = is_transparent(map_get(map, x, y, z - 1));
+    *f6 = is_transparent(map_get(map, x, y, z + 1));
 }
 
 void gen_chunk_buffers(Chunk *chunk) {

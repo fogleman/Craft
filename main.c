@@ -731,6 +731,16 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             }
         }
     }
+    if (key == GLFW_KEY_BACKSPACE) {
+        if (typing) {
+            int n = strlen(text);
+            if (n > 0) {
+                text[n - 1] = '\0';
+                printf("\b \b");
+                fflush(stdout);
+            }
+        }
+    }
     if (!typing) {
         if (key == CRAFT_KEY_FLY) {
             flying = !flying;

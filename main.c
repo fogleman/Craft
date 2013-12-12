@@ -1083,8 +1083,8 @@ int main(int argc, char **argv) {
                 delete_player(players, &player_count, pid);
                 printf("%d other players are online\n", player_count);
             }
-            char text[RECV_BUFFER_SIZE];
-            if (sscanf(buffer, "T,%s", text) == 1) {
+            if (buffer[0] == 'T' && buffer[1] == ',') {
+                char *text = buffer + 2;
                 printf("%s\n", text);
             }
         }

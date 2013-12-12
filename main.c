@@ -28,6 +28,7 @@
 #define DELETE_CHUNK_RADIUS 12
 #define SCROLL_THRESHOLD 0.1
 #define RECV_BUFFER_SIZE 1024
+#define TEXT_BUFFER_SIZE 256
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -39,6 +40,8 @@ static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
 static float fov = 65.0;
+static int typing = 0;
+static char text[TEXT_BUFFER_SIZE] = {0};
 
 typedef struct {
     Map map;
@@ -707,30 +710,65 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         return;
     }
     if (key == GLFW_KEY_ESCAPE) {
-        if (exclusive) {
+        if (typing) {
+            typing = 0;
+        }
+        else if (exclusive) {
             exclusive = 0;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
-    if (key == GLFW_KEY_TAB) {
-        flying = !flying;
-    }
     if (key == GLFW_KEY_ENTER) {
-        if (mods & GLFW_MOD_SUPER) {
-            right_click = 1;
+        if (typing) {
+            typing = 0;
+            client_talk(text);
+            printf("\n");
         }
         else {
-            left_click = 1;
+            if (mods & GLFW_MOD_SUPER) {
+                right_click = 1;
+            }
+            else {
+                left_click = 1;
+            }
         }
     }
-    if (key == 'P') {
-        teleport = 1;
+    if (!typing) {
+        if (key == GLFW_KEY_TAB) {
+            flying = !flying;
+        }
+        if (key == 'P') {
+            teleport = 1;
+        }
+        if (key >= '1' && key <= '9') {
+            block_type = key - '1' + 1;
+        }
+        if (key == 'E') {
+            block_type = block_type % 11 + 1;
+        }
     }
-    if (key >= '1' && key <= '9') {
-        block_type = key - '1' + 1;
+}
+
+void on_char(GLFWwindow *window, unsigned int u) {
+    if (typing) {
+        if (u >= 32 && u < 128) {
+            char c = (char)u;
+            int n = strlen(text);
+            if (n < TEXT_BUFFER_SIZE - 1) {
+                text[n] = c;
+                text[n + 1] = '\0';
+                printf("%c", c);
+                fflush(stdout);
+            }
+        }
     }
-    if (key == 'E') {
-        block_type = block_type % 11 + 1;
+    else {
+        if (u == 116) { // 't'
+            typing = 1;
+            text[0] = '\0';
+            printf("> ");
+            fflush(stdout);
+        }
     }
 }
 
@@ -823,6 +861,7 @@ int main(int argc, char **argv) {
     glfwSwapInterval(VSYNC);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, on_key);
+    glfwSetCharCallback(window, on_char);
     glfwSetMouseButtonCallback(window, on_mouse_button);
     glfwSetScrollCallback(window, on_scroll);
 
@@ -928,45 +967,49 @@ int main(int argc, char **argv) {
 
         int sz = 0;
         int sx = 0;
-        ortho = glfwGetKey(window, 'F');
-        fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
-        if (glfwGetKey(window, 'Q')) break;
-        if (glfwGetKey(window, 'W')) sz--;
-        if (glfwGetKey(window, 'S')) sz++;
-        if (glfwGetKey(window, 'A')) sx--;
-        if (glfwGetKey(window, 'D')) sx++;
-        float m = dt * 1.0;
-        if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
-        if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
-        if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
-        if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
+        if (!typing) {
+            float m = dt * 1.0;
+            ortho = glfwGetKey(window, 'F');
+            fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
+            if (glfwGetKey(window, 'Q')) break;
+            if (glfwGetKey(window, 'W')) sz--;
+            if (glfwGetKey(window, 'S')) sz++;
+            if (glfwGetKey(window, 'A')) sx--;
+            if (glfwGetKey(window, 'D')) sx++;
+            if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
+            if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
+            if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
+            if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
+        }
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
-        if (glfwGetKey(window, GLFW_KEY_SPACE)) {
-            if (flying) {
-                vy = 1;
+        if (!typing) {
+            if (glfwGetKey(window, GLFW_KEY_SPACE)) {
+                if (flying) {
+                    vy = 1;
+                }
+                else if (dy == 0) {
+                    dy = 8;
+                }
             }
-            else if (dy == 0) {
-                dy = 8;
+            if (glfwGetKey(window, 'Z')) {
+                vx = -1; vy = 0; vz = 0;
             }
-        }
-        if (glfwGetKey(window, 'Z')) {
-            vx = -1; vy = 0; vz = 0;
-        }
-        if (glfwGetKey(window, 'X')) {
-            vx = 1; vy = 0; vz = 0;
-        }
-        if (glfwGetKey(window, 'C')) {
-            vx = 0; vy = -1; vz = 0;
-        }
-        if (glfwGetKey(window, 'V')) {
-            vx = 0; vy = 1; vz = 0;
-        }
-        if (glfwGetKey(window, 'B')) {
-            vx = 0; vy = 0; vz = -1;
-        }
-        if (glfwGetKey(window, 'N')) {
-            vx = 0; vy = 0; vz = 1;
+            if (glfwGetKey(window, 'X')) {
+                vx = 1; vy = 0; vz = 0;
+            }
+            if (glfwGetKey(window, 'C')) {
+                vx = 0; vy = -1; vz = 0;
+            }
+            if (glfwGetKey(window, 'V')) {
+                vx = 0; vy = 1; vz = 0;
+            }
+            if (glfwGetKey(window, 'B')) {
+                vx = 0; vy = 0; vz = -1;
+            }
+            if (glfwGetKey(window, 'N')) {
+                vx = 0; vy = 0; vz = 1;
+            }
         }
         float speed = flying ? 20 : 5;
         int step = 8;

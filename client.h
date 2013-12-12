@@ -14,5 +14,6 @@ int client_recv(char *data, int length);
 void client_position(float x, float y, float z, float rx, float ry);
 void client_chunk(int p, int q);
 void client_block(int p, int q, int x, int y, int z, int w);
+void client_talk(char *text);
 
 #endif

@@ -91,6 +91,18 @@ void client_block(int p, int q, int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+void client_talk(char *text) {
+    if (!client_enabled) {
+        return;
+    }
+    if (strlen(text) == 0) {
+        return;
+    }
+    char buffer[1024];
+    snprintf(buffer, 1024, "T,%s\n", text);
+    client_send(buffer);
+}
+
 int client_recv(char *data, int length) {
     if (!client_enabled) {
         return 0;

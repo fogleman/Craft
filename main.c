@@ -1059,7 +1059,7 @@ int main(int argc, char **argv) {
                 &bx, &by, &bz, &bw) == 4)
             {
                 set_block(chunks, chunk_count, bx, by, bz, bw, 0);
-                if ((int)roundf(x) == bx && (int)roundf(z) == bz) {
+                if (player_intersects_block(2, x, y, z, bx, by, bz)) {
                     y = highest_block(chunks, chunk_count, x, z) + 2;
                 }
             }

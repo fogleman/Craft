@@ -288,7 +288,7 @@ void update_player(Player *player,
     player->ry = ry;
     gen_player_buffers(
         &player->position_buffer, &player->normal_buffer, &player->uv_buffer,
-        x, y, z, rx, ry);
+        x, y + 0.2, z, rx, ry);
 }
 
 void delete_player(Player *players, int *player_count, int id) {

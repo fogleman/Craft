@@ -12,6 +12,7 @@ HOST = '0.0.0.0'
 PORT = 4080
 BUFFER_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
+SPAWN_POINT = None
 
 YOU = 'U'
 BLOCK = 'B'
@@ -42,6 +43,10 @@ class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     daemon_threads = True
 
 class Handler(SocketServer.BaseRequestHandler):
+    def setup(self):
+        self.queue = Queue.Queue()
+        self.running = True
+        self.start()
     def handle(self):
         model = self.server.model
         model.enqueue(model.on_connect, self)
@@ -59,14 +64,28 @@ class Handler(SocketServer.BaseRequestHandler):
                     model.enqueue(model.on_data, self, line)
         finally:
             model.enqueue(model.on_disconnect, self)
+    def finish(self):
+        self.running = False
+    def start(self):
+        thread = threading.Thread(target=self.run)
+        thread.setDaemon(True)
+        thread.start()
+    def run(self):
+        while self.running:
+            try:
+                try:
+                    data = self.queue.get(timeout=5)
+                except Queue.Empty:
+                    continue
+                self.request.sendall(data)
+            except Exception:
+                self.request.close()
+                raise
     def send(self, *args):
         data = ','.join(str(x) for x in args)
-        log('SEND', self.client_id, data)
+        #log('SEND', self.client_id, data)
         data = '%s\n' % data
-        try:
-            self.request.sendall(data)
-        except Exception:
-            self.request.close()
+        self.queue.put(data)
 
 class Model(object):
     def __init__(self):
@@ -97,20 +116,23 @@ class Model(object):
         client.client_id = self.next_client_id
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
-        with session() as sql:
-            query = 'select x, y, z from block order by random() limit 1;'
-            rows = list(sql.execute(query))
-            if rows:
-                x, y, z = rows[0]
-                client.position = (x, y, z, 0, 0)
-            else:
-                client.position = (0, 0, 0, 0, 0)
+        if SPAWN_POINT is not None:
+            client.position = SPAWN_POINT
+        else:
+            with session() as sql:
+                query = 'select x, y, z from block order by random() limit 1;'
+                rows = list(sql.execute(query))
+                if rows:
+                    x, y, z = rows[0]
+                    client.position = (x, y, z, 0, 0)
+                else:
+                    client.position = (0, 0, 0, 0, 0)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
         self.send_positions(client)
     def on_data(self, client, data):
-        log('RECV', client.client_id, data)
+        #log('RECV', client.client_id, data)
         args = data.split(',')
         command, args = args[0], args[1:]
         if command in self.commands:
@@ -175,7 +197,6 @@ def main():
         '    z int not null,'
         '    w int not null'
         ');',
-        'create index if not exists block_pq_idx on block(p, q);',
         'create index if not exists block_xyz_idx on block (x, y, z);',
         'create unique index if not exists block_pqxyz_idx on '
         '    block (p, q, x, y, z);',

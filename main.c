@@ -150,9 +150,9 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     return buffer;
 }
 
-void gen_item_buffers(
+void gen_cube_buffers(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
-    int w)
+    float x, float y, float z, float n, int w)
 {
     int faces = 6;
     glDeleteBuffers(1, position_buffer);
@@ -164,7 +164,42 @@ void gen_item_buffers(
     make_cube(
         position_data, normal_data, uv_data,
         1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0.5, w);
+        x, y, z, n, w);
+    *position_buffer = gen_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 18,
+        position_data
+    );
+    *normal_buffer = gen_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 18,
+        normal_data
+    );
+    *uv_buffer = gen_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * faces * 12,
+        uv_data
+    );
+    free(position_data);
+    free(normal_data);
+    free(uv_data);
+}
+
+void gen_plant_buffers(
+    GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
+    float x, float y, float z, float n, int w)
+{
+    int faces = 4;
+    glDeleteBuffers(1, position_buffer);
+    glDeleteBuffers(1, normal_buffer);
+    glDeleteBuffers(1, uv_buffer);
+    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
+    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    float rotation = simplex3(x, y, z, 4, 0.5, 2) * 360;
+    make_plant(
+        position_data, normal_data, uv_data,
+        x, y, z, n, w, rotation);
     *position_buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * faces * 18,
@@ -253,6 +288,26 @@ void draw_cube(
     glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
+    glDisableVertexAttribArray(position_loc);
+    glDisableVertexAttribArray(normal_loc);
+    glDisableVertexAttribArray(uv_loc);
+}
+
+void draw_plant(
+    GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
+    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    glEnableVertexAttribArray(position_loc);
+    glEnableVertexAttribArray(normal_loc);
+    glEnableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6 * 4);
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(normal_loc);
     glDisableVertexAttribArray(uv_loc);
@@ -1206,9 +1261,9 @@ int main(int argc, char **argv) {
         set_matrix_item(matrix, width, height);
         if (block_type != previous_block_type) {
             previous_block_type = block_type;
-            gen_item_buffers(
+            gen_cube_buffers(
                 &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                block_type);
+                0, 0, 0, 0.5, block_type);
         }
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);

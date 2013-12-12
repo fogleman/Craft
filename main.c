@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include <time.h>
 #include "client.h"
 #include "config.h"
@@ -864,6 +865,17 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
+#ifdef __APPLE__
+   // Set dir
+   char *base = dirname(argv[0]);
+
+   if (chdir(base)) {
+      return 1;
+   }
+   setenv("PWD", base, 1);
+
+#endif
+
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {

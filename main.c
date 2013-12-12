@@ -18,6 +18,8 @@
 #include "util.h"
 #include "world.h"
 
+#define WINDOW_WIDTH 1024
+#define WINDOW_HEIGHT 768
 #define FULLSCREEN 0
 #define VSYNC 1
 #define SHOW_FPS 0
@@ -822,8 +824,8 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
 }
 
 void create_window() {
-    int width = 1024;
-    int height = 768;
+    int width = WINDOW_WIDTH;
+    int height = WINDOW_HEIGHT;
     GLFWmonitor *monitor = NULL;
     if (FULLSCREEN) {
         int mode_count;

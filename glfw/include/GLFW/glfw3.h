@@ -227,7 +227,7 @@ extern "C" {
  *  API changes.
  *  @ingroup init
  */
-#define GLFW_VERSION_REVISION       3
+#define GLFW_VERSION_REVISION       4
 /*! @} */
 
 /*! @name Key and button actions
@@ -706,8 +706,8 @@ typedef void (* GLFWmousebuttonfun)(GLFWwindow*,int,int,int);
  *  This is the function signature for cursor position callback functions.
  *
  *  @param[in] window The window that received the event.
- *  @param[in] xpos The new x-coordinate of the cursor.
- *  @param[in] ypos The new y-coordinate of the cursor.
+ *  @param[in] xpos The new x-coordinate, in screen coordinates, of the cursor.
+ *  @param[in] ypos The new y-coordinate, in screen coordinates, of the cursor.
  *
  *  @sa glfwSetCursorPosCallback
  *
@@ -765,7 +765,7 @@ typedef void (* GLFWkeyfun)(GLFWwindow*,int,int,int,int);
  *  This is the function signature for Unicode character callback functions.
  *
  *  @param[in] window The window that received the event.
- *  @param[in] character The Unicode code point of the character.
+ *  @param[in] codepoint The Unicode code point of the character.
  *
  *  @sa glfwSetCharCallback
  *
@@ -863,10 +863,7 @@ typedef struct GLFWgammaramp
  *
  *  @note This function may only be called from the main thread.
  *
- *  @note This function may take several seconds to complete on some systems,
- *  while on other systems it may take only a fraction of a second to complete.
- *
- *  @note **Mac OS X:** This function will change the current directory of the
+ *  @note **OS X:** This function will change the current directory of the
  *  application to the `Contents/Resources` subdirectory of the application's
  *  bundle, if present.
  *
@@ -1232,16 +1229,25 @@ GLFWAPI void glfwWindowHint(int target, int hint);
  *  to not share resources.
  *  @return The handle of the created window, or `NULL` if an error occurred.
  *
+ *  @remarks **Windows:** Window creation will fail if the Microsoft GDI
+ *  software OpenGL implementation is the only one available.
+ *
  *  @remarks **Windows:** If the executable has an icon resource named
  *  `GLFW_ICON,` it will be set as the icon for the window.  If no such icon is
  *  present, the `IDI_WINLOGO` icon will be used instead.
  *
- *  @remarks **Mac OS X:** The GLFW window has no icon, as it is not a document
+ *  @remarks **OS X:** The GLFW window has no icon, as it is not a document
  *  window, but the dock icon will be the same as the application bundle's icon.
  *  Also, the first time a window is opened the menu bar is populated with
  *  common commands like Hide, Quit and About.  The (minimal) about dialog uses
  *  information from the application's bundle.  For more information on bundles,
  *  see the Bundle Programming Guide provided by Apple.
+ *
+ *  @remarks **X11:** There is no mechanism for setting the window icon yet.
+ *
+ *  @remarks The swap interval is not set during window creation, but is left at
+ *  the default value for that platform.  For more information, see @ref
+ *  glfwSwapInterval.
  *
  *  @note This function may only be called from the main thread.
  *
@@ -1354,10 +1360,6 @@ GLFWAPI void glfwGetWindowPos(GLFWwindow* window, int* xpos, int* ypos);
  *
  *  @note The window manager may put limits on what positions are allowed.
  *
- *  @bug **X11:** Some window managers ignore the set position of hidden (i.e.
- *  unmapped) windows, instead placing them where it thinks is appropriate once
- *  they are shown.
- *
  *  @sa glfwGetWindowPos
  *
  *  @ingroup window
@@ -1367,7 +1369,8 @@ GLFWAPI void glfwSetWindowPos(GLFWwindow* window, int xpos, int ypos);
 /*! @brief Retrieves the size of the client area of the specified window.
  *
  *  This function retrieves the size, in screen coordinates, of the client area
- *  of the specified window.
+ *  of the specified window.  If you wish to retrieve the size of the
+ *  framebuffer in pixels, see @ref glfwGetFramebufferSize.
  *
  *  @param[in] window The window whose size to retrieve.
  *  @param[out] width Where to store the width, in screen coordinates, of the
@@ -1408,7 +1411,8 @@ GLFWAPI void glfwSetWindowSize(GLFWwindow* window, int width, int height);
 /*! @brief Retrieves the size of the framebuffer of the specified window.
  *
  *  This function retrieves the size, in pixels, of the framebuffer of the
- *  specified window.
+ *  specified window.  If you wish to retrieve the size of the window in screen
+ *  coordinates, see @ref glfwGetWindowSize.
  *
  *  @param[in] window The window whose framebuffer to query.
  *  @param[out] width Where to store the width, in pixels, of the framebuffer,
@@ -1591,7 +1595,10 @@ GLFWAPI GLFWwindowsizefun glfwSetWindowSizeCallback(GLFWwindow* window, GLFWwind
  *  @return The previously set callback, or `NULL` if no callback was set or an
  *  error occurred.
  *
- *  @remarks **Mac OS X:** Selecting Quit from the application menu will
+ *  @par New in GLFW 3
+ *  The close callback no longer returns a value.
+ *
+ *  @remarks **OS X:** Selecting Quit from the application menu will
  *  trigger the close callback for all windows.
  *
  *  @ingroup window
@@ -1684,6 +1691,12 @@ GLFWAPI GLFWframebuffersizefun glfwSetFramebufferSizeCallback(GLFWwindow* window
  *  This function is no longer called by @ref glfwSwapBuffers.  You need to call
  *  it or @ref glfwWaitEvents yourself.
  *
+ *  @remarks On some platforms, a window move, resize or menu operation will
+ *  cause event processing to block.  This is due to how event processing is
+ *  designed on those platforms.  You can use the
+ *  [window refresh callback](@ref GLFWwindowrefreshfun) to redraw the contents
+ *  of your window when necessary during the operation.
+ *
  *  @note This function may only be called from the main thread.
  *
  *  @note This function may not be called from a callback.
@@ -1710,6 +1723,12 @@ GLFWAPI void glfwPollEvents(void);
  *  callbacks.
  *
  *  This function is not required for joystick input to work.
+ *
+ *  @remarks On some platforms, a window move, resize or menu operation will
+ *  cause event processing to block.  This is due to how event processing is
+ *  designed on those platforms.  You can use the
+ *  [window refresh callback](@ref GLFWwindowrefreshfun) to redraw the contents
+ *  of your window when necessary during the operation.
  *
  *  @note This function may only be called from the main thread.
  *
@@ -1746,9 +1765,12 @@ GLFWAPI int glfwGetInputMode(GLFWwindow* window, int mode);
  *  modes:
  *  - `GLFW_CURSOR_NORMAL` makes the cursor visible and behaving normally.
  *  - `GLFW_CURSOR_HIDDEN` makes the cursor invisible when it is over the client
- *    area of the window.
- *  - `GLFW_CURSOR_DISABLED` disables the cursor and removes any limitations on
- *    cursor movement.
+ *    area of the window but does not restrict the cursor from leaving.  This is
+ *    useful if you wish to render your own cursor or have no visible cursor at
+ *    all.
+ *  - `GLFW_CURSOR_DISABLED` hides and grabs the cursor, providing virtual
+ *    and unlimited cursor movement.  This is useful for implementing for
+ *    example 3D camera controls.
  *
  *  If `mode` is `GLFW_STICKY_KEYS`, the value must be either `GL_TRUE` to
  *  enable sticky keys, or `GL_FALSE` to disable it.  If sticky keys are
@@ -1818,7 +1840,8 @@ GLFWAPI int glfwGetMouseButton(GLFWwindow* window, int button);
 /*! @brief Retrieves the last reported cursor position, relative to the client
  *  area of the window.
  *
- *  This function returns the last reported position of the cursor to the
+ *  This function returns the last reported position of the cursor, in screen
+ *  coordinates, relative to the upper-left corner of the client area of the
  *  specified window.
  *
  *  If the cursor is disabled (with `GLFW_CURSOR_DISABLED`) then the cursor
@@ -1841,11 +1864,13 @@ GLFWAPI int glfwGetMouseButton(GLFWwindow* window, int button);
  */
 GLFWAPI void glfwGetCursorPos(GLFWwindow* window, double* xpos, double* ypos);
 
-/*! @brief Sets the position of the cursor, relative to the client area of the window.
+/*! @brief Sets the position of the cursor, relative to the client area of the
+ *  window.
  *
- *  This function sets the position of the cursor.  The specified window must be
- *  focused.  If the window does not have focus when this function is called, it
- *  fails silently.
+ *  This function sets the position, in screen coordinates, of the cursor
+ *  relative to the upper-left corner of the client area of the specified
+ *  window.  The window must be focused.  If the window does not have focus when
+ *  this function is called, it fails silently.
  *
  *  If the cursor is disabled (with `GLFW_CURSOR_DISABLED`) then the cursor
  *  position is unbounded and limited only by the minimum and maximum values of
@@ -1941,7 +1966,8 @@ GLFWAPI GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* window, GLFWmo
  *
  *  This function sets the cursor position callback of the specified window,
  *  which is called when the cursor is moved.  The callback is provided with the
- *  position relative to the upper-left corner of the client area of the window.
+ *  position, in screen coordinates, relative to the upper-left corner of the
+ *  client area of the window.
  *
  *  @param[in] window The window whose callback to set.
  *  @param[in] cbfun The new callback, or `NULL` to remove the currently set
@@ -2200,6 +2226,11 @@ GLFWAPI void glfwSwapBuffers(GLFWwindow* window);
  *  until the buffers are swapped by @ref glfwSwapBuffers.
  *
  *  @remarks This function may be called from secondary threads.
+ *
+ *  @note This function is not called during window creation, leaving the swap
+ *  interval set to whatever is the default on that platform.  This is done
+ *  because some swap interval extensions used by GLFW do not allow the swap
+ *  interval to be reset to zero once it has been set to a non-zero value.
  *
  *  @note Some GPU drivers do not honor the requested swap interval, either
  *  because of user settings that override the request or due to bugs in the

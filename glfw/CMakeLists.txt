@@ -4,15 +4,16 @@ cmake_minimum_required(VERSION 2.8)
 
 set(GLFW_VERSION_MAJOR "3")
 set(GLFW_VERSION_MINOR "0")
-set(GLFW_VERSION_PATCH "3")
+set(GLFW_VERSION_PATCH "4")
 set(GLFW_VERSION_EXTRA "")
 set(GLFW_VERSION "${GLFW_VERSION_MAJOR}.${GLFW_VERSION_MINOR}")
 set(GLFW_VERSION_FULL "${GLFW_VERSION}.${GLFW_VERSION_PATCH}${GLFW_VERSION_EXTRA}")
 set(LIB_SUFFIX "" CACHE STRING "Takes an empty string or 64. Directory where lib will be installed: lib or lib64")
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" OFF)
-option(GLFW_BUILD_TESTS "Build the GLFW test programs" OFF)
+option(GLFW_BUILD_EXAMPLES "Build the GLFW example programs" ON)
+option(GLFW_BUILD_TESTS "Build the GLFW test programs" ON)
+option(GLFW_BUILD_DOCS "Build the GLFW documentation" ON)
 option(GLFW_INSTALL "Generate installation target" ON)
 option(GLFW_DOCUMENT_INTERNALS "Include internals in documentation" OFF)
 
@@ -73,11 +74,13 @@ endif()
 
 find_package(Threads REQUIRED)
 
-set(DOXYGEN_SKIP_DOT TRUE)
-find_package(Doxygen)
+if (GLFW_BUILD_DOCS)
+    set(DOXYGEN_SKIP_DOT TRUE)
+    find_package(Doxygen)
 
-if (GLFW_DOCUMENT_INTERNALS)
-    set(GLFW_INTERNAL_DOCS "${GLFW_SOURCE_DIR}/src/internal.h ${GLFW_SOURCE_DIR}/docs/internal.dox")
+    if (GLFW_DOCUMENT_INTERNALS)
+        set(GLFW_INTERNAL_DOCS "${GLFW_SOURCE_DIR}/src/internal.h ${GLFW_SOURCE_DIR}/docs/internal.dox")
+    endif()
 endif()
 
 #--------------------------------------------------------------------
@@ -282,23 +285,15 @@ if (_GLFW_GLX)
 
         # Check for dlopen support as a fallback
 
-        find_library(DL_LIBRARY dl)
-        mark_as_advanced(DL_LIBRARY)
-        if (DL_LIBRARY)
-            set(CMAKE_REQUIRED_LIBRARIES ${DL_LIBRARY})
-        else()
-            set(CMAKE_REQUIRED_LIBRARIES "")
-        endif()
-
+        set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_DL_LIBS})
         check_function_exists(dlopen _GLFW_HAS_DLOPEN)
-
         if (NOT _GLFW_HAS_DLOPEN)
             message(FATAL_ERROR "No entry point retrieval mechanism found")
         endif()
 
-        if (DL_LIBRARY)
-            list(APPEND glfw_LIBRARIES ${DL_LIBRARY})
-            set(GLFW_PKG_LIBS "${GLFW_PKG_LIBS} -ldl")
+        if (CMAKE_DL_LIBS)
+            list(APPEND glfw_LIBRARIES ${CMAKE_DL_LIBS})
+            set(GLFW_PKG_LIBS "${GLFW_PKG_LIBS} -l${CMAKE_DL_LIBS}")
         endif()
     endif()
 
@@ -356,13 +351,15 @@ if (_GLFW_COCOA AND _GLFW_NSGL)
     find_library(COCOA_FRAMEWORK Cocoa)
     find_library(IOKIT_FRAMEWORK IOKit)
     find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+    find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
     list(APPEND glfw_LIBRARIES ${COCOA_FRAMEWORK}
                                ${OPENGL_gl_LIBRARY}
                                ${IOKIT_FRAMEWORK}
-                               ${CORE_FOUNDATION_FRAMEWORK})
+                               ${CORE_FOUNDATION_FRAMEWORK}
+                               ${CORE_VIDEO_FRAMEWORK})
 
     set(GLFW_PKG_DEPS "")
-    set(GLFW_PKG_LIBS "-framework Cocoa -framework OpenGL -framework IOKit -framework CoreFoundation")
+    set(GLFW_PKG_LIBS "-framework Cocoa -framework OpenGL -framework IOKit -framework CoreFoundation -framework CoreVideo")
 endif()
 
 #--------------------------------------------------------------------
@@ -386,8 +383,8 @@ endif()
 configure_file(${GLFW_SOURCE_DIR}/docs/Doxyfile.in
                ${GLFW_BINARY_DIR}/docs/Doxyfile @ONLY)
 
-configure_file(${GLFW_SOURCE_DIR}/src/config.h.in 
-               ${GLFW_BINARY_DIR}/src/config.h @ONLY)
+configure_file(${GLFW_SOURCE_DIR}/src/glfw_config.h.in 
+               ${GLFW_BINARY_DIR}/src/glfw_config.h @ONLY)
 
 configure_file(${GLFW_SOURCE_DIR}/src/glfwConfig.cmake.in
                ${GLFW_BINARY_DIR}/src/glfwConfig.cmake @ONLY)
@@ -413,7 +410,7 @@ if (GLFW_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-if (DOXYGEN_FOUND)
+if (DOXYGEN_FOUND AND GLFW_BUILD_DOCS)
     add_subdirectory(docs)
 endif()
 

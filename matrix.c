@@ -212,7 +212,7 @@ void set_matrix_item(float *matrix, int width, int height) {
     float xoffset = 1 - size / width * 2;
     float yoffset = 1 - size / height * 2;
     mat_identity(a);
-    mat_rotate(b, 0, 1, 0, PI / 4);
+    mat_rotate(b, 0, 1, 0, -PI / 4);
     mat_multiply(a, b, a);
     mat_rotate(b, 1, 0, 0, -PI / 10);
     mat_multiply(a, b, a);

@@ -1083,6 +1083,10 @@ int main(int argc, char **argv) {
                 delete_player(players, &player_count, pid);
                 printf("%d other players are online\n", player_count);
             }
+            char text[RECV_BUFFER_SIZE];
+            if (sscanf(buffer, "T,%s", text) == 1) {
+                printf("%s\n", text);
+            }
         }
 
         int p = chunked(x);

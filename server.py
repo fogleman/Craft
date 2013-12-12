@@ -19,6 +19,7 @@ BLOCK = 'B'
 CHUNK = 'C'
 POSITION = 'P'
 DISCONNECT = 'D'
+TALK = 'T'
 
 Session = sessionmaker(bind=create_engine(ENGINE))
 
@@ -96,6 +97,7 @@ class Model(object):
             CHUNK: self.on_chunk,
             BLOCK: self.on_block,
             POSITION: self.on_position,
+            TALK: self.on_talk,
         }
     def start(self):
         thread = threading.Thread(target=self.run)
@@ -129,6 +131,7 @@ class Model(object):
                     client.position = (0, 0, 0, 0, 0)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
+        client.send(TALK, 'Welcome to Craft!')
         self.send_position(client)
         self.send_positions(client)
     def on_data(self, client, data):
@@ -168,6 +171,8 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
+    def on_talk(self, client, text):
+        self.send_talk(client, text)
     def send_positions(self, client):
         for other in self.clients:
             if other == client:
@@ -188,6 +193,11 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
+    def send_talk(self, client, text):
+        for other in self.clients:
+            if other == client:
+                continue
+            other.send(TALK, text)
 
 def main():
     queries = [

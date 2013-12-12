@@ -945,7 +945,7 @@ int main(int argc, char **argv) {
         else{
             if(sx == 0 && sz == 0 && flying == 0){
                 if(acc > 1 && acc > 0){
-                    acc = acc - (acc / 1.2);
+                    acc = acc - (acc / 1.45);
                     if(szlast != 0){sz = szlast; };
                     if(sxlast != 0){sx = sxlast; };}		
                 else{

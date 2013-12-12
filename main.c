@@ -615,12 +615,15 @@ void ensure_chunks(
             memcpy(chunk, other, sizeof(Chunk));
         }
     }
-    int n = force ? 1 : CREATE_CHUNK_RADIUS;
-    for (int i = 0; i <= n; i++) {
-        for (int dp = -n; dp <= n; dp++) {
-            for (int dq = -n; dq <= n; dq++) {
-                int j = MAX(ABS(dp), ABS(dq));
-                if (i != j) {
+    int rings = force ? 1 : CREATE_CHUNK_RADIUS;
+    int generated = 0;
+    for (int ring = 0; ring <= rings; ring++) {
+        for (int dp = -ring; dp <= ring; dp++) {
+            for (int dq = -ring; dq <= ring; dq++) {
+                if (ring != MAX(ABS(dp), ABS(dq))) {
+                    continue;
+                }
+                if (!force && generated && ring > 1) {
                     continue;
                 }
                 int a = p + dp;
@@ -629,20 +632,14 @@ void ensure_chunks(
                 if (chunk) {
                     if (chunk->dirty) {
                         gen_chunk_buffers(chunk);
-                        if (!force) {
-                            *chunk_count = count;
-                            return;
-                        }
+                        generated++;
                     }
                 }
                 else {
                     if (count < MAX_CHUNKS) {
                         create_chunk(chunks + count, a, b);
+                        generated++;
                         count++;
-                        if (!force) {
-                            *chunk_count = count;
-                            return;
-                        }
                     }
                 }
             }

@@ -154,104 +154,44 @@ void gen_cube_buffers(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
     float x, float y, float z, float n, int w)
 {
-    int faces = 6;
-    glDeleteBuffers(1, position_buffer);
-    glDeleteBuffers(1, normal_buffer);
-    glDeleteBuffers(1, uv_buffer);
-    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    GLfloat *position_data, *normal_data, *uv_data;
+    malloc_buffers(6, &position_data, &normal_data, &uv_data);
     make_cube(
         position_data, normal_data, uv_data,
         1, 1, 1, 1, 1, 1,
         x, y, z, n, w);
-    *position_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        position_data
-    );
-    *normal_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        normal_data
-    );
-    *uv_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 12,
-        uv_data
-    );
-    free(position_data);
-    free(normal_data);
-    free(uv_data);
+    gen_buffers(
+        6, position_data, normal_data, uv_data,
+        position_buffer, normal_buffer, uv_buffer);
 }
 
 void gen_plant_buffers(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
     float x, float y, float z, float n, int w)
 {
-    int faces = 4;
-    glDeleteBuffers(1, position_buffer);
-    glDeleteBuffers(1, normal_buffer);
-    glDeleteBuffers(1, uv_buffer);
-    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    GLfloat *position_data, *normal_data, *uv_data;
+    malloc_buffers(4, &position_data, &normal_data, &uv_data);
     float rotation = simplex3(x, y, z, 4, 0.5, 2) * 360;
     make_plant(
         position_data, normal_data, uv_data,
         x, y, z, n, w, rotation);
-    *position_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        position_data
-    );
-    *normal_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        normal_data
-    );
-    *uv_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 12,
-        uv_data
-    );
-    free(position_data);
-    free(normal_data);
-    free(uv_data);
+    gen_buffers(
+        4, position_data, normal_data, uv_data,
+        position_buffer, normal_buffer, uv_buffer);
 }
 
 void gen_player_buffers(
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer,
     float x, float y, float z, float rx, float ry)
 {
-    int faces = 6;
-    glDeleteBuffers(1, position_buffer);
-    glDeleteBuffers(1, normal_buffer);
-    glDeleteBuffers(1, uv_buffer);
-    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    GLfloat *position_data, *normal_data, *uv_data;
+    malloc_buffers(6, &position_data, &normal_data, &uv_data);
     make_player(
         position_data, normal_data, uv_data,
         x, y, z, rx, ry);
-    *position_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        position_data
-    );
-    *normal_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        normal_data
-    );
-    *uv_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 12,
-        uv_data
-    );
-    free(position_data);
-    free(normal_data);
-    free(uv_data);
+    gen_buffers(
+        6, position_data, normal_data, uv_data,
+        position_buffer, normal_buffer, uv_buffer);
 }
 
 void draw_chunk(
@@ -557,10 +497,6 @@ void exposed_faces(
 void gen_chunk_buffers(Chunk *chunk) {
     Map *map = &chunk->map;
 
-    glDeleteBuffers(1, &chunk->position_buffer);
-    glDeleteBuffers(1, &chunk->normal_buffer);
-    glDeleteBuffers(1, &chunk->uv_buffer);
-
     int faces = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
@@ -575,9 +511,9 @@ void gen_chunk_buffers(Chunk *chunk) {
         faces += total;
     } END_MAP_FOR_EACH;
 
-    GLfloat *position_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *normal_data = malloc(sizeof(GLfloat) * faces * 18);
-    GLfloat *uv_data = malloc(sizeof(GLfloat) * faces * 12);
+    GLfloat *position_data, *normal_data, *uv_data;
+    malloc_buffers(faces, &position_data, &normal_data, &uv_data);
+
     int position_offset = 0;
     int uv_offset = 0;
     MAP_FOR_EACH(map, e) {
@@ -613,30 +549,12 @@ void gen_chunk_buffers(Chunk *chunk) {
         uv_offset += total * 12;
     } END_MAP_FOR_EACH;
 
-    GLuint position_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        position_data
-    );
-    GLuint normal_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 18,
-        normal_data
-    );
-    GLuint uv_buffer = gen_buffer(
-        GL_ARRAY_BUFFER,
-        sizeof(GLfloat) * faces * 12,
-        uv_data
-    );
-    free(position_data);
-    free(normal_data);
-    free(uv_data);
+    gen_buffers(
+        faces, position_data, normal_data, uv_data,
+        &chunk->position_buffer, &chunk->normal_buffer, &chunk->uv_buffer);
 
     chunk->faces = faces;
     chunk->dirty = 0;
-    chunk->position_buffer = position_buffer;
-    chunk->normal_buffer = normal_buffer;
-    chunk->uv_buffer = uv_buffer;
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {

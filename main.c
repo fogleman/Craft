@@ -273,9 +273,9 @@ void draw_chunk(
     glDisableVertexAttribArray(uv_loc);
 }
 
-void draw_cube(
+void draw_item(
     GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
-    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+    GLuint position_loc, GLuint normal_loc, GLuint uv_loc, int count)
 {
     glEnableVertexAttribArray(position_loc);
     glEnableVertexAttribArray(normal_loc);
@@ -287,30 +287,28 @@ void draw_cube(
     glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
     glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6 * 6);
+    glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(normal_loc);
     glDisableVertexAttribArray(uv_loc);
+}
+
+void draw_cube(
+    GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
+    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+{
+    draw_item(
+        position_buffer, normal_buffer, uv_buffer,
+        position_loc, normal_loc, uv_loc, 36);
 }
 
 void draw_plant(
     GLuint position_buffer, GLuint normal_buffer, GLuint uv_buffer,
     GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
 {
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6 * 4);
-    glDisableVertexAttribArray(position_loc);
-    glDisableVertexAttribArray(normal_loc);
-    glDisableVertexAttribArray(uv_loc);
+    draw_item(
+        position_buffer, normal_buffer, uv_buffer,
+        position_loc, normal_loc, uv_loc, 24);
 }
 
 void draw_player(
@@ -1261,9 +1259,16 @@ int main(int argc, char **argv) {
         set_matrix_item(matrix, width, height);
         if (block_type != previous_block_type) {
             previous_block_type = block_type;
-            gen_cube_buffers(
-                &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                0, 0, 0, 0.5, block_type);
+            if (is_plant(block_type)) {
+                gen_plant_buffers(
+                    &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
+                    0, 0, 0, 0.5, block_type);
+            }
+            else {
+                gen_cube_buffers(
+                    &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
+                    0, 0, 0, 0.5, block_type);
+            }
         }
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
@@ -1271,9 +1276,16 @@ int main(int argc, char **argv) {
         glUniform1i(sampler_loc, 0);
         glUniform1f(timer_loc, glfwGetTime());
         glDisable(GL_DEPTH_TEST);
-        draw_cube(
-            item_position_buffer, item_normal_buffer, item_uv_buffer,
-            position_loc, normal_loc, uv_loc);
+        if (is_plant(block_type)) {
+            draw_plant(
+                item_position_buffer, item_normal_buffer, item_uv_buffer,
+                position_loc, normal_loc, uv_loc);
+        }
+        else {
+            draw_cube(
+                item_position_buffer, item_normal_buffer, item_uv_buffer,
+                position_loc, normal_loc, uv_loc);
+        }
         glEnable(GL_DEPTH_TEST);
 
         glfwSwapBuffers(window);

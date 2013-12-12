@@ -154,6 +154,10 @@ class Model(object):
                 client.send(BLOCK, p, q, x, y, z, w)
     def on_block(self, client, p, q, x, y, z, w):
         p, q, x, y, z, w = map(int, (p, q, x, y, z, w))
+        
+        if w > 11:
+            return False
+        
         with session() as sql:
             query = (
                 'insert or replace into block (p, q, x, y, z, w) '

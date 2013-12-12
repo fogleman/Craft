@@ -145,7 +145,7 @@ static int translateKey(WPARAM wParam, LPARAM lParam)
 {
     // Check for numeric keypad keys
     // NOTE: This way we always force "NumLock = ON", which is intentional since
-    // the returned key code should correspond to a physical location.
+    //       the returned key code should correspond to a physical location.
     if ((HIWORD(lParam) & 0x100) == 0)
     {
         switch (MapVirtualKey(HIWORD(lParam) & 0xFF, 1))
@@ -388,10 +388,21 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
 
             if (focused && iconified)
             {
-                // This is a workaround for window iconification using the
-                // taskbar leading to windows being told they're focused and
-                // iconified and then never told they're defocused
-                focused = FALSE;
+                if (window->iconified && _glfw.focusedWindow != window)
+                {
+                    // This is a workaround for window restoration using the
+                    // Win+D hot key leading to windows being told they're
+                    // focused and iconified and then never told they're
+                    // restored
+                    iconified = FALSE;
+                }
+                else
+                {
+                    // This is a workaround for window iconification using the
+                    // taskbar leading to windows being told they're focused and
+                    // iconified and then never told they're defocused
+                    focused = FALSE;
+                }
             }
 
             if (!focused && _glfw.focusedWindow == window)
@@ -428,6 +439,19 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
 
             _glfwInputWindowFocus(window, focused);
             _glfwInputWindowIconify(window, iconified);
+            return 0;
+        }
+
+        case WM_ACTIVATEAPP:
+        {
+            if (!wParam && IsIconic(hWnd))
+            {
+                // This is a workaround for full screen windows losing focus
+                // through Alt+Tab leading to windows being told they're
+                // unfocused and restored and then never told they're iconified
+                _glfwInputWindowIconify(window, GL_TRUE);
+            }
+
             return 0;
         }
 
@@ -593,7 +617,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
             if (newCursorX != window->win32.oldCursorX ||
                 newCursorY != window->win32.oldCursorY)
             {
-                double x, y;
+                int x, y;
 
                 if (window->cursorMode == GLFW_CURSOR_DISABLED)
                 {
@@ -654,8 +678,11 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
 
         case WM_SIZE:
         {
-            if (window->cursorMode == GLFW_CURSOR_DISABLED)
+            if (window->cursorMode == GLFW_CURSOR_DISABLED &&
+                _glfw.focusedWindow == window)
+            {
                 updateClipRect(window);
+            }
 
             _glfwInputFramebufferSize(window, LOWORD(lParam), HIWORD(lParam));
             _glfwInputWindowSize(window, LOWORD(lParam), HIWORD(lParam));
@@ -664,10 +691,17 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
 
         case WM_MOVE:
         {
-            if (window->cursorMode == GLFW_CURSOR_DISABLED)
+            if (window->cursorMode == GLFW_CURSOR_DISABLED &&
+                _glfw.focusedWindow == window)
+            {
                 updateClipRect(window);
+            }
 
-            _glfwInputWindowPos(window, LOWORD(lParam), HIWORD(lParam));
+            // NOTE: This cannot use LOWORD/HIWORD recommended by MSDN, as
+            // those macros do not handle negative window positions correctly
+            _glfwInputWindowPos(window,
+                                GET_X_LPARAM(lParam),
+                                GET_Y_LPARAM(lParam));
             return 0;
         }
 
@@ -679,8 +713,8 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg,
 
         case WM_SETCURSOR:
         {
-            if (window->cursorMode == GLFW_CURSOR_HIDDEN &&
-                window->win32.handle == GetForegroundWindow() &&
+            if (window->cursorMode != GLFW_CURSOR_NORMAL &&
+                _glfw.focusedWindow == window &&
                 LOWORD(lParam) == HTCLIENT)
             {
                 SetCursor(NULL);
@@ -902,7 +936,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
 
         // First we clear the current context (the one we just created)
         // This is usually done by glfwDestroyWindow, but as we're not doing
-        // full window destruction, it's duplicated here
+        // full GLFW window destruction, it's duplicated here
         _glfwPlatformMakeContextCurrent(NULL);
 
         // Next destroy the Win32 window and WGL context (without resetting or
@@ -1104,8 +1138,8 @@ void _glfwPlatformSetCursorPos(_GLFWwindow* window, double xpos, double ypos)
     ClientToScreen(window->win32.handle, &pos);
     SetCursorPos(pos.x, pos.y);
 
-    window->win32.oldCursorX = xpos;
-    window->win32.oldCursorY = ypos;
+    window->win32.oldCursorX = (int) xpos;
+    window->win32.oldCursorY = (int) ypos;
 }
 
 void _glfwPlatformSetCursorMode(_GLFWwindow* window, int mode)

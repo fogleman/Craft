@@ -28,8 +28,6 @@
 #ifndef _glx_platform_h_
 #define _glx_platform_h_
 
-#include <pthread.h>
-
 #define GLX_GLXEXT_LEGACY
 #include <GL/glx.h>
 
@@ -42,6 +40,8 @@
 #if defined(_GLFW_HAS_DLOPEN)
  #include <dlfcn.h>
 #endif
+
+#include <pthread.h>
 
 // We support four different ways for getting addresses for GL/GLX
 // extension functions: glXGetProcAddress, glXGetProcAddressARB,

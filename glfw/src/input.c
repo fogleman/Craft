@@ -35,7 +35,7 @@
 //
 static void setCursorMode(_GLFWwindow* window, int newMode)
 {
-    int oldMode;
+    const int oldMode = window->cursorMode;
 
     if (newMode != GLFW_CURSOR_NORMAL &&
         newMode != GLFW_CURSOR_HIDDEN &&
@@ -45,9 +45,10 @@ static void setCursorMode(_GLFWwindow* window, int newMode)
         return;
     }
 
-    oldMode = window->cursorMode;
     if (oldMode == newMode)
         return;
+
+    window->cursorMode = newMode;
 
     if (window == _glfw.focusedWindow)
     {
@@ -71,8 +72,6 @@ static void setCursorMode(_GLFWwindow* window, int newMode)
 
         _glfwPlatformSetCursorMode(window, newMode);
     }
-
-    window->cursorMode = newMode;
 }
 
 // Set sticky keys mode for the specified window
@@ -149,13 +148,13 @@ void _glfwInputKey(_GLFWwindow* window, int key, int scancode, int action, int m
         window->callbacks.key((GLFWwindow*) window, key, scancode, action, mods);
 }
 
-void _glfwInputChar(_GLFWwindow* window, unsigned int character)
+void _glfwInputChar(_GLFWwindow* window, unsigned int codepoint)
 {
-    if (character < 32 || (character > 126 && character < 160))
+    if (codepoint < 32 || (codepoint > 126 && codepoint < 160))
         return;
 
     if (window->callbacks.character)
-        window->callbacks.character((GLFWwindow*) window, character);
+        window->callbacks.character((GLFWwindow*) window, codepoint);
 }
 
 void _glfwInputScroll(_GLFWwindow* window, double xoffset, double yoffset)

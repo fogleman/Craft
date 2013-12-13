@@ -43,7 +43,7 @@ static int block_type = 1;
 static int ortho = 0;
 static float fov = 65.0;
 static int typing = 0;
-static char text[TEXT_BUFFER_SIZE] = {0};
+static char typing_buffer[TEXT_BUFFER_SIZE] = {0};
 
 typedef struct {
     Map map;
@@ -748,7 +748,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ENTER) {
         if (typing) {
             typing = 0;
-            client_talk(text);
+            client_talk(typing_buffer);
         }
         else {
             if (mods & GLFW_MOD_SUPER) {
@@ -761,9 +761,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     }
     if (key == GLFW_KEY_BACKSPACE) {
         if (typing) {
-            int n = strlen(text);
+            int n = strlen(typing_buffer);
             if (n > 0) {
-                text[n - 1] = '\0';
+                typing_buffer[n - 1] = '\0';
             }
         }
     }
@@ -787,17 +787,17 @@ void on_char(GLFWwindow *window, unsigned int u) {
     if (typing) {
         if (u >= 32 && u < 128) {
             char c = (char)u;
-            int n = strlen(text);
+            int n = strlen(typing_buffer);
             if (n < TEXT_BUFFER_SIZE - 1) {
-                text[n] = c;
-                text[n + 1] = '\0';
+                typing_buffer[n] = c;
+                typing_buffer[n + 1] = '\0';
             }
         }
     }
     else {
         if (u == 116) { // 't'
             typing = 1;
-            text[0] = '\0';
+            typing_buffer[0] = '\0';
         }
     }
 }
@@ -1292,7 +1292,7 @@ int main(int argc, char **argv) {
         }
         if (typing) {
             ty -= 24;
-            snprintf(text_buffer, 1024, "> %s", text);
+            snprintf(text_buffer, 1024, "> %s", typing_buffer);
             print(
                 text_position_loc, text_uv_loc,
                 6, ty, 12, text_buffer);

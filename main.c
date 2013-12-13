@@ -1286,15 +1286,26 @@ int main(int argc, char **argv) {
         glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
         glUniform1i(text_sampler_loc, 1);
         char text_buffer[1024];
+        float ty = height - 12;
         snprintf(
             text_buffer, 1024, "%d, %d, %.2f, %.2f, %.2f [%d, %d]",
             p, q, x, y, z, player_count, chunk_count);
         print(
             text_position_loc, text_uv_loc,
-            6, height - 12, 6, text_buffer);
-        print(
-            text_position_loc, text_uv_loc,
-            6, height - 36, 6, message);
+            6, ty, 6, text_buffer);
+        if (strlen(message)) {
+            ty -= 24;
+            print(
+                text_position_loc, text_uv_loc,
+                6, ty, 6, message);
+        }
+        if (typing) {
+            ty -= 24;
+            snprintf(text_buffer, 1024, "> %s", text);
+            print(
+                text_position_loc, text_uv_loc,
+                6, ty, 6, text_buffer);
+        }
 
         // swap buffers
         glfwSwapBuffers(window);

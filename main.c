@@ -1119,7 +1119,8 @@ int main(int argc, char **argv) {
         int q = chunked(z);
         ensure_chunks(chunks, &chunk_count, x, y, z, 0);
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);
 
         set_matrix_3d(matrix, width, height, x, y, z, rx, ry, fov, ortho);
 
@@ -1160,6 +1161,8 @@ int main(int argc, char **argv) {
             glDeleteBuffers(1, &wireframe_buffer);
             glDisable(GL_COLOR_LOGIC_OP);
         }
+
+        glClear(GL_DEPTH_BUFFER_BIT);
 
         set_matrix_2d(matrix, width, height);
 

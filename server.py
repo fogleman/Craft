@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import Queue
 import SocketServer
 import datetime
+import re
 import sys
 import threading
 import traceback
@@ -99,6 +100,10 @@ class Model(object):
             POSITION: self.on_position,
             TALK: self.on_talk,
         }
+        self.patterns = [
+            (re.compile(r'^/nick\s+(\S+)$'), self.on_nick),
+            (re.compile(r'^/spawn$'), self.on_spawn),
+        ]
     def start(self):
         thread = threading.Thread(target=self.run)
         thread.setDaemon(True)
@@ -116,6 +121,7 @@ class Model(object):
         func(*args, **kwargs)
     def on_connect(self, client):
         client.client_id = self.next_client_id
+        client.nick = 'Player%d' % client.client_id
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
         self.spawn(client)
@@ -163,9 +169,19 @@ class Model(object):
         self.send_position(client)
     def on_talk(self, client, text):
         if text.startswith('/'):
-            pass
+            for pattern, func in self.patterns:
+                match = pattern.match(text)
+                if match:
+                    func(client, *match.groups())
         else:
+            text = '%s> %s' % (client.nick, text)
             self.send_talk(client, text)
+    def on_nick(self, client, nick):
+        client.nick = nick
+    def on_spawn(self, client):
+        self.spawn(client)
+        client.send(YOU, client.client_id, *client.position)
+        self.send_position(client)
     def send_positions(self, client):
         for other in self.clients:
             if other == client:

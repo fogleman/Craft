@@ -176,7 +176,8 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
-    def on_talk(self, client, text):
+    def on_talk(self, client, *args):
+        text = ','.join(args)
         if text.startswith('/'):
             for pattern, func in self.patterns:
                 match = pattern.match(text)

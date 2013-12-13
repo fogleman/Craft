@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import Queue
 import SocketServer
 import datetime
+import random
 import re
 import sys
 import threading
@@ -101,9 +102,10 @@ class Model(object):
             TALK: self.on_talk,
         }
         self.patterns = [
-            (re.compile(r'^/nick\s+(\S+)$'), self.on_nick),
+            (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
-            (re.compile(r'^/goto\s+(\S+)$'), self.on_goto),
+            (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
+            (re.compile(r'^/help$'), self.on_help),
         ]
     def start(self):
         thread = threading.Thread(target=self.run)
@@ -177,19 +179,32 @@ class Model(object):
         else:
             text = '%s> %s' % (client.nick, text)
             self.send_talk(client, text)
-    def on_nick(self, client, nick):
-        client.nick = nick
+    def on_nick(self, client, nick=None):
+        if nick is None:
+            client.send(TALK, 'Your nickname is %s' % client.nick)
+        else:
+            self.send_talk(client,
+                '%s is now known as %s' % (client.nick, nick))
+            client.nick = nick
     def on_spawn(self, client):
         self.spawn(client)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
-    def on_goto(self, client, nick):
-        nicks = dict((client.nick, client) for client in self.clients)
-        other = nicks.get(nick)
+    def on_goto(self, client, nick=None):
+        if nick is None:
+            clients = [x for x in self.clients if x != client]
+            other = random.choice(self.clients) if clients else None
+        else:
+            nicks = dict((client.nick, client) for client in self.clients)
+            other = nicks.get(nick)
         if other:
             client.position = other.position
             client.send(YOU, client.client_id, *client.position)
             self.send_position(client)
+    def on_help(self, client):
+        client.send(TALK, 'Type "t" to chat with other players.')
+        client.send(TALK, 'Type "/" to start typing a command.')
+        client.send(TALK, 'Commands: /nick [NAME], /spawn, /goto [NAME], /help')
     def send_positions(self, client):
         for other in self.clients:
             if other == client:

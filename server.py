@@ -91,7 +91,7 @@ class Handler(SocketServer.BaseRequestHandler):
 
 class Model(object):
     def __init__(self):
-        self.next_client_id = 0
+        self.next_client_id = 1
         self.clients = []
         self.queue = Queue.Queue()
         self.commands = {
@@ -103,6 +103,7 @@ class Model(object):
         self.patterns = [
             (re.compile(r'^/nick\s+(\S+)$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
+            (re.compile(r'^/goto\s+(\S+)$'), self.on_goto),
         ]
     def start(self):
         thread = threading.Thread(target=self.run)
@@ -121,7 +122,7 @@ class Model(object):
         func(*args, **kwargs)
     def on_connect(self, client):
         client.client_id = self.next_client_id
-        client.nick = 'Player%d' % client.client_id
+        client.nick = 'player%d' % client.client_id
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
         self.spawn(client)
@@ -182,6 +183,13 @@ class Model(object):
         self.spawn(client)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
+    def on_goto(self, client, nick):
+        nicks = dict((client.nick, client) for client in self.clients)
+        other = nicks.get(nick)
+        if other:
+            client.position = other.position
+            client.send(YOU, client.client_id, *client.position)
+            self.send_position(client)
     def send_positions(self, client):
         for other in self.clients:
             if other == client:

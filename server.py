@@ -131,8 +131,11 @@ class Model(object):
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Welcome to Craft!')
+        client.send(TALK, 'Type "/help" for chat commands.')
         self.send_position(client)
         self.send_positions(client)
+        self.send_talk(client,
+            '%s has joined the game.' % client.nick)
     def on_data(self, client, data):
         #log('RECV', client.client_id, data)
         args = data.split(',')
@@ -144,6 +147,8 @@ class Model(object):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
+        self.send_talk(client,
+            '%s has disconnected from the server.' % client.nick)
     def on_chunk(self, client, p, q):
         p, q = map(int, (p, q))
         with session() as sql:

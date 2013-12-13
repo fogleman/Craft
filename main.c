@@ -960,6 +960,7 @@ int main(int argc, char **argv) {
     GLuint item_normal_buffer = 0;
     GLuint item_uv_buffer = 0;
     int previous_block_type = 0;
+    char message[TEXT_BUFFER_SIZE] = {0};
 
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
@@ -1181,6 +1182,7 @@ int main(int argc, char **argv) {
             if (buffer[0] == 'T' && buffer[1] == ',') {
                 char *text = buffer + 2;
                 printf("%s\n", text);
+                snprintf(message, TEXT_BUFFER_SIZE, "%s", text);
             }
         }
 
@@ -1280,12 +1282,19 @@ int main(int argc, char **argv) {
         set_matrix_2d(matrix, width, height);
 
         // render text
-        // glUseProgram(text_program);
-        // glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
-        // glUniform1i(text_sampler_loc, 1);
-        // print(
-        //     text_position_loc, text_uv_loc,
-        //     20, height - 20, 12, "Welcome to Craft!");
+        glUseProgram(text_program);
+        glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
+        glUniform1i(text_sampler_loc, 1);
+        char text_buffer[1024];
+        snprintf(
+            text_buffer, 1024, "%d, %d, %.2f, %.2f, %.2f [%d, %d]",
+            p, q, x, y, z, player_count, chunk_count);
+        print(
+            text_position_loc, text_uv_loc,
+            6, height - 12, 6, text_buffer);
+        print(
+            text_position_loc, text_uv_loc,
+            6, height - 36, 6, message);
 
         // swap buffers
         glfwSwapBuffers(window);

@@ -204,8 +204,6 @@ class Model(object):
             other.send(BLOCK, p, q, x, y, z, w)
     def send_talk(self, client, text):
         for other in self.clients:
-            if other == client:
-                continue
             other.send(TALK, text)
     def spawn(self, client):
         if SPAWN_POINT is not None:

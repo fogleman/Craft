@@ -31,6 +31,7 @@
 #define SCROLL_THRESHOLD 0.1
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
+#define MAX_MESSAGES 4
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -958,7 +959,8 @@ int main(int argc, char **argv) {
     GLuint item_normal_buffer = 0;
     GLuint item_uv_buffer = 0;
     int previous_block_type = 0;
-    char message[TEXT_BUFFER_SIZE] = {0};
+    char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
+    int message_index = 0;
 
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
@@ -1178,7 +1180,9 @@ int main(int argc, char **argv) {
             if (buffer[0] == 'T' && buffer[1] == ',') {
                 char *text = buffer + 2;
                 printf("%s\n", text);
-                snprintf(message, TEXT_BUFFER_SIZE, "%s", text);
+                snprintf(
+                    messages[message_index], TEXT_BUFFER_SIZE, "%s", text);
+                message_index = (message_index + 1) % MAX_MESSAGES;
             }
         }
 
@@ -1291,11 +1295,14 @@ int main(int argc, char **argv) {
         print(
             text_position_loc, text_uv_loc,
             tx, ty, ts, text_buffer);
-        if (strlen(message)) {
-            ty -= ts * 2;
-            print(
-                text_position_loc, text_uv_loc,
-                tx, ty, ts, message);
+        for (int i = 0; i < MAX_MESSAGES; i++) {
+            int index = (message_index + i) % MAX_MESSAGES;
+            if (strlen(messages[index])) {
+                ty -= ts * 2;
+                print(
+                    text_position_loc, text_uv_loc,
+                    tx, ty, ts, messages[index]);
+            }
         }
         if (typing) {
             ty -= ts * 2;

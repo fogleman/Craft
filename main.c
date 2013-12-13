@@ -343,7 +343,7 @@ void update_player(Player *player,
     player->ry = ry;
     gen_player_buffers(
         &player->position_buffer, &player->normal_buffer, &player->uv_buffer,
-        x, y + 0.2, z, rx, ry);
+        x, y + 0.1, z, rx, ry);
 }
 
 void delete_player(Player *players, int *player_count, int id) {
@@ -1190,6 +1190,8 @@ int main(int argc, char **argv) {
         int q = chunked(z);
         ensure_chunks(chunks, &chunk_count, x, y, z, 0);
 
+        // RENDER 3-D SCENE //
+
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
         set_matrix_3d(matrix, width, height, x, y, z, rx, ry, fov, ortho);
@@ -1232,6 +1234,8 @@ int main(int argc, char **argv) {
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
+        // RENDER 2-D HUD PARTS //
+
         glClear(GL_DEPTH_BUFFER_BIT);
         set_matrix_2d(matrix, width, height);
 
@@ -1244,42 +1248,6 @@ int main(int argc, char **argv) {
         draw_lines(crosshair_buffer, line_position_loc, 2, 4);
         glDeleteBuffers(1, &crosshair_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
-
-        glClear(GL_DEPTH_BUFFER_BIT);
-        set_matrix_item(matrix, width, height);
-
-        // render selected item
-        if (block_type != previous_block_type) {
-            previous_block_type = block_type;
-            if (is_plant(block_type)) {
-                gen_plant_buffers(
-                    &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                    0, 0, 0, 0.5, block_type);
-            }
-            else {
-                gen_cube_buffers(
-                    &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                    0, 0, 0, 0.5, block_type);
-            }
-        }
-        glUseProgram(block_program);
-        glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-        glUniform3f(camera_loc, 0, 0, 5);
-        glUniform1i(sampler_loc, 0);
-        glUniform1f(timer_loc, glfwGetTime());
-        if (is_plant(block_type)) {
-            draw_plant(
-                item_position_buffer, item_normal_buffer, item_uv_buffer,
-                position_loc, normal_loc, uv_loc);
-        }
-        else {
-            draw_cube(
-                item_position_buffer, item_normal_buffer, item_uv_buffer,
-                position_loc, normal_loc, uv_loc);
-        }
-
-        glClear(GL_DEPTH_BUFFER_BIT);
-        set_matrix_2d(matrix, width, height);
 
         // render text
         glUseProgram(text_program);
@@ -1310,6 +1278,40 @@ int main(int argc, char **argv) {
             print(
                 text_position_loc, text_uv_loc,
                 tx, ty, ts, text_buffer);
+        }
+
+        // RENDER 3-D HUD PARTS //
+
+        set_matrix_item(matrix, width, height);
+
+        // render selected item
+        if (block_type != previous_block_type) {
+            previous_block_type = block_type;
+            if (is_plant(block_type)) {
+                gen_plant_buffers(
+                    &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
+                    0, 0, 0, 0.5, block_type);
+            }
+            else {
+                gen_cube_buffers(
+                    &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
+                    0, 0, 0, 0.5, block_type);
+            }
+        }
+        glUseProgram(block_program);
+        glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
+        glUniform3f(camera_loc, 0, 0, 5);
+        glUniform1i(sampler_loc, 0);
+        glUniform1f(timer_loc, glfwGetTime());
+        if (is_plant(block_type)) {
+            draw_plant(
+                item_position_buffer, item_normal_buffer, item_uv_buffer,
+                position_loc, normal_loc, uv_loc);
+        }
+        else {
+            draw_cube(
+                item_position_buffer, item_normal_buffer, item_uv_buffer,
+                position_loc, normal_loc, uv_loc);
         }
 
         // swap buffers

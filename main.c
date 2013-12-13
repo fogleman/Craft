@@ -749,7 +749,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (typing) {
             typing = 0;
             client_talk(text);
-            printf("\n");
         }
         else {
             if (mods & GLFW_MOD_SUPER) {
@@ -765,8 +764,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             int n = strlen(text);
             if (n > 0) {
                 text[n - 1] = '\0';
-                printf("\b \b");
-                fflush(stdout);
             }
         }
     }
@@ -794,8 +791,6 @@ void on_char(GLFWwindow *window, unsigned int u) {
             if (n < TEXT_BUFFER_SIZE - 1) {
                 text[n] = c;
                 text[n + 1] = '\0';
-                printf("%c", c);
-                fflush(stdout);
             }
         }
     }
@@ -803,8 +798,6 @@ void on_char(GLFWwindow *window, unsigned int u) {
         if (u == 116) { // 't'
             typing = 1;
             text[0] = '\0';
-            printf("> ");
-            fflush(stdout);
         }
     }
 }
@@ -1169,7 +1162,6 @@ int main(int argc, char **argv) {
                     player->position_buffer = 0;
                     player->normal_buffer = 0;
                     player->uv_buffer = 0;
-                    printf("%d other players are online\n", player_count);
                 }
                 if (player) {
                     update_player(player, px, py, pz, prx, pry);
@@ -1177,7 +1169,6 @@ int main(int argc, char **argv) {
             }
             if (sscanf(buffer, "D,%d", &pid) == 1) {
                 delete_player(players, &player_count, pid);
-                printf("%d other players are online\n", player_count);
             }
             if (buffer[0] == 'T' && buffer[1] == ',') {
                 char *text = buffer + 2;

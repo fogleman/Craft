@@ -17,11 +17,11 @@ double rand_double();
 void update_fps(FPS *fps, int show);
 
 void malloc_buffers(
-    int faces,
+    int components, int faces,
     GLfloat **position_data, GLfloat **normal_data, GLfloat **uv_data);
 GLuint gen_buffer(GLenum target, GLsizei size, const void *data);
 void gen_buffers(
-    int faces,
+    int components, int faces,
     GLfloat *position_data, GLfloat *normal_data, GLfloat *uv_data,
     GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer);
 GLuint make_shader(GLenum type, const char *source);

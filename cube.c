@@ -346,3 +346,29 @@ void make_cube_wireframe(float *vertex, float x, float y, float z, float n) {
     *(v++) = x + n; *(v++) = y - n; *(v++) = z + n;
     *(v++) = x - n; *(v++) = y - n; *(v++) = z + n;
 }
+
+void make_character(
+    float *vertex, float *texture,
+    float x, float y, float n, float m, char c)
+{
+    float *v = vertex;
+    float *t = texture;
+    float s = 0.0625;
+    float a = s;
+    float b = s * 2;
+    int w = c - 32;
+    float du = (w % 16) * a;
+    float dv = 1 - (w / 16) * b - b;
+    *(v++) = x - n; *(v++) = y - m;
+    *(v++) = x + n; *(v++) = y - m;
+    *(v++) = x + n; *(v++) = y + m;
+    *(v++) = x - n; *(v++) = y - m;
+    *(v++) = x + n; *(v++) = y + m;
+    *(v++) = x - n; *(v++) = y + m;
+    *(t++) = du + 0; *(t++) = dv + 0;
+    *(t++) = du + a; *(t++) = dv + 0;
+    *(t++) = du + a; *(t++) = dv + b;
+    *(t++) = du + 0; *(t++) = dv + 0;
+    *(t++) = du + a; *(t++) = dv + b;
+    *(t++) = du + 0; *(t++) = dv + b;
+}

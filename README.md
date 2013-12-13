@@ -28,7 +28,7 @@ Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 
 #### Windows
 
-It should be able to run on Windows, but I don't have a Windows machine to test on at the moment. Let me know if and how you get it to run and I will update the README.
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
 
 ### Compile and Run
 
@@ -36,7 +36,7 @@ Once you have the dependencies (see above), run the following commands in your t
 
     git clone https://github.com/fogleman/Craft.git
     cd Craft
-    cmake .
+    cmake . -DCMAKE_BUILD_TYPE=Release
     make
     ./craft
 

@@ -196,7 +196,7 @@ void set_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, fov, aspect, 0.05, 1024.0);
+        mat_perspective(b, fov, aspect, 1 / 32.0, 256.0);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);

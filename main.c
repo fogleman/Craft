@@ -196,7 +196,7 @@ void gen_player_buffers(
 
 void gen_text_buffers(
     GLuint *position_buffer, GLuint *uv_buffer,
-    float x, float y, float n, float m, char *text)
+    float x, float y, float n, char *text)
 {
     int length = strlen(text);
     GLfloat *position_data, *uv_data;
@@ -205,8 +205,8 @@ void gen_text_buffers(
         make_character(
             position_data + i * 12,
             uv_data + i * 12,
-            x, y, n, m, text[i]);
-        x += n * 2;
+            x, y, n / 2, n, text[i]);
+        x += n;
     }
     gen_buffers(
         2, length, position_data, 0, uv_data,
@@ -314,7 +314,7 @@ void print(
     GLuint uv_buffer = 0;
     gen_text_buffers(
         &position_buffer, &uv_buffer,
-        x, y, n, n * 2, text);
+        x, y, n, text);
     draw_text(
         position_buffer, uv_buffer,
         position_loc, uv_loc, strlen(text));
@@ -1283,19 +1283,19 @@ int main(int argc, char **argv) {
             p, q, x, y, z, player_count, chunk_count);
         print(
             text_position_loc, text_uv_loc,
-            6, ty, 6, text_buffer);
+            6, ty, 12, text_buffer);
         if (strlen(message)) {
             ty -= 24;
             print(
                 text_position_loc, text_uv_loc,
-                6, ty, 6, message);
+                6, ty, 12, message);
         }
         if (typing) {
             ty -= 24;
             snprintf(text_buffer, 1024, "> %s", text);
             print(
                 text_position_loc, text_uv_loc,
-                6, ty, 6, text_buffer);
+                6, ty, 12, text_buffer);
         }
 
         // swap buffers

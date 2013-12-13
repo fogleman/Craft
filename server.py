@@ -12,11 +12,14 @@ HOST = '0.0.0.0'
 PORT = 4080
 BUFFER_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
+SPAWN_POINT = None
 
 YOU = 'U'
 BLOCK = 'B'
 CHUNK = 'C'
 POSITION = 'P'
+DISCONNECT = 'D'
+TALK = 'T'
 
 Session = sessionmaker(bind=create_engine(ENGINE))
 
@@ -37,9 +40,14 @@ def log(*args):
     print now, ' '.join(map(str, args))
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+    allow_reuse_address = True
     daemon_threads = True
 
 class Handler(SocketServer.BaseRequestHandler):
+    def setup(self):
+        self.queue = Queue.Queue()
+        self.running = True
+        self.start()
     def handle(self):
         model = self.server.model
         model.enqueue(model.on_connect, self)
@@ -57,14 +65,28 @@ class Handler(SocketServer.BaseRequestHandler):
                     model.enqueue(model.on_data, self, line)
         finally:
             model.enqueue(model.on_disconnect, self)
+    def finish(self):
+        self.running = False
+    def start(self):
+        thread = threading.Thread(target=self.run)
+        thread.setDaemon(True)
+        thread.start()
+    def run(self):
+        while self.running:
+            try:
+                try:
+                    data = self.queue.get(timeout=5)
+                except Queue.Empty:
+                    continue
+                self.request.sendall(data)
+            except Exception:
+                self.request.close()
+                raise
     def send(self, *args):
         data = ','.join(str(x) for x in args)
-        log('SEND', self.client_id, data)
+        #log('SEND', self.client_id, data)
         data = '%s\n' % data
-        try:
-            self.request.sendall(data)
-        except Exception:
-            self.request.close()
+        self.queue.put(data)
 
 class Model(object):
     def __init__(self):
@@ -75,6 +97,7 @@ class Model(object):
             CHUNK: self.on_chunk,
             BLOCK: self.on_block,
             POSITION: self.on_position,
+            TALK: self.on_talk,
         }
     def start(self):
         thread = threading.Thread(target=self.run)
@@ -95,20 +118,24 @@ class Model(object):
         client.client_id = self.next_client_id
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
-        with session() as sql:
-            query = 'select x, y, z from block order by random() limit 1;'
-            rows = list(sql.execute(query))
-            if rows:
-                x, y, z = rows[0]
-                client.position = (x, y, z, 0, 0)
-            else:
-                client.position = (0, 0, 0, 0, 0)
+        if SPAWN_POINT is not None:
+            client.position = SPAWN_POINT
+        else:
+            with session() as sql:
+                query = 'select x, y, z from block order by random() limit 1;'
+                rows = list(sql.execute(query))
+                if rows:
+                    x, y, z = rows[0]
+                    client.position = (x, y, z, 0, 0)
+                else:
+                    client.position = (0, 0, 0, 0, 0)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
+        client.send(TALK, 'Welcome to Craft!')
         self.send_position(client)
         self.send_positions(client)
     def on_data(self, client, data):
-        log('RECV', client.client_id, data)
+        #log('RECV', client.client_id, data)
         args = data.split(',')
         command, args = args[0], args[1:]
         if command in self.commands:
@@ -117,6 +144,7 @@ class Model(object):
     def on_disconnect(self, client):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
+        self.send_disconnect(client)
     def on_chunk(self, client, p, q):
         p, q = map(int, (p, q))
         with session() as sql:
@@ -129,6 +157,8 @@ class Model(object):
                 client.send(BLOCK, p, q, x, y, z, w)
     def on_block(self, client, p, q, x, y, z, w):
         p, q, x, y, z, w = map(int, (p, q, x, y, z, w))
+        if w < -1 or w > 11:
+            return
         with session() as sql:
             query = (
                 'insert or replace into block (p, q, x, y, z, w) '
@@ -141,6 +171,8 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
+    def on_talk(self, client, text):
+        self.send_talk(client, text)
     def send_positions(self, client):
         for other in self.clients:
             if other == client:
@@ -151,11 +183,21 @@ class Model(object):
             if other == client:
                 continue
             other.send(POSITION, client.client_id, *client.position)
+    def send_disconnect(self, client):
+        for other in self.clients:
+            if other == client:
+                continue
+            other.send(DISCONNECT, client.client_id)
     def send_block(self, client, p, q, x, y, z, w):
         for other in self.clients:
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
+    def send_talk(self, client, text):
+        for other in self.clients:
+            if other == client:
+                continue
+            other.send(TALK, text)
 
 def main():
     queries = [
@@ -167,7 +209,6 @@ def main():
         '    z int not null,'
         '    w int not null'
         ');',
-        'create index if not exists block_pq_idx on block(p, q);',
         'create index if not exists block_xyz_idx on block (x, y, z);',
         'create unique index if not exists block_pqxyz_idx on '
         '    block (p, q, x, y, z);',

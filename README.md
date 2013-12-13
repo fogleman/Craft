@@ -17,7 +17,9 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 
 #### Mac OS X
 
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it. You may use [Homebrew](http://brew.sh) to simplify the installation:
+
+    brew install cmake
 
 #### Linux (Ubuntu)
 
@@ -63,6 +65,7 @@ You can run your own server or connect to mine. The server uses the same SQLite 
 - ZXCVBN to move in exact directions along the XYZ axes.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
+- P to teleport to another online player (random).
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.
 

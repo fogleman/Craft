@@ -91,7 +91,19 @@ void client_block(int p, int q, int x, int y, int z, int w) {
     client_send(buffer);
 }
 
-int client_recv(char *data) {
+void client_talk(char *text) {
+    if (!client_enabled) {
+        return;
+    }
+    if (strlen(text) == 0) {
+        return;
+    }
+    char buffer[1024];
+    snprintf(buffer, 1024, "T,%s\n", text);
+    client_send(buffer);
+}
+
+int client_recv(char *data, int length) {
     if (!client_enabled) {
         return 0;
     }
@@ -100,7 +112,8 @@ int client_recv(char *data) {
     char *p = strstr(recv_buffer, "\n");
     if (p) {
         *p = '\0';
-        strcpy(data, recv_buffer);
+        strncpy(data, recv_buffer, length);
+        data[length - 1] = '\0';
         memmove(recv_buffer, p + 1, strlen(p + 1) + 1);
         result = 1;
     }

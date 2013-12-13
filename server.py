@@ -210,9 +210,11 @@ class Model(object):
     def on_help(self, client):
         client.send(TALK, 'Type "t" to chat with other players.')
         client.send(TALK, 'Type "/" to start typing a command.')
-        client.send(TALK, 'Commands: /nick [NAME], /spawn, /goto [NAME], /help, /players')
+        client.send(TALK,
+            'Commands: /goto [NAME], /help, /nick [NAME], /players, /spawn')
     def on_players(self, client):
-        client.send(TALK, "Currently connected players: " + " ".join([c.nick for c in self.clients]))
+        client.send(TALK,
+            'Players: %s' % ', '.join(x.nick for x in self.clients))
     def send_positions(self, client):
         for other in self.clients:
             if other == client:

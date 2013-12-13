@@ -106,6 +106,7 @@ class Model(object):
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
             (re.compile(r'^/help$'), self.on_help),
+            (re.compile(r'^/players$'), self.on_players),
         ]
     def start(self):
         thread = threading.Thread(target=self.run)
@@ -204,7 +205,9 @@ class Model(object):
     def on_help(self, client):
         client.send(TALK, 'Type "t" to chat with other players.')
         client.send(TALK, 'Type "/" to start typing a command.')
-        client.send(TALK, 'Commands: /nick [NAME], /spawn, /goto [NAME], /help')
+        client.send(TALK, 'Commands: /nick [NAME], /spawn, /goto [NAME], /help, /players')
+    def on_players(self, client):
+        client.send(TALK, "Currently connected players: " + " ".join([c.nick for c in self.clients]))
     def send_positions(self, client):
         for other in self.clients:
             if other == client:

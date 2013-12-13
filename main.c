@@ -1277,25 +1277,27 @@ int main(int argc, char **argv) {
         glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
         glUniform1i(text_sampler_loc, 1);
         char text_buffer[1024];
-        float ty = height - 12;
+        float ts = 12;
+        float tx = ts / 2;
+        float ty = height - ts;
         snprintf(
             text_buffer, 1024, "%d, %d, %.2f, %.2f, %.2f [%d, %d]",
             p, q, x, y, z, player_count, chunk_count);
         print(
             text_position_loc, text_uv_loc,
-            6, ty, 12, text_buffer);
+            tx, ty, ts, text_buffer);
         if (strlen(message)) {
-            ty -= 24;
+            ty -= ts * 2;
             print(
                 text_position_loc, text_uv_loc,
-                6, ty, 12, message);
+                tx, ty, ts, message);
         }
         if (typing) {
-            ty -= 24;
+            ty -= ts * 2;
             snprintf(text_buffer, 1024, "> %s", typing_buffer);
             print(
                 text_position_loc, text_uv_loc,
-                6, ty, 12, text_buffer);
+                tx, ty, ts, text_buffer);
         }
 
         // swap buffers

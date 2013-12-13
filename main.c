@@ -10,6 +10,7 @@
 #include <time.h>
 #include "client.h"
 #include "common.h"
+#include "config.h"
 #include "cube.h"
 #include "db.h"
 #include "map.h"
@@ -18,20 +19,13 @@
 #include "util.h"
 #include "world.h"
 
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
-#define FULLSCREEN 0
-#define VSYNC 1
-#define SHOW_FPS 0
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 12
-#define SCROLL_THRESHOLD 0.1
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
-#define MAX_MESSAGES 4
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -769,16 +763,16 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if (!typing) {
-        if (key == GLFW_KEY_TAB) {
+        if (key == CRAFT_KEY_FLY) {
             flying = !flying;
         }
-        if (key == 'P') {
+        if (key == CRAFT_KEY_TELEPORT) {
             teleport = 1;
         }
         if (key >= '1' && key <= '9') {
             block_type = key - '1' + 1;
         }
-        if (key == 'E') {
+        if (key == CRAFT_KEY_BLOCK_TYPE) {
             block_type = block_type % 11 + 1;
         }
     }
@@ -796,11 +790,11 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
     }
     else {
-        if (u == 't') {
+        if (u == CRAFT_KEY_CHAT) {
             typing = 1;
             typing_buffer[0] = '\0';
         }
-        if (u == '/') {
+        if (u == CRAFT_KEY_COMMAND) {
             typing = 1;
             typing_buffer[0] = '/';
             typing_buffer[1] = '\0';
@@ -1022,13 +1016,13 @@ int main(int argc, char **argv) {
         int sx = 0;
         if (!typing) {
             float m = dt * 1.0;
-            ortho = glfwGetKey(window, 'F');
-            fov = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) ? 15.0 : 65.0;
-            if (glfwGetKey(window, 'Q')) break;
-            if (glfwGetKey(window, 'W')) sz--;
-            if (glfwGetKey(window, 'S')) sz++;
-            if (glfwGetKey(window, 'A')) sx--;
-            if (glfwGetKey(window, 'D')) sx++;
+            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
+            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15.0 : 65.0;
+            if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
+            if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
+            if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
+            if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
+            if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
             if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
             if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
             if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
@@ -1037,7 +1031,7 @@ int main(int argc, char **argv) {
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
         if (!typing) {
-            if (glfwGetKey(window, GLFW_KEY_SPACE)) {
+            if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
                 if (flying) {
                     vy = 1;
                 }
@@ -1045,22 +1039,22 @@ int main(int argc, char **argv) {
                     dy = 8;
                 }
             }
-            if (glfwGetKey(window, 'Z')) {
+            if (glfwGetKey(window, CRAFT_KEY_XM)) {
                 vx = -1; vy = 0; vz = 0;
             }
-            if (glfwGetKey(window, 'X')) {
+            if (glfwGetKey(window, CRAFT_KEY_XP)) {
                 vx = 1; vy = 0; vz = 0;
             }
-            if (glfwGetKey(window, 'C')) {
+            if (glfwGetKey(window, CRAFT_KEY_YM)) {
                 vx = 0; vy = -1; vz = 0;
             }
-            if (glfwGetKey(window, 'V')) {
+            if (glfwGetKey(window, CRAFT_KEY_YP)) {
                 vx = 0; vy = 1; vz = 0;
             }
-            if (glfwGetKey(window, 'B')) {
+            if (glfwGetKey(window, CRAFT_KEY_ZM)) {
                 vx = 0; vy = 0; vz = -1;
             }
-            if (glfwGetKey(window, 'N')) {
+            if (glfwGetKey(window, CRAFT_KEY_ZP)) {
                 vx = 0; vy = 0; vz = 1;
             }
         }

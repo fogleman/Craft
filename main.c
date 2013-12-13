@@ -795,9 +795,14 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
     }
     else {
-        if (u == 116) { // 't'
+        if (u == 't') {
             typing = 1;
             typing_buffer[0] = '\0';
+        }
+        if (u == '/') {
+            typing = 1;
+            typing_buffer[0] = '/';
+            typing_buffer[1] = '\0';
         }
     }
 }

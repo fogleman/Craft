@@ -1,13 +1,14 @@
 #ifndef _config_h_
 #define _config_h_
 
-// display parameters
+// app parameters
 #define FULLSCREEN 0
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 #define VSYNC 1
 #define SHOW_FPS 0
 #define SCROLL_THRESHOLD 0.1
+#define DB_PATH "craft.db"
 
 // key bindings
 #define CRAFT_KEY_QUIT 'Q'

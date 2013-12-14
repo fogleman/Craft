@@ -19,7 +19,7 @@ int get_db_enabled() {
     return db_enabled;
 }
 
-int db_init() {
+int db_init(char *path) {
     if (!db_enabled) {
         return 0;
     }
@@ -50,7 +50,7 @@ int db_init() {
         "select x, y, z, w from block where p = ? and q = ?;";
 
     int rc;
-    rc = sqlite3_open(DB_NAME, &db);
+    rc = sqlite3_open(path, &db);
     if (rc) return rc;
     rc = sqlite3_exec(db, create_query, NULL, NULL, NULL);
     if (rc) return rc;

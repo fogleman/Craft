@@ -900,7 +900,7 @@ int main(int argc, char **argv) {
         }
     #endif
 
-    if (db_init()) {
+    if (db_init(DB_PATH)) {
         return -1;
     }
 

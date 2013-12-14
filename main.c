@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 #include "client.h"
 #include "config.h"
@@ -790,7 +791,7 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
     }
     else {
-        if (u == CRAFT_KEY_CHAT) {
+        if (toupper(u) == CRAFT_KEY_CHAT) {
             typing = 1;
             typing_buffer[0] = '\0';
         }

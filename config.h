@@ -2,9 +2,6 @@
 #define _config_h_
 
 // app parameters
-#define FULLSCREEN 0
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
 #define VSYNC 1
 #define SHOW_FPS 0
 #define SCROLL_THRESHOLD 0.1
@@ -36,5 +33,13 @@
 
 // advanced parameters
 #define CHUNK_SIZE 32
+
+typedef struct {
+    int fullscreen;
+    int width;
+    int height;
+} configuration;
+
+int configure(configuration* config);
 
 #endif

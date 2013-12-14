@@ -27,6 +27,7 @@
 #define TEXT_BUFFER_SIZE 256
 
 static GLFWwindow *window;
+static configuration config;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
@@ -851,10 +852,10 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
 }
 
 void create_window() {
-    int width = WINDOW_WIDTH;
-    int height = WINDOW_HEIGHT;
+    int width = config.width;
+    int height = config.height;
     GLFWmonitor *monitor = NULL;
-    if (FULLSCREEN) {
+    if (config.fullscreen) {
         int mode_count;
         monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
@@ -865,6 +866,12 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
+
+    if (!configure(&config)) {
+        printf("fatal: configuration failed.\n");
+        return 1;
+    }
+
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {

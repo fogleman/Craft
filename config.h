@@ -10,10 +10,6 @@
 
 // key bindings
 #define CRAFT_KEY_QUIT 'Q'
-#define CRAFT_KEY_FORWARD 'W'
-#define CRAFT_KEY_BACKWARD 'S'
-#define CRAFT_KEY_LEFT 'A'
-#define CRAFT_KEY_RIGHT 'D'
 #define CRAFT_KEY_JUMP GLFW_KEY_SPACE
 #define CRAFT_KEY_FLY GLFW_KEY_TAB
 #define CRAFT_KEY_TELEPORT 'P'
@@ -38,8 +34,12 @@ typedef struct {
     int fullscreen;
     int width;
     int height;
+    unsigned char forward;
+    unsigned char backward;
+    unsigned char left;
+    unsigned char right;
 } configuration;
 
-int configure(configuration* config);
+int configure(configuration *config);
 
 #endif

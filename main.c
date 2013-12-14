@@ -1030,10 +1030,10 @@ int main(int argc, char **argv) {
             ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
             fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15.0 : 65.0;
             if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
-            if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
-            if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
-            if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
-            if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
+            if (glfwGetKey(window, config.forward)) sz--;
+            if (glfwGetKey(window, config.backward)) sz++;
+            if (glfwGetKey(window, config.left)) sx--;
+            if (glfwGetKey(window, config.right)) sx++;
             if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
             if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
             if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;

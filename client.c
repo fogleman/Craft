@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
+#ifndef _WIN32
+	#include <netdb.h>
+#else
+	#define sleep(x) Sleep(x)
+	#include <winsock.h>
+#endif
 #include <string.h>
 #include <unistd.h>
 #include "client.h"

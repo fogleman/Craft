@@ -81,19 +81,28 @@ class Handler(SocketServer.BaseRequestHandler):
     def run(self):
         while self.running:
             try:
+                buf = []
                 try:
-                    data = self.queue.get(timeout=5)
+                    buf.append(self.queue.get(timeout=5))
+                    try:
+                        while True:
+                            buf.append(self.queue.get(False))
+                    except Queue.Empty:
+                        pass
                 except Queue.Empty:
                     continue
+                data = ''.join(buf)
                 self.request.sendall(data)
             except Exception:
                 self.request.close()
                 raise
+    def send_raw(self, data):
+        if data:
+            self.queue.put(data)
     def send(self, *args):
-        data = ','.join(str(x) for x in args)
-        #log('SEND', self.client_id, data)
-        data = '%s\n' % data
-        self.queue.put(data)
+        data = '%s\n' % ','.join(map(str, args))
+        #log('SEND', self.client_id, data[:-1])
+        self.send_raw(data)
 
 class Model(object):
     def __init__(self):
@@ -163,8 +172,11 @@ class Model(object):
                 'p = :p and q = :q;'
             )
             rows = sql.execute(query, dict(p=p, q=q))
+            buf = []
             for x, y, z, w in rows:
-                client.send(BLOCK, p, q, x, y, z, w)
+                args = (BLOCK, p, q, x, y, z, w)
+                buf.append('%s\n' % ','.join(map(str, args)))
+            client.send_raw(''.join(buf))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or w < 0 or w > 11:

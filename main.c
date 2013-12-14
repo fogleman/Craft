@@ -682,8 +682,10 @@ void _set_block(
     Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
     if (chunk) {
         Map *map = &chunk->map;
-        map_set(map, x, y, z, w);
-        chunk->dirty = 1;
+        if (map_get(map, x, y, z) != w) {
+            map_set(map, x, y, z, w);
+            chunk->dirty = 1;
+        }
     }
     db_insert_block(p, q, x, y, z, w);
 }

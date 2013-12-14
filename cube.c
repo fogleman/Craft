@@ -1,7 +1,7 @@
 #include <math.h>
-#include "common.h"
 #include "cube.h"
 #include "matrix.h"
+#include "util.h"
 
 void make_cube_faces(
     float *vertex, float *normal, float *texture,

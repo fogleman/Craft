@@ -1,6 +1,6 @@
 #include <math.h>
-#include "common.h"
 #include "matrix.h"
+#include "util.h"
 
 void normalize(float *x, float *y, float *z) {
     float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));

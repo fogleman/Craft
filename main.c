@@ -9,7 +9,6 @@
 #include <string.h>
 #include <time.h>
 #include "client.h"
-#include "common.h"
 #include "config.h"
 #include "cube.h"
 #include "db.h"

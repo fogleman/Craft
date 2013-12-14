@@ -5,17 +5,18 @@
 #include "inih/ini.h"
 #include "util.h"
 
-// display parameters
-#define CONFIG_FILE "profile.ini"
-#define FULLSCREEN 0
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
+static const char *config_file = "profile.ini";
 
-// key bindings
-#define CRAFT_KEY_FORWARD 'W'
-#define CRAFT_KEY_BACKWARD 'S'
-#define CRAFT_KEY_LEFT 'A'
-#define CRAFT_KEY_RIGHT 'D'
+void default_config(configuration *config) {
+    config->fullscreen = 0;
+    config->width = 1024;
+    config->height = 768;
+
+    config->forward = 'W';
+    config->backward = 'S';
+    config->strafe_left = 'A';
+    config->strafe_right = 'D';
+}
 
 /* *alias is the entry value in the configuration file.
  * key is the GLFW_KEY_* constant to map to *alias.
@@ -99,11 +100,12 @@ static int handler(void *user, const char *section, const char *name,
 }
 
 int configure(configuration *config) {
-    int res = ini_parse(CONFIG_FILE, handler, config);
+    default_config(config);
+    int res = ini_parse(config_file, handler, config);
     if (res < 0) {
-        printf("can't load '%s'\n", CONFIG_FILE);
+        printf("Can't load %s, using default settings.\n", config_file);
     } else if (res) {
-        printf("parse error in %s on line %d.\n", CONFIG_FILE, res);
+        printf("Parse error in %s on line %d.\n", config_file, res);
     }
     return res == 0;
 }

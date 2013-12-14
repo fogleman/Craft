@@ -59,7 +59,6 @@ static int handler(void *user, const char *section, const char *name,
     if (!handled) {
         printf("Unknown configuration: %s:%s = %s\n",
                 section, name, value);
-        return 0;
     }
 
     return 1;

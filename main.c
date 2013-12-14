@@ -764,16 +764,16 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if (!typing) {
-        if (key == CRAFT_KEY_FLY) {
+        if (key == config.fly) {
             flying = !flying;
         }
-        if (key == CRAFT_KEY_TELEPORT) {
+        if (key == config.teleport) {
             teleport = 1;
         }
         if (key >= '1' && key <= '9') {
             block_type = key - '1' + 1;
         }
-        if (key == CRAFT_KEY_BLOCK_TYPE) {
+        if (key == config.cycle_block) {
             block_type = block_type % 11 + 1;
         }
     }
@@ -791,11 +791,11 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
     }
     else {
-        if (toupper(u) == CRAFT_KEY_CHAT) {
+        if (toupper(u) == config.chat) {
             typing = 1;
             typing_buffer[0] = '\0';
         }
-        if (u == CRAFT_KEY_COMMAND) {
+        if (u == config.command) {
             typing = 1;
             typing_buffer[0] = '/';
             typing_buffer[1] = '\0';
@@ -904,7 +904,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(VSYNC);
+    glfwSwapInterval(config.vsync);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, on_key);
     glfwSetCharCallback(window, on_char);
@@ -998,7 +998,7 @@ int main(int argc, char **argv) {
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
-        update_fps(&fps, SHOW_FPS);
+        update_fps(&fps, config.show_fps);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
@@ -1028,9 +1028,9 @@ int main(int argc, char **argv) {
         int sx = 0;
         if (!typing) {
             float m = dt * 1.0;
-            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
-            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15.0 : 65.0;
-            if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
+            ortho = glfwGetKey(window, config.ortho_view);
+            fov = glfwGetKey(window, config.zoom) ? 15.0 : 65.0;
+            if (glfwGetKey(window, config.quit)) break;
             if (glfwGetKey(window, config.forward)) sz--;
             if (glfwGetKey(window, config.backward)) sz++;
             if (glfwGetKey(window, config.strafe_left)) sx--;
@@ -1043,7 +1043,7 @@ int main(int argc, char **argv) {
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
         if (!typing) {
-            if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
+            if (glfwGetKey(window, config.jump)) {
                 if (flying) {
                     vy = 1;
                 }
@@ -1051,22 +1051,22 @@ int main(int argc, char **argv) {
                     dy = 8;
                 }
             }
-            if (glfwGetKey(window, CRAFT_KEY_XM)) {
+            if (glfwGetKey(window, config.x_dec)) {
                 vx = -1; vy = 0; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_XP)) {
+            if (glfwGetKey(window, config.x_inc)) {
                 vx = 1; vy = 0; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_YM)) {
+            if (glfwGetKey(window, config.y_dec)) {
                 vx = 0; vy = -1; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_YP)) {
+            if (glfwGetKey(window, config.y_inc)) {
                 vx = 0; vy = 1; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_ZM)) {
+            if (glfwGetKey(window, config.z_dec)) {
                 vx = 0; vy = 0; vz = -1;
             }
-            if (glfwGetKey(window, CRAFT_KEY_ZP)) {
+            if (glfwGetKey(window, config.z_inc)) {
                 vx = 0; vy = 0; vz = 1;
             }
         }

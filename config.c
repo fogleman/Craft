@@ -11,11 +11,28 @@ void default_config(configuration *config) {
     config->fullscreen = 0;
     config->width = 1024;
     config->height = 768;
+    config->vsync = 1;
+    config->show_fps = 0;
 
     config->forward = 'W';
     config->backward = 'S';
     config->strafe_left = 'A';
     config->strafe_right = 'D';
+    config->quit = 'Q';
+    config->jump = GLFW_KEY_SPACE;
+    config->teleport = 'P';
+    config->fly = GLFW_KEY_TAB;
+    config->cycle_block = 'E';
+    config->zoom = GLFW_KEY_LEFT_SHIFT;
+    config->ortho_view = 'F';
+    config->x_inc = 'X';
+    config->y_inc = 'V';
+    config->z_inc = 'N';
+    config->x_dec = 'Z';
+    config->y_dec = 'C';
+    config->z_dec = 'B';
+    config->chat = 'T';
+    config->command = '/';
 }
 
 /* *alias is the entry value in the configuration file.
@@ -31,6 +48,18 @@ static const key_map key_mapping[] = {
     { "Down", GLFW_KEY_DOWN },
     { "Left", GLFW_KEY_LEFT },
     { "Right", GLFW_KEY_RIGHT },
+    { "Space", GLFW_KEY_SPACE },
+    { "LShift", GLFW_KEY_LEFT_SHIFT },
+    { "RShift", GLFW_KEY_RIGHT_SHIFT },
+    { "LCtrl", GLFW_KEY_LEFT_CONTROL },
+    { "RCtrl", GLFW_KEY_RIGHT_CONTROL },
+    { "LAlt", GLFW_KEY_LEFT_ALT },
+    { "RAlt", GLFW_KEY_RIGHT_ALT },
+    { "Tab", GLFW_KEY_TAB },
+    { "PgUp", GLFW_KEY_PAGE_UP },
+    { "PgDown", GLFW_KEY_PAGE_DOWN },
+    { "Home", GLFW_KEY_HOME },
+    { "End", GLFW_KEY_END },
 };
 
 static const size_t key_mappings = sizeof(key_mapping) / sizeof(key_mapping[0]);
@@ -71,6 +100,12 @@ static int handler(void *user, const char *section, const char *name,
         } else if (strncmp(name, "height", 6) == 0) {
             pconfig->height = atoi(value);
             handled = 1;
+        } else if (strncmp(name, "vsync", 5) == 0) {
+            pconfig->vsync = atoi(value);
+            handled = 1;
+        } else if (strncmp(name, "show fps", 8) == 0) {
+            pconfig->show_fps = atoi(value);
+            handled = 1;
         }
     } else if (strncmp(section, "controls", 8) == 0) {
         int key = get_key(value, strlen(value));
@@ -81,11 +116,56 @@ static int handler(void *user, const char *section, const char *name,
             } else if (strncmp(name, "backward", 8) == 0) {
                 pconfig->backward = key;
                 handled = 1;
-            } else if (strncmp(name, "left", 4) == 0) {
+            } else if (strncmp(name, "strafe left", 11) == 0) {
                 pconfig->strafe_left = key;
                 handled = 1;
-            } else if (strncmp(name, "right", 5) == 0) {
+            } else if (strncmp(name, "strafe right", 12) == 0) {
                 pconfig->strafe_right = key;
+                handled = 1;
+            } else if (strncmp(name, "jump", 4) == 0) {
+                pconfig->jump = key;
+                handled = 1;
+            } else if (strncmp(name, "teleport", 8) == 0) {
+                pconfig->teleport = key;
+                handled = 1;
+            } else if (strncmp(name, "fly", 3) == 0) {
+                pconfig->fly = key;
+                handled = 1;
+            } else if (strncmp(name, "cycle block", 11) == 0) {
+                pconfig->cycle_block = key;
+                handled = 1;
+            } else if (strncmp(name, "zoom", 4) == 0) {
+                pconfig->zoom = key;
+                handled = 1;
+            } else if (strncmp(name, "ortho view", 10) == 0) {
+                pconfig->ortho_view = key;
+                handled = 1;
+            } else if (strncmp(name, "increase x", 10) == 0) {
+                pconfig->x_inc = key;
+                handled = 1;
+            } else if (strncmp(name, "increase y", 10) == 0) {
+                pconfig->y_inc = key;
+                handled = 1;
+            } else if (strncmp(name, "increase z", 10) == 0) {
+                pconfig->z_inc = key;
+                handled = 1;
+            } else if (strncmp(name, "decrease x", 10) == 0) {
+                pconfig->x_dec = key;
+                handled = 1;
+            } else if (strncmp(name, "decrease y", 10) == 0) {
+                pconfig->y_dec = key;
+                handled = 1;
+            } else if (strncmp(name, "decrease z", 10) == 0) {
+                pconfig->z_dec = key;
+                handled = 1;
+            } else if (strncmp(name, "chat", 4) == 0) {
+                pconfig->chat = key;
+                handled = 1;
+            } else if (strncmp(name, "command", 7) == 0) {
+                pconfig->command = key;
+                handled = 1;
+            } else if (strncmp(name, "quit", 4) == 0) {
+                pconfig->quit = key;
                 handled = 1;
             }
         }

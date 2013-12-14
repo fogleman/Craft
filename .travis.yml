@@ -5,7 +5,7 @@ install:
  - sudo apt-get install build-essential cmake libglew-dev xorg-dev
  - sudo apt-get build-dep glfw
  # Ubuntu 12.04 doesn't have a FindGLEW CMake module
- - sudo wget http://pastebin.com/raw.php?i=5iC4Pi8v -O /usr/share/cmake-2.8/Modules/FindGLEW.cmake
+ - sudo wget http://pastebin.com/raw.php?i=ax0fDqVa -O /usr/share/cmake-2.8/Modules/FindGLEW.cmake
 
 script:
  - cmake .

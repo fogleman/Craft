@@ -162,6 +162,7 @@ class Model(object):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
+        self.next_client_id -= 1
         self.send_talk(client,
             '%s has disconnected from the server.' % client.nick)
     def on_chunk(self, client, p, q):

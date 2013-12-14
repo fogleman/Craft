@@ -14,9 +14,16 @@ include_directories(sqlite)
 include_directories(lodepng)
 include_directories(tinycthread)
 
+find_package(ZLIB REQUIRED)
+include_directories(${ZLIB_INCLUDE_DIRS})
+
 if (APPLE)
-    target_link_libraries(craft glfw ${GLFW_LIBRARIES})
+    target_link_libraries(
+        craft glfw
+        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
 else()
     find_package(GLEW REQUIRED)
-    target_link_libraries(craft glfw dl ${GLEW_LIBRARIES} ${GLFW_LIBRARIES})
+    target_link_libraries(
+        craft glfw dl
+        ${GLEW_LIBRARIES} ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
 endif()

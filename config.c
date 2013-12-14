@@ -20,6 +20,10 @@ static int handler(void *user, const char *section, const char *name,
         const char *value) {
     configuration *pconfig = (configuration*)user;
 
+    if (!*value) {
+        return 0;
+    }
+
     int handled = 0;
     if (strncmp(section, "video", 5) == 0) {
         if (strncmp(name, "fullscreen", 10) == 0) {
@@ -34,25 +38,17 @@ static int handler(void *user, const char *section, const char *name,
         }
     } else if (strncmp(section, "controls", 8) == 0) {
         if (strncmp(name, "forward", 7) == 0) {
-            if (*value) {
-                pconfig->forward = toupper(value[0]);
-                handled = 1;
-            }
+            pconfig->forward = toupper(value[0]);
+            handled = 1;
         } else if (strncmp(name, "backward", 8) == 0) {
-            if (*value) {
-                pconfig->backward = toupper(value[0]);
-                handled = 1;
-            }
+            pconfig->backward = toupper(value[0]);
+            handled = 1;
         } else if (strncmp(name, "left", 4) == 0) {
-            if (*value) {
-                pconfig->left = toupper(value[0]);
-                handled = 1;
-            }
+            pconfig->left = toupper(value[0]);
+            handled = 1;
         } else if (strncmp(name, "right", 5) == 0) {
-            if (*value) {
-                pconfig->right = toupper(value[0]);
-                handled = 1;
-            }
+            pconfig->right = toupper(value[0]);
+            handled = 1;
         }
     }
 

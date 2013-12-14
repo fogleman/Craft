@@ -14,6 +14,9 @@ include_directories(sqlite)
 include_directories(lodepng)
 include_directories(tinycthread)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules/")
+set(GLEW_LOCATION "${CMAKE_SOURCE_DIR}/glew-1.10.0")
+
 if (APPLE)
     target_link_libraries(craft glfw ${GLFW_LIBRARIES})
 else()

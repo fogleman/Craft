@@ -9,6 +9,7 @@
 #include <string.h>
 #include <libgen.h>
 #include <time.h>
+#include <unistd.h>
 #include "client.h"
 #include "config.h"
 #include "cube.h"

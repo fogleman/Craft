@@ -28,8 +28,11 @@ Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 
 #### Windows
 
-It should be able to run on Windows, but I don't have a Windows machine to test on at the moment. Let me know if and how you get it to run and I will update the README.
-
+MinGW with glew and ldl installed and cmake are required.  In order to build issue following command:
+```shell
+cmake -G"<GENERATOR_NAME>" -DGLEW_INCLUDE_DIR:string="<PATH_TO_MING/INCLUDE>" .
+```
+Where \<GENERATOR_NAME\> and \<PATH_TO_MING/INCLUDE\> must be substituted to appropriate values.
 ### Compile and Run
 
 Once you have the dependencies (see above), run the following commands in your terminal.

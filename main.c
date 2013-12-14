@@ -68,10 +68,12 @@ int is_plant(int w) {
 }
 
 int is_obstacle(int w) {
-    return w != 0 && w < 16;
+    w = ABS(w);
+    return w > 0 && w < 16;
 }
 
 int is_transparent(int w) {
+    w = ABS(w);
     return w == 0 || w == 10 || w == 15 || is_plant(w);
 }
 
@@ -675,7 +677,7 @@ void ensure_chunks(
 
 void _set_block(
     Chunk *chunks, int chunk_count,
-    int p, int q, int x, int y, int z, int w, int post)
+    int p, int q, int x, int y, int z, int w)
 {
     Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
     if (chunk) {
@@ -684,33 +686,28 @@ void _set_block(
         chunk->dirty = 1;
     }
     db_insert_block(p, q, x, y, z, w);
-    if (post) {
-        client_block(p, q, x, y, z, w);
-    }
 }
 
 void set_block(
     Chunk *chunks, int chunk_count,
-    int x, int y, int z, int w, int post)
+    int x, int y, int z, int w)
 {
     int p = chunked(x);
     int q = chunked(z);
-    _set_block(chunks, chunk_count, p, q, x, y, z, w, post);
-    w = w ? -1 : 0;
-    int p0 = x == p * CHUNK_SIZE;
-    int q0 = z == q * CHUNK_SIZE;
-    int p1 = x == p * CHUNK_SIZE + CHUNK_SIZE - 1;
-    int q1 = z == q * CHUNK_SIZE + CHUNK_SIZE - 1;
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            if (dp == 0 && dq == 0) continue;
-            if (dp < 0 && !p0) continue;
-            if (dp > 0 && !p1) continue;
-            if (dq < 0 && !q0) continue;
-            if (dq > 0 && !q1) continue;
-            _set_block(chunks, chunk_count, p + dp, q + dq, x, y, z, w, post);
-        }
+    _set_block(chunks, chunk_count, p, q, x, y, z, w);
+    if (chunked(x - 1) != p) {
+        _set_block(chunks, chunk_count, p - 1, q, x, y, z, -w);
     }
+    if (chunked(x + 1) != p) {
+        _set_block(chunks, chunk_count, p + 1, q, x, y, z, -w);
+    }
+    if (chunked(z - 1) != q) {
+        _set_block(chunks, chunk_count, p, q - 1, x, y, z, -w);
+    }
+    if (chunked(z + 1) != q) {
+        _set_block(chunks, chunk_count, p, q + 1, x, y, z, -w);
+    }
+    client_block(x, y, z, w);
 }
 
 int get_block(
@@ -1089,10 +1086,10 @@ int main(int argc, char **argv) {
             int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (hy > 0 && is_destructable(hw)) {
-                set_block(chunks, chunk_count, hx, hy, hz, 0, 1);
+                set_block(chunks, chunk_count, hx, hy, hz, 0);
                 int above = get_block(chunks, chunk_count, hx, hy + 1, hz);
                 if (is_plant(above)) {
-                    set_block(chunks, chunk_count, hx, hy + 1, hz, 0, 1);
+                    set_block(chunks, chunk_count, hx, hy + 1, hz, 0);
                 }
             }
         }
@@ -1104,7 +1101,7 @@ int main(int argc, char **argv) {
                 &hx, &hy, &hz);
             if (is_obstacle(hw)) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(chunks, chunk_count, hx, hy, hz, block_type, 1);
+                    set_block(chunks, chunk_count, hx, hy, hz, block_type);
                 }
             }
         }
@@ -1141,11 +1138,11 @@ int main(int argc, char **argv) {
                 ensure_chunks(chunks, &chunk_count, x, y, z, 1);
                 y = highest_block(chunks, chunk_count, x, z) + 2;
             }
-            int bx, by, bz, bw;
-            if (sscanf(buffer, "B,%*d,%*d,%d,%d,%d,%d",
-                &bx, &by, &bz, &bw) == 4)
+            int bp, bq, bx, by, bz, bw;
+            if (sscanf(buffer, "B,%d,%d,%d,%d,%d,%d",
+                &bp, &bq, &bx, &by, &bz, &bw) == 6)
             {
-                set_block(chunks, chunk_count, bx, by, bz, bw, 0);
+                _set_block(chunks, chunk_count, bp, bq, bx, by, bz, bw);
                 if (player_intersects_block(2, x, y, z, bx, by, bz)) {
                     y = highest_block(chunks, chunk_count, x, z) + 2;
                 }

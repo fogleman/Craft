@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from math import floor
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import Queue
@@ -12,6 +13,7 @@ import traceback
 
 HOST = '0.0.0.0'
 PORT = 4080
+CHUNK_SIZE = 32
 BUFFER_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
 SPAWN_POINT = None
@@ -40,6 +42,9 @@ def session():
 def log(*args):
     now = datetime.datetime.utcnow()
     print now, ' '.join(map(str, args))
+
+def chunked(x):
+    return int(floor(round(x) / CHUNK_SIZE))
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -154,24 +159,36 @@ class Model(object):
         p, q = map(int, (p, q))
         with session() as sql:
             query = (
-                'select x, y, z, w from block where w >= 0 and '
+                'select x, y, z, w from block where '
                 'p = :p and q = :q;'
             )
             rows = sql.execute(query, dict(p=p, q=q))
             for x, y, z, w in rows:
                 client.send(BLOCK, p, q, x, y, z, w)
-    def on_block(self, client, p, q, x, y, z, w):
-        p, q, x, y, z, w = map(int, (p, q, x, y, z, w))
-        if y <= 0 or w < -1 or w > 11:
+    def on_block(self, client, x, y, z, w):
+        x, y, z, w = map(int, (x, y, z, w))
+        if y <= 0 or w < 0 or w > 11:
             return
+        p, q = chunked(x), chunked(z)
         with session() as sql:
             query = (
                 'insert or replace into block (p, q, x, y, z, w) '
                 'values (:p, :q, :x, :y, :z, :w);'
             )
             sql.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
-        if w >= 0:
             self.send_block(client, p, q, x, y, z, w)
+            if chunked(x - 1) != p:
+                sql.execute(query, dict(p=p - 1, q=q, x=x, y=y, z=z, w=-w))
+                self.send_block(client, p - 1, q, x, y, z, -w)
+            if chunked(x + 1) != p:
+                sql.execute(query, dict(p=p + 1, q=q, x=x, y=y, z=z, w=-w))
+                self.send_block(client, p + 1, q, x, y, z, -w)
+            if chunked(z - 1) != q:
+                sql.execute(query, dict(p=p, q=q - 1, x=x, y=y, z=z, w=-w))
+                self.send_block(client, p, q - 1, x, y, z, -w)
+            if chunked(z + 1) != q:
+                sql.execute(query, dict(p=p, q=q + 1, x=x, y=y, z=z, w=-w))
+                self.send_block(client, p, q + 1, x, y, z, -w)
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)

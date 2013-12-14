@@ -865,16 +865,13 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
-#ifdef __APPLE__
-   // Set dir
-   char *base = dirname(argv[0]);
+    // Set dir
+    char *base = dirname(argv[0]);
 
-   if (chdir(base)) {
-      return 1;
-   }
-   setenv("PWD", base, 1);
-
-#endif
+    if (chdir(base)) {
+        return 1;
+    }
+    setenv("PWD", base, 1);
 
     srand(time(NULL));
     rand();

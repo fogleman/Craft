@@ -3,7 +3,7 @@
 #ifndef _WIN32
 	#include <netdb.h>
 #else
-	#define sleep(x) Sleep(x)
+	#define sleep(x) Sleep((x) * 1000)
 	#include <winsock.h>
 #endif
 #include <string.h>

@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "lodepng.h"
 #include "matrix.h"
 #include "util.h"
@@ -27,6 +28,16 @@ void update_fps(FPS *fps, int show) {
             printf("%d\n", result);
         }
     }
+}
+
+int strncicmp(const char *a, const char *b, size_t n) {
+    for (; n > 0; ++a, ++b, --n) {
+        int d = toupper(*a) - toupper(*b);
+        if (d != 0 || !*a) {
+            return d;
+        }
+    }
+    return 0;
 }
 
 char *load_file(const char *path) {

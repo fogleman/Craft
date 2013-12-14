@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include "config.h"
 #include "inih/ini.h"
+#include "util.h"
 
 // display parameters
 #define CONFIG_FILE "profile.ini"
@@ -38,16 +39,32 @@ static int handler(void *user, const char *section, const char *name,
         }
     } else if (strncmp(section, "controls", 8) == 0) {
         if (strncmp(name, "forward", 7) == 0) {
-            pconfig->forward = toupper(value[0]);
+            if (strncicmp(value, "up", 2) == 0) {
+                pconfig->forward = GLFW_KEY_UP;
+            } else {
+                pconfig->forward = toupper(value[0]);
+            }
             handled = 1;
         } else if (strncmp(name, "backward", 8) == 0) {
-            pconfig->backward = toupper(value[0]);
+            if (strncicmp(value, "down", 4) == 0) {
+                pconfig->backward = GLFW_KEY_DOWN;
+            } else {
+                pconfig->backward = toupper(value[0]);
+            }
             handled = 1;
         } else if (strncmp(name, "left", 4) == 0) {
-            pconfig->left = toupper(value[0]);
+            if (strncicmp(value, "left", 4) == 0) {
+                pconfig->strafe_left = GLFW_KEY_LEFT;
+            } else {
+                pconfig->strafe_left = toupper(value[0]);
+            }
             handled = 1;
         } else if (strncmp(name, "right", 5) == 0) {
-            pconfig->right = toupper(value[0]);
+            if (strncicmp(value, "right", 5) == 0) {
+                pconfig->strafe_right = GLFW_KEY_RIGHT;
+            } else {
+                pconfig->strafe_right = toupper(value[0]);
+            }
             handled = 1;
         }
     }

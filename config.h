@@ -31,13 +31,15 @@
 #define CHUNK_SIZE 32
 
 typedef struct {
+    // Video.
     int fullscreen;
     int width;
     int height;
-    unsigned char forward;
-    unsigned char backward;
-    unsigned char left;
-    unsigned char right;
+    // Controls.
+    int forward;
+    int backward;
+    int strafe_left;
+    int strafe_right;
 } configuration;
 
 int configure(configuration *config);

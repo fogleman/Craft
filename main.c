@@ -1032,8 +1032,8 @@ int main(int argc, char **argv) {
             if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
             if (glfwGetKey(window, config.forward)) sz--;
             if (glfwGetKey(window, config.backward)) sz++;
-            if (glfwGetKey(window, config.left)) sx--;
-            if (glfwGetKey(window, config.right)) sx++;
+            if (glfwGetKey(window, config.strafe_left)) sx--;
+            if (glfwGetKey(window, config.strafe_right)) sx++;
             if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
             if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
             if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;

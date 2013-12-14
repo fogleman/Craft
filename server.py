@@ -179,7 +179,7 @@ class Model(object):
             client.send_raw(''.join(buf))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
-        if y <= 0 or w < 0 or w > 11:
+        if y <= 0 or y > 255 or w < 0 or w > 11:
             return
         p, q = chunked(x), chunked(z)
         with session() as sql:

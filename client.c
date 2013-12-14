@@ -3,9 +3,11 @@
 #include <netdb.h>
 #include <string.h>
 #include <unistd.h>
+#include <zlib.h>
 #include "client.h"
 #include "tinycthread.h"
 
+#define CHUNK 1048576
 #define QUEUE_SIZE 65536
 #define BUFFER_SIZE 4096
 
@@ -121,10 +123,59 @@ int client_recv(char *data, int length) {
     return result;
 }
 
+int inf(FILE *source, FILE *dest) {
+    int result;
+    unsigned int have;
+    unsigned char in[CHUNK];
+    unsigned char out[CHUNK];
+    z_stream stream;
+    stream.zalloc = Z_NULL;
+    stream.zfree = Z_NULL;
+    stream.opaque = Z_NULL;
+    stream.avail_in = 0;
+    stream.next_in = Z_NULL;
+    result = inflateInit(&stream);
+    if (result != Z_OK) {
+        return result;
+    }
+    do {
+        stream.avail_in = fread(in, 1, CHUNK, source);
+        if (ferror(source)) {
+            inflateEnd(&stream);
+            return Z_ERRNO;
+        }
+        if (stream.avail_in == 0) {
+            break;
+        }
+        stream.next_in = in;
+        do {
+            stream.avail_out = CHUNK;
+            stream.next_out = out;
+            result = inflate(&stream, Z_NO_FLUSH);
+            // assert(result != Z_STREAM_ERROR);
+            switch (result) {
+                case Z_NEED_DICT:
+                    result = Z_DATA_ERROR;
+                case Z_DATA_ERROR:
+                case Z_MEM_ERROR:
+                    inflateEnd(&stream);
+                    return result;
+            }
+            have = CHUNK - stream.avail_out;
+            if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
+                inflateEnd(&stream);
+                return Z_ERRNO;
+            }
+        } while (stream.avail_out == 0);
+    } while (result != Z_STREAM_END);
+    inflateEnd(&stream);
+    return result == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
+}
+
 int recv_worker(void *arg) {
     while (1) {
         char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE - 1, 0) == -1) {
+        if (recv(sd, data, BUFFER_SIZE - 1, 0) <= 0) {
             perror("recv");
             exit(1);
         }

@@ -10,6 +10,7 @@ import re
 import sys
 import threading
 import traceback
+import zlib
 
 HOST = '0.0.0.0'
 PORT = 4080
@@ -98,6 +99,8 @@ class Handler(SocketServer.BaseRequestHandler):
                 raise
     def send_raw(self, data):
         if data:
+            compressed = zlib.compress(data)
+            print len(data), len(compressed)
             self.queue.put(data)
     def send(self, *args):
         data = '%s\n' % ','.join(map(str, args))

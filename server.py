@@ -16,7 +16,7 @@ PORT = 4080
 CHUNK_SIZE = 32
 BUFFER_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
-SPAWN_POINT = None
+SPAWN_POINT = (0, 0, 0, 0, 0)
 
 YOU = 'U'
 BLOCK = 'B'
@@ -143,7 +143,7 @@ class Model(object):
         client.nick = 'player%d' % client.client_id
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
-        self.spawn(client)
+        client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Welcome to Craft!')
@@ -225,7 +225,7 @@ class Model(object):
                 '%s is now known as %s' % (client.nick, nick))
             client.nick = nick
     def on_spawn(self, client):
-        self.spawn(client)
+        client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
     def on_goto(self, client, nick=None):
@@ -270,18 +270,6 @@ class Model(object):
     def send_talk(self, client, text):
         for other in self.clients:
             other.send(TALK, text)
-    def spawn(self, client):
-        if SPAWN_POINT is not None:
-            client.position = SPAWN_POINT
-        else:
-            with session() as sql:
-                query = 'select x, y, z from block order by random() limit 1;'
-                rows = list(sql.execute(query))
-                if rows:
-                    x, y, z = rows[0]
-                    client.position = (x, y, z, 0, 0)
-                else:
-                    client.position = (0, 0, 0, 0, 0)
 
 def main():
     queries = [

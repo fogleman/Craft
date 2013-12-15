@@ -99,9 +99,7 @@ class Handler(SocketServer.BaseRequestHandler):
                 raise
     def send_raw(self, data):
         if data:
-            compressed = zlib.compress(data)
-            print len(data), len(compressed)
-            self.queue.put(data)
+            self.queue.put(zlib.compress(data))
     def send(self, *args):
         data = '%s\n' % ','.join(map(str, args))
         #log('SEND', self.client_id, data[:-1])

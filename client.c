@@ -7,13 +7,13 @@
 #include "client.h"
 #include "tinycthread.h"
 
-#define CHUNK 1048576
-#define QUEUE_SIZE 65536
-#define BUFFER_SIZE 4096
+#define RECV_SIZE 4096
+#define CHUNK_SIZE 65536
+#define QUEUE_SIZE 1048576
 
 static int client_enabled = 0;
 static int sd = 0;
-static char recv_buffer[QUEUE_SIZE] = {0};
+static char queue[QUEUE_SIZE] = {0};
 static thrd_t recv_thread;
 static mtx_t mutex;
 
@@ -111,86 +111,83 @@ int client_recv(char *data, int length) {
     }
     int result = 0;
     mtx_lock(&mutex);
-    char *p = strstr(recv_buffer, "\n");
+    char *p = strstr(queue, "\n");
     if (p) {
         *p = '\0';
-        strncpy(data, recv_buffer, length);
+        strncpy(data, queue, length);
         data[length - 1] = '\0';
-        memmove(recv_buffer, p + 1, strlen(p + 1) + 1);
+        memmove(queue, p + 1, strlen(p + 1) + 1);
         result = 1;
     }
     mtx_unlock(&mutex);
     return result;
 }
 
-int inf(FILE *source, FILE *dest) {
+int recv_worker(void *arg) {
     int result;
     unsigned int have;
-    unsigned char in[CHUNK];
-    unsigned char out[CHUNK];
+    unsigned char in[CHUNK_SIZE];
+    unsigned char out[CHUNK_SIZE];
     z_stream stream;
-    stream.zalloc = Z_NULL;
-    stream.zfree = Z_NULL;
-    stream.opaque = Z_NULL;
     stream.avail_in = 0;
     stream.next_in = Z_NULL;
-    result = inflateInit(&stream);
-    if (result != Z_OK) {
-        return result;
-    }
-    do {
-        stream.avail_in = fread(in, 1, CHUNK, source);
-        if (ferror(source)) {
-            inflateEnd(&stream);
-            return Z_ERRNO;
-        }
-        if (stream.avail_in == 0) {
-            break;
-        }
-        stream.next_in = in;
-        do {
-            stream.avail_out = CHUNK;
-            stream.next_out = out;
-            result = inflate(&stream, Z_NO_FLUSH);
-            // assert(result != Z_STREAM_ERROR);
-            switch (result) {
-                case Z_NEED_DICT:
-                    result = Z_DATA_ERROR;
-                case Z_DATA_ERROR:
-                case Z_MEM_ERROR:
-                    inflateEnd(&stream);
-                    return result;
-            }
-            have = CHUNK - stream.avail_out;
-            if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
-                inflateEnd(&stream);
-                return Z_ERRNO;
-            }
-        } while (stream.avail_out == 0);
-    } while (result != Z_STREAM_END);
-    inflateEnd(&stream);
-    return result == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
-}
-
-int recv_worker(void *arg) {
-    while (1) {
-        char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE - 1, 0) <= 0) {
-            perror("recv");
+    while (client_enabled) {
+        stream.zalloc = Z_NULL;
+        stream.zfree = Z_NULL;
+        stream.opaque = Z_NULL;
+        result = inflateInit(&stream);
+        if (result != Z_OK) {
+            printf("END: inflateInit\n");
+            perror("inflateInit");
             exit(1);
         }
-        while (1) {
-            int done = 0;
-            mtx_lock(&mutex);
-            if (strlen(recv_buffer) + strlen(data) < QUEUE_SIZE) {
-                strcat(recv_buffer, data);
-                done = 1;
+        do {
+            if (stream.avail_in == 0) {
+                stream.avail_in = recv(sd, in, RECV_SIZE, 0);
+                if (stream.avail_in <= 0) {
+                    inflateEnd(&stream);
+                    printf("END: recv\n");
+                    perror("recv");
+                    exit(1);
+                }
+                stream.next_in = in;
             }
-            mtx_unlock(&mutex);
-            if (done) {
-                break;
-            }
-            sleep(0);
+            do {
+                stream.avail_out = CHUNK_SIZE - 1;
+                stream.next_out = out;
+                result = inflate(&stream, Z_NO_FLUSH);
+                switch (result) {
+                    case Z_NEED_DICT:
+                        result = Z_DATA_ERROR;
+                    case Z_DATA_ERROR:
+                    case Z_MEM_ERROR:
+                        inflateEnd(&stream);
+                        printf("END: inflate\n");
+                        perror("inflate");
+                        exit(1);
+                }
+                have = CHUNK_SIZE - 1 - stream.avail_out;
+                out[have] = '\0';
+                while (client_enabled) {
+                    int done = 0;
+                    mtx_lock(&mutex);
+                    if (strlen(queue) + strlen(out) < QUEUE_SIZE) {
+                        strcat(queue, out);
+                        done = 1;
+                    }
+                    mtx_unlock(&mutex);
+                    if (done) {
+                        break;
+                    }
+                    sleep(0);
+                }
+            } while (stream.avail_out == 0);
+        } while (result != Z_STREAM_END);
+        inflateEnd(&stream);
+        if (result != Z_STREAM_END) {
+            printf("END: recv_worker\n");
+            perror("recv_worker");
+            exit(1);
         }
     }
     return 0;
@@ -235,6 +232,7 @@ void client_stop() {
     if (!client_enabled) {
         return;
     }
+    client_enabled = 0;
     close(sd);
     if (thrd_join(recv_thread, NULL) != thrd_success) {
         perror("thrd_join");

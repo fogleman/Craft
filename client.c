@@ -73,12 +73,12 @@ void client_position(float x, float y, float z, float rx, float ry) {
     client_send(buffer);
 }
 
-void client_chunk(int p, int q) {
+void client_chunk(int p, int q, int key) {
     if (!client_enabled) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "C,%d,%d\n", p, q);
+    snprintf(buffer, 1024, "C,%d,%d,%d\n", p, q, key);
     client_send(buffer);
 }
 

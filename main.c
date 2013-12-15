@@ -620,7 +620,8 @@ void create_chunk(Chunk *chunk, int p, int q) {
     create_world(map, p, q);
     db_load_map(map, p, q);
     gen_chunk_buffers(chunk);
-    client_chunk(p, q);
+    int key = db_get_key(p, q);
+    client_chunk(p, q, key);
 }
 
 void ensure_chunks(
@@ -872,10 +873,19 @@ int main(int argc, char **argv) {
         if (argc == 3) {
             port = atoi(argv[2]);
         }
-        db_disable();
+        char path[1024];
+        snprintf(path, 1024, "cache.%s.%d.db", hostname, port);
+        if (db_init(path)) {
+            return -1;
+        }
         client_enable();
         client_connect(hostname, port);
         client_start();
+    }
+    else {
+        if (db_init(DB_PATH)) {
+            return -1;
+        }
     }
     if (!glfwInit()) {
         return -1;
@@ -898,10 +908,6 @@ int main(int argc, char **argv) {
             return -1;
         }
     #endif
-
-    if (db_init(DB_PATH)) {
-        return -1;
-    }
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -1131,6 +1137,7 @@ int main(int argc, char **argv) {
         client_position(x, y, z, rx, ry);
         char buffer[RECV_BUFFER_SIZE];
         int count = 0;
+        int transaction = 0;
         while (count < 1024 && client_recv(buffer, RECV_BUFFER_SIZE)) {
             count++;
             float ux, uy, uz, urx, ury;
@@ -1145,6 +1152,10 @@ int main(int argc, char **argv) {
             if (sscanf(buffer, "B,%d,%d,%d,%d,%d,%d",
                 &bp, &bq, &bx, &by, &bz, &bw) == 6)
             {
+                if (!transaction) {
+                    transaction = 1;
+                    db_begin_transaction();
+                }
                 _set_block(chunks, chunk_count, bp, bq, bx, by, bz, bw);
                 if (player_intersects_block(2, x, y, z, bx, by, bz)) {
                     y = highest_block(chunks, chunk_count, x, z) + 2;
@@ -1171,6 +1182,10 @@ int main(int argc, char **argv) {
             if (sscanf(buffer, "D,%d", &pid) == 1) {
                 delete_player(players, &player_count, pid);
             }
+            int kp, kq, key;
+            if (sscanf(buffer, "K,%d,%d,%d", &kp, &kq, &key) == 3) {
+                db_set_key(kp, kq, key);
+            }
             if (buffer[0] == 'T' && buffer[1] == ',') {
                 char *text = buffer + 2;
                 printf("%s\n", text);
@@ -1178,6 +1193,9 @@ int main(int argc, char **argv) {
                     messages[message_index], TEXT_BUFFER_SIZE, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
+        }
+        if (transaction) {
+            db_commit_transaction();
         }
 
         int p = chunked(x);

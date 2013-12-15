@@ -27,6 +27,7 @@
 #define TEXT_BUFFER_SIZE 256
 
 static GLFWwindow *window;
+static int follow = -1;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
@@ -631,15 +632,17 @@ void ensure_chunks(
     int p = chunked(x);
     int q = chunked(z);
     int count = *chunk_count;
-    for (int i = 0; i < count; i++) {
-        Chunk *chunk = chunks + i;
-        if (chunk_distance(chunk, p, q) >= DELETE_CHUNK_RADIUS) {
-            map_free(&chunk->map);
-            glDeleteBuffers(1, &chunk->position_buffer);
-            glDeleteBuffers(1, &chunk->normal_buffer);
-            glDeleteBuffers(1, &chunk->uv_buffer);
-            Chunk *other = chunks + (--count);
-            memcpy(chunk, other, sizeof(Chunk));
+    if (follow < 0) {
+        for (int i = 0; i < count; i++) {
+            Chunk *chunk = chunks + i;
+            if (chunk_distance(chunk, p, q) >= DELETE_CHUNK_RADIUS) {
+                map_free(&chunk->map);
+                glDeleteBuffers(1, &chunk->position_buffer);
+                glDeleteBuffers(1, &chunk->normal_buffer);
+                glDeleteBuffers(1, &chunk->uv_buffer);
+                Chunk *other = chunks + (--count);
+                memcpy(chunk, other, sizeof(Chunk));
+            }
         }
     }
     int rings = force ? 1 : CREATE_CHUNK_RADIUS;
@@ -1126,11 +1129,13 @@ int main(int argc, char **argv) {
         if (teleport) {
             teleport = 0;
             if (player_count) {
-                int index = rand_int(player_count);
-                Player *player = players + index;
-                x = player->x; y = player->y; z = player->z;
-                rx = player->rx; ry = player->ry;
-                ensure_chunks(chunks, &chunk_count, x, y, z, 1);
+                follow = (follow + 1) % player_count;
+                Player *player = players + follow;
+                ensure_chunks(chunks, &chunk_count,
+                    player->x, player->y, player->z, 1);
+            }
+            else {
+                follow = -1;
             }
         }
 
@@ -1323,6 +1328,49 @@ int main(int argc, char **argv) {
             draw_cube(
                 item_position_buffer, item_normal_buffer, item_uv_buffer,
                 position_loc, normal_loc, uv_loc);
+        }
+
+        // RENDER PICTURE IN PICTURE
+        if (follow >= 0 && follow < player_count) {
+            float px, py, pz, prx, pry;
+            Player *player = players + follow;
+            px = player->x; py = player->y; pz = player->z;
+            prx = player->rx; pry = player->ry;
+            int pw = 256;
+            int ph = 256;
+            int pad = 3;
+            int sw = pw + pad * 2;
+            int sh = ph + pad * 2;
+
+            glEnable(GL_SCISSOR_TEST);
+            glScissor(width - sw - 32 + pad, 32 - pad, sw, sh);
+            glClearColor(0, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glScissor(width - pw - 32, 32, pw, ph);
+            glClearColor(0.53, 0.81, 0.92, 1.00);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDisable(GL_SCISSOR_TEST);
+
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glViewport(width - pw - 32, 32, pw, ph);
+            set_matrix_3d(matrix, pw, ph, px, py, pz, prx, pry, fov, ortho);
+
+            // render chunks
+            glUseProgram(block_program);
+            glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
+            glUniform3f(camera_loc, px, py, pz);
+            glUniform1i(sampler_loc, 0);
+            glUniform1f(timer_loc, glfwGetTime());
+            for (int i = 0; i < chunk_count; i++) {
+                Chunk *chunk = chunks + i;
+                if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+                    continue;
+                }
+                if (y < 100 && !chunk_visible(chunk, matrix)) {
+                    continue;
+                }
+                draw_chunk(chunk, position_loc, normal_loc, uv_loc);
+            }
         }
 
         // swap buffers

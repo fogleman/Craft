@@ -172,7 +172,7 @@ static int handler(void *user, const char *section, const char *name,
     }
 
     if (!handled) {
-        printf("Unknown configuration: %s:%s = %s\n",
+        fprintf(stderr, "Unknown configuration: %s:%s = %s.\n",
                 section, name, value);
     }
 
@@ -183,9 +183,9 @@ int configure(configuration *config) {
     default_config(config);
     int res = ini_parse(config_file, handler, config);
     if (res < 0) {
-        printf("Can't load %s, using default settings.\n", config_file);
+        fprintf(stderr, "Can't load %s, using default settings.\n", config_file);
     } else if (res) {
-        printf("Parse error in %s on line %d.\n", config_file, res);
+        fprintf(stderr, "Parse error in %s on line %d.\n", config_file, res);
     }
     return res == 0;
 }

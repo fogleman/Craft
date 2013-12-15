@@ -1131,7 +1131,7 @@ int main(int argc, char **argv) {
         client_position(x, y, z, rx, ry);
         char buffer[RECV_BUFFER_SIZE];
         int count = 0;
-        while (count < 2048 && client_recv(buffer, RECV_BUFFER_SIZE)) {
+        while (count < 512 && client_recv(buffer, RECV_BUFFER_SIZE)) {
             count++;
             float ux, uy, uz, urx, ury;
             if (sscanf(buffer, "U,%*d,%f,%f,%f,%f,%f",

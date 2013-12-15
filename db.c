@@ -1,11 +1,18 @@
 #include <stdlib.h>
+#include <semaphore.h>
 #include "db.h"
 #include "sqlite3.h"
+#include "queue.h"
+#include "tinycthread/tinycthread.h"
 
 static int db_enabled = 1;
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *update_chunk_stmt;
+thrd_t db_insert_thread;
+mtx_t db_insert_mutex;
+sem_t db_insert_semaphore;
+Queue *db_insert_queue;
 
 void db_enable() {
     db_enabled = 1;
@@ -60,6 +67,19 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, update_chunk_query, -1, &update_chunk_stmt, NULL);
     if (rc) return rc;
+
+    rc = thrd_create(&db_insert_thread, db_do_insert_block, NULL);
+    if (rc != thrd_success) return 1;
+
+    rc = mtx_init(&db_insert_mutex, mtx_plain);
+    if (rc != thrd_success) return 1;
+
+    rc = sem_init(&db_insert_semaphore, 0, 0);
+    if (rc) return rc;
+
+    rc = queue_init(&db_insert_queue);
+    if (rc) return rc;
+
     return 0;
 }
 
@@ -67,6 +87,11 @@ void db_close() {
     if (!db_enabled) {
         return;
     }
+    sem_post(&db_insert_semaphore);
+    thrd_join(db_insert_thread, NULL);
+    mtx_destroy(&db_insert_mutex);
+    sem_destroy(&db_insert_semaphore);
+    free(db_insert_queue);
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(update_chunk_stmt);
     sqlite3_close(db);
@@ -115,14 +140,45 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
     if (!db_enabled) {
         return;
     }
-    sqlite3_reset(insert_block_stmt);
-    sqlite3_bind_int(insert_block_stmt, 1, p);
-    sqlite3_bind_int(insert_block_stmt, 2, q);
-    sqlite3_bind_int(insert_block_stmt, 3, x);
-    sqlite3_bind_int(insert_block_stmt, 4, y);
-    sqlite3_bind_int(insert_block_stmt, 5, z);
-    sqlite3_bind_int(insert_block_stmt, 6, w);
-    sqlite3_step(insert_block_stmt);
+    db_insert_block_args *data = (db_insert_block_args *) malloc(sizeof(db_insert_block_args));
+    data->p = p;
+    data->q = q;
+    data->x = x;
+    data->y = y;
+    data->z = z;
+    data->w = w;
+    mtx_lock(&db_insert_mutex);
+    queue_push(db_insert_queue, (void *)data);
+    mtx_unlock(&db_insert_mutex);
+    sem_post(&db_insert_semaphore);
+}
+
+int db_do_insert_block(void *args) {
+    db_insert_block_args *data;
+    int size;
+    
+    while (1)
+    {
+        sem_wait(&db_insert_semaphore);
+        if (db_insert_queue->size == 0) {
+            break;
+        }
+        mtx_lock(&db_insert_mutex);
+        data = (db_insert_block_args *) queue_shift(db_insert_queue);
+        mtx_unlock(&db_insert_mutex);
+        sqlite3_reset(insert_block_stmt);
+        sqlite3_bind_int(insert_block_stmt, 1, data->p);
+        sqlite3_bind_int(insert_block_stmt, 2, data->q);
+        sqlite3_bind_int(insert_block_stmt, 3, data->x);
+        sqlite3_bind_int(insert_block_stmt, 4, data->y);
+        sqlite3_bind_int(insert_block_stmt, 5, data->z);
+        sqlite3_bind_int(insert_block_stmt, 6, data->w);
+        free(data);
+        sqlite3_step(insert_block_stmt);
+    }
+    thrd_exit(1);
+
+    return 1;
 }
 
 void db_load_map(Map *map, int p, int q) {

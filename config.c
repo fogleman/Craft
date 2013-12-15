@@ -7,6 +7,20 @@
 
 static const char *config_file = "profile.ini";
 
+/* Default-initializes configuration settings. */
+static void default_config(configuration *config);
+
+/* Finds the GLFW_KEY_* constant associated with *value in key_mapping above.
+ * If val_len == 1, value[0] is returned.
+ * Returns -1 if *value is not mapped.
+ * Plain linear search, so watch the size of the mapping.
+ */
+static int get_key(const char *value, size_t val_len);
+
+/* inih parse handler. */
+static int handler(void *user, const char *section, const char *name,
+        const char *value);
+
 void default_config(configuration *config) {
     config->fullscreen = 0;
     config->width = 1024;
@@ -64,12 +78,7 @@ static const key_map key_mapping[] = {
 
 static const size_t key_mappings = sizeof(key_mapping) / sizeof(key_mapping[0]);
 
-/* Finds the GLFW_KEY_* constant associated with *value in key_mapping above.
- * If val_len == 1, value[0] is returned.
- * Returns -1 if *value is not mapped.
- * Plain linear search, so watch the size of the mapping.
- */
-static int get_key(const char *value, size_t val_len) {
+int get_key(const char *value, size_t val_len) {
     if (val_len == 1) {
         return value[0];
     }
@@ -81,7 +90,7 @@ static int get_key(const char *value, size_t val_len) {
     return -1;
 }
 
-static int handler(void *user, const char *section, const char *name,
+int handler(void *user, const char *section, const char *name,
         const char *value) {
     configuration *pconfig = (configuration*)user;
 

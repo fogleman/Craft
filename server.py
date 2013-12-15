@@ -16,7 +16,7 @@ PORT = 4080
 CHUNK_SIZE = 32
 BUFFER_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
-SPAWN_POINT = (0, 0, 0, 0, 0)
+SPAWN_POINT = None
 
 YOU = 'U'
 BLOCK = 'B'
@@ -24,7 +24,6 @@ CHUNK = 'C'
 POSITION = 'P'
 DISCONNECT = 'D'
 TALK = 'T'
-KEY = 'K'
 
 Session = sessionmaker(bind=create_engine(ENGINE))
 
@@ -117,7 +116,6 @@ class Model(object):
             TALK: self.on_talk,
         }
         self.patterns = [
-            (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
             (re.compile(r'^/help$'), self.on_help),
@@ -143,7 +141,7 @@ class Model(object):
         client.nick = 'player%d' % client.client_id
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
-        client.position = SPAWN_POINT
+        self.spawn(client)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Welcome to Craft!')
@@ -165,20 +163,19 @@ class Model(object):
         self.send_disconnect(client)
         self.send_talk(client,
             '%s has disconnected from the server.' % client.nick)
-    def on_chunk(self, client, p, q, key=0):
-        p, q, key = map(int, (p, q, key))
+    def on_chunk(self, client, p, q):
+        p, q = map(int, (p, q))
         with session() as sql:
             query = (
-                'select rowid, x, y, z, w from block where '
-                'p = :p and q = :q and rowid > :key;'
+                'select x, y, z, w from block where '
+                'p = :p and q = :q;'
             )
-            rows = sql.execute(query, dict(p=p, q=q, key=key))
-            max_rowid = 0
-            for rowid, x, y, z, w in rows:
-                client.send(BLOCK, p, q, x, y, z, w)
-                max_rowid = max(max_rowid, rowid)
-            if max_rowid:
-                client.send(KEY, p, q, max_rowid)
+            rows = sql.execute(query, dict(p=p, q=q))
+            buf = []
+            for x, y, z, w in rows:
+                args = (BLOCK, p, q, x, y, z, w)
+                buf.append('%s\n' % ','.join(map(str, args)))
+            client.send_raw(''.join(buf))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or y > 255 or w < 0 or w > 11:
@@ -217,15 +214,8 @@ class Model(object):
         else:
             text = '%s> %s' % (client.nick, text)
             self.send_talk(client, text)
-    def on_nick(self, client, nick=None):
-        if nick is None:
-            client.send(TALK, 'Your nickname is %s' % client.nick)
-        else:
-            self.send_talk(client,
-                '%s is now known as %s' % (client.nick, nick))
-            client.nick = nick
     def on_spawn(self, client):
-        client.position = SPAWN_POINT
+        self.spawn(client)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
     def on_goto(self, client, nick=None):
@@ -270,6 +260,72 @@ class Model(object):
     def send_talk(self, client, text):
         for other in self.clients:
             other.send(TALK, text)
+    def spawn(self, client):
+        if SPAWN_POINT is not None:
+            client.position = SPAWN_POINT
+        else:
+            with session() as sql:
+                query = 'select x, y, z from block order by random() limit 1;'
+                rows = list(sql.execute(query))
+                if rows:
+                    x, y, z = rows[0]
+                    client.position = (x, y, z, 0, 0)
+                else:
+                    client.position = (0, 0, 0, 0, 0)
+
+class User:
+    def __init__(self, username, password, position):
+        self.username = username
+        self.password = password
+        self.position = position
+
+class UserManager:
+    def __init__(self):
+        self.users = []
+    def on_create(self, client, name, password, confirm):
+        for i in self.users:
+            if name == i.username:
+                return 'username error'
+        if password == confirm and len(password) > 6:
+            user = User(name, password, client.position)
+            client.user = user
+            self.users.append(user)
+            return 'success'
+        else:
+            return 'password error'
+    def on_rename(self, client, name):
+        try:
+            self.users[self.get_client_user(client)].username = name
+            return 'success'
+        except ex:
+            return 'you must be logged in'
+    def on_change_password(self, client, password, confirm):
+        if password == confirm:
+            try:
+                self.users[self.get_client_user(client)].password = password
+                return 'success'
+            except ex:
+                return 'you must be logged in'
+        else:
+            return 'password error'
+    def on_logon(self, client, username, password):
+        for i in self.users:
+            if i.username == username and i.password == password:
+                client.user = i
+                return 'success'
+    def on_logoff(self, client):
+        client.user = False
+    def on_delete(self, client):
+        it = self.get_client_user(client)
+        client.user = False
+        self.users.remove(it)
+    def get_client_user(self, client):
+        it = 0
+        for i in self.users:
+            if i == client.user:
+                return it
+            it += 1
+        return 'error'
 
 def main():
     queries = [

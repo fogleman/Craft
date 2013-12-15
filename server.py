@@ -174,9 +174,7 @@ class Model(object):
             rows = sql.execute(query, dict(p=p, q=q))
             buf = []
             for x, y, z, w in rows:
-                args = (BLOCK, p, q, x, y, z, w)
-                buf.append('%s\n' % ','.join(map(str, args)))
-            client.send_raw(''.join(buf))
+                client.send(BLOCK, p, q, x, y, z, w)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or y > 255 or w < 0 or w > 11:

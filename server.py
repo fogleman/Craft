@@ -24,6 +24,7 @@ CHUNK = 'C'
 POSITION = 'P'
 DISCONNECT = 'D'
 TALK = 'T'
+KEY = 'K'
 
 Session = sessionmaker(bind=create_engine(ENGINE))
 
@@ -164,19 +165,20 @@ class Model(object):
         self.send_disconnect(client)
         self.send_talk(client,
             '%s has disconnected from the server.' % client.nick)
-    def on_chunk(self, client, p, q):
-        p, q = map(int, (p, q))
+    def on_chunk(self, client, p, q, key=0):
+        p, q, key = map(int, (p, q, key))
         with session() as sql:
             query = (
-                'select x, y, z, w from block where '
-                'p = :p and q = :q;'
+                'select rowid, x, y, z, w from block where '
+                'p = :p and q = :q and rowid > :key;'
             )
-            rows = sql.execute(query, dict(p=p, q=q))
-            buf = []
-            for x, y, z, w in rows:
-                args = (BLOCK, p, q, x, y, z, w)
-                buf.append('%s\n' % ','.join(map(str, args)))
-            client.send_raw(''.join(buf))
+            rows = sql.execute(query, dict(p=p, q=q, key=key))
+            max_rowid = 0
+            for rowid, x, y, z, w in rows:
+                client.send(BLOCK, p, q, x, y, z, w)
+                max_rowid = max(max_rowid, rowid)
+            if max_rowid:
+                client.send(KEY, p, q, max_rowid)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or y > 255 or w < 0 or w > 11:

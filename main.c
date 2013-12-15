@@ -1363,12 +1363,12 @@ int main(int argc, char **argv) {
             glUniform1f(timer_loc, glfwGetTime());
             for (int i = 0; i < chunk_count; i++) {
                 Chunk *chunk = chunks + i;
-                if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
-                    continue;
-                }
-                if (y < 100 && !chunk_visible(chunk, matrix)) {
-                    continue;
-                }
+                // if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+                //     continue;
+                // }
+                // if (y < 100 && !chunk_visible(chunk, matrix)) {
+                //     continue;
+                // }
                 draw_chunk(chunk, position_loc, normal_loc, uv_loc);
             }
         }

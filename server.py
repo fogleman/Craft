@@ -16,7 +16,7 @@ PORT = 4080
 CHUNK_SIZE = 32
 BUFFER_SIZE = 1024
 ENGINE = 'sqlite:///craft.db'
-SPAWN_POINT = None
+SPAWN_POINT = (0, 0, 0, 0, 0)
 
 YOU = 'U'
 BLOCK = 'B'
@@ -24,6 +24,7 @@ CHUNK = 'C'
 POSITION = 'P'
 DISCONNECT = 'D'
 TALK = 'T'
+KEY = 'K'
 
 Session = sessionmaker(bind=create_engine(ENGINE))
 
@@ -141,7 +142,7 @@ class Model(object):
         client.nick = 'player%d' % client.client_id
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
-        self.spawn(client)
+        client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Welcome to Craft!')
@@ -163,19 +164,20 @@ class Model(object):
         self.send_disconnect(client)
         self.send_talk(client,
             '%s has disconnected from the server.' % client.nick)
-    def on_chunk(self, client, p, q):
-        p, q = map(int, (p, q))
+    def on_chunk(self, client, p, q, key=0):
+        p, q, key = map(int, (p, q, key))
         with session() as sql:
             query = (
-                'select x, y, z, w from block where '
-                'p = :p and q = :q;'
+                'select rowid, x, y, z, w from block where '
+                'p = :p and q = :q and rowid > :key;'
             )
-            rows = sql.execute(query, dict(p=p, q=q))
-            buf = []
-            for x, y, z, w in rows:
-                args = (BLOCK, p, q, x, y, z, w)
-                buf.append('%s\n' % ','.join(map(str, args)))
-            client.send_raw(''.join(buf))
+            rows = sql.execute(query, dict(p=p, q=q, key=key))
+            max_rowid = 0
+            for rowid, x, y, z, w in rows:
+                client.send(BLOCK, p, q, x, y, z, w)
+                max_rowid = max(max_rowid, rowid)
+            if max_rowid:
+                client.send(KEY, p, q, max_rowid)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or y > 255 or w < 0 or w > 11:
@@ -215,7 +217,7 @@ class Model(object):
             text = '%s> %s' % (client.nick, text)
             self.send_talk(client, text)
     def on_spawn(self, client):
-        self.spawn(client)
+        client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
     def on_goto(self, client, nick=None):

@@ -38,6 +38,13 @@ typedef struct {
     int command;
 } configuration;
 
+/* Reads settings into *config. First default-initializes all keys in *config,
+ * then searches for the configuration file "profile.ini". If the file exists
+ * it is parsed and corresponding keys in *config are replaced. It is not an
+ * error that the file does not exist but it is an error that the file is
+ * malformed.
+ * Returns 0 on success, 1 otherwise.
+ */
 int configure(configuration *config);
 
 #endif

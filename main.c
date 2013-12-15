@@ -868,7 +868,7 @@ void create_window() {
 
 int main(int argc, char **argv) {
 
-    if (!configure(&config)) {
+    if (configure(&config)) {
         fprintf(stderr, "Fatal: configuration failed.\n");
         return 1;
     }

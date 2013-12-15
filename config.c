@@ -187,5 +187,5 @@ int configure(configuration *config) {
     } else if (res) {
         fprintf(stderr, "Parse error in %s on line %d.\n", config_file, res);
     }
-    return res == 0;
+    return res > 0;
 }

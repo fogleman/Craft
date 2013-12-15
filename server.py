@@ -262,26 +262,16 @@ class Model(object):
     def send_talk(self, client, text):
         for other in self.clients:
             other.send(TALK, text)
-    def spawn(self, client):
-        if SPAWN_POINT is not None:
-            client.position = SPAWN_POINT
-        else:
-            with session() as sql:
-                query = 'select x, y, z from block order by random() limit 1;'
-                rows = list(sql.execute(query))
-                if rows:
-                    x, y, z = rows[0]
-                    client.position = (x, y, z, 0, 0)
-                else:
-                    client.position = (0, 0, 0, 0, 0)
 
 class User:
+    __slots__ = ['username', 'password', 'position']
     def __init__(self, username, password, position):
         self.username = username
         self.password = password
         self.position = position
 
 class UserManager:
+    __slots__ = ['users']
     def __init__(self):
         self.users = []
     def on_create(self, client, name, password, confirm):

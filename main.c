@@ -1146,7 +1146,6 @@ int main(int argc, char **argv) {
             {
                 x = ux; y = uy; z = uz; rx = urx; ry = ury;
                 ensure_chunks(chunks, &chunk_count, x, y, z, 1);
-                y = highest_block(chunks, chunk_count, x, z) + 2;
             }
             int bp, bq, bx, by, bz, bw;
             if (sscanf(buffer, "B,%d,%d,%d,%d,%d,%d",

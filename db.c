@@ -54,6 +54,8 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_exec(db, create_query, NULL, NULL, NULL);
     if (rc) return rc;
+    rc = sqlite3_exec(db, "PRAGMA journal_mode = OFF;", NULL, NULL, NULL);
+    if (rc) return rc;
     rc = sqlite3_prepare_v2(db, insert_block_query, -1, &insert_block_stmt, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, update_chunk_query, -1, &update_chunk_stmt, NULL);

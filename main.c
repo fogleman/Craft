@@ -65,6 +65,16 @@ typedef struct {
     GLuint uv_buffer;
 } Player;
 
+typedef struct {
+    int w;
+    int count;
+} Item;
+
+typedef struct {
+    Item *items;
+    int selected;
+} Inventory;
+
 int is_plant(int w) {
     return w > 16;
 }
@@ -993,6 +1003,18 @@ int main(int argc, char **argv) {
     double px = 0;
     double py = 0;
 
+    Inventory inventory;
+    inventory.items = calloc(INVENTORY_SLOTS, sizeof(Item));
+    
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        inventory.items[item].count = 0;
+        inventory.items[item].w     = 0;
+    }
+    
+    // Test items
+    inventory.items[0].w = 1;
+    inventory.items[2].w = 3;
+    
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
     ensure_chunks(chunks, &chunk_count, x, y, z, 1);
     if (!loaded) {
@@ -1307,7 +1329,10 @@ int main(int argc, char **argv) {
         // RENDER 3-D HUD PARTS //
 
         for (int item = 0; item < INVENTORY_SLOTS; item ++) {
-            int block = item;
+            int block = inventory.items[item].w;
+            
+            if (block == 0)
+                continue;
             
             set_matrix_item(matrix, width, height, item, INVENTORY_SLOTS);
 

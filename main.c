@@ -36,7 +36,6 @@ static int right_click = 0;
 static int middle_click = 0;
 static int teleport = 0;
 static int flying = 0;
-static int block_type = 1;
 static int ortho = 0;
 static float fov = 65.0;
 static int typing = 0;
@@ -74,6 +73,8 @@ typedef struct {
     Item *items;
     int selected;
 } Inventory;
+
+static Inventory inventory;
 
 int is_plant(int w) {
     return w > 16;
@@ -222,6 +223,23 @@ void gen_text_buffers(
         position_buffer, 0, uv_buffer);
 }
 
+void gen_inventory_buffers(
+    GLuint *position_buffer, GLuint *uv_buffer,
+    float x, float y, float n, int sel)
+{
+    int length = INVENTORY_SLOTS;
+    GLfloat *position_data, *uv_data;
+    malloc_buffers(2, length, &position_data, 0, &uv_data);
+    for (int i = 0; i < length; i ++) {
+        make_inventory(
+            position_data + i * 16,
+            uv_data + i * 16,
+            x, y, n / 2, n, sel ? 1 : 0);
+        x += n;
+    }
+    gen_buffers(2, length, position_data, 0, uv_data, position_buffer, 0, uv_buffer);
+}
+
 void draw_chunk(
     Chunk *chunk, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
 {
@@ -265,6 +283,24 @@ void draw_text(
     GLuint position_buffer, GLuint uv_buffer,
     GLuint position_loc, GLuint uv_loc, int length)
 {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnableVertexAttribArray(position_loc);
+    glEnableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+    glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDrawArrays(GL_TRIANGLES, 0, length * 6);
+    glDisableVertexAttribArray(position_loc);
+    glDisableVertexAttribArray(uv_loc);
+    glDisable(GL_BLEND);
+}
+
+void draw_inventory(
+    GLuint position_buffer, GLuint uv_buffer,
+    GLuint position_loc, GLuint uv_loc, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnableVertexAttribArray(position_loc);
@@ -327,6 +363,22 @@ void print(
     draw_text(
         position_buffer, uv_buffer,
         position_loc, uv_loc, strlen(text));
+    glDeleteBuffers(1, &position_buffer);
+    glDeleteBuffers(1, &uv_buffer);
+}
+
+void draw_inventory_slots(
+           GLuint position_loc, GLuint uv_loc,
+           float x, float y, float n, int sel)
+{
+    GLuint position_buffer = 0;
+    GLuint uv_buffer = 0;
+    gen_inventory_buffers(
+                     &position_buffer, &uv_buffer,
+                     x, y, n, sel);
+    draw_inventory(
+              position_buffer, uv_buffer,
+              position_loc, uv_loc, INVENTORY_SLOTS);
     glDeleteBuffers(1, &position_buffer);
     glDeleteBuffers(1, &uv_buffer);
 }
@@ -782,10 +834,10 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             teleport = 1;
         }
         if (key >= '1' && key <= '9') {
-            block_type = key - '1' + 1;
+            inventory.selected = key - '1';
         }
         if (key == CRAFT_KEY_BLOCK_TYPE) {
-            block_type = block_type % 11 + 1;
+            inventory.selected = inventory.selected % INVENTORY_SLOTS + 1;
         }
     }
 }
@@ -818,16 +870,16 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     static double ypos = 0;
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
-        block_type++;
-        if (block_type > 11) {
-            block_type = 1;
+        inventory.selected++;
+        if (inventory.selected > INVENTORY_SLOTS) {
+            inventory.selected = 1;
         }
         ypos = 0;
     }
     if (ypos > SCROLL_THRESHOLD) {
-        block_type--;
-        if (block_type < 1) {
-            block_type = 11;
+        inventory.selected--;
+        if (inventory.selected < 1) {
+            inventory.selected = INVENTORY_SLOTS;
         }
         ypos = 0;
     }
@@ -956,6 +1008,14 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     load_png_texture("font.png");
 
+    GLuint inventory_texture;
+    glGenTextures(1, &inventory_texture);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, inventory_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    load_png_texture("inventory.png");
+    
     GLuint block_program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
@@ -978,10 +1038,16 @@ int main(int argc, char **argv) {
     GLuint text_position_loc = glGetAttribLocation(text_program, "position");
     GLuint text_uv_loc = glGetAttribLocation(text_program, "uv");
 
+    GLuint inventory_program = load_program(
+        "shaders/inventory_vertex.glsl", "shaders/inventory_fragment.glsl");
+    GLuint inventory_matrix_loc = glGetUniformLocation(inventory_program, "matrix");
+    GLuint inventory_sampler_loc = glGetUniformLocation(inventory_program, "sampler");
+    GLuint inventory_position_loc = glGetAttribLocation(inventory_program, "position");
+    GLuint inventory_uv_loc = glGetAttribLocation(inventory_program, "uv");
+    
     GLuint item_position_buffer = 0;
     GLuint item_normal_buffer = 0;
     GLuint item_uv_buffer = 0;
-    int previous_block_type = 0;
     char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
     int message_index = 0;
     double last_commit = glfwGetTime();
@@ -1003,17 +1069,12 @@ int main(int argc, char **argv) {
     double px = 0;
     double py = 0;
 
-    Inventory inventory;
     inventory.items = calloc(INVENTORY_SLOTS, sizeof(Item));
     
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         inventory.items[item].count = 0;
-        inventory.items[item].w     = 0;
+        inventory.items[item].w     = item + 1;
     }
-    
-    // Test items
-    inventory.items[0].w = 1;
-    inventory.items[2].w = 3;
     
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
     ensure_chunks(chunks, &chunk_count, x, y, z, 1);
@@ -1151,7 +1212,7 @@ int main(int argc, char **argv) {
                 &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_obstacle(hw)) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(chunks, chunk_count, hx, hy, hz, block_type);
+                    set_block(chunks, chunk_count, hx, hy, hz, inventory.items[inventory.selected].w);
                 }
             }
         }
@@ -1162,7 +1223,7 @@ int main(int argc, char **argv) {
             int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (is_selectable(hw)) {
-                block_type = hw;
+//                inventory.selected = hw;
             }
         }
 
@@ -1326,7 +1387,20 @@ int main(int argc, char **argv) {
                 tx, ty, ts, text_buffer);
         }
 
-        // RENDER 3-D HUD PARTS //
+        // RENDER INVENTORY //
+
+        glUseProgram(inventory_program);
+        glUniformMatrix4fv(inventory_matrix_loc, 1, GL_FALSE, matrix);
+        glUniform1i(inventory_sampler_loc, 1);
+        
+        /* draw_inventory_slots(
+            inventory_position_loc, inventory_uv_loc,
+            0, 0, 16, inventory.selected); */
+        
+        glUseProgram(block_program);
+        glUniform3f(camera_loc, 1, 0, 5);
+        glUniform1i(sampler_loc, 0);
+        glUniform1f(timer_loc, glfwGetTime());
 
         for (int item = 0; item < INVENTORY_SLOTS; item ++) {
             int block = inventory.items[item].w;
@@ -1334,7 +1408,7 @@ int main(int argc, char **argv) {
             if (block == 0)
                 continue;
             
-            set_matrix_item(matrix, width, height, item, INVENTORY_SLOTS);
+            set_matrix_item(matrix, width, height, item, INVENTORY_SLOTS, inventory.selected == item);
 
             // render selected item
             if (is_plant(block)) {
@@ -1347,11 +1421,7 @@ int main(int argc, char **argv) {
                     &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
                     0, 0, 0, 0.5, block);
             }
-            glUseProgram(block_program);
             glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-            glUniform3f(camera_loc, 1, 0, 5);
-            glUniform1i(sampler_loc, 0);
-            glUniform1f(timer_loc, glfwGetTime());
 
             if (is_plant(block)) {
                 draw_plant(

@@ -28,8 +28,8 @@ void client_enable() {
 
 #ifdef _WIN32
 	WSADATA wsa;
-	if (WSAStartup(MAKEWORD(1, 1), &wsa) != 0)
-		return -1;
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+		client_enabled = 0 ;
 #endif
 
 }

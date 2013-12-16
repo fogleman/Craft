@@ -223,11 +223,15 @@ class Model(object):
         self.send_position(client)
     def on_talk(self, client, *args):
         text = ','.join(args)
+        found_match = False
         if text.startswith('/'):
             for pattern, func in self.patterns:
                 match = pattern.match(text)
                 if match:
                     func(client, *match.groups())
+                    found_match = True
+            if not found_match:
+                client.send(TALK, 'The command %s was not found' % text)
         else:
             text = '%s> %s' % (client.nick, text)
             self.send_talk(client, text)

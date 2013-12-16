@@ -25,6 +25,9 @@
 #define DELETE_CHUNK_RADIUS 12
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
+#define LEFT 0
+#define CENTER 1
+#define RIGHT 2
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -303,9 +306,11 @@ void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
 }
 
 void print(
-    GLuint position_loc, GLuint uv_loc,
+    GLuint position_loc, GLuint uv_loc, int justify,
     float x, float y, float n, char *text)
 {
+    int length = strlen(text);
+    x -= n * justify * (length - 1) / 2;
     GLuint position_buffer = 0;
     GLuint uv_buffer = 0;
     gen_text_buffers(
@@ -313,7 +318,7 @@ void print(
         x, y, n, text);
     draw_text(
         position_buffer, uv_buffer,
-        position_loc, uv_loc, strlen(text));
+        position_loc, uv_loc, length);
     glDeleteBuffers(1, &position_buffer);
     glDeleteBuffers(1, &uv_buffer);
 }
@@ -1271,17 +1276,17 @@ int main(int argc, char **argv) {
         float tx = ts / 2;
         float ty = height - ts;
         snprintf(
-            text_buffer, 1024, "%d, %d, %.2f, %.2f, %.2f [%d, %d]",
+            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d]",
             p, q, x, y, z, player_count, chunk_count);
         print(
-            text_position_loc, text_uv_loc,
+            text_position_loc, text_uv_loc, LEFT,
             tx, ty, ts, text_buffer);
         for (int i = 0; i < MAX_MESSAGES; i++) {
             int index = (message_index + i) % MAX_MESSAGES;
             if (strlen(messages[index])) {
                 ty -= ts * 2;
                 print(
-                    text_position_loc, text_uv_loc,
+                    text_position_loc, text_uv_loc, LEFT,
                     tx, ty, ts, messages[index]);
             }
         }
@@ -1289,7 +1294,7 @@ int main(int argc, char **argv) {
             ty -= ts * 2;
             snprintf(text_buffer, 1024, "> %s", typing_buffer);
             print(
-                text_position_loc, text_uv_loc,
+                text_position_loc, text_uv_loc, LEFT,
                 tx, ty, ts, text_buffer);
         }
 

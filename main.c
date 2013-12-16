@@ -1236,7 +1236,7 @@ int main(int argc, char **argv) {
         int hx, hy, hz;
         int hw = hit_test(
             chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
-        if (is_obstacle(hw)) {
+        if (is_obstacle(hw) || is_destructable(hw)) {
             glUseProgram(line_program);
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);

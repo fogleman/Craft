@@ -124,7 +124,7 @@ int client_recv(char *data, int length) {
 int recv_worker(void *arg) {
     while (1) {
         char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE - 1, 0) == -1) {
+        if (recv(sd, data, BUFFER_SIZE - 1, 0) <= 0) {
             perror("recv");
             exit(1);
         }

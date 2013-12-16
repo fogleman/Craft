@@ -1327,9 +1327,9 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    client_stop();
     db_save_state(x, y, z, rx, ry);
     db_close();
     glfwTerminate();
+    client_stop();
     return 0;
 }

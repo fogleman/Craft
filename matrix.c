@@ -214,7 +214,7 @@ void set_matrix_item(float *matrix, int width, int height, int slot, int slots) 
     /* 1 ...  0  ...-1 */
     /* 0 1 2 3 4 5 6 7 */
     float slotoff = (float)slot - (float)(slots - 1) / 2;
-    float xoffset = (size * slotoff) / height * 2.5;
+    float xoffset = -(size * slotoff) / height * 2.5;
     float yoffset = 1 - size / height * 2;
     mat_identity(a);
     mat_rotate(b, 0, 1, 0, -PI / 4);

@@ -741,11 +741,12 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if(key == CRAFT_KEY_RADAR) {
-        if(radar)
-            radar = 0;
-        else
-            radar = 1;
-
+        if(!typing) {
+            if(radar)
+                radar = 0;
+            else
+                radar = 1;
+        }
     }
     if (key == GLFW_KEY_ENTER) {
         if (typing) {

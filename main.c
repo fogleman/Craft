@@ -865,6 +865,7 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
+    db_disable();
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {

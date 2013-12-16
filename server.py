@@ -1,12 +1,10 @@
-from contextlib import contextmanager
 from math import floor
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import Queue
 import SocketServer
 import datetime
 import random
 import re
+import sqlite3
 import sys
 import threading
 import traceback
@@ -15,7 +13,7 @@ HOST = '0.0.0.0'
 PORT = 4080
 CHUNK_SIZE = 32
 BUFFER_SIZE = 1024
-ENGINE = 'sqlite:///craft.db'
+DB_PATH = 'craft.db'
 SPAWN_POINT = (0, 0, 0, 0, 0)
 
 YOU = 'U'
@@ -25,20 +23,6 @@ POSITION = 'P'
 DISCONNECT = 'D'
 TALK = 'T'
 KEY = 'K'
-
-Session = sessionmaker(bind=create_engine(ENGINE))
-
-@contextmanager
-def session():
-    session = Session()
-    try:
-        yield session
-        session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
 
 def log(*args):
     now = datetime.datetime.utcnow()
@@ -128,16 +112,46 @@ class Model(object):
         thread.setDaemon(True)
         thread.start()
     def run(self):
+        self.connection = sqlite3.connect(DB_PATH)
+        self.create_tables()
+        self.commit()
+        commit_interval = datetime.timedelta(seconds=10)
         while True:
             try:
+                if datetime.datetime.utcnow() - self.last_commit > commit_interval:
+                    self.commit()
                 self.dequeue()
             except Exception:
                 traceback.print_exc()
     def enqueue(self, func, *args, **kwargs):
         self.queue.put((func, args, kwargs))
     def dequeue(self):
-        func, args, kwargs = self.queue.get()
-        func(*args, **kwargs)
+        try:
+            func, args, kwargs = self.queue.get(timeout=5)
+            func(*args, **kwargs)
+        except Queue.Empty:
+            pass
+    def execute(self, *args, **kwargs):
+        return self.connection.execute(*args, **kwargs)
+    def commit(self):
+        self.connection.commit()
+        self.last_commit = datetime.datetime.utcnow()
+    def create_tables(self):
+        queries = [
+            'create table if not exists block ('
+            '    p int not null,'
+            '    q int not null,'
+            '    x int not null,'
+            '    y int not null,'
+            '    z int not null,'
+            '    w int not null'
+            ');',
+            'create index if not exists block_xyz_idx on block (x, y, z);',
+            'create unique index if not exists block_pqxyz_idx on '
+            '    block (p, q, x, y, z);',
+        ]
+        for query in queries:
+            self.execute(query)
     def on_connect(self, client):
         client.client_id = self.next_client_id
         client.nick = 'player%d' % client.client_id
@@ -167,42 +181,40 @@ class Model(object):
             '%s has disconnected from the server.' % client.nick)
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
-        with session() as sql:
-            query = (
-                'select rowid, x, y, z, w from block where '
-                'p = :p and q = :q and rowid > :key;'
-            )
-            rows = sql.execute(query, dict(p=p, q=q, key=key))
-            max_rowid = 0
-            for rowid, x, y, z, w in rows:
-                client.send(BLOCK, p, q, x, y, z, w)
-                max_rowid = max(max_rowid, rowid)
-            if max_rowid:
-                client.send(KEY, p, q, max_rowid)
+        query = (
+            'select rowid, x, y, z, w from block where '
+            'p = :p and q = :q and rowid > :key;'
+        )
+        rows = self.execute(query, dict(p=p, q=q, key=key))
+        max_rowid = 0
+        for rowid, x, y, z, w in rows:
+            client.send(BLOCK, p, q, x, y, z, w)
+            max_rowid = max(max_rowid, rowid)
+        if max_rowid:
+            client.send(KEY, p, q, max_rowid)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or y > 255 or w < 0 or w > 11:
             return
         p, q = chunked(x), chunked(z)
-        with session() as sql:
-            query = (
-                'insert or replace into block (p, q, x, y, z, w) '
-                'values (:p, :q, :x, :y, :z, :w);'
-            )
-            sql.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
-            self.send_block(client, p, q, x, y, z, w)
-            if chunked(x - 1) != p:
-                sql.execute(query, dict(p=p - 1, q=q, x=x, y=y, z=z, w=-w))
-                self.send_block(client, p - 1, q, x, y, z, -w)
-            if chunked(x + 1) != p:
-                sql.execute(query, dict(p=p + 1, q=q, x=x, y=y, z=z, w=-w))
-                self.send_block(client, p + 1, q, x, y, z, -w)
-            if chunked(z - 1) != q:
-                sql.execute(query, dict(p=p, q=q - 1, x=x, y=y, z=z, w=-w))
-                self.send_block(client, p, q - 1, x, y, z, -w)
-            if chunked(z + 1) != q:
-                sql.execute(query, dict(p=p, q=q + 1, x=x, y=y, z=z, w=-w))
-                self.send_block(client, p, q + 1, x, y, z, -w)
+        query = (
+            'insert or replace into block (p, q, x, y, z, w) '
+            'values (:p, :q, :x, :y, :z, :w);'
+        )
+        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+        self.send_block(client, p, q, x, y, z, w)
+        if chunked(x - 1) != p:
+            self.execute(query, dict(p=p - 1, q=q, x=x, y=y, z=z, w=-w))
+            self.send_block(client, p - 1, q, x, y, z, -w)
+        if chunked(x + 1) != p:
+            self.execute(query, dict(p=p + 1, q=q, x=x, y=y, z=z, w=-w))
+            self.send_block(client, p + 1, q, x, y, z, -w)
+        if chunked(z - 1) != q:
+            self.execute(query, dict(p=p, q=q - 1, x=x, y=y, z=z, w=-w))
+            self.send_block(client, p, q - 1, x, y, z, -w)
+        if chunked(z + 1) != q:
+            self.execute(query, dict(p=p, q=q + 1, x=x, y=y, z=z, w=-w))
+            self.send_block(client, p, q + 1, x, y, z, -w)
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
@@ -272,22 +284,6 @@ class Model(object):
             other.send(TALK, text)
 
 def main():
-    queries = [
-        'create table if not exists block ('
-        '    p int not null,'
-        '    q int not null,'
-        '    x int not null,'
-        '    y int not null,'
-        '    z int not null,'
-        '    w int not null'
-        ');',
-        'create index if not exists block_xyz_idx on block (x, y, z);',
-        'create unique index if not exists block_pqxyz_idx on '
-        '    block (p, q, x, y, z);',
-    ]
-    with session() as sql:
-        for query in queries:
-            sql.execute(query)
     host, port = HOST, PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]

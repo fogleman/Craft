@@ -6,6 +6,7 @@ import socket
 HOST = '127.0.0.1'
 PORT = 4080
 
+EMPTY = 0
 GRASS = 1
 SAND = 2
 STONE = 3

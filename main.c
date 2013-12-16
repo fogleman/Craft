@@ -865,6 +865,7 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
+
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {
@@ -1333,5 +1334,8 @@ int main(int argc, char **argv) {
     db_save_state(x, y, z, rx, ry);
     db_close();
     glfwTerminate();
+
+	client_disable();
+
     return 0;
 }

@@ -25,10 +25,22 @@ static mtx_t mutex;
 
 void client_enable() {
     client_enabled = 1;
+
+#ifdef _WIN32
+	WSADATA wsa;
+	if (WSAStartup(MAKEWORD(1, 1), &wsa) != 0)
+		return -1;
+#endif
+
 }
 
 void client_disable() {
     client_enabled = 0;
+
+#ifdef _WIN32
+	WSACleanup();
+#endif
+
 }
 
 int get_client_enabled() {
@@ -192,7 +204,13 @@ void client_stop() {
     if (!client_enabled) {
         return;
     }
+
+#ifndef _WIN32
     close(sd);
+#else
+	closesocket(sd);
+#endif
+
     if (thrd_join(recv_thread, NULL) != thrd_success) {
         perror("thrd_join");
         exit(1);

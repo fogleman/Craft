@@ -103,10 +103,10 @@ void mat_multiply(float *matrix, float *a, float *b) {
     }
 }
 
-void mat_apply(float *data, float *matrix, int count) {
+void mat_apply(float *data, float *matrix, int count, int offset, int stride) {
     float vec[4] = {0, 0, 0, 1};
     for (int i = 0; i < count; i++) {
-        float *d = data + i * 3;
+        float *d = data + offset + stride * i;
         vec[0] = *(d++); vec[1] = *(d++); vec[2] = *(d++);
         mat_vec_multiply(vec, matrix, vec);
         d = data + i * 3;

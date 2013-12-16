@@ -36,6 +36,6 @@
 
 // advanced parameters
 #define CHUNK_SIZE 32
-#define COMMIT_INTERVAL 15
+#define COMMIT_INTERVAL 5
 
 #endif

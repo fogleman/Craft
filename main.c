@@ -1304,24 +1304,22 @@ int main(int argc, char **argv) {
         float cx = width / 2;
         float cy = height / 2;
         float distance = 0;
-        float to_deg = 180 / 3.1415926535;
-        float to_rad = 3.1415926535 / 180;
         #define MAX_RADAR_DISTANCE 200
 
         for(int i = 0; i < player_count; i++) {
             float degrees = 0;
             if(players[i].id) {
                 if(players[i].x >= x && players[i].z >= z) {
-                    degrees = 180 - atan((z - players[i].z) / (players[i].x - x)) * to_deg - rx * to_deg - 360;
+                    degrees = 180 - DEGREES(atan((z - players[i].z) / (players[i].x - x)) - rx) - 360;
                 }
                 else if(players[i].x >= x && players[i].z <= z) {
-                    degrees = 180 + atan((players[i].z - z) / (players[i].x - x)) * to_deg - rx * to_deg - 360;
+                    degrees = 180 + DEGREES(atan((players[i].z - z) / (players[i].x - x)) - rx) - 360;
                 }
                 else if(players[i].x <= x && players[i].z >= z) {
-                    degrees = atan((z - players[i].z)/(x - players[i].x)) * to_deg - rx * to_deg - 360;
+                    degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x)) - rx) - 360;
                 }
                 else if(players[i].x <= x && players[i].z <= z) {
-                    degrees = atan((z - players[i].z)/(x - players[i].x)) * to_deg - rx * to_deg - 360;
+                    degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x)) - rx) - 360;
                 }
                 degrees = abs(fmod(degrees, 360.0)) + 180;
                 degrees = abs(fmod(degrees, 360.0));
@@ -1332,8 +1330,8 @@ int main(int argc, char **argv) {
                 else
                     snprintf(radar_buffer, 1024, "*");
 
-                tx1 = cx + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * cos(degrees * to_rad);
-                ty1 = cy + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * sin(degrees * to_rad);
+                tx1 = cx + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * cos(RADIANS(degrees));
+                ty1 = cy + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * sin(RADIANS(degrees));
 
                 print(
                     text_position_loc, text_uv_loc,

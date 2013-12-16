@@ -235,7 +235,7 @@ class Model(object):
         client.send(TALK, 'Type "t" to chat with other players.')
         client.send(TALK, 'Type "/" to start typing a command.')
         client.send(TALK,
-            'Commands: /goto [NAME], /help, /nick [NAME], /players, /spawn')
+            'Commands: /help, /goto [NAME], /players, /spawn, /user [help, ...]')
     def on_players(self, client):
         client.send(TALK,
             'Players: %s' % ', '.join(x.nick for x in self.clients))

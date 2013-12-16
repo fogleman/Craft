@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "lodepng.h"
 #include "matrix.h"
 #include "util.h"
@@ -31,6 +32,7 @@ void update_fps(FPS *fps, int show) {
 
 char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");
+    if (!file) return NULL;
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
@@ -99,6 +101,7 @@ void gen_buffers(
 }
 
 GLuint make_shader(GLenum type, const char *source) {
+    assert(source);
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
@@ -116,7 +119,9 @@ GLuint make_shader(GLenum type, const char *source) {
 }
 
 GLuint load_shader(GLenum type, const char *path) {
+    assert(path);
     char *data = load_file(path);
+    if (!data) return 0;
     GLuint result = make_shader(type, data);
     free(data);
     return result;
@@ -158,6 +163,7 @@ void load_png_texture(const char *file_name) {
     error = lodepng_decode32_file(&image, &width, &height, file_name);
     if (error) {
         fprintf(stderr, "error %u: %s\n", error, lodepng_error_text(error));
+        return;
     }
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, image);

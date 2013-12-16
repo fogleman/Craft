@@ -264,11 +264,12 @@ class Model(object):
             other.send(TALK, text)
 
 class User:
-    __slots__ = ['username', 'password', 'position']
+    __slots__ = ['username', 'password', 'position', 'inUse']
     def __init__(self, username, password, position):
         self.username = username
         self.password = password
         self.position = position
+        self.inUse = False
 
 class UserManager:
     __slots__ = ['users']
@@ -302,10 +303,12 @@ class UserManager:
             return 'password error'
     def on_logon(self, client, username, password):
         for i in self.users:
-            if i.username == username and i.password == password:
+            if i.username == username and i.password == password and not i.inUse:
                 client.user = i
+                i.inUse = True
                 return 'success'
     def on_logoff(self, client):
+        self.users[self.get_client_user(client)].inUse = False
         client.user = False
     def on_delete(self, client):
         it = self.get_client_user(client)

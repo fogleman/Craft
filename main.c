@@ -1310,16 +1310,16 @@ int main(int argc, char **argv) {
             float degrees = 0;
             if(players[i].id) {
                 if(players[i].x >= x && players[i].z >= z) {
-                    degrees = 180 - DEGREES(atan((z - players[i].z) / (players[i].x - x)) - rx) - 360;
+                    degrees = 180 - DEGREES(atan((z - players[i].z) / (players[i].x - x))) - DEGREES(rx) - 360;
                 }
                 else if(players[i].x >= x && players[i].z <= z) {
-                    degrees = 180 + DEGREES(atan((players[i].z - z) / (players[i].x - x)) - rx) - 360;
+                    degrees = 180 + DEGREES(atan((players[i].z - z) / (players[i].x - x))) - DEGREES(rx) - 360;
                 }
                 else if(players[i].x <= x && players[i].z >= z) {
-                    degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x)) - rx) - 360;
+                    degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x))) - DEGREES(rx) - 360;
                 }
                 else if(players[i].x <= x && players[i].z <= z) {
-                    degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x)) - rx) - 360;
+                    degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x))) - DEGREES(rx) - 360;
                 }
                 degrees = abs(fmod(degrees, 360.0)) + 180;
                 degrees = abs(fmod(degrees, 360.0));

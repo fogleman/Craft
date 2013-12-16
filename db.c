@@ -77,6 +77,7 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, set_key_query, -1, &set_key_stmt, NULL);
     if (rc) return rc;
+    db_commit();
     return 0;
 }
 
@@ -84,6 +85,7 @@ void db_close() {
     if (!db_enabled) {
         return;
     }
+    db_commit_transaction();
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(update_chunk_stmt);
     sqlite3_finalize(get_key_stmt);
@@ -92,11 +94,25 @@ void db_close() {
 }
 
 void db_begin_transaction() {
+    if (!db_enabled) {
+        return;
+    }
     sqlite3_exec(db, "begin transaction;", NULL, NULL, NULL);
 }
 
 void db_commit_transaction() {
+    if (!db_enabled) {
+        return;
+    }
     sqlite3_exec(db, "commit transaction;", NULL, NULL, NULL);
+}
+
+void db_commit() {
+    if (!db_enabled) {
+        return;
+    }
+    db_commit_transaction();
+    db_begin_transaction();
 }
 
 void db_save_state(float x, float y, float z, float rx, float ry) {

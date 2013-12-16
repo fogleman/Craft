@@ -7,14 +7,16 @@ import re
 import sqlite3
 import sys
 import threading
+import time
 import traceback
 
 HOST = '0.0.0.0'
 PORT = 4080
 CHUNK_SIZE = 32
 BUFFER_SIZE = 1024
-DB_PATH = 'craft.db'
 SPAWN_POINT = (0, 0, 0, 0, 0)
+DB_PATH = 'craft.db'
+COMMIT_INTERVAL = 15
 
 YOU = 'U'
 BLOCK = 'B'
@@ -115,10 +117,9 @@ class Model(object):
         self.connection = sqlite3.connect(DB_PATH)
         self.create_tables()
         self.commit()
-        commit_interval = datetime.timedelta(seconds=10)
         while True:
             try:
-                if datetime.datetime.utcnow() - self.last_commit > commit_interval:
+                if time.time() - self.last_commit > COMMIT_INTERVAL:
                     self.commit()
                 self.dequeue()
             except Exception:
@@ -134,8 +135,8 @@ class Model(object):
     def execute(self, *args, **kwargs):
         return self.connection.execute(*args, **kwargs)
     def commit(self):
+        self.last_commit = time.time()
         self.connection.commit()
-        self.last_commit = datetime.datetime.utcnow()
     def create_tables(self):
         queries = [
             'create table if not exists block ('

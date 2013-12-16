@@ -865,7 +865,6 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
-    db_disable();
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {
@@ -960,6 +959,7 @@ int main(int argc, char **argv) {
     int previous_block_type = 0;
     char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
     int message_index = 0;
+    double last_commit = glfwGetTime();
 
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
@@ -995,6 +995,11 @@ int main(int argc, char **argv) {
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
+
+        if (now - last_commit > COMMIT_INTERVAL) {
+            last_commit = now;
+            db_commit();
+        }
 
         if (exclusive && (px || py)) {
             double mx, my;
@@ -1138,7 +1143,6 @@ int main(int argc, char **argv) {
         client_position(x, y, z, rx, ry);
         char buffer[RECV_BUFFER_SIZE];
         int count = 0;
-        int transaction = 0;
         while (count < 1024 && client_recv(buffer, RECV_BUFFER_SIZE)) {
             count++;
             float ux, uy, uz, urx, ury;
@@ -1152,10 +1156,6 @@ int main(int argc, char **argv) {
             if (sscanf(buffer, "B,%d,%d,%d,%d,%d,%d",
                 &bp, &bq, &bx, &by, &bz, &bw) == 6)
             {
-                if (!transaction) {
-                    transaction = 1;
-                    db_begin_transaction();
-                }
                 _set_block(chunks, chunk_count, bp, bq, bx, by, bz, bw);
                 if (player_intersects_block(2, x, y, z, bx, by, bz)) {
                     y = highest_block(chunks, chunk_count, x, z) + 2;
@@ -1193,9 +1193,6 @@ int main(int argc, char **argv) {
                     messages[message_index], TEXT_BUFFER_SIZE, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
-        }
-        if (transaction) {
-            db_commit_transaction();
         }
 
         int p = chunked(x);

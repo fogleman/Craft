@@ -2,7 +2,7 @@
 #include <semaphore.h>
 #include "db.h"
 #include "sqlite3.h"
-#include "queue.h"
+#include "circular_buffer.h"
 #include "tinycthread/tinycthread.h"
 
 static int db_enabled = 1;
@@ -12,7 +12,7 @@ static sqlite3_stmt *update_chunk_stmt;
 thrd_t db_insert_thread;
 mtx_t db_insert_mutex;
 sem_t db_insert_semaphore;
-Queue *db_insert_queue;
+CircularBuffer *db_insert_queue;
 
 void db_enable() {
     db_enabled = 1;
@@ -77,7 +77,7 @@ int db_init(char *path) {
     rc = sem_init(&db_insert_semaphore, 0, 0);
     if (rc) return rc;
 
-    rc = queue_init(&db_insert_queue);
+    rc = cb_init(&db_insert_queue, 10);
     if (rc) return rc;
 
     return 0;
@@ -91,7 +91,7 @@ void db_close() {
     thrd_join(db_insert_thread, NULL);
     mtx_destroy(&db_insert_mutex);
     sem_destroy(&db_insert_semaphore);
-    free(db_insert_queue);
+    cb_free(&db_insert_queue);
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(update_chunk_stmt);
     sqlite3_close(db);
@@ -148,7 +148,7 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
     data->z = z;
     data->w = w;
     mtx_lock(&db_insert_mutex);
-    queue_push(db_insert_queue, (void *)data);
+    cb_push(db_insert_queue, (void *)data);
     mtx_unlock(&db_insert_mutex);
     sem_post(&db_insert_semaphore);
 }
@@ -160,11 +160,11 @@ int db_do_insert_block(void *args) {
     while (1)
     {
         sem_wait(&db_insert_semaphore);
-        if (db_insert_queue->size == 0) {
+        if (db_insert_queue->length == 0) {
             break;
         }
         mtx_lock(&db_insert_mutex);
-        data = (db_insert_block_args *) queue_shift(db_insert_queue);
+        data = (db_insert_block_args *) cb_shift(db_insert_queue);
         mtx_unlock(&db_insert_mutex);
         sqlite3_reset(insert_block_stmt);
         sqlite3_bind_int(insert_block_stmt, 1, data->p);

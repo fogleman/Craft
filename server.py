@@ -106,6 +106,7 @@ class Model(object):
             (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
+            (re.compile(r'^/pq\s+(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_pq),
             (re.compile(r'^/help$'), self.on_help),
             (re.compile(r'^/players$'), self.on_players),
         ]
@@ -252,6 +253,13 @@ class Model(object):
             client.position = other.position
             client.send(YOU, client.client_id, *client.position)
             self.send_position(client)
+    def on_pq(self, client, p, q):
+        p, q = map(int, (p, q))
+        if abs(p) > 1000 or abs(q) > 1000:
+            return
+        client.position = (p * CHUNK_SIZE, 0, q * CHUNK_SIZE, 0, 0)
+        client.send(YOU, client.client_id, *client.position)
+        self.send_position(client)
     def on_help(self, client):
         client.send(TALK, 'Type "t" to chat with other players.')
         client.send(TALK, 'Type "/" to start typing a command.')

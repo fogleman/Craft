@@ -103,7 +103,6 @@ class Model(object):
             TALK: self.on_talk,
         }
         self.patterns = [
-            (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
             (re.compile(r'^/pq\s+(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_pq),
@@ -231,13 +230,6 @@ class Model(object):
         else:
             text = '%s> %s' % (client.nick, text)
             self.send_talk(client, text)
-    def on_nick(self, client, nick=None):
-        if nick is None:
-            client.send(TALK, 'Your nickname is %s' % client.nick)
-        else:
-            self.send_talk(client,
-                '%s is now known as %s' % (client.nick, nick))
-            client.nick = nick
     def on_spawn(self, client):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
@@ -264,7 +256,7 @@ class Model(object):
         client.send(TALK, 'Type "t" to chat with other players.')
         client.send(TALK, 'Type "/" to start typing a command.')
         client.send(TALK,
-            'Commands: /goto [NAME], /help, /nick [NAME], /players, /spawn')
+            'Commands: /help, /goto [NAME], /players, /spawn, /user [help, ...]')
     def on_players(self, client):
         client.send(TALK,
             'Players: %s' % ', '.join(x.nick for x in self.clients))
@@ -291,6 +283,65 @@ class Model(object):
     def send_talk(self, client, text):
         for other in self.clients:
             other.send(TALK, text)
+
+class User:
+    __slots__ = ['username', 'password', 'position', 'inUse']
+    def __init__(self, username, password, position):
+        self.username = username
+        self.password = password
+        self.position = position
+        self.inUse = False
+
+class UserManager:
+    __slots__ = ['users']
+    def __init__(self):
+        self.users = []
+    def on_create(self, client, name, password, confirm):
+        for i in self.users:
+            if name == i.username:
+                return 'username error'
+        if password == confirm and len(password) > 6:
+            user = User(name, password, client.position)
+            client.user = user
+            self.users.append(user)
+            return 'success'
+        else:
+            return 'password error'
+    def on_rename(self, client, name):
+        try:
+            self.users[self.get_client_user(client)].username = name
+            return 'success'
+        except ex:
+            return 'you must be logged in'
+    def on_change_password(self, client, password, confirm):
+        if password == confirm:
+            try:
+                self.users[self.get_client_user(client)].password = password
+                return 'success'
+            except ex:
+                return 'you must be logged in'
+        else:
+            return 'password error'
+    def on_logon(self, client, username, password):
+        for i in self.users:
+            if i.username == username and i.password == password and not i.inUse:
+                client.user = i
+                i.inUse = True
+                return 'success'
+    def on_logoff(self, client):
+        self.users[self.get_client_user(client)].inUse = False
+        client.user = False
+    def on_delete(self, client):
+        it = self.get_client_user(client)
+        client.user = False
+        self.users.remove(it)
+    def get_client_user(self, client):
+        it = 0
+        for i in self.users:
+            if i == client.user:
+                return it
+            it += 1
+        return 'error'
 
 def main():
     host, port = HOST, PORT

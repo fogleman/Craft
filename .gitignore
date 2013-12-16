@@ -7,3 +7,7 @@ craft
 *.o
 *.db
 
+Craft.build
+*.a
+usr
+xcuserdata

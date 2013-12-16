@@ -203,13 +203,18 @@ void set_matrix_3d(
     mat_multiply(matrix, a, matrix);
 }
 
-void set_matrix_item(float *matrix, int width, int height) {
+void set_matrix_item(float *matrix, int width, int height, int slot, int slots) {
     float a[16];
     float b[16];
     float aspect = (float)width / height;
     float size = 64;
     float box = height / size / 2;
-    float xoffset = 1 - size / width * 2;
+    /* 1  ...  0  ... -1 */
+    /* 0 1 2 3 4 5 6 7 8 */
+    /* 1 ...  0  ...-1 */
+    /* 0 1 2 3 4 5 6 7 */
+    float slotoff = (float)slot - (float)(slots - 1) / 2;
+    float xoffset = (size * slotoff) / height * 2.5;
     float yoffset = 1 - size / height * 2;
     mat_identity(a);
     mat_rotate(b, 0, 1, 0, -PI / 4);

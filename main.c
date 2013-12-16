@@ -27,6 +27,7 @@
 #define DELETE_CHUNK_RADIUS 12
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
+#define INVENTORY_SLOTS 9
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -1305,38 +1306,39 @@ int main(int argc, char **argv) {
 
         // RENDER 3-D HUD PARTS //
 
-        set_matrix_item(matrix, width, height);
+        for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+            int block = item;
+            
+            set_matrix_item(matrix, width, height, item, INVENTORY_SLOTS);
 
-        // render selected item
-        if (block_type != previous_block_type) {
-            previous_block_type = block_type;
-            if (is_plant(block_type)) {
+            // render selected item
+            if (is_plant(block)) {
                 gen_plant_buffers(
                     &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                    0, 0, 0, 0.5, block_type);
+                    0, 0, 0, 0.5, block);
             }
             else {
                 gen_cube_buffers(
                     &item_position_buffer, &item_normal_buffer, &item_uv_buffer,
-                    0, 0, 0, 0.5, block_type);
+                    0, 0, 0, 0.5, block);
+            }
+            glUseProgram(block_program);
+            glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
+            glUniform3f(camera_loc, 1, 0, 5);
+            glUniform1i(sampler_loc, 0);
+            glUniform1f(timer_loc, glfwGetTime());
+
+            if (is_plant(block)) {
+                draw_plant(
+                    item_position_buffer, item_normal_buffer, item_uv_buffer,
+                    position_loc, normal_loc, uv_loc);
+            }
+            else {
+                draw_cube(
+                    item_position_buffer, item_normal_buffer, item_uv_buffer,
+                    position_loc, normal_loc, uv_loc);
             }
         }
-        glUseProgram(block_program);
-        glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-        glUniform3f(camera_loc, 0, 0, 5);
-        glUniform1i(sampler_loc, 0);
-        glUniform1f(timer_loc, glfwGetTime());
-        if (is_plant(block_type)) {
-            draw_plant(
-                item_position_buffer, item_normal_buffer, item_uv_buffer,
-                position_loc, normal_loc, uv_loc);
-        }
-        else {
-            draw_cube(
-                item_position_buffer, item_normal_buffer, item_uv_buffer,
-                position_loc, normal_loc, uv_loc);
-        }
-
         // swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();

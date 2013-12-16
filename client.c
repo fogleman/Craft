@@ -1,8 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <netdb.h>
+#else
+#define sleep(x) Sleep((x)* 1000)
+#include <winsock.h>
+#endif
+
 #include <string.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include "client.h"
 #include "tinycthread.h"
 

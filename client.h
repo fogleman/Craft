@@ -16,4 +16,8 @@ void client_chunk(int p, int q, int key);
 void client_block(int x, int y, int z, int w);
 void client_talk(char *text);
 
+#ifdef _WIN32
+#define snprintf _snprintf
+#endif
+
 #endif

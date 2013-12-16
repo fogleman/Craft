@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Main">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Dependency">
+      <UniqueIdentifier>{6ee842cf-9c1c-4f49-9514-4b74b50d08a3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\client.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\config.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cube.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\db.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\map.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\matrix.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\noise.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\util.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\world.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lodepng\lodepng.h">
+      <Filter>Dependency</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sqlite\sqlite3.h">
+      <Filter>Dependency</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\sqlite\sqlite3ext.h">
+      <Filter>Dependency</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tinycthread\tinycthread.h">
+      <Filter>Dependency</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\client.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cube.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\db.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\main.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\map.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\matrix.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\noise.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\util.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\world.c">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\lodepng\lodepng.c">
+      <Filter>Dependency</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\sqlite\sqlite3.c">
+      <Filter>Dependency</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\tinycthread\tinycthread.c">
+      <Filter>Dependency</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

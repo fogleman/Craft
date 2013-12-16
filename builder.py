@@ -126,7 +126,7 @@ class Client(object):
             z = sz if dz1 else z
             for c in row:
                 w = lookup.get(c)
-                if w:
+                if w is not None:
                     self.set_block(x, y, z, w)
                 x, y, z = x + dx1, y + dy1, z + dz1
             x, y, z = x + dx2, y + dy2, z + dz2

@@ -56,21 +56,36 @@ def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
                     result.add((x, y, z))
     return result
 
-def circle_x(cx, cy, cz, r, fill=False):
-    return sphere(cx, cy, cz, r, fill, fx=True)
+def circle_x(x, y, z, r, fill=False):
+    return sphere(x, y, z, r, fill, fx=True)
 
-def circle_y(cx, cy, cz, r, fill=False):
-    return sphere(cx, cy, cz, r, fill, fy=True)
+def circle_y(x, y, z, r, fill=False):
+    return sphere(x, y, z, r, fill, fy=True)
 
-def circle_z(cx, cy, cz, r, fill=False):
-    return sphere(cx, cy, cz, r, fill, fz=True)
+def circle_z(x, y, z, r, fill=False):
+    return sphere(x, y, z, r, fill, fz=True)
+
+def cylinder_x(x1, x2, y, z, r, fill=False):
+    result = set()
+    for x in range(x1, x2 + 1):
+        result |= circle_x(x, y, z, r, fill)
+    return result
+
+def cylinder_y(x, y1, y2, z, r, fill=False):
+    result = set()
+    for y in range(y1, y2 + 1):
+        result |= circle_y(x, y, z, r, fill)
+    return result
+
+def cylinder_z(x, y, z1, z2, r, fill=False):
+    result = set()
+    for z in range(z1, z2 + 1):
+        result |= circle_z(x, y, z, r, fill)
+    return result
 
 def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
     result = set()
-    a = 0
-    a += x1 == x2
-    a += y1 == y2
-    a += z1 == z2
+    a = (x1 == x2) + (y1 == y2) + (z1 == z2)
     for x in range(x1, x2 + 1):
         for y in range(y1, y2 + 1):
             for z in range(z1, z2 + 1):
@@ -83,7 +98,7 @@ def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
                 result.add((x, y, z))
     return result
 
-def pyramid(y, x1, x2, z1, z2, fill=False):
+def pyramid(x1, x2, y, z1, z2, fill=False):
     result = set()
     while x2 >= x1 and z2 >= z2:
         result |= cuboid(x1, x2, y, y, z1, z2, fill)
@@ -100,9 +115,24 @@ class Client(object):
         key = lambda block: (block[1], block[0], block[2])
         for x, y, z in sorted(blocks, key=key):
             self.set_block(x, y, z, w)
+    def bitmap(self, sx, sy, sz, d1, d2, data, lookup):
+        x, y, z = sx, sy, sz
+        dx1, dy1, dz1 = d1
+        dx2, dy2, dz2 = d2
+        for row in data:
+            x = sx if dx1 else x
+            y = sy if dy1 else y
+            z = sz if dz1 else z
+            for c in row:
+                w = lookup.get(c)
+                if w:
+                    self.set_block(x, y, z, w)
+                x, y, z = x + dx1, y + dy1, z + dz1
+            x, y, z = x + dx2, y + dy2, z + dz2
 
 def main():
     client = Client()
+    set_block = client.set_block
     set_blocks = client.set_blocks
     # set_blocks(circle_y(0, 32, 0, 16, True), STONE)
     # set_blocks(circle_y(0, 33, 0, 16), BRICK)
@@ -131,18 +161,33 @@ def main():
     #     set_blocks(cuboid(-1, 1, 1, 32, z, z), CEMENT)
     #     set_blocks(cuboid(-1, 1, 1, 32, -z, -z), CEMENT)
     # for x in range(0, 1024, 8):
-    #     set_blocks(set_block(x, 32, 0), CEMENT)
-    #     set_blocks(set_block(-x, 32, 0), CEMENT)
+    #     set_block(x, 32, 0 CEMENT)
+    #     set_block(-x, 32, , CEMENT)
     # for z in range(0, 1024, 8):
-    #     set_blocks(set_block(0, 32, z), CEMENT)
-    #     set_blocks(set_block(0, 32, -z), CEMENT)
-    # set_blocks(pyramid(12, 32, 32+64-1, 32, 32+64-1), COBBLE)
+    #     set_block(0, 32, z CEMENT)
+    #     set_block(0, 32, -, CEMENT)
+    # set_blocks(pyramid(32, 32+64-1, 12, 32, 32+64-1), COBBLE)
     # outer = circle_y(0, 11, 0, 176 + 3, True)
     # inner = circle_y(0, 11, 0, 176 - 3, True)
     # set_blocks(outer - inner, STONE)
     # a = sphere(-32, 48, -32, 24, True)
     # b = sphere(-24, 40, -24, 24, True)
     # set_blocks(a - b, PLANK)
+    # set_blocks(cylinder_x(-64, 64, 32, 0, 8), STONE)
+    # data = [
+    #     '...............................',
+    #     '..xxx..xxxx...xxx..xxxxx.xxxxx.',
+    #     '.x...x.x...x.x...x.x.......x...',
+    #     '.x.....xxxx..xxxxx.xxx.....x...',
+    #     '.x...x.x..x..x...x.x.......x...',
+    #     '..xxx..x...x.x...x.x.......x...',
+    #     '...............................',
+    # ]
+    # lookup = {
+    #     'x': STONE,
+    #     '.': PLANK,
+    # }
+    # client.bitmap(0, 32, 32, (1, 0, 0), (0, -1, 0), data, lookup)
 
 if __name__ == '__main__':
     main()

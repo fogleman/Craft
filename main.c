@@ -920,7 +920,6 @@ int main(int argc, char **argv) {
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LINE_SMOOTH);
     glLogicOp(GL_INVERT);
     glClearColor(0.53, 0.81, 0.92, 1.00);
 

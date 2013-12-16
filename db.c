@@ -2,7 +2,7 @@
 #include "db.h"
 #include "sqlite3.h"
 
-static int db_enabled = 1;
+static int db_enabled = 0;
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *update_chunk_stmt;

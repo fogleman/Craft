@@ -873,16 +873,20 @@ int main(int argc, char **argv) {
         if (argc == 3) {
             port = atoi(argv[2]);
         }
-        char path[1024];
-        snprintf(path, 1024, "cache.%s.%d.db", hostname, port);
-        if (db_init(path)) {
-            return -1;
+        if (USE_CACHE) {
+            char path[1024];
+            snprintf(path, 1024, "cache.%s.%d.db", hostname, port);
+            db_enable();
+            if (db_init(path)) {
+                return -1;
+            }
         }
         client_enable();
         client_connect(hostname, port);
         client_start();
     }
     else {
+        db_enable();
         if (db_init(DB_PATH)) {
             return -1;
         }

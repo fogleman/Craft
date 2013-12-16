@@ -77,7 +77,7 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, set_key_query, -1, &set_key_stmt, NULL);
     if (rc) return rc;
-    db_commit();
+    db_begin_transaction();
     return 0;
 }
 

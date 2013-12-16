@@ -1245,7 +1245,7 @@ int main(int argc, char **argv) {
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
-            GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.51);
+            GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
             draw_lines(wireframe_buffer, line_position_loc, 3, 48);
             glDeleteBuffers(1, &wireframe_buffer);
             glDisable(GL_COLOR_LOGIC_OP);

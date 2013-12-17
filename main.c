@@ -31,6 +31,7 @@
 
 static GLFWwindow *window;
 static int follow = -1;
+static int observe = 0;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
@@ -736,6 +737,12 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_BLOCK_TYPE) {
             block_type = block_type % 14 + 1;
         }
+        if (key == CRAFT_KEY_OBSERVE) {
+            observe = (observe + 1) % 3;
+            if (follow < 0) {
+                teleport = 1;
+            }
+        }
     }
 }
 
@@ -1103,14 +1110,15 @@ int main(int argc, char **argv) {
 
         if (teleport) {
             teleport = 0;
-            if (player_count) {
-                follow = (follow + 1) % player_count;
+            follow++;
+            if (follow >= player_count) {
+                follow = -1;
+                observe = 0;
+            }
+            else {
                 Player *player = players + follow;
                 State *s = &player->state;
                 ensure_chunks(chunks, &chunk_count, s->x, s->y, s->z, 1);
-            }
-            else {
-                follow = -1;
             }
         }
 
@@ -1179,14 +1187,21 @@ int main(int argc, char **argv) {
 
         // RENDER 3-D SCENE //
 
+        Player *player = &me;
+        if (observe && follow >= 0 && follow < player_count) {
+            player = players + follow;
+        }
+        State *s = &player->state;
+
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
-        set_matrix_3d(matrix, width, height, x, y, z, rx, ry, fov, ortho);
+        set_matrix_3d(
+            matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
 
         // render chunks
         glUseProgram(block_program);
         glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-        glUniform3f(camera_loc, x, y, z);
+        glUniform3f(camera_loc, s->x, s->y, s->z);
         glUniform1i(sampler_loc, 0);
         glUniform1f(timer_loc, glfwGetTime());
         for (int i = 0; i < chunk_count; i++) {
@@ -1201,11 +1216,15 @@ int main(int argc, char **argv) {
         }
 
         // render players
-        // draw_player(&block_attrib, &me);
+        if (observe) {
+            draw_player(&block_attrib, &me);
+        }
         for (int i = 0; i < player_count; i++) {
-            Player *player = players + i;
-            interpolate_player(player);
-            draw_player(&block_attrib, player);
+            Player *other = players + i;
+            interpolate_player(other);
+            if (other != player) {
+                draw_player(&block_attrib, other);
+            }
         }
 
         // render focused block wireframe
@@ -1293,8 +1312,11 @@ int main(int argc, char **argv) {
 
         // RENDER PICTURE IN PICTURE //
 
-        if (follow >= 0 && follow < player_count) {
+        if (observe < 2 && follow >= 0 && follow < player_count) {
             Player *player = players + follow;
+            if (observe) {
+                player = &me;
+            }
             State *s = &player->state;
 
             int pw = 256;
@@ -1329,10 +1351,14 @@ int main(int argc, char **argv) {
             }
 
             // render players
-            draw_player(&block_attrib, &me);
+            if (!observe) {
+                draw_player(&block_attrib, &me);
+            }
             for (int i = 0; i < player_count; i++) {
-                Player *player = players + i;
-                draw_player(&block_attrib, player);
+                Player *other = players + i;
+                if (other != player) {
+                    draw_player(&block_attrib, other);
+                }
             }
         }
 

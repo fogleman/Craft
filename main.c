@@ -140,7 +140,7 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 }
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_buffers(8, 6);
+    GLfloat *data = malloc_faces(8, 6);
     make_cube(
         data,
         1, 1, 1, 1, 1, 1,
@@ -149,29 +149,23 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
 }
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_buffers(8, 4);
+    GLfloat *data = malloc_faces(8, 4);
     float rotation = simplex3(x, y, z, 4, 0.5, 2) * 360;
-    make_plant(
-        data,
-        x, y, z, n, w, rotation);
+    make_plant(data, x, y, z, n, w, rotation);
     return gen_faces(8, 4, data);
 }
 
 GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
-    GLfloat *data = malloc_buffers(8, 6);
-    make_player(
-        data,
-        x, y, z, rx, ry);
+    GLfloat *data = malloc_faces(8, 6);
+    make_player(data, x, y, z, rx, ry);
     return gen_faces(8, 6, data);
 }
 
 GLuint gen_text_buffer(float x, float y, float n, char *text) {
     int length = strlen(text);
-    GLfloat *data = malloc_buffers(4, length);
+    GLfloat *data = malloc_faces(4, length);
     for (int i = 0; i < length; i++) {
-        make_character(
-            data + i * 24,
-            x, y, n / 2, n, text[i]);
+        make_character(data + i * 24, x, y, n / 2, n, text[i]);
         x += n;
     }
     return gen_faces(4, length, data);
@@ -184,9 +178,12 @@ void draw_chunk(
     glEnableVertexAttribArray(position_loc);
     glEnableVertexAttribArray(normal_loc);
     glEnableVertexAttribArray(uv_loc);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, 0);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 8, 0);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 6);
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(normal_loc);
@@ -202,9 +199,12 @@ void draw_item(
     glEnableVertexAttribArray(position_loc);
     glEnableVertexAttribArray(normal_loc);
     glEnableVertexAttribArray(uv_loc);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, 0);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
+    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 8, 0);
+    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(normal_loc);
@@ -221,8 +221,10 @@ void draw_text(
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(position_loc);
     glEnableVertexAttribArray(uv_loc);
-    glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, 0);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
+    glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 4, 0);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
     glDrawArrays(GL_TRIANGLES, 0, length * 6);
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(uv_loc);
@@ -231,29 +233,21 @@ void draw_text(
 }
 
 void draw_cube(
-    GLuint buffer,
-    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+    GLuint buffer, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
 {
-    draw_item(
-        buffer,
-        position_loc, normal_loc, uv_loc, 36);
+    draw_item(buffer, position_loc, normal_loc, uv_loc, 36);
 }
 
 void draw_plant(
-    GLuint buffer,
-    GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
+    GLuint buffer, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
 {
-    draw_item(
-        buffer,
-        position_loc, normal_loc, uv_loc, 24);
+    draw_item(buffer, position_loc, normal_loc, uv_loc, 24);
 }
 
 void draw_player(
     Player *player, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
 {
-    draw_cube(
-        player->buffer,
-        position_loc, normal_loc, uv_loc);
+    draw_cube(player->buffer, position_loc, normal_loc, uv_loc);
 }
 
 void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
@@ -516,7 +510,7 @@ void gen_chunk_buffers(Chunk *chunk) {
         faces += total;
     } END_MAP_FOR_EACH;
 
-    GLfloat *data = malloc_buffers(8, faces);
+    GLfloat *data = malloc_faces(8, faces);
     int offset = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {

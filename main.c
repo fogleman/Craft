@@ -130,19 +130,13 @@ GLuint gen_crosshair_buffer(int width, int height) {
         x, y - p, x, y + p,
         x - p, y, x + p, y
     };
-    GLuint buffer = gen_buffer(
-        GL_ARRAY_BUFFER, sizeof(data), data
-    );
-    return buffer;
+    return gen_buffer(GL_ARRAY_BUFFER, sizeof(data), data);
 }
 
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     float data[144];
     make_cube_wireframe(data, x, y, z, n);
-    GLuint buffer = gen_buffer(
-        GL_ARRAY_BUFFER, sizeof(data), data
-    );
-    return buffer;
+    return gen_buffer(GL_ARRAY_BUFFER, sizeof(data), data);
 }
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
@@ -151,7 +145,7 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
         data,
         1, 1, 1, 1, 1, 1,
         x, y, z, n, w);
-    return gen_buffers(8, 6, data);
+    return gen_faces(8, 6, data);
 }
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
@@ -160,7 +154,7 @@ GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     make_plant(
         data,
         x, y, z, n, w, rotation);
-    return gen_buffers(8, 4, data);
+    return gen_faces(8, 4, data);
 }
 
 GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
@@ -168,7 +162,7 @@ GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
     make_player(
         data,
         x, y, z, rx, ry);
-    return gen_buffers(8, 6, data);
+    return gen_faces(8, 6, data);
 }
 
 GLuint gen_text_buffer(float x, float y, float n, char *text) {
@@ -180,7 +174,7 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
             x, y, n / 2, n, text[i]);
         x += n;
     }
-    return gen_buffers(4, length, data);
+    return gen_faces(4, length, data);
 }
 
 void draw_chunk(
@@ -552,7 +546,7 @@ void gen_chunk_buffers(Chunk *chunk) {
         offset += total * 48;
     } END_MAP_FOR_EACH;
 
-    chunk->buffer = gen_buffers(8, faces, data);
+    chunk->buffer = gen_faces(8, faces, data);
     chunk->faces = faces;
     chunk->dirty = 0;
 }

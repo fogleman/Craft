@@ -44,7 +44,7 @@ GLfloat *malloc_buffers(int components, int faces) {
     return malloc(sizeof(GLfloat) * 6 * components * faces);
 }
 
-GLuint gen_buffer(GLenum target, GLsizei size, const void *data) {
+GLuint gen_buffer(GLenum target, GLsizei size, GLfloat *data) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(target, buffer);
@@ -53,7 +53,7 @@ GLuint gen_buffer(GLenum target, GLsizei size, const void *data) {
     return buffer;
 }
 
-GLuint gen_buffers(int components, int faces, GLfloat *data) {
+GLuint gen_faces(int components, int faces, GLfloat *data) {
     GLuint buffer = gen_buffer(
         GL_ARRAY_BUFFER,
         sizeof(GLfloat) * 6 * components * faces,

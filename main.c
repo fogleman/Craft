@@ -27,7 +27,6 @@
 #define DELETE_CHUNK_RADIUS 12
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
-#define INVENTORY_SLOTS 9
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -63,16 +62,6 @@ typedef struct {
     GLuint normal_buffer;
     GLuint uv_buffer;
 } Player;
-
-typedef struct {
-    int w;
-    int count;
-} Item;
-
-typedef struct {
-    Item *items;
-    int selected;
-} Inventory;
 
 static Inventory inventory;
 
@@ -837,7 +826,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             inventory.selected = key - '1';
         }
         if (key == CRAFT_KEY_BLOCK_TYPE) {
-            inventory.selected = inventory.selected % INVENTORY_SLOTS + 1;
+            inventory.selected = (inventory.selected + 1) % INVENTORY_SLOTS;
         }
     }
 }
@@ -871,15 +860,15 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
         inventory.selected++;
-        if (inventory.selected > INVENTORY_SLOTS) {
-            inventory.selected = 1;
+        if (inventory.selected >= INVENTORY_SLOTS) {
+            inventory.selected = 0;
         }
         ypos = 0;
     }
     if (ypos > SCROLL_THRESHOLD) {
         inventory.selected--;
-        if (inventory.selected < 1) {
-            inventory.selected = INVENTORY_SLOTS;
+        if (inventory.selected < 0) {
+            inventory.selected = INVENTORY_SLOTS - 1;
         }
         ypos = 0;
     }
@@ -913,6 +902,18 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             middle_click = 1;
         }
     }
+}
+
+int find_usable_inventory_slot(int w) {
+    //Try for same type
+    for (int item = 0; item < INVENTORY_SLOTS; item ++)
+        if (inventory.items[item].w == w && inventory.items[item].count < MAX_SLOT_SIZE)
+            return item;
+    //Try for empty
+    for (int item = 0; item < INVENTORY_SLOTS; item ++)
+        if (inventory.items[item].w == 0)
+            return item;
+    return -1;
 }
 
 void create_window() {
@@ -1076,7 +1077,7 @@ int main(int argc, char **argv) {
         inventory.items[item].w     = 0;
     }
     
-    int loaded = db_load_state(&x, &y, &z, &rx, &ry);
+    int loaded = db_load_state(&x, &y, &z, &rx, &ry, &inventory);
     ensure_chunks(chunks, &chunk_count, x, y, z, 1);
     if (!loaded) {
         y = highest_block(chunks, chunk_count, x, z) + 2;
@@ -1198,23 +1199,13 @@ int main(int argc, char **argv) {
                 &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_destructable(hw)) {
                 if (is_selectable(hw)) {
-                    int slot = -1;
-                    for (int item = 0; item < INVENTORY_SLOTS; item ++)
-                        if (inventory.items[item].w == hw) {
-                            slot = item;
-                            break;
-                        }
-                    if (slot == -1)
-                        for (int item = 0; item < INVENTORY_SLOTS; item ++)
-                            if (inventory.items[item].w == 0) {
-                                slot = item;
-                                inventory.items[item].w = hw;
-                                inventory.items[item].count = 0;
-                                break;
-                            }
+                    int slot = find_usable_inventory_slot(hw);
                     
-                    if (slot != -1)
+                    if (slot != -1) {
+                        inventory.items[slot].w = hw;
                         inventory.items[slot].count ++;
+                        db_set_slot(hw, slot, inventory.items[slot].count);
+                    }
                 }
                     
                 set_block(chunks, chunk_count, hx, hy, hz, 0);
@@ -1495,7 +1486,7 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    db_save_state(x, y, z, rx, ry);
+    db_save_state(x, y, z, rx, ry, inventory);
     db_close();
     glfwTerminate();
     client_stop();

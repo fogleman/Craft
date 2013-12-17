@@ -19,6 +19,19 @@ typedef struct {
     double since;
 } FPS;
 
+#define INVENTORY_SLOTS 9
+#define MAX_SLOT_SIZE 64
+
+typedef struct {
+    int w;
+    int count;
+} Item;
+
+typedef struct {
+    Item *items;
+    int selected;
+} Inventory;
+
 int rand_int(int n);
 double rand_double();
 void update_fps(FPS *fps, int show);

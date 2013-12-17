@@ -109,7 +109,7 @@ void mat_apply(float *data, float *matrix, int count, int offset, int stride) {
         float *d = data + offset + stride * i;
         vec[0] = *(d++); vec[1] = *(d++); vec[2] = *(d++);
         mat_vec_multiply(vec, matrix, vec);
-        d = data + i * 3;
+        d = data + offset + stride * i;
         *(d++) = vec[0]; *(d++) = vec[1]; *(d++) = vec[2];
     }
 }

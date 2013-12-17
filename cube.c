@@ -261,10 +261,10 @@ void make_plant(
     mat_identity(ma);
     mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, sizeof(GLfloat) * 3, sizeof(GLfloat) * 8);
+    mat_apply(data, ma, 24, 3, 8);
     mat_translate(mb, px, py, pz);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, sizeof(GLfloat) * 0, sizeof(GLfloat) * 8);
+    mat_apply(data, ma, 24, 0, 8);
 }
 
 void make_player(
@@ -283,10 +283,10 @@ void make_player(
     mat_multiply(ma, mb, ma);
     mat_rotate(mb, cosf(rx), 0, sinf(rx), -ry);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, sizeof(GLfloat) * 3, sizeof(GLfloat) * 8);
+    mat_apply(data, ma, 36, 3, 8);
     mat_translate(mb, x, y, z);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, sizeof(GLfloat) * 0, sizeof(GLfloat) * 8);
+    mat_apply(data, ma, 36, 0, 8);
 }
 
 void make_cube_wireframe(float *data, float x, float y, float z, float n) {

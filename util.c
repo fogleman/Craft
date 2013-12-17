@@ -40,19 +40,8 @@ char *load_file(const char *path) {
     return data;
 }
 
-void malloc_buffers(
-    int components, int faces,
-    GLfloat **position_data, GLfloat **normal_data, GLfloat **uv_data)
-{
-    if (position_data) {
-        *position_data = malloc(sizeof(GLfloat) * faces * 6 * components);
-    }
-    if (normal_data) {
-        *normal_data = malloc(sizeof(GLfloat) * faces * 6 * components);
-    }
-    if (uv_data) {
-        *uv_data = malloc(sizeof(GLfloat) * faces * 6 * 2);
-    }
+GLfloat *malloc_buffers(int components, int faces) {
+    return malloc(sizeof(GLfloat) * 6 * components * faces);
 }
 
 GLuint gen_buffer(GLenum target, GLsizei size, const void *data) {
@@ -64,38 +53,13 @@ GLuint gen_buffer(GLenum target, GLsizei size, const void *data) {
     return buffer;
 }
 
-void gen_buffers(
-    int components, int faces,
-    GLfloat *position_data, GLfloat *normal_data, GLfloat *uv_data,
-    GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer)
-{
-    if (position_buffer) {
-        glDeleteBuffers(1, position_buffer);
-        *position_buffer = gen_buffer(
-            GL_ARRAY_BUFFER,
-            sizeof(GLfloat) * faces * 6 * components,
-            position_data
-        );
-        free(position_data);
-    }
-    if (normal_buffer) {
-        glDeleteBuffers(1, normal_buffer);
-        *normal_buffer = gen_buffer(
-            GL_ARRAY_BUFFER,
-            sizeof(GLfloat) * faces * 6 * components,
-            normal_data
-        );
-        free(normal_data);
-    }
-    if (uv_buffer) {
-        glDeleteBuffers(1, uv_buffer);
-        *uv_buffer = gen_buffer(
-            GL_ARRAY_BUFFER,
-            sizeof(GLfloat) * faces * 6 * 2,
-            uv_data
-        );
-        free(uv_data);
-    }
+GLuint gen_buffers(int components, int faces, GLfloat *data) {
+    GLuint buffer = gen_buffer(
+        GL_ARRAY_BUFFER,
+        sizeof(GLfloat) * 6 * components * faces,
+        data);
+    free(data);
+    return buffer;
 }
 
 GLuint make_shader(GLenum type, const char *source) {

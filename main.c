@@ -141,10 +141,7 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(8, 6);
-    make_cube(
-        data,
-        1, 1, 1, 1, 1, 1,
-        x, y, z, n, w);
+    make_cube(data, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
     return gen_faces(8, 6, data);
 }
 
@@ -540,6 +537,7 @@ void gen_chunk_buffers(Chunk *chunk) {
         offset += total * 48;
     } END_MAP_FOR_EACH;
 
+    glDeleteBuffers(1, &chunk->buffer);
     chunk->buffer = gen_faces(8, faces, data);
     chunk->faces = faces;
     chunk->dirty = 0;

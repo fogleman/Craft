@@ -130,13 +130,13 @@ GLuint gen_crosshair_buffer(int width, int height) {
         x, y - p, x, y + p,
         x - p, y, x + p, y
     };
-    return gen_buffer(GL_ARRAY_BUFFER, sizeof(data), data);
+    return gen_buffer(sizeof(data), data);
 }
 
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     float data[144];
     make_cube_wireframe(data, x, y, z, n);
-    return gen_buffer(GL_ARRAY_BUFFER, sizeof(data), data);
+    return gen_buffer(sizeof(data), data);
 }
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {

@@ -53,12 +53,19 @@ typedef struct {
 } Chunk;
 
 typedef struct {
-    int id;
     float x;
     float y;
     float z;
     float rx;
     float ry;
+    float t;
+} State;
+
+typedef struct {
+    int id;
+    State state;
+    State state1;
+    State state2;
     GLuint buffer;
 } Player;
 
@@ -266,15 +273,45 @@ Player *find_player(Player *players, int player_count, int id) {
 }
 
 void update_player(Player *player,
-    float x, float y, float z, float rx, float ry)
+    float x, float y, float z, float rx, float ry, int interpolate)
 {
-    player->x = x;
-    player->y = y;
-    player->z = z;
-    player->rx = rx;
-    player->ry = ry;
-    del_buffer(player->buffer);
-    player->buffer = gen_player_buffer(x, y + 0.1, z, rx, ry);
+    if (interpolate) {
+        State *s1 = &player->state1;
+        State *s2 = &player->state2;
+        memcpy(s1, s2, sizeof(State));
+        s2->x = x; s2->y = y; s2->z = z; s2->rx = rx; s2->ry = ry;
+        s2->t = glfwGetTime();
+        if (s2->rx - s1->rx > PI) {
+            s1->rx += 2 * PI;
+        }
+        if (s1->rx - s2->rx > PI) {
+            s1->rx -= 2 * PI;
+        }
+    }
+    else {
+        State *s = &player->state;
+        s->x = x; s->y = y + 0.1; s->z = z; s->rx = rx; s->ry = ry;
+        del_buffer(player->buffer);
+        player->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
+    }
+}
+
+void interpolate_player(Player *player) {
+    State *s1 = &player->state1;
+    State *s2 = &player->state2;
+    float t1 = s2->t - s1->t;
+    float t2 = glfwGetTime() - s2->t;
+    t1 = MIN(t1, 1);
+    t1 = MAX(t1, 0.1);
+    float p = MIN(t2 / t1, 1);
+    update_player(
+        player,
+        s1->x + (s2->x - s1->x) * p,
+        s1->y + (s2->y - s1->y) * p,
+        s1->z + (s2->z - s1->z) * p,
+        s1->rx + (s2->rx - s1->rx) * p,
+        s1->ry + (s2->ry - s1->ry) * p,
+        0);
 }
 
 void delete_player(Player *players, int *player_count, int id) {
@@ -731,7 +768,7 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
         block_type++;
-        if (block_type > 11) {
+        if (block_type > 14) {
             block_type = 1;
         }
         ypos = 0;
@@ -739,7 +776,7 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     if (ypos > SCROLL_THRESHOLD) {
         block_type--;
         if (block_type < 1) {
-            block_type = 11;
+            block_type = 14;
         }
         ypos = 0;
     }
@@ -890,11 +927,15 @@ int main(int argc, char **argv) {
     char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
     int message_index = 0;
     double last_commit = glfwGetTime();
+    double last_update = glfwGetTime();
 
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
 
-    Player me = {0, 0, 0, 0, 0, 0, 0};
+    Player me;
+    me.id = 0;
+    me.buffer = 0;
+
     Player players[MAX_PLAYERS];
     int player_count = 0;
 
@@ -1065,15 +1106,14 @@ int main(int argc, char **argv) {
             if (player_count) {
                 follow = (follow + 1) % player_count;
                 Player *player = players + follow;
-                ensure_chunks(chunks, &chunk_count,
-                    player->x, player->y, player->z, 1);
+                State *s = &player->state;
+                ensure_chunks(chunks, &chunk_count, s->x, s->y, s->z, 1);
             }
             else {
                 follow = -1;
             }
         }
 
-        client_position(x, y, z, rx, ry);
         char buffer[RECV_BUFFER_SIZE];
         int count = 0;
         while (count < 1024 && client_recv(buffer, RECV_BUFFER_SIZE)) {
@@ -1105,9 +1145,10 @@ int main(int argc, char **argv) {
                     player_count++;
                     player->id = pid;
                     player->buffer = 0;
+                    update_player(player, px, py, pz, prx, pry, 1); // twice
                 }
                 if (player) {
-                    update_player(player, px, py, pz, prx, pry);
+                    update_player(player, px, py, pz, prx, pry, 1);
                 }
             }
             if (sscanf(buffer, "D,%d", &pid) == 1) {
@@ -1126,10 +1167,15 @@ int main(int argc, char **argv) {
             }
         }
 
+        if (now - last_update > 0.1) {
+            last_update = now;
+            client_position(x, y, z, rx, ry);
+        }
+
         int p = chunked(x);
         int q = chunked(z);
         ensure_chunks(chunks, &chunk_count, x, y, z, 0);
-        update_player(&me, x, y, z, rx, ry);
+        update_player(&me, x, y, z, rx, ry, 0);
 
         // RENDER 3-D SCENE //
 
@@ -1155,9 +1201,10 @@ int main(int argc, char **argv) {
         }
 
         // render players
-        draw_player(&block_attrib, &me);
+        // draw_player(&block_attrib, &me);
         for (int i = 0; i < player_count; i++) {
             Player *player = players + i;
+            interpolate_player(player);
             draw_player(&block_attrib, player);
         }
 
@@ -1244,12 +1291,12 @@ int main(int argc, char **argv) {
             draw_cube(&block_attrib, item_buffer);
         }
 
-        // RENDER PICTURE IN PICTURE
+        // RENDER PICTURE IN PICTURE //
+
         if (follow >= 0 && follow < player_count) {
-            float px, py, pz, prx, pry;
             Player *player = players + follow;
-            px = player->x; py = player->y; pz = player->z;
-            prx = player->rx; pry = player->ry;
+            State *s = &player->state;
+
             int pw = 256;
             int ph = 256;
             int pad = 3;
@@ -1267,12 +1314,13 @@ int main(int argc, char **argv) {
 
             glClear(GL_DEPTH_BUFFER_BIT);
             glViewport(width - pw - 32, 32, pw, ph);
-            set_matrix_3d(matrix, pw, ph, px, py, pz, prx, pry, fov, ortho);
+            set_matrix_3d(
+                matrix, pw, ph, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
 
             // render chunks
             glUseProgram(block_program);
             glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-            glUniform3f(camera_loc, px, py, pz);
+            glUniform3f(camera_loc, s->x, s->y, s->z);
             glUniform1i(sampler_loc, 0);
             glUniform1f(timer_loc, glfwGetTime());
             for (int i = 0; i < chunk_count; i++) {

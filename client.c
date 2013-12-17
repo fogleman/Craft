@@ -4,7 +4,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #define snprintf _snprintf
-#define sleep(n) Sleep(n*1000)
 #define close closesocket
 #else
 #include <netdb.h>
@@ -146,7 +145,11 @@ int recv_worker(void *arg) {
             if (done) {
                 break;
             }
+#ifdef _WIN32
+            Sleep(1);
+#else
             sleep(0);
+#endif
         }
     }
     return 0;

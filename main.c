@@ -920,7 +920,10 @@ int main(int argc, char **argv) {
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
 
-    Player me = {0, 0, 0, 0, 0, 0, 0};
+    Player me;
+    me.id = 0;
+    me.buffer = 0;
+
     Player players[MAX_PLAYERS];
     int player_count = 0;
 

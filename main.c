@@ -1211,11 +1211,14 @@ int main(int argc, char **argv) {
         glUniform1f(timer_loc, glfwGetTime());
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
-            if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
-                continue;
-            }
-            if (y < 100 && !chunk_visible(chunk, matrix)) {
-                continue;
+            // TODO: check chunk_distance relative to player
+            if (follow < 0) {
+                if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+                    continue;
+                }
+                if (y < 100 && !chunk_visible(chunk, matrix)) {
+                    continue;
+                }
             }
             draw_chunk(&block_attrib, chunk);
         }
@@ -1352,6 +1355,7 @@ int main(int argc, char **argv) {
             glUniform1f(timer_loc, glfwGetTime());
             for (int i = 0; i < chunk_count; i++) {
                 Chunk *chunk = chunks + i;
+                // TODO: check chunk_distance relative to player
                 draw_chunk(&block_attrib, chunk);
             }
 

@@ -728,7 +728,7 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
         block_type++;
-        if (block_type > 11) {
+        if (block_type > 14) {
             block_type = 1;
         }
         ypos = 0;
@@ -736,7 +736,7 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     if (ypos > SCROLL_THRESHOLD) {
         block_type--;
         if (block_type < 1) {
-            block_type = 11;
+            block_type = 14;
         }
         ypos = 0;
     }

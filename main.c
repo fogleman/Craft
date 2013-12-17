@@ -900,7 +900,7 @@ int main(int argc, char **argv) {
     Player players[MAX_PLAYERS];
     int player_count = 0;
 
-    FPS fps = {0, 0};
+    FPS fps = {0, 0, 0};
     float matrix[16];
     float x = (rand_double() - 0.5) * 10000;
     float z = (rand_double() - 0.5) * 10000;
@@ -924,7 +924,7 @@ int main(int argc, char **argv) {
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
-        update_fps(&fps, SHOW_FPS);
+        update_fps(&fps);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
@@ -1198,8 +1198,8 @@ int main(int argc, char **argv) {
         float tx = ts / 2;
         float ty = height - ts;
         snprintf(
-            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d]",
-            p, q, x, y, z, player_count, chunk_count);
+            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d",
+            p, q, x, y, z, player_count, chunk_count, fps.fps);
         print(
             text_position_loc, text_uv_loc, LEFT,
             tx, ty, ts, text_buffer);

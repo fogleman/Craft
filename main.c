@@ -64,6 +64,11 @@ typedef struct {
 } Player;
 
 static Inventory inventory;
+typedef struct {
+    GLuint position;
+    GLuint normal;
+    GLuint uv;
+} Attrib;
 
 int is_plant(int w) {
     return w > 16;
@@ -185,25 +190,24 @@ GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
     return gen_faces(4, length, data);
 }
 
-void draw_chunk(
-    Chunk *chunk, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->buffer);
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, 0);
+void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glEnableVertexAttribArray(attrib->position);
+    glEnableVertexAttribArray(attrib->normal);
+    glEnableVertexAttribArray(attrib->uv);
+    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
+                          sizeof(GLfloat) * 8, 0);
     glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
+                          sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
     glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
+                          sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
     glDisableVertexAttribArray(attrib->uv);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
+
 
 void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -248,10 +252,8 @@ void draw_inventory(
     glDisable(GL_BLEND);
 }
 
-void draw_cube(
-    GLuint buffer, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    draw_item(buffer, position_loc, normal_loc, uv_loc, 36);
+void draw_chunk(Attrib *attrib, Chunk *chunk) {
+    draw_triangles_3d(attrib, chunk->buffer, chunk->faces * 6);
 }
 
 void draw_item(Attrib *attrib, GLuint buffer, int count) {
@@ -734,9 +736,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key >= '1' && key <= '9') {
             inventory.selected = key - '1';
         }
-        if (key == '0') {
-            block_type = 10;
-        }
         if (key == CRAFT_KEY_BLOCK_TYPE) {
             inventory.selected = (inventory.selected + 1) % INVENTORY_SLOTS;
         }
@@ -931,6 +930,10 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("inventory.png");
     
+    Attrib block_attrib = {0, 0, 0};
+    Attrib line_attrib = {0, 0, 0};
+    Attrib text_attrib = {0, 0, 0};
+
     GLuint block_program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     block_attrib.position = glGetAttribLocation(block_program, "position");
@@ -1374,10 +1377,10 @@ int main(int argc, char **argv) {
             glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
 
             if (is_plant(block)) {
-                draw_plant(item_buffer, position_loc, normal_loc, uv_loc);
+                draw_plant(&block_attrib, item_buffer);
             }
             else {
-                draw_cube(item_buffer, position_loc, normal_loc, uv_loc);
+                draw_cube(&block_attrib, item_buffer);
             }
         }
         // render text
@@ -1403,8 +1406,7 @@ int main(int argc, char **argv) {
             snprintf(
                      text_buffer, 16, "%d", inventory.items[item].count);
             tx += ts * (2.5 - strlen(text_buffer));
-            print(
-                  text_position_loc, text_uv_loc, LEFT,
+            print(&text_attrib, LEFT,
                   tx, ty, ts, text_buffer);
         }
         

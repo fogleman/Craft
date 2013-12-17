@@ -1,6 +1,6 @@
 #include <math.h>
-#include "common.h"
 #include "matrix.h"
+#include "util.h"
 
 void normalize(float *x, float *y, float *z) {
     float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
@@ -103,13 +103,13 @@ void mat_multiply(float *matrix, float *a, float *b) {
     }
 }
 
-void mat_apply(float *data, float *matrix, int count) {
+void mat_apply(float *data, float *matrix, int count, int offset, int stride) {
     float vec[4] = {0, 0, 0, 1};
     for (int i = 0; i < count; i++) {
-        float *d = data + i * 3;
+        float *d = data + offset + stride * i;
         vec[0] = *(d++); vec[1] = *(d++); vec[2] = *(d++);
         mat_vec_multiply(vec, matrix, vec);
-        d = data + i * 3;
+        d = data + offset + stride * i;
         *(d++) = vec[0]; *(d++) = vec[1]; *(d++) = vec[2];
     }
 }
@@ -185,7 +185,7 @@ void set_matrix_3d(
     float b[16];
     float aspect = (float)width / height;
     mat_identity(a);
-    mat_translate(b, -x, -y - 0.2, -z);
+    mat_translate(b, -x, -y - 0.1, -z);
     mat_multiply(a, b, a);
     mat_rotate(b, cosf(rx), 0, sinf(rx), ry);
     mat_multiply(a, b, a);
@@ -196,7 +196,7 @@ void set_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, fov, aspect, 1 / 32.0, 256.0);
+        mat_perspective(b, fov, aspect, 1 / 8.0, 256.0);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);

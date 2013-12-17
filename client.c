@@ -80,21 +80,21 @@ void client_position(float x, float y, float z, float rx, float ry) {
     client_send(buffer);
 }
 
-void client_chunk(int p, int q) {
+void client_chunk(int p, int q, int key) {
     if (!client_enabled) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "C,%d,%d\n", p, q);
+    snprintf(buffer, 1024, "C,%d,%d,%d\n", p, q, key);
     client_send(buffer);
 }
 
-void client_block(int p, int q, int x, int y, int z, int w) {
+void client_block(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d,%d\n", p, q, x, y, z, w);
+    snprintf(buffer, 1024, "B,%d,%d,%d,%d\n", x, y, z, w);
     client_send(buffer);
 }
 
@@ -131,7 +131,7 @@ int client_recv(char *data, int length) {
 int recv_worker(void *arg) {
     while (1) {
         char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE - 1, 0) == -1) {
+        if (recv(sd, data, BUFFER_SIZE - 1, 0) <= 0) {
             perror("recv");
             exit(1);
         }

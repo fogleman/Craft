@@ -1073,7 +1073,7 @@ int main(int argc, char **argv) {
     
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         inventory.items[item].count = 0;
-        inventory.items[item].w     = item + 1;
+        inventory.items[item].w     = 0;
     }
     
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
@@ -1197,6 +1197,26 @@ int main(int argc, char **argv) {
             int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_destructable(hw)) {
+                if (is_selectable(hw)) {
+                    int slot = -1;
+                    for (int item = 0; item < INVENTORY_SLOTS; item ++)
+                        if (inventory.items[item].w == hw) {
+                            slot = item;
+                            break;
+                        }
+                    if (slot == -1)
+                        for (int item = 0; item < INVENTORY_SLOTS; item ++)
+                            if (inventory.items[item].w == 0) {
+                                slot = item;
+                                inventory.items[item].w = hw;
+                                inventory.items[item].count = 0;
+                                break;
+                            }
+                    
+                    if (slot != -1)
+                        inventory.items[slot].count ++;
+                }
+                    
                 set_block(chunks, chunk_count, hx, hy, hz, 0);
                 int above = get_block(chunks, chunk_count, hx, hy + 1, hz);
                 if (is_plant(above)) {
@@ -1211,10 +1231,16 @@ int main(int argc, char **argv) {
             int hw = hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_obstacle(hw)) {
-                if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
+                if (inventory.items[inventory.selected].count > 0 &&
+                    !player_intersects_block(2, x, y, z, hx, hy, hz)) {
+
                     set_block(chunks, chunk_count, hx, hy, hz, inventory.items[inventory.selected].w);
+
+                    inventory.items[inventory.selected].count --;
+                    if (inventory.items[inventory.selected].count == 0)
+                        inventory.items[inventory.selected].w = 0;
                 }
-            }
+            } 
         }
 
         if (middle_click) {
@@ -1408,6 +1434,9 @@ int main(int argc, char **argv) {
             if (block == 0)
                 continue;
             
+            if (inventory.items[item].count == 0)
+                continue;
+            
             set_matrix_item(matrix, width, height, item, INVENTORY_SLOTS, inventory.selected == item);
 
             // render selected item
@@ -1434,6 +1463,34 @@ int main(int argc, char **argv) {
                     position_loc, normal_loc, uv_loc);
             }
         }
+        // render text
+        glClear(GL_DEPTH_BUFFER_BIT);
+        set_matrix_2d(matrix, width, height);
+
+        glUseProgram(text_program);
+        glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
+        glUniform1i(text_sampler_loc, 1);
+        for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+            int block = inventory.items[item].w;
+            
+            if (block == 0)
+                continue;
+            if (inventory.items[item].count == 0)
+                continue;
+            
+            char text_buffer[4];
+            float ts = 24;
+            float sep = 96;
+            float tx = width / 2 + sep * (item - ((INVENTORY_SLOTS - 1) / 2));
+            float ty = sep / 3;
+            snprintf(
+                     text_buffer, 4, "%d", inventory.items[item].count);
+            tx += ts * (2.5 - strlen(text_buffer));
+            print(
+                  text_position_loc, text_uv_loc,
+                  tx, ty, ts, text_buffer);
+        }
+        
         // swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();

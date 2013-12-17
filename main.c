@@ -52,19 +52,20 @@ typedef struct {
 } Chunk;
 
 typedef struct {
-    float x, y, z, rx, ry, t;
-} State;
-
-typedef struct {
-    int id;
     float x;
     float y;
     float z;
     float rx;
     float ry;
+    float t;
+} State;
+
+typedef struct {
+    int id;
+    State state;
+    State state1;
+    State state2;
     GLuint buffer;
-    State s1;
-    State s2;
 } Player;
 
 typedef struct {
@@ -274,44 +275,34 @@ void update_player(Player *player,
     float x, float y, float z, float rx, float ry, int interpolate)
 {
     if (interpolate) {
-        memcpy(&player->s1, &player->s2, sizeof(State));
-        player->s2.x = x;
-        player->s2.y = y;
-        player->s2.z = z;
-        player->s2.rx = rx;
-        player->s2.ry = ry;
-        player->s2.t = glfwGetTime();
+        State *s1 = &player->state1;
+        State *s2 = &player->state2;
+        memcpy(s1, s2, sizeof(State));
+        s2->x = x; s2->y = y; s2->z = z; s2->rx = rx; s2->ry = ry;
+        s2->t = glfwGetTime();
     }
     else {
-        player->x = x;
-        player->y = y;
-        player->z = z;
-        player->rx = rx;
-        player->ry = ry;
+        State *s = &player->state;
+        s->x = x; s->y = y + 0.1; s->z = z; s->rx = rx; s->ry = ry;
         del_buffer(player->buffer);
-        player->buffer = gen_player_buffer(x, y + 0.1, z, rx, ry);
+        player->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
     }
 }
 
 void interpolate_player(Player *player) {
-    float t1 = player->s1.t;
-    float t2 = player->s2.t;
-    float p = (glfwGetTime() - t2) / (t2 - t1);
-    p = p > 1 ? 1 : p;
-    float x1, y1, z1, rx1, ry1;
-    float x2, y2, z2, rx2, ry2;
-    x1 = player->s1.x; y1 = player->s1.y; z1 = player->s1.z;
-    rx1 = player->s1.rx; ry1 = player->s1.ry;
-    x2 = player->s2.x; y2 = player->s2.y; z2 = player->s2.z;
-    rx2 = player->s2.rx; ry2 = player->s2.ry;
-    player->x = x1 + (x2 - x1) * p;
-    player->y = y1 + (y2 - y1) * p;
-    player->z = z1 + (z2 - z1) * p;
-    player->rx = rx1 + (rx2 - rx1) * p;
-    player->ry = ry1 + (ry2 - ry1) * p;
-    del_buffer(player->buffer);
-    player->buffer = gen_player_buffer(
-        player->x, player->y + 0.1, player->z, player->rx, player->ry);
+    State *s1 = &player->state1;
+    State *s2 = &player->state2;
+    float t1 = s2->t - s1->t;
+    float t2 = glfwGetTime() - s2->t;
+    float p = t1 < 0.001 ? 1 : MIN(t2 / t1, 1);
+    update_player(
+        player,
+        s1->x + (s2->x - s1->x) * p,
+        s1->y + (s2->y - s1->y) * p,
+        s1->z + (s2->z - s1->z) * p,
+        s1->rx + (s2->rx - s1->rx) * p,
+        s1->ry + (s2->ry - s1->ry) * p,
+        0);
 }
 
 void delete_player(Player *players, int *player_count, int id) {
@@ -1100,8 +1091,9 @@ int main(int argc, char **argv) {
             if (player_count) {
                 int index = rand_int(player_count);
                 Player *player = players + index;
-                x = player->x; y = player->y; z = player->z;
-                rx = player->rx; ry = player->ry;
+                State *s = &player->state;
+                x = s->x; y = s->y; z = s->z;
+                rx = s->rx; ry = s->ry;
                 ensure_chunks(chunks, &chunk_count, x, y, z, 1);
             }
         }
@@ -1138,6 +1130,7 @@ int main(int argc, char **argv) {
                     player_count++;
                     player->id = pid;
                     player->buffer = 0;
+                    update_player(player, px, py, pz, prx, pry, 1); // twice
                 }
                 if (player) {
                     update_player(player, px, py, pz, prx, pry, 1);

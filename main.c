@@ -61,6 +61,12 @@ typedef struct {
     GLuint buffer;
 } Player;
 
+typedef struct {
+    GLuint position;
+    GLuint normal;
+    GLuint uv;
+} Attrib;
+
 int is_plant(int w) {
     return w > 16;
 }
@@ -168,102 +174,83 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
-void draw_chunk(
-    Chunk *chunk, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, chunk->buffer);
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, 0);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
-    glDrawArrays(GL_TRIANGLES, 0, chunk->faces * 6);
-    glDisableVertexAttribArray(position_loc);
-    glDisableVertexAttribArray(normal_loc);
-    glDisableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void draw_item(
-    GLuint buffer,
-    GLuint position_loc, GLuint normal_loc, GLuint uv_loc, int count)
-{
+void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(normal_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(attrib->position);
+    glEnableVertexAttribArray(attrib->normal);
+    glEnableVertexAttribArray(attrib->uv);
+    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 8, 0);
-    glVertexAttribPointer(normal_loc, 3, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(position_loc);
-    glDisableVertexAttribArray(normal_loc);
-    glDisableVertexAttribArray(uv_loc);
+    glDisableVertexAttribArray(attrib->position);
+    glDisableVertexAttribArray(attrib->normal);
+    glDisableVertexAttribArray(attrib->uv);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void draw_text(
-    GLuint buffer,
-    GLuint position_loc, GLuint uv_loc, int length)
-{
+void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glEnableVertexAttribArray(attrib->position);
+    glEnableVertexAttribArray(attrib->uv);
+    glVertexAttribPointer(attrib->position, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 4, 0);
+    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
+    glDrawArrays(GL_TRIANGLES, 0, count);
+    glDisableVertexAttribArray(attrib->position);
+    glDisableVertexAttribArray(attrib->uv);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glEnableVertexAttribArray(attrib->position);
+    glVertexAttribPointer(
+        attrib->position, components, GL_FLOAT, GL_FALSE, 0, 0);
+    glDrawArrays(GL_LINES, 0, count);
+    glDisableVertexAttribArray(attrib->position);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void draw_chunk(Attrib *attrib, Chunk *chunk) {
+    draw_triangles_3d(attrib, chunk->buffer, chunk->faces * 6);
+}
+
+void draw_item(Attrib *attrib, GLuint buffer, int count) {
+    draw_triangles_3d(attrib, buffer, count);
+}
+
+void draw_text(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(position_loc);
-    glEnableVertexAttribArray(uv_loc);
-    glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 4, 0);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
-    glDrawArrays(GL_TRIANGLES, 0, length * 6);
-    glDisableVertexAttribArray(position_loc);
-    glDisableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    draw_triangles_2d(attrib, buffer, length * 6);
     glDisable(GL_BLEND);
 }
 
-void draw_cube(
-    GLuint buffer, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    draw_item(buffer, position_loc, normal_loc, uv_loc, 36);
+void draw_cube(Attrib *attrib, GLuint buffer) {
+    draw_item(attrib, buffer, 36);
 }
 
-void draw_plant(
-    GLuint buffer, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    draw_item(buffer, position_loc, normal_loc, uv_loc, 24);
+void draw_plant(Attrib *attrib, GLuint buffer) {
+    draw_item(attrib, buffer, 24);
 }
 
-void draw_player(
-    Player *player, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
-{
-    draw_cube(player->buffer, position_loc, normal_loc, uv_loc);
-}
-
-void draw_lines(GLuint buffer, GLuint position_loc, int size, int count) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(position_loc);
-    glVertexAttribPointer(position_loc, size, GL_FLOAT, GL_FALSE, 0, 0);
-    glDrawArrays(GL_LINES, 0, count);
-    glDisableVertexAttribArray(position_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+void draw_player(Attrib *attrib, Player *player) {
+    draw_cube(attrib, player->buffer);
 }
 
 void print(
-    GLuint position_loc, GLuint uv_loc, int justify,
+    Attrib *attrib, int justify,
     float x, float y, float n, char *text)
 {
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
-    draw_text(buffer, position_loc, uv_loc, length);
+    draw_text(attrib, buffer, length);
     del_buffer(buffer);
 }
 
@@ -869,27 +856,31 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     load_png_texture("font.png");
 
+    Attrib block_attrib = {0, 0, 0};
+    Attrib line_attrib = {0, 0, 0};
+    Attrib text_attrib = {0, 0, 0};
+
     GLuint block_program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
+    block_attrib.position = glGetAttribLocation(block_program, "position");
+    block_attrib.normal = glGetAttribLocation(block_program, "normal");
+    block_attrib.uv = glGetAttribLocation(block_program, "uv");
     GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
-    GLuint camera_loc = glGetUniformLocation(block_program, "camera");
     GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
+    GLuint camera_loc = glGetUniformLocation(block_program, "camera");
     GLuint timer_loc = glGetUniformLocation(block_program, "timer");
-    GLuint position_loc = glGetAttribLocation(block_program, "position");
-    GLuint normal_loc = glGetAttribLocation(block_program, "normal");
-    GLuint uv_loc = glGetAttribLocation(block_program, "uv");
 
     GLuint line_program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
+    line_attrib.position = glGetAttribLocation(line_program, "position");
     GLuint line_matrix_loc = glGetUniformLocation(line_program, "matrix");
-    GLuint line_position_loc = glGetAttribLocation(line_program, "position");
 
     GLuint text_program = load_program(
         "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
+    text_attrib.position = glGetAttribLocation(text_program, "position");
+    text_attrib.uv = glGetAttribLocation(text_program, "uv");
     GLuint text_matrix_loc = glGetUniformLocation(text_program, "matrix");
     GLuint text_sampler_loc = glGetUniformLocation(text_program, "sampler");
-    GLuint text_position_loc = glGetAttribLocation(text_program, "position");
-    GLuint text_uv_loc = glGetAttribLocation(text_program, "uv");
 
     GLuint item_buffer = 0;
     int previous_block_type = 0;
@@ -1153,13 +1144,13 @@ int main(int argc, char **argv) {
             if (y < 100 && !chunk_visible(chunk, matrix)) {
                 continue;
             }
-            draw_chunk(chunk, position_loc, normal_loc, uv_loc);
+            draw_chunk(&block_attrib, chunk);
         }
 
         // render players
         for (int i = 0; i < player_count; i++) {
             Player *player = players + i;
-            draw_player(player, position_loc, normal_loc, uv_loc);
+            draw_player(&block_attrib, player);
         }
 
         // render focused block wireframe
@@ -1172,7 +1163,7 @@ int main(int argc, char **argv) {
             glEnable(GL_COLOR_LOGIC_OP);
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
             GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
-            draw_lines(wireframe_buffer, line_position_loc, 3, 48);
+            draw_lines(&line_attrib, wireframe_buffer, 3, 48);
             del_buffer(wireframe_buffer);
             glDisable(GL_COLOR_LOGIC_OP);
         }
@@ -1188,7 +1179,7 @@ int main(int argc, char **argv) {
         glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
         GLuint crosshair_buffer = gen_crosshair_buffer(width, height);
-        draw_lines(crosshair_buffer, line_position_loc, 2, 4);
+        draw_lines(&line_attrib, crosshair_buffer, 2, 4);
         del_buffer(crosshair_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
@@ -1203,24 +1194,18 @@ int main(int argc, char **argv) {
         snprintf(
             text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d",
             p, q, x, y, z, player_count, chunk_count, fps.fps);
-        print(
-            text_position_loc, text_uv_loc, LEFT,
-            tx, ty, ts, text_buffer);
+        print(&text_attrib, LEFT, tx, ty, ts, text_buffer);
         for (int i = 0; i < MAX_MESSAGES; i++) {
             int index = (message_index + i) % MAX_MESSAGES;
             if (strlen(messages[index])) {
                 ty -= ts * 2;
-                print(
-                    text_position_loc, text_uv_loc, LEFT,
-                    tx, ty, ts, messages[index]);
+                print(&text_attrib, LEFT, tx, ty, ts, messages[index]);
             }
         }
         if (typing) {
             ty -= ts * 2;
             snprintf(text_buffer, 1024, "> %s", typing_buffer);
-            print(
-                text_position_loc, text_uv_loc, LEFT,
-                tx, ty, ts, text_buffer);
+            print(&text_attrib, LEFT, tx, ty, ts, text_buffer);
         }
 
         // RENDER 3-D HUD PARTS //
@@ -1245,10 +1230,10 @@ int main(int argc, char **argv) {
         glUniform1i(sampler_loc, 0);
         glUniform1f(timer_loc, glfwGetTime());
         if (is_plant(block_type)) {
-            draw_plant(item_buffer, position_loc, normal_loc, uv_loc);
+            draw_plant(&block_attrib, item_buffer);
         }
         else {
-            draw_cube(item_buffer, position_loc, normal_loc, uv_loc);
+            draw_cube(&block_attrib, item_buffer);
         }
 
         // swap buffers

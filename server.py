@@ -93,7 +93,6 @@ class Handler(SocketServer.BaseRequestHandler):
 
 class Model(object):
     def __init__(self):
-        self.next_client_id = 1
         self.clients = []
         self.queue = Queue.Queue()
         self.commands = {
@@ -154,10 +153,15 @@ class Model(object):
         ]
         for query in queries:
             self.execute(query)
+    def next_client_id(self):
+        result = 1
+        client_ids = set(x.client_id for x in self.clients)
+        while result in client_ids:
+            result += 1
+        return result
     def on_connect(self, client):
-        client.client_id = self.next_client_id
+        client.client_id = self.next_client_id()
         client.nick = 'player%d' % client.client_id
-        self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
         self.clients.append(client)

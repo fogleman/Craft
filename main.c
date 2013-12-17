@@ -264,7 +264,7 @@ void print(
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
     draw_text(buffer, position_loc, uv_loc, length);
-    glDeleteBuffers(1, &buffer);
+    del_buffer(buffer);
 }
 
 Player *find_player(Player *players, int player_count, int id) {
@@ -285,7 +285,7 @@ void update_player(Player *player,
     player->z = z;
     player->rx = rx;
     player->ry = ry;
-    glDeleteBuffers(1, &player->buffer);
+    del_buffer(player->buffer);
     player->buffer = gen_player_buffer(x, y + 0.1, z, rx, ry);
 }
 
@@ -295,7 +295,7 @@ void delete_player(Player *players, int *player_count, int id) {
         return;
     }
     int count = *player_count;
-    glDeleteBuffers(1, &player->buffer);
+    del_buffer(player->buffer);
     Player *other = players + (--count);
     memcpy(player, other, sizeof(Player));
     *player_count = count;
@@ -537,7 +537,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         offset += total * 48;
     } END_MAP_FOR_EACH;
 
-    glDeleteBuffers(1, &chunk->buffer);
+    del_buffer(chunk->buffer);
     chunk->buffer = gen_faces(8, faces, data);
     chunk->faces = faces;
     chunk->dirty = 0;
@@ -569,7 +569,7 @@ void ensure_chunks(
         Chunk *chunk = chunks + i;
         if (chunk_distance(chunk, p, q) >= DELETE_CHUNK_RADIUS) {
             map_free(&chunk->map);
-            glDeleteBuffers(1, &chunk->buffer);
+            del_buffer(chunk->buffer);
             Chunk *other = chunks + (--count);
             memcpy(chunk, other, sizeof(Chunk));
         }
@@ -1173,7 +1173,7 @@ int main(int argc, char **argv) {
             glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
             GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
             draw_lines(wireframe_buffer, line_position_loc, 3, 48);
-            glDeleteBuffers(1, &wireframe_buffer);
+            del_buffer(wireframe_buffer);
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
@@ -1189,7 +1189,7 @@ int main(int argc, char **argv) {
         glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
         GLuint crosshair_buffer = gen_crosshair_buffer(width, height);
         draw_lines(crosshair_buffer, line_position_loc, 2, 4);
-        glDeleteBuffers(1, &crosshair_buffer);
+        del_buffer(crosshair_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
         // render text
@@ -1231,11 +1231,11 @@ int main(int argc, char **argv) {
         if (block_type != previous_block_type) {
             previous_block_type = block_type;
             if (is_plant(block_type)) {
-                glDeleteBuffers(1, &item_buffer);
+                del_buffer(item_buffer);
                 item_buffer = gen_plant_buffer(0, 0, 0, 0.5, block_type);
             }
             else {
-                glDeleteBuffers(1, &item_buffer);
+                del_buffer(item_buffer);
                 item_buffer = gen_cube_buffer(0, 0, 0, 0.5, block_type);
             }
         }

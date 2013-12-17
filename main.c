@@ -1150,7 +1150,7 @@ int main(int argc, char **argv) {
         }
 
         // render players
-        draw_player(&block_attrib, &me);
+        // draw_player(&block_attrib, &me);
         for (int i = 0; i < player_count; i++) {
             Player *player = players + i;
             draw_player(&block_attrib, player);

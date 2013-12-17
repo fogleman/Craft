@@ -166,8 +166,7 @@ class Model(object):
         client.send(TALK, 'Type "/help" for chat commands.')
         self.send_position(client)
         self.send_positions(client)
-        self.send_talk(client,
-            '%s has joined the game.' % client.nick)
+        self.send_talk('%s has joined the game.' % client.nick)
     def on_data(self, client, data):
         #log('RECV', client.client_id, data)
         args = data.split(',')
@@ -179,8 +178,7 @@ class Model(object):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
-        self.send_talk(client,
-            '%s has disconnected from the server.' % client.nick)
+        self.send_talk('%s has disconnected from the server.' % client.nick)
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
         query = (
@@ -224,23 +222,20 @@ class Model(object):
     def on_talk(self, client, *args):
         text = ','.join(args)
         if text.startswith('/'):
-            matched = False
             for pattern, func in self.patterns:
                 match = pattern.match(text)
                 if match:
-                    matched = True
                     func(client, *match.groups())
-            if not matched:
+                    break
+            else:
                 client.send(TALK, 'Unrecognized command: "%s"' % text)
         else:
-            text = '%s> %s' % (client.nick, text)
-            self.send_talk(client, text)
+            self.send_talk('%s> %s' % (client.nick, text))
     def on_nick(self, client, nick=None):
         if nick is None:
             client.send(TALK, 'Your nickname is %s' % client.nick)
         else:
-            self.send_talk(client,
-                '%s is now known as %s' % (client.nick, nick))
+            self.send_talk('%s is now known as %s' % (client.nick, nick))
             client.nick = nick
     def on_spawn(self, client):
         client.position = SPAWN_POINT
@@ -292,9 +287,9 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
-    def send_talk(self, client, text):
-        for other in self.clients:
-            other.send(TALK, text)
+    def send_talk(self, text):
+        for client in self.clients:
+            client.send(TALK, text)
 
 def main():
     host, port = HOST, PORT

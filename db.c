@@ -8,8 +8,8 @@ static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *update_chunk_stmt;
 static sqlite3_stmt *get_key_stmt;
 static sqlite3_stmt *set_key_stmt;
+static sqlite3_stmt *get_slot_stmt;
 static sqlite3_stmt *set_slot_stmt;
-static sqlite3_stmt *increment_slot_stmt;
 
 void db_enable() {
     db_enabled = 1;
@@ -72,12 +72,12 @@ int db_init(char *path) {
         "insert or replace into key (p, q, key) "
         "values (?, ?, ?);";
     
+    static const char *get_slot_query =
+        "select w, count from inventory where slot = ?;";
+    
     static const char *set_slot_query =
         "insert or replace into inventory (w, slot, count) "
         "values (?, ?, ?);";
-
-    static const char *increment_slot_query =
-        "update inventory set count = count + 1 where slot = ?;";
     
     int rc;
     rc = sqlite3_open(path, &db);
@@ -92,9 +92,9 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, set_key_query, -1, &set_key_stmt, NULL);
     if (rc) return rc;
-    rc = sqlite3_prepare_v2(db, set_slot_query, -1, &set_slot_stmt, NULL);
+    rc = sqlite3_prepare_v2(db, get_slot_query, -1, &get_slot_stmt, NULL);
     if (rc) return rc;
-    rc = sqlite3_prepare_v2(db, increment_slot_query, -1, &increment_slot_stmt, NULL);
+    rc = sqlite3_prepare_v2(db, set_slot_query, -1, &set_slot_stmt, NULL);
     if (rc) return rc;
     db_begin_transaction();
     return 0;
@@ -109,8 +109,8 @@ void db_close() {
     sqlite3_finalize(update_chunk_stmt);
     sqlite3_finalize(get_key_stmt);
     sqlite3_finalize(set_key_stmt);
+    sqlite3_finalize(get_slot_stmt);
     sqlite3_finalize(set_slot_stmt);
-    sqlite3_finalize(increment_slot_stmt);
     sqlite3_close(db);
 }
 
@@ -256,6 +256,23 @@ void db_set_key(int p, int q, int key) {
     sqlite3_bind_int(set_key_stmt, 2, q);
     sqlite3_bind_int(set_key_stmt, 3, key);
     sqlite3_step(set_key_stmt);
+}
+
+Item db_get_slot(int slot) {
+    Item item;
+
+    if (!db_enabled) {
+        return item;
+    }
+
+    sqlite3_reset(get_slot_stmt);
+    sqlite3_bind_int(get_slot_stmt, 1, slot);
+    
+    if (sqlite3_step(get_slot_stmt) == SQLITE_ROW) {
+        item.w = sqlite3_column_int(get_slot_stmt, 0);
+        item.count = sqlite3_column_int(get_slot_stmt, 1);
+    }
+    return item;
 }
 
 void db_set_slot(int w, int slot, int count) {

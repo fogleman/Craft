@@ -82,12 +82,12 @@ void client_chunk(int p, int q, int key) {
     client_send(buffer);
 }
 
-void client_block(int x, int y, int z, int w) {
+void client_block(int x, int y, int z, int w, int s) {
     if (!client_enabled) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "B,%d,%d,%d,%d\n", x, y, z, w);
+    snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d\n", x, y, z, w, s);
     client_send(buffer);
 }
 
@@ -101,6 +101,18 @@ void client_talk(char *text) {
     char buffer[1024];
     snprintf(buffer, 1024, "T,%s\n", text);
     client_send(buffer);
+}
+
+void client_inventory(Inventory inventory) {
+    if (!client_enabled) {
+        return;
+    }
+    
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        char buffer[1024];
+        snprintf(buffer, 1024, "I,%d,%d,%d\n", inventory.items[item].w, item, inventory.items[item].count);
+        client_send(buffer);
+    }
 }
 
 int client_recv(char *data, int length) {

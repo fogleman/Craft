@@ -18,6 +18,7 @@ void db_insert_block(int p, int q, int x, int y, int z, int w);
 void db_load_map(Map *map, int p, int q);
 int db_get_key(int p, int q);
 void db_set_key(int p, int q, int key);
+Item db_get_slot(int slot);
 void db_set_slot(int w, int slot, int count);
 
 #endif

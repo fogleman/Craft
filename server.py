@@ -17,6 +17,7 @@ BUFFER_SIZE = 1024
 SPAWN_POINT = (0, 0, 0, 0, 0)
 DB_PATH = 'craft.db'
 COMMIT_INTERVAL = 5
+INVENTORY_SLOTS = 9
 
 YOU = 'U'
 BLOCK = 'B'
@@ -25,6 +26,7 @@ POSITION = 'P'
 DISCONNECT = 'D'
 TALK = 'T'
 KEY = 'K'
+INVENTORY = 'I'
 
 def log(*args):
     now = datetime.datetime.utcnow()
@@ -101,6 +103,7 @@ class Model(object):
             BLOCK: self.on_block,
             POSITION: self.on_position,
             TALK: self.on_talk,
+            INVENTORY: self.on_inventory,
         }
         self.patterns = [
             (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_nick),
@@ -109,6 +112,8 @@ class Model(object):
             (re.compile(r'^/pq\s+(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_pq),
             (re.compile(r'^/help$'), self.on_help),
             (re.compile(r'^/players$'), self.on_players),
+            (re.compile(r'^/give\s+(-?\S+)\s*,?\s*(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_give),
+            (re.compile(r'^/dumpinv$'), self.dump_inventory),
         ]
     def start(self):
         thread = threading.Thread(target=self.run)
@@ -157,6 +162,9 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id
         client.nick = 'player%d' % client.client_id
+        client.inventory = []
+        for slot in xrange(INVENTORY_SLOTS):
+            client.inventory.append({"type" : 0, "count" : 0})
         self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
@@ -194,10 +202,43 @@ class Model(object):
             max_rowid = max(max_rowid, rowid)
         if max_rowid:
             client.send(KEY, p, q, max_rowid)
-    def on_block(self, client, x, y, z, w):
-        x, y, z, w = map(int, (x, y, z, w))
+    def on_block(self, client, x, y, z, w, s=0):
+        x, y, z, w, s = map(int, (x, y, z, w, s))
         if y <= 0 or y > 255 or w < 0 or w > 11:
             return
+        if (w == 0):
+            # Break
+            final_slot = -1
+            for slot in xrange(INVENTORY_SLOTS):
+                if client.inventory[slot]["type"] == w:
+                    if client.inventory[slot]["count"] < 64:
+                        final_slot = slot
+                        break
+            if (final_slot == -1):
+                for slot in xrange(INVENTORY_SLOTS):
+                    if client.inventory[slot]["type"] == 0:
+                        final_slot = slot
+                        client.inventory[slot]["count"] = 0
+            
+            client.inventory[final_slot]["type"] = w
+            client.inventory[final_slot]["count"] += 1
+
+        else:
+            # Place
+            success = False
+            if (client.inventory[s]["type"] == w):
+                client.inventory[s]["count"] -= 1
+                if (client.inventory[slot]["count"] == 0):
+                    client.inventory[slot]["type"] = 0
+                client.send(INVENTORY, s, client.inventory[s]["type"], client.inventory[s]["count"])
+            else:
+                for slot in xrange(INVENTORY_SLOTS):
+                    if client.inventory[slot]["type"] == w:
+                        client.inventory[slot]["count"] -= 1
+                        if (client.inventory[slot]["count"] == 0):
+                            client.inventory[slot]["type"] = 0
+                        client.send(INVENTORY, slot, client.inventory[slot]["type"], client.inventory[slot]["count"])
+
         p, q = chunked(x), chunked(z)
         query = (
             'insert or replace into block (p, q, x, y, z, w) '
@@ -217,6 +258,7 @@ class Model(object):
         if chunked(z + 1) != q:
             self.execute(query, dict(p=p, q=q + 1, x=x, y=y, z=z, w=-w))
             self.send_block(client, p, q + 1, x, y, z, -w)
+
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
@@ -268,6 +310,44 @@ class Model(object):
     def on_players(self, client):
         client.send(TALK,
             'Players: %s' % ', '.join(x.nick for x in self.clients))
+    def on_inventory(self, client, w, slot, count):
+        client.inventory[slot]["type"] = w
+        client.inventory[slot]["count"] = count
+    def on_give(self, client, nick=None, w=0, count=0):
+        w, count = map(int, (w, count))
+        if nick is None:
+            other = client
+        else:
+            nicks = dict((client.nick, client) for client in self.clients)
+            other = nicks.get(nick)
+        print "Giving {0} {1} of {2}".format(nick, w, count)
+        if w == 0 or count == 0:
+            return
+        for slot in xrange(INVENTORY_SLOTS):
+            if other.inventory[slot]["type"] == w:
+                if other.inventory[slot]["count"] + count > 64:
+                    count -= 64 - abs(other.inventory[slot]["count"])
+                    other.inventory[slot]["count"] = 64
+                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                else:
+                    other.inventory[slot]["count"] += count
+                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                    return
+        for slot in xrange(INVENTORY_SLOTS):
+            if other.inventory[slot]["type"] == 0:
+                if count > 64:
+                    count -= 64
+                    other.inventory[slot]["type"] = w
+                    other.inventory[slot]["count"] = 64
+                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                else:
+                    other.inventory[slot]["type"] = w
+                    other.inventory[slot]["count"] = count
+                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                    return
+
+    def dump_inventory(self, client):
+        print client.inventory
     def send_positions(self, client):
         for other in self.clients:
             if other == client:
@@ -291,6 +371,9 @@ class Model(object):
     def send_talk(self, client, text):
         for other in self.clients:
             other.send(TALK, text)
+    def send_inventory(self, client):
+        for slot in xrange(INVENTORY_SLOTS):
+            client.send(INVENTORY, slot, client.inventory[slot]["type"], client.inventory[slot]["count"])
 
 def main():
     host, port = HOST, PORT

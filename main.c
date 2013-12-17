@@ -763,7 +763,7 @@ void set_block(
     if (chunked(z + 1) != q) {
         _set_block(chunks, chunk_count, p, q + 1, x, y, z, -w);
     }
-    client_block(x, y, z, w);
+    client_block(x, y, z, w, inventory.selected);
 }
 
 int get_block(
@@ -1083,6 +1083,8 @@ int main(int argc, char **argv) {
         y = highest_block(chunks, chunk_count, x, z) + 2;
     }
 
+    
+    
     glfwGetCursorPos(window, &px, &py);
     double previous = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
@@ -1226,10 +1228,12 @@ int main(int argc, char **argv) {
                     !player_intersects_block(2, x, y, z, hx, hy, hz)) {
 
                     set_block(chunks, chunk_count, hx, hy, hz, inventory.items[inventory.selected].w);
-
+                    
                     inventory.items[inventory.selected].count --;
                     if (inventory.items[inventory.selected].count == 0)
                         inventory.items[inventory.selected].w = 0;
+
+                    db_set_slot(inventory.items[inventory.selected].w, inventory.selected, inventory.items[inventory.selected].count);
                 }
             } 
         }
@@ -1307,6 +1311,11 @@ int main(int argc, char **argv) {
                 snprintf(
                     messages[message_index], TEXT_BUFFER_SIZE, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
+            }
+            int islot, iw, icount;
+            if (sscanf(buffer, "I,%d,%d,%d", &islot, &iw, &icount) == 3) {
+                inventory.items[islot].w = iw;
+                inventory.items[islot].count = icount;
             }
         }
 

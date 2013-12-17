@@ -490,7 +490,7 @@ void exposed_faces(
     *f6 = is_transparent(map_get(map, x, y, z + 1));
 }
 
-void gen_chunk_buffers(Chunk *chunk) {
+void gen_chunk_buffer(Chunk *chunk) {
     Map *map = &chunk->map;
 
     int faces = 0;
@@ -553,7 +553,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     map_alloc(map);
     create_world(map, p, q);
     db_load_map(map, p, q);
-    gen_chunk_buffers(chunk);
+    gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
 }
@@ -590,7 +590,7 @@ void ensure_chunks(
                 Chunk *chunk = find_chunk(chunks, count, a, b);
                 if (chunk) {
                     if (chunk->dirty) {
-                        gen_chunk_buffers(chunk);
+                        gen_chunk_buffer(chunk);
                         generated++;
                     }
                 }

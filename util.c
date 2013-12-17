@@ -15,17 +15,14 @@ double rand_double() {
     return (double)rand() / (double)RAND_MAX;
 }
 
-void update_fps(FPS *fps, int show) {
+void update_fps(FPS *fps) {
     fps->frames++;
     double now = glfwGetTime();
     double elapsed = now - fps->since;
     if (elapsed >= 1) {
-        int result = fps->frames / elapsed;
+        fps->fps = round(fps->frames / elapsed);
         fps->frames = 0;
         fps->since = now;
-        if (show) {
-            printf("%d\n", result);
-        }
     }
 }
 
@@ -40,62 +37,28 @@ char *load_file(const char *path) {
     return data;
 }
 
-void malloc_buffers(
-    int components, int faces,
-    GLfloat **position_data, GLfloat **normal_data, GLfloat **uv_data)
-{
-    if (position_data) {
-        *position_data = malloc(sizeof(GLfloat) * faces * 6 * components);
-    }
-    if (normal_data) {
-        *normal_data = malloc(sizeof(GLfloat) * faces * 6 * components);
-    }
-    if (uv_data) {
-        *uv_data = malloc(sizeof(GLfloat) * faces * 6 * 2);
-    }
-}
-
-GLuint gen_buffer(GLenum target, GLsizei size, const void *data) {
+GLuint gen_buffer(GLsizei size, GLfloat *data) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
-    glBindBuffer(target, buffer);
-    glBufferData(target, size, data, GL_STATIC_DRAW);
-    glBindBuffer(target, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     return buffer;
 }
 
-void gen_buffers(
-    int components, int faces,
-    GLfloat *position_data, GLfloat *normal_data, GLfloat *uv_data,
-    GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer)
-{
-    if (position_buffer) {
-        glDeleteBuffers(1, position_buffer);
-        *position_buffer = gen_buffer(
-            GL_ARRAY_BUFFER,
-            sizeof(GLfloat) * faces * 6 * components,
-            position_data
-        );
-        free(position_data);
-    }
-    if (normal_buffer) {
-        glDeleteBuffers(1, normal_buffer);
-        *normal_buffer = gen_buffer(
-            GL_ARRAY_BUFFER,
-            sizeof(GLfloat) * faces * 6 * components,
-            normal_data
-        );
-        free(normal_data);
-    }
-    if (uv_buffer) {
-        glDeleteBuffers(1, uv_buffer);
-        *uv_buffer = gen_buffer(
-            GL_ARRAY_BUFFER,
-            sizeof(GLfloat) * faces * 6 * 2,
-            uv_data
-        );
-        free(uv_data);
-    }
+void del_buffer(GLuint buffer) {
+    glDeleteBuffers(1, &buffer);
+}
+
+GLfloat *malloc_faces(int components, int faces) {
+    return malloc(sizeof(GLfloat) * 6 * components * faces);
+}
+
+GLuint gen_faces(int components, int faces, GLfloat *data) {
+    GLuint buffer = gen_buffer(
+        sizeof(GLfloat) * 6 * components * faces, data);
+    free(data);
+    return buffer;
 }
 
 GLuint make_shader(GLenum type, const char *source) {

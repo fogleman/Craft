@@ -6,10 +6,10 @@
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 #define VSYNC 1
-#define SHOW_FPS 0
 #define SCROLL_THRESHOLD 0.1
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
+#define USE_CACHE 1
 
 // key bindings
 #define CRAFT_KEY_QUIT 'Q'
@@ -36,5 +36,6 @@
 
 // advanced parameters
 #define CHUNK_SIZE 32
+#define COMMIT_INTERVAL 5
 
 #endif

@@ -49,7 +49,7 @@ void create_world(Map *map, int p, int q) {
                             for (int oz = -3; oz <= 3; oz++) {
                                 int d = (ox * ox) + (oz * oz) +
                                     (y - (h + 4)) * (y - (h + 4));
-				if (d < 11) {
+				if (d < 11 && simplex3(x + ox, y, z + oz, 4, 0.3, 2) > 0.4) {
                                     map_set(map, x + ox, y, z + oz, 15);
                                 }
                             }

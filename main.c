@@ -1115,11 +1115,6 @@ int main(int argc, char **argv) {
                 follow = -1;
                 observe = 0;
             }
-            else {
-                Player *player = players + follow;
-                State *s = &player->state;
-                ensure_chunks(chunks, &chunk_count, s->x, s->y, s->z, 1);
-            }
         }
 
         char buffer[RECV_BUFFER_SIZE];
@@ -1182,13 +1177,23 @@ int main(int argc, char **argv) {
 
         int p = chunked(x);
         int q = chunked(z);
-        ensure_chunks(chunks, &chunk_count, x, y, z, 0);
         update_player(&me, x, y, z, rx, ry, 0);
+        ensure_chunks(chunks, &chunk_count, x, y, z, 0);
+
+        if (follow >= 0 && follow < player_count) {
+            Player *player = players + follow;
+            State *s = &player->state;
+            ensure_chunks(chunks, &chunk_count, s->x, s->y, s->z, 0);
+        }
+        else {
+            follow = -1;
+            observe = 0;
+        }
 
         // RENDER 3-D SCENE //
 
         Player *player = &me;
-        if (observe && follow >= 0 && follow < player_count) {
+        if (observe) {
             player = players + follow;
         }
         State *s = &player->state;
@@ -1312,7 +1317,7 @@ int main(int argc, char **argv) {
 
         // RENDER PICTURE IN PICTURE //
 
-        if (observe < 2 && follow >= 0 && follow < player_count) {
+        if (observe < 2 && follow >= 0) {
             Player *player = players + follow;
             if (observe) {
                 player = &me;

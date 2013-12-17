@@ -95,7 +95,6 @@ class Handler(SocketServer.BaseRequestHandler):
 
 class Model(object):
     def __init__(self):
-        self.next_client_id = 1
         self.clients = []
         self.queue = Queue.Queue()
         self.commands = {
@@ -159,13 +158,18 @@ class Model(object):
         ]
         for query in queries:
             self.execute(query)
+    def next_client_id(self):
+        result = 1
+        client_ids = set(x.client_id for x in self.clients)
+        while result in client_ids:
+            result += 1
+        return result
     def on_connect(self, client):
-        client.client_id = self.next_client_id
+        client.client_id = self.next_client_id()
         client.nick = 'player%d' % client.client_id
         client.inventory = []
         for slot in xrange(INVENTORY_SLOTS):
             client.inventory.append({"type" : 0, "count" : 0})
-        self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
         self.clients.append(client)
@@ -174,8 +178,7 @@ class Model(object):
         client.send(TALK, 'Type "/help" for chat commands.')
         self.send_position(client)
         self.send_positions(client)
-        self.send_talk(client,
-            '%s has joined the game.' % client.nick)
+        self.send_talk('%s has joined the game.' % client.nick)
     def on_data(self, client, data):
         #log('RECV', client.client_id, data)
         args = data.split(',')
@@ -187,8 +190,7 @@ class Model(object):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
-        self.send_talk(client,
-            '%s has disconnected from the server.' % client.nick)
+        self.send_talk('%s has disconnected from the server.' % client.nick)
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
         query = (
@@ -270,15 +272,16 @@ class Model(object):
                 match = pattern.match(text)
                 if match:
                     func(client, *match.groups())
+                    break
+            else:
+                client.send(TALK, 'Unrecognized command: "%s"' % text)
         else:
-            text = '%s> %s' % (client.nick, text)
-            self.send_talk(client, text)
+            self.send_talk('%s> %s' % (client.nick, text))
     def on_nick(self, client, nick=None):
         if nick is None:
             client.send(TALK, 'Your nickname is %s' % client.nick)
         else:
-            self.send_talk(client,
-                '%s is now known as %s' % (client.nick, nick))
+            self.send_talk('%s is now known as %s' % (client.nick, nick))
             client.nick = nick
     def on_spawn(self, client):
         client.position = SPAWN_POINT
@@ -368,9 +371,9 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
-    def send_talk(self, client, text):
-        for other in self.clients:
-            other.send(TALK, text)
+    def send_talk(self, text):
+        for client in self.clients:
+            client.send(TALK, text)
     def send_inventory(self, client):
         for slot in xrange(INVENTORY_SLOTS):
             client.send(INVENTORY, slot, client.inventory[slot]["type"], client.inventory[slot]["count"])

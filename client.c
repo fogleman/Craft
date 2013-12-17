@@ -64,7 +64,7 @@ void client_position(float x, float y, float z, float rx, float ry) {
         (pz - z) * (pz - z) +
         (prx - rx) * (prx - rx) +
         (pry - ry) * (pry - ry);
-    if (distance < 0.1) {
+    if (distance < 0.0001) {
         return;
     }
     px = x; py = y; pz = z; prx = rx; pry = ry;
@@ -124,7 +124,7 @@ int client_recv(char *data, int length) {
 int recv_worker(void *arg) {
     while (1) {
         char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE - 1, 0) == -1) {
+        if (recv(sd, data, BUFFER_SIZE - 1, 0) <= 0) {
             perror("recv");
             exit(1);
         }

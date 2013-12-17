@@ -26,8 +26,6 @@ void default_config(configuration *config) {
     config->width = 1024;
     config->height = 768;
     config->vsync = 1;
-    config->show_fps = 0;
-
     config->forward = 'W';
     config->backward = 'S';
     config->strafe_left = 'A';
@@ -111,9 +109,6 @@ int handler(void *user, const char *section, const char *name,
             handled = 1;
         } else if (strncmp(name, "vsync", 5) == 0) {
             pconfig->vsync = atoi(value);
-            handled = 1;
-        } else if (strncmp(name, "show fps", 8) == 0) {
-            pconfig->show_fps = atoi(value);
             handled = 1;
         }
     } else if (strncmp(section, "controls", 8) == 0) {

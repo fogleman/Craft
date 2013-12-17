@@ -280,6 +280,12 @@ void update_player(Player *player,
         memcpy(s1, s2, sizeof(State));
         s2->x = x; s2->y = y; s2->z = z; s2->rx = rx; s2->ry = ry;
         s2->t = glfwGetTime();
+        if (s2->rx - s1->rx > PI) {
+            s1->rx += 2 * PI;
+        }
+        if (s1->rx - s2->rx > PI) {
+            s1->rx -= 2 * PI;
+        }
     }
     else {
         State *s = &player->state;
@@ -294,7 +300,9 @@ void interpolate_player(Player *player) {
     State *s2 = &player->state2;
     float t1 = s2->t - s1->t;
     float t2 = glfwGetTime() - s2->t;
-    float p = t1 < 0.001 ? 1 : MIN(t2 / t1, 1);
+    t1 = MIN(t1, 1);
+    t1 = MAX(t1, 0.1);
+    float p = MIN(t2 / t1, 1);
     update_player(
         player,
         s1->x + (s2->x - s1->x) * p,
@@ -916,6 +924,7 @@ int main(int argc, char **argv) {
     char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
     int message_index = 0;
     double last_commit = glfwGetTime();
+    double last_update = glfwGetTime();
 
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
@@ -1101,7 +1110,6 @@ int main(int argc, char **argv) {
             }
         }
 
-        client_position(x, y, z, rx, ry);
         char buffer[RECV_BUFFER_SIZE];
         int count = 0;
         while (count < 1024 && client_recv(buffer, RECV_BUFFER_SIZE)) {
@@ -1153,6 +1161,11 @@ int main(int argc, char **argv) {
                     messages[message_index], TEXT_BUFFER_SIZE, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
+        }
+
+        if (now - last_update > 0.1) {
+            last_update = now;
+            client_position(x, y, z, rx, ry);
         }
 
         int p = chunked(x);

@@ -94,6 +94,7 @@ class Handler(SocketServer.BaseRequestHandler):
 class Model(object):
     def __init__(self):
         self.next_client_id = 1
+        self.client_number = []
         self.clients = []
         self.queue = Queue.Queue()
         self.commands = {
@@ -154,10 +155,23 @@ class Model(object):
         ]
         for query in queries:
             self.execute(query)
+
+    def find_next_spot(self):
+        if(not len(self.client_number)):
+            self.client_number.append([0, 1])
+            return 0
+        else:
+            for client_no in self.client_number:
+                if client_no[1] == 0:
+                    client_no[1] = 1
+                    return client_no[0]
+            self.client_number.append([len(self.client_number), 1])
+            return len(self.client_number)-1
+
     def on_connect(self, client):
-        client.client_id = self.next_client_id
+        next_spot = self.find_next_spot()
+        client.client_id = next_spot + 1
         client.nick = 'player%d' % client.client_id
-        self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
         self.clients.append(client)
@@ -176,6 +190,7 @@ class Model(object):
             func(client, *args)
     def on_disconnect(self, client):
         log('DISC', client.client_id, *client.client_address)
+        self.client_number[client.client_id-1][1] = False
         self.clients.remove(client)
         self.send_disconnect(client)
         self.send_talk('%s has disconnected from the server.' % client.nick)

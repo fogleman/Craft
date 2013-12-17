@@ -50,7 +50,6 @@ You can run your own server or connect to mine. The server uses the same SQLite 
 
 #### Server
 
-    pip install sqlalchemy
     python server.py [HOST [PORT]]
 
 ### Controls

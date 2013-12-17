@@ -35,6 +35,7 @@ static int teleport = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
+static int radar = 0;
 static float fov = 65.0;
 static int typing = 0;
 static char typing_buffer[TEXT_BUFFER_SIZE] = {0};
@@ -739,6 +740,14 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
+    if(key == CRAFT_KEY_RADAR) {
+        if(!typing) {
+            if(radar)
+                radar = 0;
+            else
+                radar = 1;
+        }
+    }
     if (key == GLFW_KEY_ENTER) {
         if (typing) {
             typing = 0;
@@ -1292,6 +1301,63 @@ int main(int argc, char **argv) {
                 text_position_loc, text_uv_loc,
                 tx, ty, ts, text_buffer);
         }
+
+        // Render radar
+        glUseProgram(text_program);
+        glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
+        glUniform1i(text_sampler_loc, 1);
+        char radar_buffer[1024];
+        char updown[2];
+        float ts1 = 8;
+        float tx1 = 0;
+        float ty1 = 0;
+        float cx = width / 2;
+        float cy = height / 2;
+        float distance = 0;
+        #define MAX_RADAR_DISTANCE 200
+        if(radar) {
+            for(int i = 0; i < player_count; i++) {
+                float degrees = 0;
+                if(players[i].id) {
+                    if(players[i].x >= x && players[i].z >= z) {
+                        degrees = 180 - DEGREES(atan((z - players[i].z) / (players[i].x - x))) - DEGREES(rx) - 360;
+                    }
+                    else if(players[i].x >= x && players[i].z <= z) {
+                        degrees = 180 + DEGREES(atan((players[i].z - z) / (players[i].x - x))) - DEGREES(rx) - 360;
+                    }
+                    else if(players[i].x <= x && players[i].z >= z) {
+                        degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x))) - DEGREES(rx) - 360;
+                    }
+                    else if(players[i].x <= x && players[i].z <= z) {
+                        degrees = DEGREES(atan((z - players[i].z)/(x - players[i].x))) - DEGREES(rx) - 360;
+                    }
+                    degrees = abs(fmod(degrees, 360.0)) + 180;
+                    degrees = abs(fmod(degrees, 360.0));
+                    distance = sqrt(pow(z - players[i].z, 2) + pow(x - players[i].x, 2));
+
+                    if(players[i].y > y)
+                        snprintf(updown,2,"%s","u");
+                    else
+                        snprintf(updown,2,"%s","d");
+
+                    if(distance > MAX_RADAR_DISTANCE)
+                       snprintf(radar_buffer,1024, "%i:%s - %0.0f", players[i].id, updown, distance);
+                    else if(distance > 30)
+                        snprintf(radar_buffer,1024, "%i:%s", players[i].id,updown);
+                    else
+                        snprintf(radar_buffer, 1024, "*%s",updown);
+
+                    tx1 = cx + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * cos(RADIANS(degrees));
+                    ty1 = cy + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * sin(RADIANS(degrees));
+
+                    print(
+                        text_position_loc, text_uv_loc,
+                        tx1, ty1, 8, radar_buffer);
+                }
+            }
+
+        }
+
 
         // RENDER 3-D HUD PARTS //
 

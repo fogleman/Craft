@@ -28,7 +28,7 @@ void make_character(
     float x, float y, float n, float m, char c);
 
 void make_inventory(
-                    float *vertex, float *texture,
-                    float x, float y, float n, float m, int s);
+    float *data,
+    float x, float y, float n, float m, int s);
 
 #endif

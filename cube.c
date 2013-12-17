@@ -368,27 +368,26 @@ void make_character(
 }
 
 void make_inventory(
-                    float *vertex, float *texture,
-                    float x, float y, float n, float m, int s)
+    float *data,
+    float x, float y, float n, float m, int s)
 {
-    float *v = vertex;
-    float *t = texture;
+    float *d = data;
     float z = 0.5;
     float a = z;
     float b = z * 2;
     int w = s;
     float du = w * a;
     float p = 0;
-    *(v++) = x - n; *(v++) = y - m;
-    *(v++) = x + n; *(v++) = y - m;
-    *(v++) = x + n; *(v++) = y + m;
-    *(v++) = x - n; *(v++) = y - m;
-    *(v++) = x + n; *(v++) = y + m;
-    *(v++) = x - n; *(v++) = y + m;
-    *(t++) = du + 0; *(t++) = p;
-    *(t++) = du + a; *(t++) = p;
-    *(t++) = du + a; *(t++) = b - p;
-    *(t++) = du + 0; *(t++) = p;
-    *(t++) = du + a; *(t++) = b - p;
-    *(t++) = du + 0; *(t++) = b - p;
+    *(d++) = x - n;  *(d++) = y - m;
+    *(d++) = du + 0; *(d++) = p;
+    *(d++) = x + n;  *(d++) = y - m;
+    *(d++) = du + a; *(d++) = p;
+    *(d++) = x + n;  *(d++) = y + m;
+    *(d++) = du + a; *(d++) = b - p;
+    *(d++) = x - n;  *(d++) = y - m;
+    *(d++) = du + 0; *(d++) = p;
+    *(d++) = x + n;  *(d++) = y + m;
+    *(d++) = du + a; *(d++) = b - p;
+    *(d++) = x - n;  *(d++) = y + m;
+    *(d++) = du + 0; *(d++) = b - p;
 }

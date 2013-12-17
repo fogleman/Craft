@@ -171,22 +171,18 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
-/* void gen_inventory_buffers(
-    GLuint *position_buffer, GLuint *uv_buffer,
-    float x, float y, float n, int sel)
-{
+GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
     int length = INVENTORY_SLOTS;
-    GLfloat *position_data, *uv_data;
-    malloc_buffers(2, length, &position_data, 0, &uv_data);
+    GLfloat *data = malloc_faces(4, length);
+    x -= n * (length - 1) / 2;
     for (int i = 0; i < length; i ++) {
         make_inventory(
-            position_data + i * 16,
-            uv_data + i * 16,
-            x, y, n / 2, n, sel ? 1 : 0);
+            data + i * 24,
+            x, y, n / 2, n / 2, sel == i ? 1 : 0);
         x += n;
     }
-    gen_buffers(2, length, position_data, 0, uv_data, position_buffer, 0, uv_buffer);
-} */
+    return gen_faces(4, length, data);
+}
 
 void draw_chunk(
     Chunk *chunk, GLuint position_loc, GLuint normal_loc, GLuint uv_loc)
@@ -250,20 +246,21 @@ void draw_text(
 }
 
 void draw_inventory(
-    GLuint position_buffer, GLuint uv_buffer,
+    GLuint buffer,
     GLuint position_loc, GLuint uv_loc, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(position_loc);
     glEnableVertexAttribArray(uv_loc);
-    glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-    glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
-    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(position_loc, 2, GL_FLOAT, GL_FALSE,
+                          sizeof(GLfloat) * 4, 0);
+    glVertexAttribPointer(uv_loc, 2, GL_FLOAT, GL_FALSE,
+                          sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
     glDrawArrays(GL_TRIANGLES, 0, length * 6);
     glDisableVertexAttribArray(position_loc);
     glDisableVertexAttribArray(uv_loc);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDisable(GL_BLEND);
 }
 
@@ -305,21 +302,15 @@ void print(
     glDeleteBuffers(1, &buffer);
 }
 
-/* void draw_inventory_slots(
+void draw_inventory_slots(
            GLuint position_loc, GLuint uv_loc,
            float x, float y, float n, int sel)
 {
-    GLuint position_buffer = 0;
-    GLuint uv_buffer = 0;
-    gen_inventory_buffers(
-                     &position_buffer, &uv_buffer,
-                     x, y, n, sel);
-    draw_inventory(
-              position_buffer, uv_buffer,
-              position_loc, uv_loc, INVENTORY_SLOTS);
-    glDeleteBuffers(1, &position_buffer);
-    glDeleteBuffers(1, &uv_buffer);
-} */
+    GLuint buffer = gen_inventory_buffers(x, y, n, sel);
+    
+    draw_inventory(buffer, position_loc, uv_loc, INVENTORY_SLOTS);
+    glDeleteBuffers(1, &buffer);
+}
 
 Player *find_player(Player *players, int player_count, int id) {
     for (int i = 0; i < player_count; i++) {
@@ -944,8 +935,8 @@ int main(int argc, char **argv) {
     glGenTextures(1, &inventory_texture);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, inventory_texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("inventory.png");
     
     GLuint block_program = load_program(
@@ -1342,13 +1333,16 @@ int main(int argc, char **argv) {
 
         // RENDER INVENTORY //
 
+        glClear(GL_DEPTH_BUFFER_BIT);
         glUseProgram(inventory_program);
         glUniformMatrix4fv(inventory_matrix_loc, 1, GL_FALSE, matrix);
-        glUniform1i(inventory_sampler_loc, 1);
+        glUniform1i(inventory_sampler_loc, 2);
         
-        /* draw_inventory_slots(
+        draw_inventory_slots(
             inventory_position_loc, inventory_uv_loc,
-            0, 0, 16, inventory.selected); */
+            width / 2, 64, 96, inventory.selected);
+
+        glClear(GL_DEPTH_BUFFER_BIT);
         
         glUseProgram(block_program);
         glUniform3f(camera_loc, 1, 0, 5);
@@ -1364,7 +1358,7 @@ int main(int argc, char **argv) {
             if (inventory.items[item].count == 0)
                 continue;
             
-            set_matrix_item(matrix, width, height, item, INVENTORY_SLOTS, inventory.selected == item);
+            set_matrix_item(matrix, width, height, 64, 48, item, INVENTORY_SLOTS);
 
             // render selected item
             if (is_plant(block)) {

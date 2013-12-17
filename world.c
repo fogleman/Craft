@@ -21,8 +21,13 @@ void create_world(Map *map, int p, int q) {
             if (dx < 0 || dz < 0 || dx >= CHUNK_SIZE || dz >= CHUNK_SIZE) {
                 w = -1;
             }
+	
+	    // Add a base layer of stone.
+	    for (int y = 0; y < 3; y++) {
+		    map_set(map, x, y, z, 6);
+	    }
             // sand and grass terrain
-            for (int y = 0; y < h; y++) {
+            for (int y = 3; y < h; y++) {
                 map_set(map, x, y, z, w);
             }
             // TODO: w = -1 if outside of chunk
@@ -49,7 +54,7 @@ void create_world(Map *map, int p, int q) {
                             for (int oz = -3; oz <= 3; oz++) {
                                 int d = (ox * ox) + (oz * oz) +
                                     (y - (h + 4)) * (y - (h + 4));
-				if (d < 11 && simplex3(x + ox, y, z + oz, 4, 0.3, 2) > 0.4) {
+				if ((d < 11) && simplex3(x + ox, y, z + oz, 4, 0.3, 2) > 0.4) {
                                     map_set(map, x + ox, y, z + oz, 15);
                                 }
                             }

@@ -24,7 +24,6 @@
 #define CRAFT_KEY_BLOCK_TYPE 'E'
 #define CRAFT_KEY_ZOOM GLFW_KEY_LEFT_SHIFT
 #define CRAFT_KEY_ORTHO 'F'
-#define CRAFT_KEY_RADAR 'R'
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 

@@ -80,7 +80,7 @@ int is_destructable(int w) {
 }
 
 int is_selectable(int w) {
-    return w > 0 && w <= 11;
+    return w > 0 && w <= 14;
 }
 
 int chunked(float x) {
@@ -703,8 +703,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key >= '1' && key <= '9') {
             block_type = key - '1' + 1;
         }
+        if (key == '0') {
+            block_type = 10;
+        }
         if (key == CRAFT_KEY_BLOCK_TYPE) {
-            block_type = block_type % 11 + 1;
+            block_type = block_type % 14 + 1;
         }
     }
 }

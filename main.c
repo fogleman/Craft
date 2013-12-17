@@ -108,9 +108,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         float m = cosf(ry);
         float y = sinf(ry);
         if (sx) {
-            if (!sz) {
-                y = 0;
-            }
+            y = 0;
             m = 1;
         }
         if (sz > 0) {

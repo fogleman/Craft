@@ -19,9 +19,6 @@ typedef struct {
     double since;
 } FPS;
 
-#define INVENTORY_SLOTS 9
-#define MAX_SLOT_SIZE 64
-
 typedef struct {
     int w;
     int count;

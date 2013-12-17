@@ -36,6 +36,7 @@ static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
 static int middle_click = 0;
+static int drop = 0;
 static int teleport = 0;
 static int flying = 0;
 static int ortho = 0;
@@ -751,6 +752,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_BLOCK_TYPE) {
             inventory.selected = (inventory.selected + 1) % INVENTORY_SLOTS;
         }
+        if (key == CRAFT_KEY_DROP) {
+            drop = 1;
+        }
     }
 }
 
@@ -1168,6 +1172,19 @@ int main(int argc, char **argv) {
             }
         }
 
+        if (drop) {
+            drop = 0;
+            int amount = 1;
+            if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
+                amount = 64;
+            
+            inventory.items[inventory.selected].count -= amount;
+            if (inventory.items[inventory.selected].count <= 0) {
+                inventory.items[inventory.selected].count = 0;
+                inventory.items[inventory.selected].w = 0;
+            }
+        }
+        
         if (teleport) {
             teleport = 0;
             if (player_count) {
@@ -1340,7 +1357,7 @@ int main(int argc, char **argv) {
         
         draw_inventory_slots(
             inventory_position_loc, inventory_uv_loc,
-            width / 2, 64, 96, inventory.selected);
+            width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
 
         glClear(GL_DEPTH_BUFFER_BIT);
         
@@ -1358,7 +1375,7 @@ int main(int argc, char **argv) {
             if (inventory.items[item].count == 0)
                 continue;
             
-            set_matrix_item(matrix, width, height, 64, 48, item, INVENTORY_SLOTS);
+            set_matrix_item(matrix, width, height, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * .75, item, INVENTORY_SLOTS);
 
             // render selected item
             if (is_plant(block)) {
@@ -1382,7 +1399,7 @@ int main(int argc, char **argv) {
         glClear(GL_DEPTH_BUFFER_BIT);
         set_matrix_2d(matrix, width, height);
 
-        glUseProgram(text_program);
+        glUseProgram(inventory_program);
         glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
         glUniform1i(text_sampler_loc, 1);
         for (int item = 0; item < INVENTORY_SLOTS; item ++) {
@@ -1393,13 +1410,13 @@ int main(int argc, char **argv) {
             if (inventory.items[item].count == 0)
                 continue;
             
-            char text_buffer[4];
-            float ts = 24;
-            float sep = 96;
-            float tx = width / 2 + sep * (item - ((INVENTORY_SLOTS - 1) / 2));
+            char text_buffer[16];
+            float ts = INVENTORY_FONT_SIZE;
+            float sep = INVENTORY_ITEM_SIZE * 1.5;
+            float tx = width / 2 + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
             float ty = sep / 3;
             snprintf(
-                     text_buffer, 4, "%d", inventory.items[item].count);
+                     text_buffer, 16, "%d", inventory.items[item].count);
             tx += ts * (2.5 - strlen(text_buffer));
             print(
                   text_position_loc, text_uv_loc, LEFT,

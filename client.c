@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "client.h"
 #include "tinycthread.h"
+#include "config.h"
 
 #define QUEUE_SIZE 65536
 #define BUFFER_SIZE 4096

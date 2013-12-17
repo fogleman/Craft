@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "db.h"
 #include "sqlite3.h"
+#include "config.h"
 
 static int db_enabled = 0;
 static sqlite3 *db;

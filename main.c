@@ -891,6 +891,7 @@ int main(int argc, char **argv) {
     Chunk chunks[MAX_CHUNKS];
     int chunk_count = 0;
 
+    Player me = {0, 0, 0, 0, 0, 0, 0};
     Player players[MAX_PLAYERS];
     int player_count = 0;
 
@@ -1123,6 +1124,7 @@ int main(int argc, char **argv) {
         int p = chunked(x);
         int q = chunked(z);
         ensure_chunks(chunks, &chunk_count, x, y, z, 0);
+        update_player(&me, x, y, z, rx, ry);
 
         // RENDER 3-D SCENE //
 
@@ -1148,6 +1150,7 @@ int main(int argc, char **argv) {
         }
 
         // render players
+        draw_player(&block_attrib, &me);
         for (int i = 0; i < player_count; i++) {
             Player *player = players + i;
             draw_player(&block_attrib, player);

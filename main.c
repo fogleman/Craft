@@ -28,21 +28,10 @@
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
-
-static GLFWwindow *window;
-static int follow = -1;
-static int observe = 0;
-static int exclusive = 1;
-static int left_click = 0;
-static int right_click = 0;
-static int middle_click = 0;
-static int teleport = 0;
-static int flying = 0;
-static int block_type = 1;
-static int ortho = 0;
-static float fov = 65.0;
-static int typing = 0;
-static char typing_buffer[TEXT_BUFFER_SIZE] = {0};
+#define OBSERVE_ME 0
+#define OBSERVE_ME_YOU 1
+#define OBSERVE_YOU_ME 2
+#define OBSERVE_YOU 3
 
 typedef struct {
     Map map;
@@ -80,6 +69,25 @@ typedef struct {
     GLuint camera;
     GLuint timer;
 } Attrib;
+
+static Chunk chunks[MAX_CHUNKS];
+static int chunk_count = 0;
+static Player players[MAX_PLAYERS];
+static int player_count = 0;
+static GLFWwindow *window;
+static int follow = 0;
+static int observe = 0;
+static int exclusive = 1;
+static int left_click = 0;
+static int right_click = 0;
+static int middle_click = 0;
+static int teleport = 0;
+static int flying = 0;
+static int block_type = 1;
+static int ortho = 0;
+static float fov = 65.0;
+static int typing = 0;
+static char typing_buffer[TEXT_BUFFER_SIZE] = {0};
 
 int is_plant(int w) {
     return w > 16;
@@ -257,18 +265,7 @@ void draw_player(Attrib *attrib, Player *player) {
     draw_cube(attrib, player->buffer);
 }
 
-void print(
-    Attrib *attrib, int justify,
-    float x, float y, float n, char *text)
-{
-    int length = strlen(text);
-    x -= n * justify * (length - 1) / 2;
-    GLuint buffer = gen_text_buffer(x, y, n, text);
-    draw_text(attrib, buffer, length);
-    del_buffer(buffer);
-}
-
-Player *find_player(Player *players, int player_count, int id) {
+Player *find_player(int id) {
     for (int i = 0; i < player_count; i++) {
         Player *player = players + i;
         if (player->id == id) {
@@ -320,19 +317,19 @@ void interpolate_player(Player *player) {
         0);
 }
 
-void delete_player(Player *players, int *player_count, int id) {
-    Player *player = find_player(players, *player_count, id);
+void delete_player(int id) {
+    Player *player = find_player(id);
     if (!player) {
         return;
     }
-    int count = *player_count;
+    int count = player_count;
     del_buffer(player->buffer);
     Player *other = players + (--count);
     memcpy(player, other, sizeof(Player));
-    *player_count = count;
+    player_count = count;
 }
 
-Chunk *find_chunk(Chunk *chunks, int chunk_count, int p, int q) {
+Chunk *find_chunk(int p, int q) {
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
         if (chunk->p == p && chunk->q == q) {
@@ -367,13 +364,13 @@ int chunk_visible(Chunk *chunk, float *matrix) {
     return 0;
 }
 
-int highest_block(Chunk *chunks, int chunk_count, float x, float z) {
+int highest_block(float x, float z) {
     int result = -1;
     int nx = roundf(x);
     int nz = roundf(z);
     int p = chunked(x);
     int q = chunked(z);
-    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
         MAP_FOR_EACH(map, e) {
@@ -418,8 +415,7 @@ int _hit_test(
 }
 
 int hit_test(
-    Chunk *chunks, int chunk_count, int previous,
-    float x, float y, float z, float rx, float ry,
+    int previous, float x, float y, float z, float rx, float ry,
     int *bx, int *by, int *bz)
 {
     int result = 0;
@@ -449,14 +445,11 @@ int hit_test(
     return result;
 }
 
-int collide(
-    Chunk *chunks, int chunk_count,
-    int height, float *x, float *y, float *z)
-{
+int collide(int height, float *x, float *y, float *z) {
     int result = 0;
     int p = chunked(*x);
     int q = chunked(*z);
-    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    Chunk *chunk = find_chunk(p, q);
     if (!chunk) {
         return result;
     }
@@ -589,14 +582,11 @@ void create_chunk(Chunk *chunk, int p, int q) {
     client_chunk(p, q, key);
 }
 
-void ensure_chunks(
-    Chunk *chunks, int *chunk_count,
-    float x, float y, float z, int force)
-{
+void ensure_chunks(float x, float y, float z, int force) {
     int p = chunked(x);
     int q = chunked(z);
-    int count = *chunk_count;
-    if (follow < 0) {
+    int count = chunk_count;
+    if (0) {
         for (int i = 0; i < count; i++) {
             Chunk *chunk = chunks + i;
             if (chunk_distance(chunk, p, q) >= DELETE_CHUNK_RADIUS) {
@@ -620,7 +610,7 @@ void ensure_chunks(
                 }
                 int a = p + dp;
                 int b = q + dq;
-                Chunk *chunk = find_chunk(chunks, count, a, b);
+                Chunk *chunk = find_chunk(a, b);
                 if (chunk) {
                     if (chunk->dirty) {
                         gen_chunk_buffer(chunk);
@@ -637,14 +627,11 @@ void ensure_chunks(
             }
         }
     }
-    *chunk_count = count;
+    chunk_count = count;
 }
 
-void _set_block(
-    Chunk *chunks, int chunk_count,
-    int p, int q, int x, int y, int z, int w)
-{
-    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+void _set_block(int p, int q, int x, int y, int z, int w) {
+    Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
         if (map_get(map, x, y, z) != w) {
@@ -655,40 +642,145 @@ void _set_block(
     db_insert_block(p, q, x, y, z, w);
 }
 
-void set_block(
-    Chunk *chunks, int chunk_count,
-    int x, int y, int z, int w)
-{
+void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
-    _set_block(chunks, chunk_count, p, q, x, y, z, w);
+    _set_block(p, q, x, y, z, w);
     if (chunked(x - 1) != p) {
-        _set_block(chunks, chunk_count, p - 1, q, x, y, z, -w);
+        _set_block(p - 1, q, x, y, z, -w);
     }
     if (chunked(x + 1) != p) {
-        _set_block(chunks, chunk_count, p + 1, q, x, y, z, -w);
+        _set_block(p + 1, q, x, y, z, -w);
     }
     if (chunked(z - 1) != q) {
-        _set_block(chunks, chunk_count, p, q - 1, x, y, z, -w);
+        _set_block(p, q - 1, x, y, z, -w);
     }
     if (chunked(z + 1) != q) {
-        _set_block(chunks, chunk_count, p, q + 1, x, y, z, -w);
+        _set_block(p, q + 1, x, y, z, -w);
     }
     client_block(x, y, z, w);
 }
 
-int get_block(
-    Chunk *chunks, int chunk_count,
-    int x, int y, int z)
-{
+int get_block(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
-    Chunk *chunk = find_chunk(chunks, chunk_count, p, q);
+    Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
         return map_get(map, x, y, z);
     }
     return 0;
+}
+
+void render_chunks(Attrib *attrib, int width, int height, Player *player) {
+    State *s = &player->state;
+    ensure_chunks(s->x, s->y, s->z, 0);
+    int p = chunked(s->x);
+    int q = chunked(s->z);
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform3f(attrib->camera, s->x, s->y, s->z);
+    glUniform1i(attrib->sampler, 0);
+    glUniform1f(attrib->timer, glfwGetTime());
+    for (int i = 0; i < chunk_count; i++) {
+        Chunk *chunk = chunks + i;
+        if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+            continue;
+        }
+        if (s->y < 100 && !chunk_visible(chunk, matrix)) {
+            continue;
+        }
+        draw_chunk(attrib, chunk);
+    }
+}
+
+void render_players(Attrib *attrib, int width, int height, Player *player) {
+    State *s = &player->state;
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform3f(attrib->camera, s->x, s->y, s->z);
+    glUniform1i(attrib->sampler, 0);
+    glUniform1f(attrib->timer, glfwGetTime());
+    for (int i = 0; i < player_count; i++) {
+        Player *other = players + i;
+        if (other != player) {
+            draw_player(attrib, other);
+        }
+    }
+}
+
+void render_wireframe(Attrib *attrib, int width, int height, Player *player) {
+    State *s = &player->state;
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    int hx, hy, hz;
+    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+    if (is_obstacle(hw)) {
+        glUseProgram(attrib->program);
+        glLineWidth(1);
+        glEnable(GL_COLOR_LOGIC_OP);
+        glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+        GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
+        draw_lines(attrib, wireframe_buffer, 3, 48);
+        del_buffer(wireframe_buffer);
+        glDisable(GL_COLOR_LOGIC_OP);
+    }
+}
+
+void render_crosshairs(Attrib *attrib, int width, int height) {
+    float matrix[16];
+    set_matrix_2d(matrix, width, height);
+    glUseProgram(attrib->program);
+    glLineWidth(4);
+    glEnable(GL_COLOR_LOGIC_OP);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    GLuint crosshair_buffer = gen_crosshair_buffer(width, height);
+    draw_lines(attrib, crosshair_buffer, 2, 4);
+    del_buffer(crosshair_buffer);
+    glDisable(GL_COLOR_LOGIC_OP);
+}
+
+void render_item(Attrib *attrib, int width, int height) {
+    float matrix[16];
+    set_matrix_item(matrix, width, height);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform3f(attrib->camera, 0, 0, 5);
+    glUniform1i(attrib->sampler, 0);
+    glUniform1f(attrib->timer, glfwGetTime());
+    if (is_plant(block_type)) {
+        GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, block_type);
+        draw_plant(attrib, buffer);
+        del_buffer(buffer);
+    }
+    else {
+        GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, block_type);
+        draw_cube(attrib, buffer);
+        del_buffer(buffer);
+    }
+}
+
+void render_text(
+    Attrib *attrib, int width, int height,
+    int justify, float x, float y, float n, char *text)
+{
+    float matrix[16];
+    set_matrix_2d(matrix, width, height);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 1);
+    int length = strlen(text);
+    x -= n * justify * (length - 1) / 2;
+    GLuint buffer = gen_text_buffer(x, y, n, text);
+    draw_text(attrib, buffer, length);
+    del_buffer(buffer);
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -743,10 +835,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             block_type = block_type % 14 + 1;
         }
         if (key == CRAFT_KEY_OBSERVE) {
-            observe = (observe + 1) % 3;
-            if (follow < 0) {
-                teleport = 1;
-            }
+            observe = (observe + 1) % 4;
         }
     }
 }
@@ -932,27 +1021,21 @@ int main(int argc, char **argv) {
 
     program = load_program(
         "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
+    text_attrib.program = program;
     text_attrib.position = glGetAttribLocation(program, "position");
     text_attrib.uv = glGetAttribLocation(program, "uv");
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
 
-    GLuint item_buffer = 0;
-    int previous_block_type = 0;
     char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
     int message_index = 0;
     double last_commit = glfwGetTime();
     double last_update = glfwGetTime();
 
-    Chunk chunks[MAX_CHUNKS];
-    int chunk_count = 0;
-
-    Player me;
-    me.id = 0;
-    me.buffer = 0;
-
-    Player players[MAX_PLAYERS];
-    int player_count = 0;
+    Player *me = players;
+    me->id = 0;
+    me->buffer = 0;
+    player_count = 1;
 
     FPS fps = {0, 0, 0};
     float matrix[16];
@@ -966,9 +1049,9 @@ int main(int argc, char **argv) {
     double py = 0;
 
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
-    ensure_chunks(chunks, &chunk_count, x, y, z, 1);
+    ensure_chunks(x, y, z, 1);
     if (!loaded) {
-        y = highest_block(chunks, chunk_count, x, z) + 2;
+        y = highest_block(x, z) + 2;
     }
 
     glfwGetCursorPos(window, &px, &py);
@@ -988,6 +1071,7 @@ int main(int argc, char **argv) {
             db_commit();
         }
 
+        // HANDLE MOUSE INPUT //
         if (exclusive && (px || py)) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
@@ -1009,6 +1093,7 @@ int main(int argc, char **argv) {
             glfwGetCursorPos(window, &px, &py);
         }
 
+        // HANDLE MOVEMENT //
         int sz = 0;
         int sx = 0;
         if (!typing) {
@@ -1072,59 +1157,54 @@ int main(int argc, char **argv) {
             x += vx;
             y += vy + dy * ut;
             z += vz;
-            if (collide(chunks, chunk_count, 2, &x, &y, &z)) {
+            if (collide(2, &x, &y, &z)) {
                 dy = 0;
             }
         }
         if (y < 0) {
-            y = highest_block(chunks, chunk_count, x, z) + 2;
+            y = highest_block(x, z) + 2;
         }
 
+        // HANDLE CALLBACK FLAGS //
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;
-            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
+            int hw = hit_test(0, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_destructable(hw)) {
-                set_block(chunks, chunk_count, hx, hy, hz, 0);
-                int above = get_block(chunks, chunk_count, hx, hy + 1, hz);
+                set_block(hx, hy, hz, 0);
+                int above = get_block(hx, hy + 1, hz);
                 if (is_plant(above)) {
-                    set_block(chunks, chunk_count, hx, hy + 1, hz, 0);
+                    set_block(hx, hy + 1, hz, 0);
                 }
             }
         }
-
         if (right_click) {
             right_click = 0;
             int hx, hy, hz;
-            int hw = hit_test(chunks, chunk_count, 1, x, y, z, rx, ry,
+            int hw = hit_test(1, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_obstacle(hw)) {
                 if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(chunks, chunk_count, hx, hy, hz, block_type);
+                    set_block(hx, hy, hz, block_type);
                 }
             }
         }
-
         if (middle_click) {
             middle_click = 0;
             int hx, hy, hz;
-            int hw = hit_test(chunks, chunk_count, 0, x, y, z, rx, ry,
+            int hw = hit_test(0, x, y, z, rx, ry,
                 &hx, &hy, &hz);
             if (is_selectable(hw)) {
                 block_type = hw;
             }
         }
-
         if (teleport) {
             teleport = 0;
-            follow++;
-            if (follow >= player_count) {
-                follow = -1;
-                observe = 0;
-            }
+            follow = (follow + 1) % player_count;
         }
 
+        // HANDLE DATA FROM SERVER //
         char buffer[RECV_BUFFER_SIZE];
         int count = 0;
         while (count < 1024 && client_recv(buffer, RECV_BUFFER_SIZE)) {
@@ -1134,15 +1214,15 @@ int main(int argc, char **argv) {
                 &ux, &uy, &uz, &urx, &ury) == 5)
             {
                 x = ux; y = uy; z = uz; rx = urx; ry = ury;
-                ensure_chunks(chunks, &chunk_count, x, y, z, 1);
+                ensure_chunks(x, y, z, 1);
             }
             int bp, bq, bx, by, bz, bw;
             if (sscanf(buffer, "B,%d,%d,%d,%d,%d,%d",
                 &bp, &bq, &bx, &by, &bz, &bw) == 6)
             {
-                _set_block(chunks, chunk_count, bp, bq, bx, by, bz, bw);
+                _set_block(bp, bq, bx, by, bz, bw);
                 if (player_intersects_block(2, x, y, z, bx, by, bz)) {
-                    y = highest_block(chunks, chunk_count, x, z) + 2;
+                    y = highest_block(x, z) + 2;
                 }
             }
             int pid;
@@ -1150,7 +1230,7 @@ int main(int argc, char **argv) {
             if (sscanf(buffer, "P,%d,%f,%f,%f,%f,%f",
                 &pid, &px, &py, &pz, &prx, &pry) == 6)
             {
-                Player *player = find_player(players, player_count, pid);
+                Player *player = find_player(pid);
                 if (!player && player_count < MAX_PLAYERS) {
                     player = players + player_count;
                     player_count++;
@@ -1163,7 +1243,7 @@ int main(int argc, char **argv) {
                 }
             }
             if (sscanf(buffer, "D,%d", &pid) == 1) {
-                delete_player(players, &player_count, pid);
+                delete_player(pid);
             }
             int kp, kq, key;
             if (sscanf(buffer, "K,%d,%d,%d", &kp, &kq, &key) == 3) {
@@ -1178,162 +1258,68 @@ int main(int argc, char **argv) {
             }
         }
 
+        // SEND DATA TO SERVER //
         if (now - last_update > 0.1) {
             last_update = now;
             client_position(x, y, z, rx, ry);
         }
 
-        int p = chunked(x);
-        int q = chunked(z);
-        update_player(&me, x, y, z, rx, ry, 0);
-        ensure_chunks(chunks, &chunk_count, x, y, z, 0);
-
-        if (follow >= 0 && follow < player_count) {
-            Player *player = players + follow;
-            State *s = &player->state;
-            ensure_chunks(chunks, &chunk_count, s->x, s->y, s->z, 0);
+        // UPDATE PLAYERS //
+        follow = follow % player_count;
+        update_player(me, x, y, z, rx, ry, 0);
+        for (int i = 1; i < player_count; i++) {
+            interpolate_player(players + i);
         }
-        else {
-            follow = -1;
-            observe = 0;
+
+        Player *player = me;
+        if (observe == OBSERVE_YOU_ME || observe == OBSERVE_YOU) {
+            player = players + follow;
         }
 
         // RENDER 3-D SCENE //
-
-        Player *player = &me;
-        if (observe) {
-            player = players + follow;
-        }
-        State *s = &player->state;
-
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
-        set_matrix_3d(
-            matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+        render_chunks(&block_attrib, width, height, player);
+        render_players(&block_attrib, width, height, player);
+        render_wireframe(&line_attrib, width, height, player);
 
-        // render chunks
-        glUseProgram(block_attrib.program);
-        glUniformMatrix4fv(block_attrib.matrix, 1, GL_FALSE, matrix);
-        glUniform3f(block_attrib.camera, s->x, s->y, s->z);
-        glUniform1i(block_attrib.sampler, 0);
-        glUniform1f(block_attrib.timer, glfwGetTime());
-        for (int i = 0; i < chunk_count; i++) {
-            Chunk *chunk = chunks + i;
-            // TODO: check chunk_distance relative to player
-            if (follow < 0) {
-                if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
-                    continue;
-                }
-                if (y < 100 && !chunk_visible(chunk, matrix)) {
-                    continue;
-                }
-            }
-            draw_chunk(&block_attrib, chunk);
-        }
-
-        // render players
-        if (observe) {
-            draw_player(&block_attrib, &me);
-        }
-        for (int i = 0; i < player_count; i++) {
-            Player *other = players + i;
-            interpolate_player(other);
-            if (other != player) {
-                draw_player(&block_attrib, other);
-            }
-        }
-
-        // render focused block wireframe
-        int hx, hy, hz;
-        int hw = hit_test(
-            chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
-        if (is_obstacle(hw)) {
-            glUseProgram(line_attrib.program);
-            glLineWidth(1);
-            glEnable(GL_COLOR_LOGIC_OP);
-            glUniformMatrix4fv(line_attrib.matrix, 1, GL_FALSE, matrix);
-            GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
-            draw_lines(&line_attrib, wireframe_buffer, 3, 48);
-            del_buffer(wireframe_buffer);
-            glDisable(GL_COLOR_LOGIC_OP);
-        }
-
-        // RENDER 2-D HUD PARTS //
-
+        // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
-        set_matrix_2d(matrix, width, height);
+        render_crosshairs(&line_attrib, width, height);
+        render_item(&block_attrib, width, height);
 
-        // render crosshairs
-        glUseProgram(line_attrib.program);
-        glLineWidth(4);
-        glEnable(GL_COLOR_LOGIC_OP);
-        glUniformMatrix4fv(line_attrib.matrix, 1, GL_FALSE, matrix);
-        GLuint crosshair_buffer = gen_crosshair_buffer(width, height);
-        draw_lines(&line_attrib, crosshair_buffer, 2, 4);
-        del_buffer(crosshair_buffer);
-        glDisable(GL_COLOR_LOGIC_OP);
-
-        // render text
-        glUseProgram(text_attrib.program);
-        glUniformMatrix4fv(text_attrib.matrix, 1, GL_FALSE, matrix);
-        glUniform1i(text_attrib.sampler, 1);
+        // RENDER TEXT //
         char text_buffer[1024];
         float ts = 12;
         float tx = ts / 2;
         float ty = height - ts;
         snprintf(
             text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d",
-            p, q, x, y, z, player_count, chunk_count, fps.fps);
-        print(&text_attrib, LEFT, tx, ty, ts, text_buffer);
+            chunked(x), chunked(z), x, y, z,
+            player_count, chunk_count, fps.fps);
+        render_text(&text_attrib, width, height,
+            LEFT, tx, ty, ts, text_buffer);
         for (int i = 0; i < MAX_MESSAGES; i++) {
             int index = (message_index + i) % MAX_MESSAGES;
             if (strlen(messages[index])) {
                 ty -= ts * 2;
-                print(&text_attrib, LEFT, tx, ty, ts, messages[index]);
+                render_text(&text_attrib, width, height,
+                    LEFT, tx, ty, ts, messages[index]);
             }
         }
         if (typing) {
             ty -= ts * 2;
             snprintf(text_buffer, 1024, "> %s", typing_buffer);
-            print(&text_attrib, LEFT, tx, ty, ts, text_buffer);
-        }
-
-        // RENDER 3-D HUD PARTS //
-
-        set_matrix_item(matrix, width, height);
-
-        // render selected item
-        if (block_type != previous_block_type) {
-            previous_block_type = block_type;
-            if (is_plant(block_type)) {
-                del_buffer(item_buffer);
-                item_buffer = gen_plant_buffer(0, 0, 0, 0.5, block_type);
-            }
-            else {
-                del_buffer(item_buffer);
-                item_buffer = gen_cube_buffer(0, 0, 0, 0.5, block_type);
-            }
-        }
-        glUseProgram(block_attrib.program);
-        glUniformMatrix4fv(block_attrib.matrix, 1, GL_FALSE, matrix);
-        glUniform3f(block_attrib.camera, 0, 0, 5);
-        glUniform1i(block_attrib.sampler, 0);
-        glUniform1f(block_attrib.timer, glfwGetTime());
-        if (is_plant(block_type)) {
-            draw_plant(&block_attrib, item_buffer);
-        }
-        else {
-            draw_cube(&block_attrib, item_buffer);
+            render_text(&text_attrib, width, height,
+                LEFT, tx, ty, ts, text_buffer);
         }
 
         // RENDER PICTURE IN PICTURE //
-
-        if (observe < 2 && follow >= 0) {
-            Player *player = players + follow;
-            if (observe) {
-                player = &me;
+        if (observe == OBSERVE_ME_YOU || observe == OBSERVE_YOU_ME) {
+            Player *player = me;
+            if (observe == OBSERVE_ME_YOU) {
+                player = players + follow;
             }
-            State *s = &player->state;
 
             int pw = 256;
             int ph = 256;
@@ -1352,31 +1338,9 @@ int main(int argc, char **argv) {
 
             glClear(GL_DEPTH_BUFFER_BIT);
             glViewport(width - pw - 32, 32, pw, ph);
-            set_matrix_3d(
-                matrix, pw, ph, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
 
-            // render chunks
-            glUseProgram(block_attrib.program);
-            glUniformMatrix4fv(block_attrib.matrix, 1, GL_FALSE, matrix);
-            glUniform3f(block_attrib.camera, s->x, s->y, s->z);
-            glUniform1i(block_attrib.sampler, 0);
-            glUniform1f(block_attrib.timer, glfwGetTime());
-            for (int i = 0; i < chunk_count; i++) {
-                Chunk *chunk = chunks + i;
-                // TODO: check chunk_distance relative to player
-                draw_chunk(&block_attrib, chunk);
-            }
-
-            // render players
-            if (!observe) {
-                draw_player(&block_attrib, &me);
-            }
-            for (int i = 0; i < player_count; i++) {
-                Player *other = players + i;
-                if (other != player) {
-                    draw_player(&block_attrib, other);
-                }
-            }
+            render_chunks(&block_attrib, pw, ph, player);
+            render_players(&block_attrib, pw, ph, player);
         }
 
         // swap buffers

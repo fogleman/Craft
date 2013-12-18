@@ -28,6 +28,8 @@ typedef struct {
 typedef struct {
     Item *items;
     int selected;
+    int highlighted;
+    Item holding;
 } Inventory;
 
 int rand_int(int n);

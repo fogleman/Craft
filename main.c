@@ -955,7 +955,7 @@ void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_a
 void render_inventory_screen(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
                       float x, float y, float n, int sel) {
     for (int row = 0; row < INVENTORY_ROWS; row ++) {
-        render_inventory_bar(window_attrib, x, y + n*row, n, -1);
+        render_inventory_bar(window_attrib, x, y + n*row, n, sel - (row * INVENTORY_SLOTS));
         glClear(GL_DEPTH_BUFFER_BIT);
         render_inventory_items(item_attrib, x, y + n*row, n, row);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -963,56 +963,74 @@ void render_inventory_screen(Attrib *window_attrib, Attrib *item_attrib, Attrib 
     }
 }
 
+int mouse_to_inventory(int width, int height, float x, float y, float n) {
+    /* .. 0 .. 1 .. 2 .. 3 .. 4 .. 5 .. 6 .. 7 .. 8 .. */
+    /* |---------------------------------------------| */
+    int xcell = round((INVENTORY_SLOTS - 1) / 2. + ((x - width / 2.) / n));
+    int ycell = 0.5 - (y - height / 2.) / n;
+
+    if (xcell < 0 || ycell < 0 || xcell > INVENTORY_SLOTS || ycell > INVENTORY_ROWS)
+        return -1;
+    
+    return xcell + (ycell * INVENTORY_SLOTS);
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         return;
     }
-    if (key == GLFW_KEY_BACKSPACE) {
-        if (typing) {
-            int n = strlen(typing_buffer);
-            if (n > 0) {
-                typing_buffer[n - 1] = '\0';
+    if (!inventory_screen) {
+        if (key == GLFW_KEY_BACKSPACE) {
+            if (typing) {
+                int n = strlen(typing_buffer);
+                if (n > 0) {
+                    typing_buffer[n - 1] = '\0';
+                }
             }
         }
     }
     if (action != GLFW_PRESS) {
         return;
     }
-    if (key == GLFW_KEY_ESCAPE) {
-        if (typing) {
-            typing = 0;
+    if (!inventory_screen) {
+        if (key == GLFW_KEY_ESCAPE) {
+            if (typing) {
+                typing = 0;
+            }
+            else if (exclusive) {
+                exclusive = 0;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
         }
-        else if (exclusive) {
-            exclusive = 0;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-    }
-    if (key == GLFW_KEY_ENTER) {
-        if (typing) {
-            typing = 0;
-            client_talk(typing_buffer);
-        }
-        else {
-            if (mods & GLFW_MOD_SUPER) {
-                right_click = 1;
+        if (key == GLFW_KEY_ENTER) {
+            if (typing) {
+                typing = 0;
+                client_talk(typing_buffer);
             }
             else {
-                left_click = 1;
+                if (mods & GLFW_MOD_SUPER) {
+                    right_click = 1;
+                }
+                else {
+                    left_click = 1;
+                }
             }
         }
     }
     if (!typing) {
-        if (key == CRAFT_KEY_FLY) {
-            flying = !flying;
-        }
-        if (key >= '1' && key <= '9') {
-            inventory.selected = key - '1';
-        }
-        if (key == CRAFT_KEY_BLOCK_TYPE) {
-            inventory.selected = (inventory.selected + 1) % INVENTORY_SLOTS;
-        }
-        if (key == CRAFT_KEY_DROP) {
-            drop = 1;
+        if (!inventory_screen) {
+            if (key == CRAFT_KEY_FLY) {
+                flying = !flying;
+            }
+            if (key >= '1' && key <= '9') {
+                inventory.selected = key - '1';
+            }
+            if (key == CRAFT_KEY_BLOCK_TYPE) {
+                inventory.selected = (inventory.selected + 1) % INVENTORY_SLOTS;
+            }
+            if (key == CRAFT_KEY_DROP) {
+                drop = 1;
+            }
         }
         if (key == CRAFT_KEY_INVENTORY) {
             inventory_toggle = 1;
@@ -1031,7 +1049,7 @@ void on_char(GLFWwindow *window, unsigned int u) {
             }
         }
     }
-    else {
+    else if (!inventory_screen) {
         if (u == CRAFT_KEY_CHAT) {
             typing = 1;
             typing_buffer[0] = '\0';
@@ -1081,7 +1099,7 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
                 double mx, my;
                 glfwGetCursorPos(window, &mx, &my);
                 
-                //TODO: something
+                int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
             } else {
                 exclusive = 1;
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -1339,7 +1357,8 @@ int main(int argc, char **argv) {
         
         // HANDLE MOVEMENT //
         if (inventory_screen) {
-            //TODO: Something
+            int sel = mouse_to_inventory(width, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
+            inventory.highlighted = sel;
         } else {
             int sz = 0;
             int sx = 0;
@@ -1645,7 +1664,7 @@ int main(int argc, char **argv) {
         render_inventory(&inventory_attrib, &block_attrib, &text_attrib, width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
         
         if (inventory_screen) {
-            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
+            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
         }
         
         // swap buffers

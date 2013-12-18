@@ -594,8 +594,10 @@ void delete_chunks() {
         if (chunk_distance(chunk, p1, q1) < DELETE_CHUNK_RADIUS) {
             continue;
         }
-        if (chunk_distance(chunk, p2, q2) < DELETE_CHUNK_RADIUS) {
-            continue;
+        if (observe != OBSERVE_ME) {
+            if (chunk_distance(chunk, p2, q2) < DELETE_CHUNK_RADIUS) {
+                continue;
+            }
         }
         map_free(&chunk->map);
         del_buffer(chunk->buffer);

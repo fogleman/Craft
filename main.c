@@ -107,7 +107,7 @@ int is_destructable(int w) {
 }
 
 int is_selectable(int w) {
-    return w > 0 && w <= 14;
+    return w > 0 && w <= 15;
 }
 
 int chunked(float x) {
@@ -844,7 +844,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             block_type = 10;
         }
         if (key == CRAFT_KEY_BLOCK_TYPE) {
-            block_type = block_type % 14 + 1;
+            block_type = block_type % 15 + 1;
         }
         if (key == CRAFT_KEY_OBSERVE) {
             observe1 = (observe1 + 1) % player_count;
@@ -884,7 +884,7 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
         block_type++;
-        if (block_type > 14) {
+        if (block_type > 15) {
             block_type = 1;
         }
         ypos = 0;
@@ -892,7 +892,7 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     if (ypos > SCROLL_THRESHOLD) {
         block_type--;
         if (block_type < 1) {
-            block_type = 14;
+            block_type = 15;
         }
         ypos = 0;
     }
@@ -1051,8 +1051,8 @@ int main(int argc, char **argv) {
 
     Player *me = players;
     me->id = 0;
+    me->name[0] = '\0';
     me->buffer = 0;
-    strncpy(me->name, "me", MAX_NAME_LENGTH);
     player_count = 1;
 
     float x = (rand_double() - 0.5) * 10000;
@@ -1181,7 +1181,7 @@ int main(int argc, char **argv) {
             y = highest_block(x, z) + 2;
         }
 
-        // HANDLE CALLBACK FLAGS //
+        // HANDLE CLICKS //
         if (left_click) {
             left_click = 0;
             int hx, hy, hz;

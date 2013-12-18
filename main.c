@@ -1342,7 +1342,7 @@ int main(int argc, char **argv) {
             render_text(&text_attrib, width, height,
                 LEFT, tx, ty, ts, text_buffer);
         }
-        if (player != me) {
+        if (observe != OBSERVE_ME) {
             render_text(&text_attrib, width, height,
                 CENTER, width / 2, ts, ts, player->name);
         }

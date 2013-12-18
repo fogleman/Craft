@@ -24,7 +24,8 @@ typedef struct {
     int strafe_right;
     int jump;
     int fly;
-    int teleport;
+    int follow_next;
+    int observe_mode;
     int cycle_block;
     int ortho_view;
     int zoom;

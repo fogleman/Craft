@@ -844,6 +844,17 @@ void render_text(
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_RELEASE) {
+        return;
+    }
+    if (key == GLFW_KEY_BACKSPACE) {
+        if (typing) {
+            int n = strlen(typing_buffer);
+            if (n > 0) {
+                typing_buffer[n - 1] = '\0';
+            }
+        }
+    }
     if (action != GLFW_PRESS) {
         return;
     }
@@ -867,14 +878,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             }
             else {
                 left_click = 1;
-            }
-        }
-    }
-    if (key == GLFW_KEY_BACKSPACE) {
-        if (typing) {
-            int n = strlen(typing_buffer);
-            if (n > 0) {
-                typing_buffer[n - 1] = '\0';
             }
         }
     }

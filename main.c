@@ -1222,10 +1222,12 @@ int main(int argc, char **argv) {
         int count = 0;
         while (count < 1024 && client_recv(buffer, RECV_BUFFER_SIZE)) {
             count++;
+            int pid;
             float ux, uy, uz, urx, ury;
-            if (sscanf(buffer, "U,%*d,%f,%f,%f,%f,%f",
-                &ux, &uy, &uz, &urx, &ury) == 5)
+            if (sscanf(buffer, "U,%d,%f,%f,%f,%f,%f",
+                &pid, &ux, &uy, &uz, &urx, &ury) == 6)
             {
+                me->id = pid;
                 x = ux; y = uy; z = uz; rx = urx; ry = ury;
                 ensure_chunks(x, y, z, 1);
             }
@@ -1238,7 +1240,6 @@ int main(int argc, char **argv) {
                     y = highest_block(x, z) + 2;
                 }
             }
-            int pid;
             float px, py, pz, prx, pry;
             if (sscanf(buffer, "P,%d,%f,%f,%f,%f,%f",
                 &pid, &px, &py, &pz, &prx, &pry) == 6)

@@ -88,6 +88,7 @@ static int block_type = 1;
 static int ortho = 0;
 static float fov = 65.0;
 static int typing = 0;
+static int radar = 0;
 static char typing_buffer[TEXT_BUFFER_SIZE] = {0};
 
 int is_plant(int w) {
@@ -162,6 +163,23 @@ GLuint gen_crosshair_buffer(int width, int height) {
     return gen_buffer(sizeof(data), data);
 }
 
+GLuint gen_circle_buffer(int width, int height,float p) {
+    int x = width / 2;
+    int y = height / 2;
+    float data[360][4];
+    data[0][0] = sin(0*PI/180)*p+x;
+    data[0][1] = cos(0*PI/180)*p+y;
+    data[0][2] = sin(358*PI/180)*p+x;
+    data[0][3] = cos(358*PI/180)*p+y;
+    for (int i=1; i<360;i++) {
+        data[i][0] = sin((i-1)*PI/180)*p+x;
+        data[i][1] = cos((i-1)*PI/180)*p+y;
+        data[i][2] = sin((i)*PI/180)*p+x;
+        data[i][3] = cos((i)*PI/180)*p+y;
+    }
+    return gen_buffer(sizeof(data), *data);
+}
+
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     float data[144];
     make_cube_wireframe(data, x, y, z, n);
@@ -230,6 +248,16 @@ void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
 }
 
 void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glEnableVertexAttribArray(attrib->position);
+    glVertexAttribPointer(
+        attrib->position, components, GL_FLOAT, GL_FALSE, 0, 0);
+    glDrawArrays(GL_LINES, 0, count);
+    glDisableVertexAttribArray(attrib->position);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void draw_circles(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
     glVertexAttribPointer(
@@ -763,6 +791,20 @@ void render_crosshairs(Attrib *attrib, int width, int height) {
     glDisable(GL_COLOR_LOGIC_OP);
 }
 
+void render_circles(Attrib *attrib, int width, int height,float p) {
+    float matrix[16];
+    set_matrix_2d(matrix, width, height);
+    glUseProgram(attrib->program);
+    glLineWidth(1);
+    glEnable(GL_COLOR_LOGIC_OP);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    GLuint circle_buffer = gen_circle_buffer(width, height,p);
+    // draw_lines(attrib, crosshair_buffer, 2, 4);
+    draw_circles(attrib,circle_buffer, 2, 720);
+    del_buffer(circle_buffer);
+    glDisable(GL_COLOR_LOGIC_OP);
+}
+
 void render_item(Attrib *attrib, int width, int height) {
     float matrix[16];
     set_matrix_item(matrix, width, height);
@@ -810,6 +852,14 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         else if (exclusive) {
             exclusive = 0;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+    }
+    if(key == CRAFT_KEY_RADAR) {
+        if(!typing) {
+            if(radar)
+                radar = 0;
+            else
+                radar = 1;
         }
     }
     if (key == GLFW_KEY_ENTER) {
@@ -1345,6 +1395,61 @@ int main(int argc, char **argv) {
         if (observe != OBSERVE_ME) {
             render_text(&text_attrib, width, height,
                 CENTER, width / 2, ts, ts, player->name);
+        }
+
+        // RENDER RADAR
+
+        char radar_buffer[50];
+        char updown[2];
+        float ts1 = 8;
+        float tx1 = 0;
+        float ty1 = 0;
+        float cx = width / 2;
+        float cy = height / 2;
+        float distance = 0;
+        #define MAX_RADAR_DISTANCE 200
+        if(radar) {
+            render_circles(&line_attrib, width, height,MAX_RADAR_DISTANCE);
+            render_circles(&line_attrib, width, height,MAX_RADAR_DISTANCE/2);
+            for(int i = 0; i < player_count; i++) {
+                float degrees = 0;
+                if(players[i].id != me->id) {
+                    if(players[i].state.x >= x && players[i].state.z >= z) {
+                        degrees = 180 - DEGREES(atan((z - players[i].state.z) / (players[i].state.x - x))) - DEGREES(rx) - 360;
+                    }
+                    else if(players[i].state.x >= x && players[i].state.z <= z) {
+                        degrees = 180 + DEGREES(atan((players[i].state.z - z) / (players[i].state.x - x))) - DEGREES(rx) - 360;
+                    }
+                    else if(players[i].state.x <= x && players[i].state.z >= z) {
+                        degrees = DEGREES(atan((z - players[i].state.z)/(x - players[i].state.x))) - DEGREES(rx) - 360;
+                    }
+                    else if(players[i].state.x <= x && players[i].state.z <= z) {
+                        degrees = DEGREES(atan((z - players[i].state.z)/(x - players[i].state.x))) - DEGREES(rx) - 360;
+                    }
+                    degrees = abs(fmod(degrees, 360.0)) + 180;
+                    degrees = abs(fmod(degrees, 360.0));
+                    distance = sqrt(pow(z - players[i].state.z, 2) + pow(x - players[i].state.x, 2));
+
+                    if(players[i].state.y > y)
+                        snprintf(updown,2,"%s","u");
+                    else
+                        snprintf(updown,2,"%s","d");
+
+                    if(distance > MAX_RADAR_DISTANCE)
+                       snprintf(radar_buffer,50, "%s:%s - %0.0f", players[i].name, updown, distance);
+                    else if(distance > 30)
+                        snprintf(radar_buffer,50, "%s:%s", players[i].name,updown);
+                    else
+                        snprintf(radar_buffer, 50, "*%s",updown);
+
+                    tx1 = cx + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * cos(RADIANS(degrees));
+                    ty1 = cy + (distance > MAX_RADAR_DISTANCE ? MAX_RADAR_DISTANCE: distance) * sin(RADIANS(degrees));
+
+                    render_text(&text_attrib, width, height,
+                            CENTER, tx1, ty1, 8, radar_buffer);
+                }
+            }
+
         }
 
         // RENDER PICTURE IN PICTURE //

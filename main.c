@@ -70,18 +70,18 @@ typedef struct {
     GLuint timer;
 } Attrib;
 
+static GLFWwindow *window;
 static Chunk chunks[MAX_CHUNKS];
 static int chunk_count = 0;
 static Player players[MAX_PLAYERS];
 static int player_count = 0;
-static GLFWwindow *window;
 static int follow = 0;
 static int observe = 0;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
 static int middle_click = 0;
-static int teleport = 0;
+static int follow_next = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
@@ -582,23 +582,36 @@ void create_chunk(Chunk *chunk, int p, int q) {
     client_chunk(p, q, key);
 }
 
+void delete_chunks() {
+    int count = chunk_count;
+    State *s1 = &players->state;
+    State *s2 = &(players + follow)->state;
+    int p1 = chunked(s1->x);
+    int q1 = chunked(s1->z);
+    int p2 = chunked(s2->x);
+    int q2 = chunked(s2->z);
+    for (int i = 0; i < count; i++) {
+        Chunk *chunk = chunks + i;
+        if (chunk_distance(chunk, p1, q1) < DELETE_CHUNK_RADIUS) {
+            continue;
+        }
+        if (chunk_distance(chunk, p2, q2) < DELETE_CHUNK_RADIUS) {
+            continue;
+        }
+        map_free(&chunk->map);
+        del_buffer(chunk->buffer);
+        Chunk *other = chunks + (--count);
+        memcpy(chunk, other, sizeof(Chunk));
+    }
+    chunk_count = count;
+}
+
 void ensure_chunks(float x, float y, float z, int force) {
+    int count = chunk_count;
     int p = chunked(x);
     int q = chunked(z);
-    int count = chunk_count;
-    if (0) {
-        for (int i = 0; i < count; i++) {
-            Chunk *chunk = chunks + i;
-            if (chunk_distance(chunk, p, q) >= DELETE_CHUNK_RADIUS) {
-                map_free(&chunk->map);
-                del_buffer(chunk->buffer);
-                Chunk *other = chunks + (--count);
-                memcpy(chunk, other, sizeof(Chunk));
-            }
-        }
-    }
-    int rings = force ? 1 : CREATE_CHUNK_RADIUS;
     int generated = 0;
+    int rings = force ? 1 : CREATE_CHUNK_RADIUS;
     for (int ring = 0; ring <= rings; ring++) {
         for (int dp = -ring; dp <= ring; dp++) {
             for (int dq = -ring; dq <= ring; dq++) {
@@ -822,8 +835,8 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_FLY) {
             flying = !flying;
         }
-        if (key == CRAFT_KEY_TELEPORT) {
-            teleport = 1;
+        if (key == CRAFT_KEY_FOLLOW_NEXT) {
+            follow_next = 1;
         }
         if (key >= '1' && key <= '9') {
             block_type = key - '1' + 1;
@@ -1027,8 +1040,9 @@ int main(int argc, char **argv) {
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
 
-    char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
+    FPS fps = {0, 0, 0};
     int message_index = 0;
+    char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
     double last_commit = glfwGetTime();
     double last_update = glfwGetTime();
 
@@ -1037,14 +1051,13 @@ int main(int argc, char **argv) {
     me->buffer = 0;
     player_count = 1;
 
-    FPS fps = {0, 0, 0};
-    float matrix[16];
     float x = (rand_double() - 0.5) * 10000;
     float z = (rand_double() - 0.5) * 10000;
     float y = 0;
-    float dy = 0;
     float rx = 0;
     float ry = 0;
+    float dy = 0;
+
     double px = 0;
     double py = 0;
 
@@ -1199,8 +1212,8 @@ int main(int argc, char **argv) {
                 block_type = hw;
             }
         }
-        if (teleport) {
-            teleport = 0;
+        if (follow_next) {
+            follow_next = 0;
             follow = (follow + 1) % player_count;
         }
 
@@ -1276,6 +1289,8 @@ int main(int argc, char **argv) {
             player = players + follow;
         }
 
+        delete_chunks();
+
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -1316,7 +1331,7 @@ int main(int argc, char **argv) {
 
         // RENDER PICTURE IN PICTURE //
         if (observe == OBSERVE_ME_YOU || observe == OBSERVE_YOU_ME) {
-            Player *player = me;
+            player = me;
             if (observe == OBSERVE_ME_YOU) {
                 player = players + follow;
             }
@@ -1335,7 +1350,6 @@ int main(int argc, char **argv) {
             glClearColor(0.53, 0.81, 0.92, 1.00);
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_SCISSOR_TEST);
-
             glClear(GL_DEPTH_BUFFER_BIT);
             glViewport(width - pw - 32, 32, pw, ph);
 

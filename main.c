@@ -23,8 +23,8 @@
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6
 #define DELETE_CHUNK_RADIUS 12
-#define RECV_BUFFER_SIZE 1024
-#define TEXT_BUFFER_SIZE 256
+#define MAX_RECV_LENGTH 1024
+#define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
 #define LEFT 0
 #define CENTER 1
@@ -84,9 +84,9 @@ static int observe2 = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
-static float fov = 65.0;
+static float fov = 65;
 static int typing = 0;
-static char typing_buffer[TEXT_BUFFER_SIZE] = {0};
+static char typing_buffer[MAX_TEXT_LENGTH] = {0};
 
 int is_plant(int w) {
     return w > 16;
@@ -860,7 +860,7 @@ void on_char(GLFWwindow *window, unsigned int u) {
         if (u >= 32 && u < 128) {
             char c = (char)u;
             int n = strlen(typing_buffer);
-            if (n < TEXT_BUFFER_SIZE - 1) {
+            if (n < MAX_TEXT_LENGTH - 1) {
                 typing_buffer[n] = c;
                 typing_buffer[n + 1] = '\0';
             }
@@ -1045,7 +1045,7 @@ int main(int argc, char **argv) {
 
     FPS fps = {0, 0, 0};
     int message_index = 0;
-    char messages[MAX_MESSAGES][TEXT_BUFFER_SIZE] = {0};
+    char messages[MAX_MESSAGES][MAX_TEXT_LENGTH] = {0};
     double last_commit = glfwGetTime();
     double last_update = glfwGetTime();
 
@@ -1115,7 +1115,7 @@ int main(int argc, char **argv) {
         if (!typing) {
             float m = dt * 1.0;
             ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
-            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15.0 : 65.0;
+            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
             if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
             if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
             if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
@@ -1217,9 +1217,9 @@ int main(int argc, char **argv) {
         }
 
         // HANDLE DATA FROM SERVER //
-        char buffer[RECV_BUFFER_SIZE];
+        char buffer[MAX_RECV_LENGTH];
         int count = 0;
-        while (count < 1024 && client_recv(buffer, RECV_BUFFER_SIZE)) {
+        while (count < 1024 && client_recv(buffer, MAX_RECV_LENGTH)) {
             count++;
             int pid;
             float ux, uy, uz, urx, ury;
@@ -1267,7 +1267,7 @@ int main(int argc, char **argv) {
                 char *text = buffer + 2;
                 printf("%s\n", text);
                 snprintf(
-                    messages[message_index], TEXT_BUFFER_SIZE, "%s", text);
+                    messages[message_index], MAX_TEXT_LENGTH, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
             char format[32];
@@ -1358,6 +1358,8 @@ int main(int argc, char **argv) {
 
             width = pw;
             height = ph;
+            ortho = 0;
+            fov = 65;
 
             render_chunks(&block_attrib, player);
             render_players(&block_attrib, player);

@@ -1,8 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <string.h>
+#ifdef WIN32
+#define STRICT
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#define snprintf _snprintf
+#define sleep Sleep
+#define close closesocket
+#else
+#include <netdb.h>
 #include <unistd.h>
+#endif
 #include "client.h"
 #include "tinycthread.h"
 
@@ -16,6 +26,13 @@ static thrd_t recv_thread;
 static mtx_t mutex;
 
 void client_enable() {
+#ifdef WIN32
+    WSADATA wsa;
+    if (WSAStartup(MAKEWORD(2,2), &wsa)) {
+        perror("socket library initialization");
+        exit(1);
+    }
+#endif
     client_enabled = 1;
 }
 

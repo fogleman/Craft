@@ -27,6 +27,7 @@ DISCONNECT = 'D'
 TALK = 'T'
 KEY = 'K'
 INVENTORY = 'I'
+NICK = 'N'
 
 def log(*args):
     now = datetime.datetime.utcnow()
@@ -105,7 +106,7 @@ class Model(object):
             INVENTORY: self.on_inventory,
         }
         self.patterns = [
-            (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_nick),
+            (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
             (re.compile(r'^/pq\s+(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_pq),
@@ -178,6 +179,8 @@ class Model(object):
         client.send(TALK, 'Type "/help" for chat commands.')
         self.send_position(client)
         self.send_positions(client)
+        self.send_nick(client)
+        self.send_nicks(client)
         self.send_talk('%s has joined the game.' % client.nick)
     def on_data(self, client, data):
         #log('RECV', client.client_id, data)
@@ -207,6 +210,9 @@ class Model(object):
     def on_block(self, client, x, y, z, w, s=0):
         x, y, z, w, s = map(int, (x, y, z, w, s))
         if y <= 0 or y > 255 or w < 0 or w > 11:
+    def on_block(self, client, x, y, z, w):
+        x, y, z, w = map(int, (x, y, z, w))
+        if y <= 0 or y > 255 or w < 0 or w > 15:
             return
         if (w == 0):
             # Break
@@ -283,6 +289,7 @@ class Model(object):
         else:
             self.send_talk('%s is now known as %s' % (client.nick, nick))
             client.nick = nick
+            self.send_nick(client)
     def on_spawn(self, client):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
@@ -361,6 +368,14 @@ class Model(object):
             if other == client:
                 continue
             other.send(POSITION, client.client_id, *client.position)
+    def send_nicks(self, client):
+        for other in self.clients:
+            if other == client:
+                continue
+            client.send(NICK, other.client_id, other.nick)
+    def send_nick(self, client):
+        for other in self.clients:
+            other.send(NICK, client.client_id, client.nick)
     def send_disconnect(self, client):
         for other in self.clients:
             if other == client:

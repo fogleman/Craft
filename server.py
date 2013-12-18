@@ -25,6 +25,7 @@ POSITION = 'P'
 DISCONNECT = 'D'
 TALK = 'T'
 KEY = 'K'
+NICK = 'N'
 
 def log(*args):
     now = datetime.datetime.utcnow()
@@ -93,7 +94,6 @@ class Handler(SocketServer.BaseRequestHandler):
 
 class Model(object):
     def __init__(self):
-        self.next_client_id = 1
         self.clients = []
         self.queue = Queue.Queue()
         self.commands = {
@@ -103,7 +103,7 @@ class Model(object):
             TALK: self.on_talk,
         }
         self.patterns = [
-            (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_nick),
+            (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
             (re.compile(r'^/pq\s+(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_pq),
@@ -154,10 +154,15 @@ class Model(object):
         ]
         for query in queries:
             self.execute(query)
+    def next_client_id(self):
+        result = 1
+        client_ids = set(x.client_id for x in self.clients)
+        while result in client_ids:
+            result += 1
+        return result
     def on_connect(self, client):
-        client.client_id = self.next_client_id
+        client.client_id = self.next_client_id()
         client.nick = 'player%d' % client.client_id
-        self.next_client_id += 1
         log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
         self.clients.append(client)
@@ -166,8 +171,9 @@ class Model(object):
         client.send(TALK, 'Type "/help" for chat commands.')
         self.send_position(client)
         self.send_positions(client)
-        self.send_talk(client,
-            '%s has joined the game.' % client.nick)
+        self.send_nick(client)
+        self.send_nicks(client)
+        self.send_talk('%s has joined the game.' % client.nick)
     def on_data(self, client, data):
         #log('RECV', client.client_id, data)
         args = data.split(',')
@@ -179,8 +185,7 @@ class Model(object):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
-        self.send_talk(client,
-            '%s has disconnected from the server.' % client.nick)
+        self.send_talk('%s has disconnected from the server.' % client.nick)
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
         query = (
@@ -196,7 +201,7 @@ class Model(object):
             client.send(KEY, p, q, max_rowid)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
-        if y <= 0 or y > 255 or w < 0 or w > 11:
+        if y <= 0 or y > 255 or w < 0 or w > 14:
             return
         p, q = chunked(x), chunked(z)
         query = (
@@ -228,16 +233,18 @@ class Model(object):
                 match = pattern.match(text)
                 if match:
                     func(client, *match.groups())
+                    break
+            else:
+                client.send(TALK, 'Unrecognized command: "%s"' % text)
         else:
-            text = '%s> %s' % (client.nick, text)
-            self.send_talk(client, text)
+            self.send_talk('%s> %s' % (client.nick, text))
     def on_nick(self, client, nick=None):
         if nick is None:
             client.send(TALK, 'Your nickname is %s' % client.nick)
         else:
-            self.send_talk(client,
-                '%s is now known as %s' % (client.nick, nick))
+            self.send_talk('%s is now known as %s' % (client.nick, nick))
             client.nick = nick
+            self.send_nick(client)
     def on_spawn(self, client):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
@@ -278,6 +285,14 @@ class Model(object):
             if other == client:
                 continue
             other.send(POSITION, client.client_id, *client.position)
+    def send_nicks(self, client):
+        for other in self.clients:
+            if other == client:
+                continue
+            client.send(NICK, other.client_id, other.nick)
+    def send_nick(self, client):
+        for other in self.clients:
+            other.send(NICK, client.client_id, client.nick)
     def send_disconnect(self, client):
         for other in self.clients:
             if other == client:
@@ -288,9 +303,9 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
-    def send_talk(self, client, text):
-        for other in self.clients:
-            other.send(TALK, text)
+    def send_talk(self, text):
+        for client in self.clients:
+            client.send(TALK, text)
 
 def main():
     host, port = HOST, PORT

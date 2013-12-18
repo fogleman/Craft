@@ -15,22 +15,19 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef struct {
+    unsigned int fps;
     unsigned int frames;
     double since;
 } FPS;
 
 int rand_int(int n);
 double rand_double();
-void update_fps(FPS *fps, int show);
+void update_fps(FPS *fps);
 
-void malloc_buffers(
-    int components, int faces,
-    GLfloat **position_data, GLfloat **normal_data, GLfloat **uv_data);
-GLuint gen_buffer(GLenum target, GLsizei size, const void *data);
-void gen_buffers(
-    int components, int faces,
-    GLfloat *position_data, GLfloat *normal_data, GLfloat *uv_data,
-    GLuint *position_buffer, GLuint *normal_buffer, GLuint *uv_buffer);
+GLuint gen_buffer(GLsizei size, GLfloat *data);
+void del_buffer(GLuint buffer);
+GLfloat *malloc_faces(int components, int faces);
+GLuint gen_faces(int components, int faces, GLfloat *data);
 GLuint make_shader(GLenum type, const char *source);
 GLuint load_shader(GLenum type, const char *path);
 GLuint make_program(GLuint shader1, GLuint shader2);

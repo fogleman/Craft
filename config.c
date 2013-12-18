@@ -46,6 +46,7 @@ void default_config(configuration *config) {
     config->z_dec = 'B';
     config->chat = 'T';
     config->command = '/';
+    strncpy(config->name, "[unnamed]", MAX_NAME_LENGTH);
 }
 
 /* *alias is the entry value in the configuration file.
@@ -176,6 +177,13 @@ int handler(void *user, const char *section, const char *name,
                 pconfig->quit = key;
                 handled = 1;
             }
+        }
+    } else if (strncmp(section, "player", 6) == 0) {
+        if (strncmp(name, "name", 4) == 0) {
+            if (strncicmp(value, "[unnamed]", 9)) {
+                strncpy(pconfig->name, value, MAX_NAME_LENGTH);
+            }
+            handled = 1;
         }
     }
 

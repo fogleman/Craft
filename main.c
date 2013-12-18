@@ -26,7 +26,6 @@
 #define DELETE_CHUNK_RADIUS 12
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
-#define MAX_NAME_LENGTH 32
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
@@ -972,7 +971,7 @@ int main(int argc, char **argv) {
             }
         }
         client_enable();
-        client_connect(hostname, port);
+        client_connect(hostname, port, config.name);
         client_start();
     }
     else {
@@ -1063,7 +1062,7 @@ int main(int argc, char **argv) {
     Player *me = players;
     me->id = 0;
     me->buffer = 0;
-    strncpy(me->name, "me", MAX_NAME_LENGTH);
+    strncpy(me->name, config.name, MAX_NAME_LENGTH);
     player_count = 1;
 
     float x = (rand_double() - 0.5) * 10000;
@@ -1261,7 +1260,7 @@ int main(int argc, char **argv) {
                     player_count++;
                     player->id = pid;
                     player->buffer = 0;
-                    snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
+                    strncpy(player->name, config.name, MAX_NAME_LENGTH);
                     update_player(player, px, py, pz, prx, pry, 1); // twice
                 }
                 if (player) {

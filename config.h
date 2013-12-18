@@ -6,6 +6,7 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
+#define MAX_NAME_LENGTH 32
 
 // advanced parameters
 #define CHUNK_SIZE 32
@@ -38,6 +39,8 @@ typedef struct {
     int z_dec;
     int chat;
     int command;
+    // Identity.
+    char name[MAX_NAME_LENGTH];
 } configuration;
 
 /* Reads settings into *config. First default-initializes all keys in *config,

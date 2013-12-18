@@ -145,7 +145,7 @@ int recv_worker(void *arg) {
     return 0;
 }
 
-void client_connect(char *hostname, int port) {
+void client_connect(char *hostname, int port, char *as_nick) {
     if (!client_enabled) {
         return;
     }
@@ -167,6 +167,7 @@ void client_connect(char *hostname, int port) {
         perror("connect");
         exit(1);
     }
+    client_send(as_nick);
 }
 
 void client_start() {

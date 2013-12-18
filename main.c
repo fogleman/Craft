@@ -963,6 +963,11 @@ void render_inventory_screen(Attrib *window_attrib, Attrib *item_attrib, Attrib 
     }
 }
 
+void render_inventory_held(Attrib *item_attrib, Attrib *text_attrib,
+                           float x, float y, float n) {
+    
+}
+
 int mouse_to_inventory(int width, int height, float x, float y, float n) {
     /* .. 0 .. 1 .. 2 .. 3 .. 4 .. 5 .. 6 .. 7 .. 8 .. */
     /* |---------------------------------------------| */
@@ -1100,6 +1105,53 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
                 glfwGetCursorPos(window, &mx, &my);
                 
                 int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
+                if (inventory.holding.count == 0) {
+                    if (sel != -1) {
+                        //Pick up
+                        inventory.holding.count = inventory.items[sel].count;
+                        inventory.holding.w = inventory.items[sel].w;
+                        inventory.items[sel].count = 0;
+                        inventory.items[sel].w = 0;
+                    }
+                } else {
+                    if (sel == -1) {
+                        //Throw
+                        inventory.holding.count = 0;
+                        inventory.holding.w = 0;
+                    } else {
+                        //Place
+                        if (inventory.items[sel].w == 0) {
+                            //Into empty
+                            inventory.items[sel].count = inventory.holding.count;
+                            inventory.items[sel].w = inventory.holding.w;
+                            inventory.holding.count = 0;
+                            inventory.holding.w = 0;
+                        } else {
+                            if (inventory.items[sel].w == inventory.holding.w) {
+                            //Into same type
+                                if (inventory.holding.count + inventory.items[sel].count <= 64) {
+                                    //Append all
+                                    inventory.items[sel].count += inventory.holding.count;
+                                    inventory.holding.count = 0;
+                                    inventory.holding.w = 0;
+                                } else {
+                                    //Append with leftover
+                                    inventory.holding.count -= 64 - inventory.items[sel].count;
+                                    inventory.items[sel].count = 64;
+                                }
+                            } else {
+                                //Into diff type
+                                Item cache;
+                                cache.count = inventory.holding.count;
+                                cache.w = inventory.holding.w;
+                                
+                                inventory.holding = inventory.items[sel];
+                                inventory.items[sel] = cache;
+                            }
+                    
+                        }
+                    }
+                }
             } else {
                 exclusive = 1;
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);

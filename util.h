@@ -24,6 +24,14 @@ int rand_int(int n);
 double rand_double();
 void update_fps(FPS *fps);
 
+/* Case insensitive string n-comparison.
+ * Returns 0 if the first n characters of *a and *b are equal.
+ *       < 0 if *a[0..n] < *b[0..n]
+ *       > 0 if *a[0..n] > *b[0..n]
+ * If strlen(*a) < strlen(*b), *a compares less than *b.
+ * There is no standard platform agnostic version of this.
+ */
+int strncicmp(const char *a, const char *b, size_t n);
 GLuint gen_buffer(GLsizei size, GLfloat *data);
 void del_buffer(GLuint buffer);
 GLfloat *malloc_faces(int components, int faces);

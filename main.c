@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 #include "client.h"
 #include "config.h"
@@ -25,7 +26,6 @@
 #define DELETE_CHUNK_RADIUS 12
 #define MAX_RECV_LENGTH 1024
 #define MAX_TEXT_LENGTH 256
-#define MAX_NAME_LENGTH 32
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
@@ -68,6 +68,7 @@ typedef struct {
     GLuint timer;
 } Attrib;
 
+static configuration config;
 static GLFWwindow *window;
 static int width = 0;
 static int height = 0;
@@ -882,7 +883,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if (!typing) {
-        if (key == CRAFT_KEY_FLY) {
+        if (key == config.fly) {
             flying = !flying;
         }
         if (key >= '1' && key <= '9') {
@@ -891,13 +892,13 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == '0') {
             block_type = 10;
         }
-        if (key == CRAFT_KEY_BLOCK_TYPE) {
+        if (key == config.cycle_block) {
             block_type = block_type % 15 + 1;
         }
-        if (key == CRAFT_KEY_OBSERVE) {
+        if (key == config.observe) {
             observe1 = (observe1 + 1) % player_count;
         }
-        if (key == CRAFT_KEY_OBSERVE_INSET) {
+        if (key == config.observe_inset) {
             observe2 = (observe2 + 1) % player_count;
         }
     }
@@ -915,11 +916,11 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
     }
     else {
-        if (u == CRAFT_KEY_CHAT) {
+        if (toupper(u) == config.chat) {
             typing = 1;
             typing_buffer[0] = '\0';
         }
-        if (u == CRAFT_KEY_COMMAND) {
+        if (u == config.command) {
             typing = 1;
             typing_buffer[0] = '/';
             typing_buffer[1] = '\0';
@@ -977,10 +978,10 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
 }
 
 void create_window() {
-    int window_width = WINDOW_WIDTH;
-    int window_height = WINDOW_HEIGHT;
+    int window_width = config.width;
+    int window_height = config.height;
     GLFWmonitor *monitor = NULL;
-    if (FULLSCREEN) {
+    if (config.fullscreen) {
         int mode_count;
         monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
@@ -992,6 +993,12 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
+
+    if (configure(&config)) {
+        fprintf(stderr, "Fatal: configuration failed.\n");
+        return 1;
+    }
+
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {
@@ -1009,7 +1016,7 @@ int main(int argc, char **argv) {
             }
         }
         client_enable();
-        client_connect(hostname, port);
+        client_connect(hostname, port, config.name);
         client_start();
     }
     else {
@@ -1027,7 +1034,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(VSYNC);
+    glfwSwapInterval(config.vsync);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, on_key);
     glfwSetCharCallback(window, on_char);
@@ -1162,13 +1169,13 @@ int main(int argc, char **argv) {
         int sx = 0;
         if (!typing) {
             float m = dt * 1.0;
-            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
-            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
-            if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
-            if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
-            if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
-            if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
-            if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
+            ortho = glfwGetKey(window, config.ortho_view);
+            fov = glfwGetKey(window, config.zoom) ? 15 : 65;
+            if (glfwGetKey(window, config.quit)) break;
+            if (glfwGetKey(window, config.forward)) sz--;
+            if (glfwGetKey(window, config.backward)) sz++;
+            if (glfwGetKey(window, config.strafe_left)) sx--;
+            if (glfwGetKey(window, config.strafe_right)) sx++;
             if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
             if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
             if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
@@ -1177,7 +1184,7 @@ int main(int argc, char **argv) {
         float vx, vy, vz;
         get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
         if (!typing) {
-            if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
+            if (glfwGetKey(window, config.jump)) {
                 if (flying) {
                     vy = 1;
                 }
@@ -1185,22 +1192,22 @@ int main(int argc, char **argv) {
                     dy = 8;
                 }
             }
-            if (glfwGetKey(window, CRAFT_KEY_XM)) {
+            if (glfwGetKey(window, config.x_dec)) {
                 vx = -1; vy = 0; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_XP)) {
+            if (glfwGetKey(window, config.x_inc)) {
                 vx = 1; vy = 0; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_YM)) {
+            if (glfwGetKey(window, config.y_dec)) {
                 vx = 0; vy = -1; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_YP)) {
+            if (glfwGetKey(window, config.y_inc)) {
                 vx = 0; vy = 1; vz = 0;
             }
-            if (glfwGetKey(window, CRAFT_KEY_ZM)) {
+            if (glfwGetKey(window, config.z_dec)) {
                 vx = 0; vy = 0; vz = -1;
             }
-            if (glfwGetKey(window, CRAFT_KEY_ZP)) {
+            if (glfwGetKey(window, config.z_inc)) {
                 vx = 0; vy = 0; vz = 1;
             }
         }
@@ -1297,7 +1304,7 @@ int main(int argc, char **argv) {
                     player_count++;
                     player->id = pid;
                     player->buffer = 0;
-                    snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
+                    strncpy(player->name, config.name, MAX_NAME_LENGTH);
                     update_player(player, px, py, pz, prx, pry, 1); // twice
                 }
                 if (player) {
@@ -1344,6 +1351,18 @@ int main(int argc, char **argv) {
             interpolate_player(players + i);
         }
         Player *player = players + observe1;
+
+        // RENDER 3-D SCENE //
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        render_chunks(&block_attrib, player);
+        render_players(&block_attrib, player);
+        render_wireframe(&line_attrib, player);
+
+        // RENDER HUD //
+        glClear(GL_DEPTH_BUFFER_BIT);
+        render_crosshairs(&line_attrib);
+        render_item(&block_attrib);
 
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);

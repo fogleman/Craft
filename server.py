@@ -45,7 +45,8 @@ class Handler(SocketServer.BaseRequestHandler):
         self.start()
     def handle(self):
         model = self.server.model
-        model.enqueue(model.on_connect, self)
+        nick = self.request.recv(BUFFER_SIZE)
+        model.enqueue(model.on_connect, self, nick)
         try:
             buf = []
             while True:
@@ -160,9 +161,12 @@ class Model(object):
         while result in client_ids:
             result += 1
         return result
-    def on_connect(self, client):
+    def on_connect(self, client, nick):
         client.client_id = self.next_client_id()
-        client.nick = 'player%d' % client.client_id
+        if nick == '[unnamed]':
+            client.nick = 'player%d' % client.client_id
+        else:
+            client.nick = nick
         log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
         self.clients.append(client)

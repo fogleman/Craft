@@ -4,7 +4,8 @@ project(craft)
 
 add_executable(
     craft main.c client.c cube.c db.c map.c matrix.c noise.c util.c world.c
-    sqlite/sqlite3.c lodepng/lodepng.c tinycthread/tinycthread.c)
+    config.c
+    sqlite/sqlite3.c lodepng/lodepng.c tinycthread/tinycthread.c inih/ini.c)
 
 add_definitions(-std=c99 -O3)
 
@@ -13,6 +14,7 @@ include_directories(glfw/include)
 include_directories(sqlite)
 include_directories(lodepng)
 include_directories(tinycthread)
+include_directories(inih)
 
 if (APPLE)
     target_link_libraries(craft glfw ${GLFW_LIBRARIES})

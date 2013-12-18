@@ -29,10 +29,6 @@
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
-#define OBSERVE_ME 0
-#define OBSERVE_ME_YOU 1
-#define OBSERVE_YOU_ME 2
-#define OBSERVE_YOU 3
 
 typedef struct {
     Map map;
@@ -77,12 +73,12 @@ static Chunk chunks[MAX_CHUNKS];
 static int chunk_count = 0;
 static Player players[MAX_PLAYERS];
 static int player_count = 0;
-static int follow = 0;
-static int observe = 0;
 static int exclusive = 1;
 static int left_click = 0;
 static int right_click = 0;
 static int middle_click = 0;
+static int observe1 = 0;
+static int observe2 = 0;
 static int flying = 0;
 static int block_type = 1;
 static int ortho = 0;
@@ -586,25 +582,27 @@ void create_chunk(Chunk *chunk, int p, int q) {
 void delete_chunks() {
     int count = chunk_count;
     State *s1 = &players->state;
-    State *s2 = &(players + follow)->state;
-    int p1 = chunked(s1->x);
-    int q1 = chunked(s1->z);
-    int p2 = chunked(s2->x);
-    int q2 = chunked(s2->z);
+    State *s2 = &(players + observe1)->state;
+    State *s3 = &(players + observe2)->state;
+    State *states[3] = {s1, s2, s3};
     for (int i = 0; i < count; i++) {
         Chunk *chunk = chunks + i;
-        if (chunk_distance(chunk, p1, q1) < DELETE_CHUNK_RADIUS) {
-            continue;
-        }
-        if (observe != OBSERVE_ME) {
-            if (chunk_distance(chunk, p2, q2) < DELETE_CHUNK_RADIUS) {
-                continue;
+        int delete = 1;
+        for (int j = 0; j < 3; j++) {
+            State *s = states[j];
+            int p = chunked(s->x);
+            int q = chunked(s->z);
+            if (chunk_distance(chunk, p, q) < DELETE_CHUNK_RADIUS) {
+                delete = 0;
+                break;
             }
         }
-        map_free(&chunk->map);
-        del_buffer(chunk->buffer);
-        Chunk *other = chunks + (--count);
-        memcpy(chunk, other, sizeof(Chunk));
+        if (delete) {
+            map_free(&chunk->map);
+            del_buffer(chunk->buffer);
+            Chunk *other = chunks + (--count);
+            memcpy(chunk, other, sizeof(Chunk));
+        }
     }
     chunk_count = count;
 }
@@ -838,12 +836,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_FLY) {
             flying = !flying;
         }
-        if (key == CRAFT_KEY_FOLLOW_NEXT) {
-            follow = (follow + 1) % player_count;
-            if (observe == OBSERVE_ME) {
-                observe = OBSERVE_ME_YOU;
-            }
-        }
         if (key >= '1' && key <= '9') {
             block_type = key - '1' + 1;
         }
@@ -854,7 +846,10 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             block_type = block_type % 14 + 1;
         }
         if (key == CRAFT_KEY_OBSERVE) {
-            observe = (observe + 1) % 4;
+            observe1 = (observe1 + 1) % player_count;
+        }
+        if (key == CRAFT_KEY_OBSERVE_INSET) {
+            observe2 = (observe2 + 1) % player_count;
         }
     }
 }
@@ -1291,19 +1286,15 @@ int main(int argc, char **argv) {
             client_position(x, y, z, rx, ry);
         }
 
-        // UPDATE PLAYERS //
-        follow = follow % player_count;
+        // PREPARE TO RENDER //
+        observe1 = observe1 % player_count;
+        observe2 = observe2 % player_count;
+        delete_chunks();
         update_player(me, x, y, z, rx, ry, 0);
         for (int i = 1; i < player_count; i++) {
             interpolate_player(players + i);
         }
-
-        Player *player = me;
-        if (observe == OBSERVE_YOU_ME || observe == OBSERVE_YOU) {
-            player = players + follow;
-        }
-
-        delete_chunks();
+        Player *player = players + observe1;
 
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
@@ -1342,17 +1333,14 @@ int main(int argc, char **argv) {
             render_text(&text_attrib, width, height,
                 LEFT, tx, ty, ts, text_buffer);
         }
-        if (observe != OBSERVE_ME) {
+        if (player != me) {
             render_text(&text_attrib, width, height,
                 CENTER, width / 2, ts, ts, player->name);
         }
 
         // RENDER PICTURE IN PICTURE //
-        if (observe == OBSERVE_ME_YOU || observe == OBSERVE_YOU_ME) {
-            player = me;
-            if (observe == OBSERVE_ME_YOU) {
-                player = players + follow;
-            }
+        if (observe2) {
+            player = players + observe2;
 
             int pw = 256;
             int ph = 256;

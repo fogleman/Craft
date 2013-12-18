@@ -64,8 +64,8 @@ You can run your own server or connect to mine. The server uses the same SQLite 
 - ZXCVBN to move in exact directions along the XYZ axes.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
-- O to step through different observer modes.
-- P to step through which player you are observing.
+- O to observe players in the main view.
+- P to observe players in the picture-in-picture view.
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.
 

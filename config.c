@@ -32,8 +32,8 @@ void default_config(configuration *config) {
     config->strafe_right = 'D';
     config->quit = 'Q';
     config->jump = GLFW_KEY_SPACE;
-    config->follow_next = 'P';
-    config->observe_mode = 'O';
+    config->observe = 'O';
+    config->observe_inset = 'P';
     config->fly = GLFW_KEY_TAB;
     config->cycle_block = 'E';
     config->zoom = GLFW_KEY_LEFT_SHIFT;
@@ -131,11 +131,11 @@ int handler(void *user, const char *section, const char *name,
             } else if (strncmp(name, "jump", 4) == 0) {
                 pconfig->jump = key;
                 handled = 1;
-            } else if (strncmp(name, "follow next", 11) == 0) {
-                pconfig->follow_next = key;
+            } else if (strncmp(name, "observe", 7) == 0) {
+                pconfig->observe = key;
                 handled = 1;
-            } else if (strncmp(name, "observe mode", 12) == 0) {
-                pconfig->observe_mode = key;
+            } else if (strncmp(name, "observe inset", 13) == 0) {
+                pconfig->observe_inset = key;
                 handled = 1;
             } else if (strncmp(name, "fly", 3) == 0) {
                 pconfig->fly = key;

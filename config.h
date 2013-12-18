@@ -26,7 +26,8 @@ typedef struct {
     int jump;
     int fly;
     int follow_next;
-    int observe_mode;
+    int observe;
+    int observe_inset;
     int cycle_block;
     int ortho_view;
     int zoom;

@@ -205,7 +205,7 @@ class Model(object):
             client.send(KEY, p, q, max_rowid)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
-        if y <= 0 or y > 255 or w < 0 or w > 14:
+        if y <= 0 or y > 255 or w < 0 or w > 15:
             return
         p, q = chunked(x), chunked(z)
         query = (

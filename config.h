@@ -12,7 +12,7 @@
 #define USE_CACHE 1
 
 // key bindings
-#define CRAFT_KEY_QUIT 'P'
+#define CRAFT_KEY_QUIT GLFW_KEY_BACKSPACE
 #define CRAFT_KEY_FORWARD 'W'
 #define CRAFT_KEY_BACKWARD 'S'
 #define CRAFT_KEY_LEFT 'A'

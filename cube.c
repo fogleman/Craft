@@ -366,3 +366,95 @@ void make_character(
     *(d++) = x - n; *(d++) = y + m;
     *(d++) = du + 0; *(d++) = dv + b - p;
 }
+
+int _make_hemisphere(
+    float *data, float r, int detail,
+    float *a, float *b, float *c,
+    float *ta, float *tb, float *tc)
+{
+    if (detail == 0) {
+        float *d = data;
+        *(d++) = a[0] * r; *(d++) = a[1] * r; *(d++) = a[2] * r;
+        *(d++) = a[0]; *(d++) = a[1]; *(d++) = a[2];
+        *(d++) = ta[0]; *(d++) = ta[1];
+        *(d++) = b[0] * r; *(d++) = b[1] * r; *(d++) = b[2] * r;
+        *(d++) = b[0]; *(d++) = b[1]; *(d++) = b[2];
+        *(d++) = tb[0]; *(d++) = tb[1];
+        *(d++) = c[0] * r; *(d++) = c[1] * r; *(d++) = c[2] * r;
+        *(d++) = c[0]; *(d++) = c[1]; *(d++) = c[2];
+        *(d++) = tc[0]; *(d++) = tc[1];
+        return 1;
+    }
+    else {
+        float ab[3], ac[3], bc[3];
+        float tab[2], tac[2], tbc[2];
+        for (int i = 0; i < 3; i++) {
+            ab[i] = (a[i] + b[i]) / 2;
+            ac[i] = (a[i] + c[i]) / 2;
+            bc[i] = (b[i] + c[i]) / 2;
+        }
+        for (int i = 0; i < 2; i++) {
+            tab[i] = (ta[i] + tb[i]) / 2;
+            tac[i] = (ta[i] + tc[i]) / 2;
+            tbc[i] = (tb[i] + tc[i]) / 2;
+        }
+        normalize(ab + 0, ab + 1, ab + 2);
+        normalize(ac + 0, ac + 1, ac + 2);
+        normalize(bc + 0, bc + 1, bc + 2);
+        int total = 0;
+        int n;
+        n = _make_hemisphere(data, r, detail - 1, a, ab, ac, ta, tab, tac);
+        total += n; data += n * 24;
+        n = _make_hemisphere(data, r, detail - 1, b, bc, ab, tb, tbc, tab);
+        total += n; data += n * 24;
+        n = _make_hemisphere(data, r, detail - 1, c, ac, bc, tc, tac, tbc);
+        total += n; data += n * 24;
+        n = _make_hemisphere(data, r, detail - 1, ab, bc, ac, tab, tbc, tac);
+        total += n; data += n * 24;
+        return total;
+    }
+}
+
+void make_hemisphere(float *data, float r, int detail) {
+    // detail, triangles, floats (divide by 2 for hemisphere)
+    // 0, 8, 192
+    // 1, 32, 768
+    // 2, 128, 3072
+    // 3, 512, 12288
+    // 4, 2048, 49152
+    // 5, 8192, 196608
+    // 6, 32768, 786432
+    // 7, 131072, 3145728
+    static int indices[4][3] = {
+        // // {0, 1, 2}, {0, 2, 3},
+        // {0, 3, 4}, {0, 4, 1},
+        // // {5, 2, 1}, {5, 3, 2},
+        // {5, 4, 3}, {5, 1, 4}
+        {4, 3, 0}, {1, 4, 0},
+        // {2, 1, 0}, {3, 2, 0},
+        {3, 4, 5}, {4, 1, 5}
+        // {1, 2, 5}, {2, 3, 5},
+    };
+    static float positions[6][3] = {
+        { 0, 0,-1}, { 1, 0, 0},
+        { 0,-1, 0}, {-1, 0, 0},
+        { 0, 1, 0}, { 0, 0, 1}
+    };
+    static float uvs[6][3] = {
+        {0, 0}, {0, 0},
+        {0,-1/16.0}, {0, 0},
+        {0, 1/16.0}, {0, 0}
+    };
+    int total = 0;
+    for (int i = 0; i < 4; i++) {
+        int n = _make_hemisphere(
+            data, r, detail,
+            positions[indices[i][0]],
+            positions[indices[i][1]],
+            positions[indices[i][2]],
+            uvs[indices[i][0]],
+            uvs[indices[i][1]],
+            uvs[indices[i][2]]);
+        total += n; data += n * 24;
+    }
+}

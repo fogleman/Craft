@@ -776,6 +776,23 @@ void render_players(Attrib *attrib, Player *player) {
     }
 }
 
+void render_sky(Attrib *attrib, Player *player) {
+    State *s = &player->state;
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, 0, 0, 0, s->rx, s->ry, fov, ortho);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform3f(attrib->camera, 0, 0, 0);
+    glUniform1i(attrib->sampler, 0);
+    glUniform1f(attrib->timer, glfwGetTime());
+    float data[6144];
+    make_hemisphere(data, 1, 3);
+    GLuint buffer = gen_buffer(sizeof(data), data);
+    draw_triangles_3d(attrib, buffer, 256 * 3);
+    del_buffer(buffer);
+}
+
 void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -1347,6 +1364,8 @@ int main(int argc, char **argv) {
 
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        render_sky(&block_attrib, player);
         glClear(GL_DEPTH_BUFFER_BIT);
         render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);

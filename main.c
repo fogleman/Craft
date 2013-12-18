@@ -71,9 +71,14 @@ typedef struct {
 } Player;
 
 typedef struct {
+    GLuint program;
     GLuint position;
     GLuint normal;
     GLuint uv;
+    GLuint matrix;
+    GLuint sampler;
+    GLuint camera;
+    GLuint timer;
 } Attrib;
 
 int is_plant(int w) {
@@ -903,31 +908,34 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     load_png_texture("font.png");
 
-    Attrib block_attrib = {0, 0, 0};
-    Attrib line_attrib = {0, 0, 0};
-    Attrib text_attrib = {0, 0, 0};
+    Attrib block_attrib = {0};
+    Attrib line_attrib = {0};
+    Attrib text_attrib = {0};
+    GLuint program;
 
-    GLuint block_program = load_program(
+    program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
-    block_attrib.position = glGetAttribLocation(block_program, "position");
-    block_attrib.normal = glGetAttribLocation(block_program, "normal");
-    block_attrib.uv = glGetAttribLocation(block_program, "uv");
-    GLuint matrix_loc = glGetUniformLocation(block_program, "matrix");
-    GLuint sampler_loc = glGetUniformLocation(block_program, "sampler");
-    GLuint camera_loc = glGetUniformLocation(block_program, "camera");
-    GLuint timer_loc = glGetUniformLocation(block_program, "timer");
+    block_attrib.program = program;
+    block_attrib.position = glGetAttribLocation(program, "position");
+    block_attrib.normal = glGetAttribLocation(program, "normal");
+    block_attrib.uv = glGetAttribLocation(program, "uv");
+    block_attrib.matrix = glGetUniformLocation(program, "matrix");
+    block_attrib.sampler = glGetUniformLocation(program, "sampler");
+    block_attrib.camera = glGetUniformLocation(program, "camera");
+    block_attrib.timer = glGetUniformLocation(program, "timer");
 
-    GLuint line_program = load_program(
+    program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
-    line_attrib.position = glGetAttribLocation(line_program, "position");
-    GLuint line_matrix_loc = glGetUniformLocation(line_program, "matrix");
+    line_attrib.program = program;
+    line_attrib.position = glGetAttribLocation(program, "position");
+    line_attrib.matrix = glGetUniformLocation(program, "matrix");
 
-    GLuint text_program = load_program(
+    program = load_program(
         "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
-    text_attrib.position = glGetAttribLocation(text_program, "position");
-    text_attrib.uv = glGetAttribLocation(text_program, "uv");
-    GLuint text_matrix_loc = glGetUniformLocation(text_program, "matrix");
-    GLuint text_sampler_loc = glGetUniformLocation(text_program, "sampler");
+    text_attrib.position = glGetAttribLocation(program, "position");
+    text_attrib.uv = glGetAttribLocation(program, "uv");
+    text_attrib.matrix = glGetUniformLocation(program, "matrix");
+    text_attrib.sampler = glGetUniformLocation(program, "sampler");
 
     GLuint item_buffer = 0;
     int previous_block_type = 0;
@@ -1204,11 +1212,11 @@ int main(int argc, char **argv) {
             matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
 
         // render chunks
-        glUseProgram(block_program);
-        glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-        glUniform3f(camera_loc, s->x, s->y, s->z);
-        glUniform1i(sampler_loc, 0);
-        glUniform1f(timer_loc, glfwGetTime());
+        glUseProgram(block_attrib.program);
+        glUniformMatrix4fv(block_attrib.matrix, 1, GL_FALSE, matrix);
+        glUniform3f(block_attrib.camera, s->x, s->y, s->z);
+        glUniform1i(block_attrib.sampler, 0);
+        glUniform1f(block_attrib.timer, glfwGetTime());
         for (int i = 0; i < chunk_count; i++) {
             Chunk *chunk = chunks + i;
             // TODO: check chunk_distance relative to player
@@ -1240,10 +1248,10 @@ int main(int argc, char **argv) {
         int hw = hit_test(
             chunks, chunk_count, 0, x, y, z, rx, ry, &hx, &hy, &hz);
         if (is_obstacle(hw)) {
-            glUseProgram(line_program);
+            glUseProgram(line_attrib.program);
             glLineWidth(1);
             glEnable(GL_COLOR_LOGIC_OP);
-            glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
+            glUniformMatrix4fv(line_attrib.matrix, 1, GL_FALSE, matrix);
             GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
             draw_lines(&line_attrib, wireframe_buffer, 3, 48);
             del_buffer(wireframe_buffer);
@@ -1256,19 +1264,19 @@ int main(int argc, char **argv) {
         set_matrix_2d(matrix, width, height);
 
         // render crosshairs
-        glUseProgram(line_program);
+        glUseProgram(line_attrib.program);
         glLineWidth(4);
         glEnable(GL_COLOR_LOGIC_OP);
-        glUniformMatrix4fv(line_matrix_loc, 1, GL_FALSE, matrix);
+        glUniformMatrix4fv(line_attrib.matrix, 1, GL_FALSE, matrix);
         GLuint crosshair_buffer = gen_crosshair_buffer(width, height);
         draw_lines(&line_attrib, crosshair_buffer, 2, 4);
         del_buffer(crosshair_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
 
         // render text
-        glUseProgram(text_program);
-        glUniformMatrix4fv(text_matrix_loc, 1, GL_FALSE, matrix);
-        glUniform1i(text_sampler_loc, 1);
+        glUseProgram(text_attrib.program);
+        glUniformMatrix4fv(text_attrib.matrix, 1, GL_FALSE, matrix);
+        glUniform1i(text_attrib.sampler, 1);
         char text_buffer[1024];
         float ts = 12;
         float tx = ts / 2;
@@ -1306,11 +1314,11 @@ int main(int argc, char **argv) {
                 item_buffer = gen_cube_buffer(0, 0, 0, 0.5, block_type);
             }
         }
-        glUseProgram(block_program);
-        glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-        glUniform3f(camera_loc, 0, 0, 5);
-        glUniform1i(sampler_loc, 0);
-        glUniform1f(timer_loc, glfwGetTime());
+        glUseProgram(block_attrib.program);
+        glUniformMatrix4fv(block_attrib.matrix, 1, GL_FALSE, matrix);
+        glUniform3f(block_attrib.camera, 0, 0, 5);
+        glUniform1i(block_attrib.sampler, 0);
+        glUniform1f(block_attrib.timer, glfwGetTime());
         if (is_plant(block_type)) {
             draw_plant(&block_attrib, item_buffer);
         }
@@ -1348,11 +1356,11 @@ int main(int argc, char **argv) {
                 matrix, pw, ph, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
 
             // render chunks
-            glUseProgram(block_program);
-            glUniformMatrix4fv(matrix_loc, 1, GL_FALSE, matrix);
-            glUniform3f(camera_loc, s->x, s->y, s->z);
-            glUniform1i(sampler_loc, 0);
-            glUniform1f(timer_loc, glfwGetTime());
+            glUseProgram(block_attrib.program);
+            glUniformMatrix4fv(block_attrib.matrix, 1, GL_FALSE, matrix);
+            glUniform3f(block_attrib.camera, s->x, s->y, s->z);
+            glUniform1i(block_attrib.sampler, 0);
+            glUniform1f(block_attrib.timer, glfwGetTime());
             for (int i = 0; i < chunk_count; i++) {
                 Chunk *chunk = chunks + i;
                 // TODO: check chunk_distance relative to player

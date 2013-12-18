@@ -166,6 +166,12 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     return gen_buffer(sizeof(data), data);
 }
 
+GLuint gen_sky_buffer() {
+    float data[6144];
+    make_hemisphere(data, 192, 3);
+    return gen_buffer(sizeof(data), data);
+}
+
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(8, 6);
     make_cube(data, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
@@ -776,21 +782,16 @@ void render_players(Attrib *attrib, Player *player) {
     }
 }
 
-void render_sky(Attrib *attrib, Player *player) {
+void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, 0, 0, 0, s->rx, s->ry, fov, ortho);
+        matrix, width, height, 0, s->y, 0, s->rx, s->ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform3f(attrib->camera, 0, 0, 0);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, glfwGetTime());
-    float data[6144];
-    make_hemisphere(data, 1, 3);
-    GLuint buffer = gen_buffer(sizeof(data), data);
     draw_triangles_3d(attrib, buffer, 256 * 3);
-    del_buffer(buffer);
 }
 
 void render_wireframe(Attrib *attrib, Player *player) {
@@ -1081,6 +1082,7 @@ int main(int argc, char **argv) {
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
+    Attrib sky_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -1108,11 +1110,22 @@ int main(int argc, char **argv) {
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
 
+    program = load_program(
+        "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
+    sky_attrib.program = program;
+    sky_attrib.position = glGetAttribLocation(program, "position");
+    sky_attrib.normal = glGetAttribLocation(program, "normal");
+    sky_attrib.uv = glGetAttribLocation(program, "uv");
+    sky_attrib.matrix = glGetUniformLocation(program, "matrix");
+    sky_attrib.sampler = glGetUniformLocation(program, "sampler");
+    sky_attrib.timer = glGetUniformLocation(program, "timer");
+
     FPS fps = {0, 0, 0};
     int message_index = 0;
     char messages[MAX_MESSAGES][MAX_TEXT_LENGTH] = {0};
     double last_commit = glfwGetTime();
     double last_update = glfwGetTime();
+    GLuint sky_buffer = gen_sky_buffer();
 
     Player *me = players;
     me->id = 0;
@@ -1365,7 +1378,7 @@ int main(int argc, char **argv) {
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
-        render_sky(&block_attrib, player);
+        render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
         render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);

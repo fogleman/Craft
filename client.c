@@ -109,7 +109,7 @@ void client_inventory(Inventory inventory) {
         return;
     }
     
-    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         char buffer[1024];
         snprintf(buffer, 1024, "I,%d,%d,%d\n", inventory.items[item].w, item, inventory.items[item].count);
         client_send(buffer);

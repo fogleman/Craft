@@ -157,7 +157,7 @@ void db_save_state(float x, float y, float z, float rx, float ry, Inventory inve
     static const char *query2 =
         "insert into inventory (w, slot, count) values (?, ?, ?);";
     sqlite3_exec(db, "delete from inventory;", NULL, NULL, NULL);
-    for (int slot = 0; slot < INVENTORY_SLOTS; slot ++) {
+    for (int slot = 0; slot < INVENTORY_SLOTS * INVENTORY_ROWS; slot ++) {
         if (inventory.items[slot].w == 0 || inventory.items[slot].count == 0)
             continue;
         
@@ -191,7 +191,7 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry, Inventory 
     
     static const char *query2 =
     "select w, count from inventory where slot = ?;";
-    for (int slot = 0; slot < INVENTORY_SLOTS; slot ++) {
+    for (int slot = 0; slot < INVENTORY_SLOTS * INVENTORY_ROWS; slot ++) {
         sqlite3_prepare_v2(db, query2, -1, &stmt, NULL);
         sqlite3_bind_int(stmt, 1, slot);
         if (sqlite3_step(stmt) == SQLITE_ROW) {

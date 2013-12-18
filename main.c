@@ -59,7 +59,6 @@ typedef struct {
     GLuint buffer;
 } Player;
 
-static Inventory inventory;
 typedef struct {
     GLuint program;
     GLuint position;
@@ -90,6 +89,9 @@ static int ortho = 0;
 static float fov = 65;
 static int typing = 0;
 static char typing_buffer[MAX_TEXT_LENGTH] = {0};
+static Inventory inventory;
+static int inventory_screen = 0;
+static int inventory_toggle = 0;
 
 int is_plant(int w) {
     return w > 16;
@@ -857,37 +859,40 @@ void render_text(
     del_buffer(buffer);
 }
 
-void render_inventory(Attrib *windowAttrib, Attrib *itemAttrib, Attrib *textAttrib, float x, float y, float n, int sel) {
+void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel) {
     float matrix[16];
     set_matrix_2d(matrix, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-    glUseProgram(windowAttrib->program);
-    glUniformMatrix4fv(windowAttrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(windowAttrib->sampler, 2);
-
-    GLuint buffer = gen_inventory_buffers(x, y, n, sel);
-
-    draw_inventory(windowAttrib, buffer, INVENTORY_SLOTS);
-    del_buffer(buffer);
-
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 2);
     
-    glUseProgram(itemAttrib->program);
-    glUniform3f(itemAttrib->camera, 0, 0, 5);
-    glUniform1i(itemAttrib->sampler, 0);
-    glUniform1f(itemAttrib->timer, glfwGetTime());
+    GLuint buffer = gen_inventory_buffers(x, y, n, sel);
+    
+    draw_inventory(attrib, buffer, INVENTORY_SLOTS);
+    del_buffer(buffer);
+}
 
+void render_inventory_items(Attrib *attrib, float x, float y, float n, int row) {
+    float matrix[16];
+    GLuint buffer;
+    
+    glUseProgram(attrib->program);
+    glUniform3f(attrib->camera, 0, 0, 5);
+    glUniform1i(attrib->sampler, 0);
+    glUniform1f(attrib->timer, glfwGetTime());
+    
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
-        int block = inventory.items[item].w;
+        int block = inventory.items[item + (row * INVENTORY_SLOTS)].w;
         
         if (block == 0)
             continue;
         
-        if (inventory.items[item].count == 0)
+        if (inventory.items[item + (row * INVENTORY_SLOTS)].count == 0)
             continue;
         
-        set_matrix_item(matrix, width, height, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * .75, item, INVENTORY_SLOTS);
-
+        set_matrix_item(matrix, width, height, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * .75, item, INVENTORY_SLOTS, y);
+        
         // render selected item
         if (is_plant(block)) {
             glDeleteBuffers(1, &buffer);
@@ -896,42 +901,65 @@ void render_inventory(Attrib *windowAttrib, Attrib *itemAttrib, Attrib *textAttr
         else {
             buffer = gen_cube_buffer(0, 0, 0, 0.5, block);
         }
-        glUniformMatrix4fv(itemAttrib->matrix, 1, GL_FALSE, matrix);
+        glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
         
         if (is_plant(block)) {
-            draw_plant(itemAttrib, buffer);
+            draw_plant(attrib, buffer);
             del_buffer(buffer);
         }
         else {
-            draw_cube(itemAttrib, buffer);
+            draw_cube(attrib, buffer);
             del_buffer(buffer);
         }
     }
+}
+
+void render_inventory_text(Attrib *attrib, float x, float y, float n, int row) {
+    float matrix[16];
     // render text
-    glClear(GL_DEPTH_BUFFER_BIT);
     set_matrix_2d(matrix, width, height);
     
-    glUseProgram(textAttrib->program);
-    glUniformMatrix4fv(textAttrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(textAttrib->sampler, 1);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 1);
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
-        int block = inventory.items[item].w;
+        int block = inventory.items[item + (row * INVENTORY_SLOTS)].w;
         
         if (block == 0)
             continue;
-        if (inventory.items[item].count == 0)
+        if (inventory.items[item + (row * INVENTORY_SLOTS)].count <= 1)
             continue;
         
         char text_buffer[16];
         float ts = INVENTORY_FONT_SIZE;
         float sep = INVENTORY_ITEM_SIZE * 1.5;
         float tx = width / 2 + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
-        float ty = sep / 3;
+        float ty = y == 0 ? sep / 3 : y - sep / 3;
         snprintf(
-                 text_buffer, 16, "%d", inventory.items[item].count);
+                 text_buffer, 16, "%d", inventory.items[item + (row * INVENTORY_SLOTS)].count);
         tx += ts * (2.5 - strlen(text_buffer));
-        print(textAttrib, LEFT,
+        print(attrib, LEFT,
               tx, ty, ts, text_buffer);
+    }
+}
+
+void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
+                          float x, float y, float n, int sel) {
+    render_inventory_bar(window_attrib, x, y, n, sel);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    render_inventory_items(item_attrib, x, 0, n, 0);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    render_inventory_text(text_attrib, x, 0, n, 0);
+}
+
+void render_inventory_screen(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
+                      float x, float y, float n, int sel) {
+    for (int row = 0; row < INVENTORY_ROWS; row ++) {
+        render_inventory_bar(window_attrib, x, y + n*row, n, -1);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        render_inventory_items(item_attrib, x, y + n*row, n, row);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        render_inventory_text(text_attrib, x, y + n*row, n, row);
     }
 }
 
@@ -985,6 +1013,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
         if (key == CRAFT_KEY_DROP) {
             drop = 1;
+        }
+        if (key == CRAFT_KEY_INVENTORY) {
+            inventory_toggle = 1;
         }
     }
 }
@@ -1046,29 +1077,46 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             }
         }
         else {
-            exclusive = 1;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            if (inventory_screen) {
+                double mx, my;
+                glfwGetCursorPos(window, &mx, &my);
+                
+                //TODO: something
+            } else {
+                exclusive = 1;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
         }
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (exclusive) {
             right_click = 1;
+        } else if (inventory_screen) {
+            double mx, my;
+            glfwGetCursorPos(window, &mx, &my);
+            
+            //TODO: something
         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
         if (exclusive) {
             middle_click = 1;
+        } if (inventory_screen) {
+            double mx, my;
+            glfwGetCursorPos(window, &mx, &my);
+            
+            //TODO: something
         }
     }
 }
 
 int find_usable_inventory_slot(int w) {
     //Try for same type
-    for (int item = 0; item < INVENTORY_SLOTS; item ++)
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
         if (inventory.items[item].w == w && inventory.items[item].count < MAX_SLOT_SIZE)
             return item;
     //Try for empty
-    for (int item = 0; item < INVENTORY_SLOTS; item ++)
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
         if (inventory.items[item].w == 0)
             return item;
     return -1;
@@ -1236,9 +1284,9 @@ int main(int argc, char **argv) {
     double px = 0;
     double py = 0;
     
-    inventory.items = calloc(INVENTORY_SLOTS, sizeof(Item));
+    inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
     
-    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].count = 0;
         inventory.items[item].w     = 0;
     }
@@ -1362,7 +1410,7 @@ int main(int argc, char **argv) {
         }
         
         // HANDLE CLICKS //
-        if (left_click) {
+        if (left_click && exclusive) {
             left_click = 0;
             int hx, hy, hz;
             int hw = hit_test(0, x, y, z, rx, ry,
@@ -1385,7 +1433,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if (right_click) {
+        if (right_click && exclusive) {
             right_click = 0;
             int hx, hy, hz;
             int hw = hit_test(1, x, y, z, rx, ry,
@@ -1404,7 +1452,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if (middle_click) {
+        if (middle_click && exclusive) {
             middle_click = 0;
             int hx, hy, hz;
             int hw = hit_test(0, x, y, z, rx, ry,
@@ -1424,6 +1472,17 @@ int main(int argc, char **argv) {
             if (inventory.items[inventory.selected].count <= 0) {
                 inventory.items[inventory.selected].count = 0;
                 inventory.items[inventory.selected].w = 0;
+            }
+        }
+        
+        if (inventory_toggle) {
+            inventory_toggle = 0;
+            inventory_screen = !inventory_screen;
+            exclusive = !inventory_screen;
+            if (exclusive) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            } else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
         }
         
@@ -1580,6 +1639,10 @@ int main(int argc, char **argv) {
         // RENDER INVENTORY //
         
         render_inventory(&inventory_attrib, &block_attrib, &text_attrib, width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
+        
+        if (inventory_screen) {
+            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
+        }
         
         // swap buffers
         glfwSwapBuffers(window);

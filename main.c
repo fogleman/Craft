@@ -1369,6 +1369,10 @@ int main(int argc, char **argv) {
 
             render_chunks(&block_attrib, pw, ph, player);
             render_players(&block_attrib, pw, ph, player);
+
+            glClear(GL_DEPTH_BUFFER_BIT);
+            render_text(&text_attrib, pw, ph,
+                CENTER, pw / 2, ts, ts, player->name);
         }
 
         // swap buffers

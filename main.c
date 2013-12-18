@@ -1342,6 +1342,10 @@ int main(int argc, char **argv) {
             render_text(&text_attrib, width, height,
                 LEFT, tx, ty, ts, text_buffer);
         }
+        if (player != me) {
+            render_text(&text_attrib, width, height,
+                CENTER, width / 2, ts, ts, player->name);
+        }
 
         // RENDER PICTURE IN PICTURE //
         if (observe == OBSERVE_ME_YOU || observe == OBSERVE_YOU_ME) {

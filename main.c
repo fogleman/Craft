@@ -362,6 +362,51 @@ void delete_player(int id) {
     player_count = count;
 }
 
+float player_player_distance(Player *p1, Player *p2) {
+    State *s1 = &p1->state;
+    State *s2 = &p2->state;
+    float x = s2->x - s1->x;
+    float y = s2->y - s1->y;
+    float z = s2->z - s1->z;
+    return sqrtf(x * x + y * y + z * z);
+}
+
+float player_crosshair_distance(Player *p1, Player *p2) {
+    State *s1 = &p1->state;
+    State *s2 = &p2->state;
+    float d = player_player_distance(p1, p2);
+    float vx, vy, vz;
+    get_sight_vector(s1->rx, s1->ry, &vx, &vy, &vz);
+    vx *= d; vy *= d; vz *= d;
+    float px, py, pz;
+    px = s1->x + vx; py = s1->y + vy; pz = s1->z + vz;
+    float x = s2->x - px;
+    float y = s2->y - py;
+    float z = s2->z - pz;
+    return sqrtf(x * x + y * y + z * z);
+}
+
+Player *player_crosshair(Player *player) {
+    Player *result = 0;
+    float threshold = RADIANS(5);
+    float best = 0;
+    for (int i = 0; i < player_count; i++) {
+        Player *other = players + i;
+        if (other == player) {
+            continue;
+        }
+        float p = player_crosshair_distance(player, other);
+        float d = player_player_distance(player, other);
+        if (p / d < threshold) {
+            if (best == 0 || d < best) {
+                best = d;
+                result = other;
+            }
+        }
+    }
+    return result;
+}
+
 Chunk *find_chunk(int p, int q) {
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -891,6 +936,17 @@ void render_inventory(Attrib *windowAttrib, Attrib *itemAttrib, Attrib *textAttr
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_RELEASE) {
+        return;
+    }
+    if (key == GLFW_KEY_BACKSPACE) {
+        if (typing) {
+            int n = strlen(typing_buffer);
+            if (n > 0) {
+                typing_buffer[n - 1] = '\0';
+            }
+        }
+    }
     if (action != GLFW_PRESS) {
         return;
     }
@@ -914,14 +970,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             }
             else {
                 left_click = 1;
-            }
-        }
-    }
-    if (key == GLFW_KEY_BACKSPACE) {
-        if (typing) {
-            int n = strlen(typing_buffer);
-            if (n > 0) {
-                typing_buffer[n - 1] = '\0';
             }
         }
     }
@@ -1492,7 +1540,12 @@ int main(int argc, char **argv) {
         if (player != me) {
             render_text(&text_attrib, CENTER, width / 2, ts, ts, player->name);
         }
-        
+        Player *other = player_crosshair(player);
+        if (other) {
+            render_text(&text_attrib, CENTER,
+                width / 2, height / 2 - ts - 24, ts, other->name);
+        }
+
         // RENDER PICTURE IN PICTURE //
         if (observe2) {
             player = players + observe2;

@@ -1338,140 +1338,144 @@ int main(int argc, char **argv) {
         }
         
         // HANDLE MOVEMENT //
-        int sz = 0;
-        int sx = 0;
-        if (!typing) {
-            float m = dt * 1.0;
-            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
-            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
-            if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
-            if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
-            if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
-            if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
-            if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
-            if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
-            if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
-            if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
-            if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
-        }
-        float vx, vy, vz;
-        get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
-        if (!typing) {
-            if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
-                if (flying) {
-                    vy = 1;
-                }
-                else if (dy == 0) {
-                    dy = 8;
-                }
+        if (inventory_screen) {
+            //TODO: Something
+        } else {
+            int sz = 0;
+            int sx = 0;
+            if (!typing) {
+                float m = dt * 1.0;
+                ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
+                fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
+                if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
+                if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
+                if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
+                if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
+                if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
+                if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
+                if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
+                if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
+                if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
             }
-            if (glfwGetKey(window, CRAFT_KEY_XM)) {
-                vx = -1; vy = 0; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_XP)) {
-                vx = 1; vy = 0; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_YM)) {
-                vx = 0; vy = -1; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_YP)) {
-                vx = 0; vy = 1; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_ZM)) {
-                vx = 0; vy = 0; vz = -1;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_ZP)) {
-                vx = 0; vy = 0; vz = 1;
-            }
-        }
-        float speed = flying ? 20 : 5;
-        int step = 8;
-        float ut = dt / step;
-        vx = vx * ut * speed;
-        vy = vy * ut * speed;
-        vz = vz * ut * speed;
-        for (int i = 0; i < step; i++) {
-            if (flying) {
-                dy = 0;
-            }
-            else {
-                dy -= ut * 25;
-                dy = MAX(dy, -250);
-            }
-            x += vx;
-            y += vy + dy * ut;
-            z += vz;
-            if (collide(2, &x, &y, &z)) {
-                dy = 0;
-            }
-        }
-        if (y < 0) {
-            y = highest_block(x, z) + 2;
-        }
-        
-        // HANDLE CLICKS //
-        if (left_click && exclusive) {
-            left_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(0, x, y, z, rx, ry,
-                              &hx, &hy, &hz);
-            if (hy > 0 && hy < 256 && is_destructable(hw)) {
-                if (is_selectable(hw)) {
-                    int slot = find_usable_inventory_slot(hw);
-                    
-                    if (slot != -1) {
-                        inventory.items[slot].w = hw;
-                        inventory.items[slot].count ++;
-                        db_set_slot(hw, slot, inventory.items[slot].count);
+            float vx, vy, vz;
+            get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
+            if (!typing) {
+                if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
+                    if (flying) {
+                        vy = 1;
+                    }
+                    else if (dy == 0) {
+                        dy = 8;
                     }
                 }
-                
-                set_block(hx, hy, hz, 0);
-                int above = get_block(hx, hy + 1, hz);
-                if (is_plant(above)) {
-                    set_block(hx, hy + 1, hz, 0);
+                if (glfwGetKey(window, CRAFT_KEY_XM)) {
+                    vx = -1; vy = 0; vz = 0;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_XP)) {
+                    vx = 1; vy = 0; vz = 0;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_YM)) {
+                    vx = 0; vy = -1; vz = 0;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_YP)) {
+                    vx = 0; vy = 1; vz = 0;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_ZM)) {
+                    vx = 0; vy = 0; vz = -1;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_ZP)) {
+                    vx = 0; vy = 0; vz = 1;
                 }
             }
-        }
-        if (right_click && exclusive) {
-            right_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(1, x, y, z, rx, ry,
-                              &hx, &hy, &hz);
-            if (hy > 0 && hy < 256 && is_obstacle(hw)) {
-                if (inventory.items[inventory.selected].count > 0 &&
-                    !player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    
-                    set_block(hx, hy, hz, inventory.items[inventory.selected].w);
-                    
-                    inventory.items[inventory.selected].count --;
-                    if (inventory.items[inventory.selected].count == 0)
-                        inventory.items[inventory.selected].w = 0;
-                    
-                    db_set_slot(inventory.items[inventory.selected].w, inventory.selected, inventory.items[inventory.selected].count);
+            float speed = flying ? 20 : 5;
+            int step = 8;
+            float ut = dt / step;
+            vx = vx * ut * speed;
+            vy = vy * ut * speed;
+            vz = vz * ut * speed;
+            for (int i = 0; i < step; i++) {
+                if (flying) {
+                    dy = 0;
+                }
+                else {
+                    dy -= ut * 25;
+                    dy = MAX(dy, -250);
+                }
+                x += vx;
+                y += vy + dy * ut;
+                z += vz;
+                if (collide(2, &x, &y, &z)) {
+                    dy = 0;
                 }
             }
-        }
-        if (middle_click && exclusive) {
-            middle_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(0, x, y, z, rx, ry,
-                              &hx, &hy, &hz);
-            if (is_selectable(hw)) {
-                //                inventory.selected = hw;
+            if (y < 0) {
+                y = highest_block(x, z) + 2;
             }
-        }
-        
-        if (drop) {
-            drop = 0;
-            int amount = 1;
-            if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
-                amount = 64;
             
-            inventory.items[inventory.selected].count -= amount;
-            if (inventory.items[inventory.selected].count <= 0) {
-                inventory.items[inventory.selected].count = 0;
-                inventory.items[inventory.selected].w = 0;
+            // HANDLE CLICKS //
+            if (left_click && exclusive) {
+                left_click = 0;
+                int hx, hy, hz;
+                int hw = hit_test(0, x, y, z, rx, ry,
+                                  &hx, &hy, &hz);
+                if (hy > 0 && hy < 256 && is_destructable(hw)) {
+                    if (is_selectable(hw)) {
+                        int slot = find_usable_inventory_slot(hw);
+                        
+                        if (slot != -1) {
+                            inventory.items[slot].w = hw;
+                            inventory.items[slot].count ++;
+                            db_set_slot(hw, slot, inventory.items[slot].count);
+                        }
+                    }
+                    
+                    set_block(hx, hy, hz, 0);
+                    int above = get_block(hx, hy + 1, hz);
+                    if (is_plant(above)) {
+                        set_block(hx, hy + 1, hz, 0);
+                    }
+                }
+            }
+            if (right_click && exclusive) {
+                right_click = 0;
+                int hx, hy, hz;
+                int hw = hit_test(1, x, y, z, rx, ry,
+                                  &hx, &hy, &hz);
+                if (hy > 0 && hy < 256 && is_obstacle(hw)) {
+                    if (inventory.items[inventory.selected].count > 0 &&
+                        !player_intersects_block(2, x, y, z, hx, hy, hz)) {
+                        
+                        set_block(hx, hy, hz, inventory.items[inventory.selected].w);
+                        
+                        inventory.items[inventory.selected].count --;
+                        if (inventory.items[inventory.selected].count == 0)
+                            inventory.items[inventory.selected].w = 0;
+                        
+                        db_set_slot(inventory.items[inventory.selected].w, inventory.selected, inventory.items[inventory.selected].count);
+                    }
+                }
+            }
+            if (middle_click && exclusive) {
+                middle_click = 0;
+                int hx, hy, hz;
+                int hw = hit_test(0, x, y, z, rx, ry,
+                                  &hx, &hy, &hz);
+                if (is_selectable(hw)) {
+                    //                inventory.selected = hw;
+                }
+            }
+            
+            if (drop) {
+                drop = 0;
+                int amount = 1;
+                if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
+                    amount = 64;
+                
+                inventory.items[inventory.selected].count -= amount;
+                if (inventory.items[inventory.selected].count <= 0) {
+                    inventory.items[inventory.selected].count = 0;
+                    inventory.items[inventory.selected].w = 0;
+                }
             }
         }
         

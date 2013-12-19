@@ -21,6 +21,9 @@ void main() {
     fragment_uv = uv;
     camera_distance = distance(camera, vec3(position));
     fog_factor = pow(clamp(camera_distance / 192.0, 0.0, 1.0), 4.0);
-    fog_height = 2.0 * acos(position.y / 384.0) / pi;
+    float dy = position.y - camera.y;
+    float dx = distance(position.xz, camera.xz);
+    fog_height = atan(dy, dx) * 2 / pi;
+    fog_height = 1.0 - abs(fog_height);
     diffuse = max(0.0, dot(normal, light_direction));
 }

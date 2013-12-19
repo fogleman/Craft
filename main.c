@@ -1256,6 +1256,18 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
 }
 
+Item get_current_item() {
+    return inventory.items[inventory.selected];
+}
+
+int get_current_block() {
+    return get_current_item().w;
+}
+
+int get_current_count() {
+    return get_current_item().count;
+}
+
 int find_matching_inventory_slot(int w) {
     //Try for same type
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
@@ -1617,16 +1629,16 @@ int main(int argc, char **argv) {
                 int hw = hit_test(1, x, y, z, rx, ry,
                                   &hx, &hy, &hz);
                 if (hy > 0 && hy < 256 && is_obstacle(hw)) {
-                    if (inventory.items[inventory.selected].count > 0 &&
+                    if (get_current_count() > 0 &&
                         !player_intersects_block(2, x, y, z, hx, hy, hz)) {
                         
-                        set_block(hx, hy, hz, inventory.items[inventory.selected].w);
+                        set_block(hx, hy, hz, get_current_block());
                         
-                        if (inventory.items[inventory.selected].count != INVENTORY_UNLIMITED) {
+                        if (get_current_count() != INVENTORY_UNLIMITED) {
                             inventory.items[inventory.selected].count --;
-                            if (inventory.items[inventory.selected].count == 0)
+                            if (get_current_count() == 0)
                                 inventory.items[inventory.selected].w = 0;
-                            db_set_slot(inventory.items[inventory.selected].w, inventory.selected, inventory.items[inventory.selected].count);
+                            db_set_slot(get_current_block(), inventory.selected, get_current_count());
                         }
                     }
                 }
@@ -1640,6 +1652,7 @@ int main(int argc, char **argv) {
                     //                inventory.selected = hw;
                 }
             }
+            
             if (drop) {
                 drop = 0;
                 int amount = 1;
@@ -1647,7 +1660,7 @@ int main(int argc, char **argv) {
                     amount = 64;
                 
                 inventory.items[inventory.selected].count -= amount;
-                if (inventory.items[inventory.selected].count <= 0) {
+                if (get_current_count() <= 0) {
                     inventory.items[inventory.selected].count = 0;
                     inventory.items[inventory.selected].w = 0;
                 }

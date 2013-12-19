@@ -310,7 +310,7 @@ void update_player(Player *player,
     }
     else {
         State *s = &player->state;
-        s->x = x; s->y = y + 0.1; s->z = z; s->rx = rx; s->ry = ry;
+        s->x = x; s->y = y; s->z = z; s->rx = rx; s->ry = ry;
         del_buffer(player->buffer);
         player->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
     }
@@ -450,7 +450,7 @@ int _hit_test(
     float vx, float vy, float vz,
     int *hx, int *hy, int *hz)
 {
-    int m = 8;
+    int m = 32;
     int px = 0;
     int py = 0;
     int pz = 0;

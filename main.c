@@ -936,8 +936,10 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n)
     
     char text_buffer[16];
     float ts = INVENTORY_FONT_SIZE;
-    snprintf(
-             text_buffer, 16, "%d", item.count);
+    if (item.count == INVENTORY_UNLIMITED)
+        snprintf(text_buffer, 16, "inf");
+    else
+        snprintf(text_buffer, 16, "%d", item.count);
     x += ts * (2.5 - strlen(text_buffer));
     print(attrib, LEFT,
           x, y, ts, text_buffer);
@@ -996,7 +998,7 @@ int mouse_to_inventory(int width, int height, float x, float y, float n) {
     int xcell = round((INVENTORY_SLOTS - 1) / 2. + ((x - width / 2.) / n));
     int ycell = 0.5 - (y - height / 2.) / n;
 
-    if (xcell < 0 || ycell < 0 || xcell > INVENTORY_SLOTS || ycell > INVENTORY_ROWS)
+    if (xcell < 0 || ycell < 0 || xcell >= INVENTORY_SLOTS || ycell >= INVENTORY_ROWS)
         return -1;
     
     return xcell + (ycell * INVENTORY_SLOTS);
@@ -1057,6 +1059,12 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             }
             if (key == CRAFT_KEY_DROP) {
                 drop = 1;
+            }
+            if (key == CRAFT_KEY_OBSERVE) {
+                observe1 = (observe1 + 1) % player_count;
+            }
+            if (key == CRAFT_KEY_OBSERVE_INSET) {
+                observe2 = (observe2 + 1) % player_count;
             }
         }
         if (key == CRAFT_KEY_INVENTORY) {
@@ -1149,8 +1157,8 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
                             inventory.holding.count = 0;
                             inventory.holding.w = 0;
                         } else {
-                            if (inventory.items[sel].w == inventory.holding.w) {
-                            //Into same type
+                            if (inventory.items[sel].w == inventory.holding.w && inventory.holding.count != INVENTORY_UNLIMITED) {
+                                //Into same type
                                 if (inventory.holding.count + inventory.items[sel].count <= 64) {
                                     //Append all
                                     inventory.items[sel].count += inventory.holding.count;
@@ -1188,45 +1196,47 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             glfwGetCursorPos(window, &mx, &my);
             
             int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
-            if (inventory.holding.count == 0) {
-                if (sel != -1) {
-                    //Pick up half
-                    int pickup = ceil(inventory.items[sel].count / 2.);
-                    
-                    inventory.holding.count = pickup;
-                    if (inventory.holding.count > 0)
-                        inventory.holding.w = inventory.items[sel].w;
-                    
-                    inventory.items[sel].count -= pickup;
-                    if (inventory.items[sel].count == 0)
-                        inventory.items[sel].w = 0;
-                }
-            } else {
-                if (sel == -1) {
-                    //Throw one
-                    inventory.holding.count --;
-                    if (inventory.holding.count == 0)
-                        inventory.holding.w = 0;
+            if (inventory.items[sel].count != INVENTORY_UNLIMITED) {
+                if (inventory.holding.count == 0) {
+                    if (sel != -1) {
+                        //Pick up half
+                        int pickup = ceil(inventory.items[sel].count / 2.);
+                        
+                        inventory.holding.count = pickup;
+                        if (inventory.holding.count > 0)
+                            inventory.holding.w = inventory.items[sel].w;
+                        
+                        inventory.items[sel].count -= pickup;
+                        if (inventory.items[sel].count == 0)
+                            inventory.items[sel].w = 0;
+                    }
                 } else {
-                    //Place one
-                    if (inventory.items[sel].w == 0) {
-                        //Into empty
-                        inventory.items[sel].count = 1;
-                        inventory.items[sel].w = inventory.holding.w;
-
+                    if (sel == -1) {
+                        //Throw one
                         inventory.holding.count --;
                         if (inventory.holding.count == 0)
                             inventory.holding.w = 0;
                     } else {
-                        if (inventory.items[sel].w == inventory.holding.w) {
-                            //Into same type
-                            if (inventory.items[sel].count < 64) {
-                                //Append with one
-                                inventory.items[sel].count ++;
+                        //Place one
+                        if (inventory.items[sel].w == 0) {
+                            //Into empty
+                            inventory.items[sel].count = 1;
+                            inventory.items[sel].w = inventory.holding.w;
 
-                                inventory.holding.count --;
-                                if (inventory.holding.count == 0)
-                                    inventory.holding.w = 0;
+                            inventory.holding.count --;
+                            if (inventory.holding.count == 0)
+                                inventory.holding.w = 0;
+                        } else {
+                            if (inventory.items[sel].w == inventory.holding.w) {
+                                //Into same type
+                                if (inventory.items[sel].count < 64) {
+                                    //Append with one
+                                    inventory.items[sel].count ++;
+
+                                    inventory.holding.count --;
+                                    if (inventory.holding.count == 0)
+                                        inventory.holding.w = 0;
+                                }
                             }
                         }
                     }
@@ -1481,6 +1491,12 @@ int main(int argc, char **argv) {
         if (inventory_screen) {
             int sel = mouse_to_inventory(width, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
             inventory.highlighted = sel;
+            if (glfwGetKey(window, CRAFT_KEY_INFINITE)) {
+                if (inventory.items[inventory.highlighted].count == INVENTORY_UNLIMITED)
+                    inventory.items[inventory.highlighted].count = MAX_SLOT_SIZE;
+                else
+                    inventory.items[inventory.highlighted].count = INVENTORY_UNLIMITED;
+            }
         } else {
             if (!typing) {
                 float m = dt * 1.0;
@@ -1586,11 +1602,12 @@ int main(int argc, char **argv) {
                         
                         set_block(hx, hy, hz, inventory.items[inventory.selected].w);
                         
-                        inventory.items[inventory.selected].count --;
-                        if (inventory.items[inventory.selected].count == 0)
-                            inventory.items[inventory.selected].w = 0;
-                        
-                        db_set_slot(inventory.items[inventory.selected].w, inventory.selected, inventory.items[inventory.selected].count);
+                        if (inventory.items[inventory.selected].count != INVENTORY_UNLIMITED) {
+                            inventory.items[inventory.selected].count --;
+                            if (inventory.items[inventory.selected].count == 0)
+                                inventory.items[inventory.selected].w = 0;
+                            db_set_slot(inventory.items[inventory.selected].w, inventory.selected, inventory.items[inventory.selected].count);
+                        }
                     }
                 }
             }
@@ -1747,6 +1764,16 @@ int main(int argc, char **argv) {
             render_text(&text_attrib, CENTER,
                 width / 2, height / 2 - ts - 24, ts, other->name);
         }
+        // RENDER INVENTORY //
+        
+        render_inventory(&inventory_attrib, &block_attrib, &text_attrib, width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
+        
+        if (inventory_screen) {
+            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
+            if (inventory.holding.count > 0) {
+                render_inventory_held(&block_attrib, &text_attrib, px, py, INVENTORY_ITEM_SIZE * 1.5);
+            }
+        }
 
         // RENDER PICTURE IN PICTURE //
         if (observe2) {
@@ -1779,17 +1806,6 @@ int main(int argc, char **argv) {
             glClear(GL_DEPTH_BUFFER_BIT);
             render_text(&text_attrib, CENTER, pw / 2, ts, ts, player->name);
         }
-        // RENDER INVENTORY //
-        
-        render_inventory(&inventory_attrib, &block_attrib, &text_attrib, width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
-        
-        if (inventory_screen) {
-            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
-            if (inventory.holding.count > 0) {
-                render_inventory_held(&block_attrib, &text_attrib, px, py, INVENTORY_ITEM_SIZE * 1.5);
-            }
-        }
-        
         // swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -28,6 +28,7 @@
 #define CRAFT_KEY_ORTHO 'F'
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
+#define CRAFT_KEY_INFINITE 'I'
 
 // keys for moving along axes
 #define CRAFT_KEY_XM 'Z'
@@ -47,5 +48,6 @@
 #define MAX_SLOT_SIZE 64
 #define INVENTORY_ITEM_SIZE 48
 #define INVENTORY_FONT_SIZE 20
+#define INVENTORY_UNLIMITED 0x7fffffff
 
 #endif

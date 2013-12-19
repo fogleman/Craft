@@ -22,7 +22,7 @@ void main() {
     vec3 light_color = vec3(p * 0.5);
     vec3 ambient = vec3(p * 0.3 + 0.2);
     if (color == vec3(1.0)) {
-        ambient += p / 2.0;
+        ambient += p / 4.0;
     }
     vec3 light = ambient + light_color * diffuse;
     color = min(color * light, vec3(1.0));

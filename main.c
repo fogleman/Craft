@@ -26,6 +26,8 @@
 #define MAX_RECV_LENGTH 1024
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
+#define ZNEAR 0.125
+#define ZFAR 256
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
@@ -177,8 +179,8 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 }
 
 GLuint gen_sky_buffer() {
-    float data[24576];
-    make_hemisphere(data, 192, 4);
+    float data[49152];
+    make_sphere(data, 384, 4);
     return gen_buffer(sizeof(data), data);
 }
 
@@ -756,7 +758,8 @@ void render_chunks(Attrib *attrib, Player *player) {
     int q = chunked(s->z);
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry,
+        ZNEAR, ZFAR, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -779,7 +782,8 @@ void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry,
+        ZNEAR, ZFAR, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -797,19 +801,21 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, 0, s->y, 0, s->rx, s->ry, fov, ortho);
+        matrix, width, height, 0, s->y, 0, s->rx, s->ry,
+        16, 1024, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, time_of_day());
-    draw_triangles_3d(attrib, buffer, 1024 * 3);
+    draw_triangles_3d(attrib, buffer, 2048 * 3);
 }
 
 void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry,
+        ZNEAR, ZFAR, fov, ortho);
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {

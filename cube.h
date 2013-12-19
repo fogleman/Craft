@@ -27,6 +27,6 @@ void make_character(
     float *data,
     float x, float y, float n, float m, char c);
 
-void make_hemisphere(float *data, float r, int detail);
+void make_sphere(float *data, float r, int detail);
 
 #endif

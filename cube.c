@@ -367,7 +367,7 @@ void make_character(
     *(d++) = du + 0; *(d++) = dv + b - p;
 }
 
-int _make_hemisphere(
+int _make_sphere(
     float *data, float r, int detail,
     float *a, float *b, float *c,
     float *ta, float *tb, float *tc)
@@ -397,24 +397,24 @@ int _make_hemisphere(
         normalize(bc + 0, bc + 1, bc + 2);
         float tab[2], tac[2], tbc[2];
         tab[0] = 0; tac[0] = 0; tbc[0] = 0;
-        tab[1] = 2 * acosf(ab[1]) / PI;
-        tac[1] = 2 * acosf(ac[1]) / PI;
-        tbc[1] = 2 * acosf(bc[1]) / PI;
+        tab[1] = 2 * acosf(ABS(ab[1])) / PI;
+        tac[1] = 2 * acosf(ABS(ac[1])) / PI;
+        tbc[1] = 2 * acosf(ABS(bc[1])) / PI;
         int total = 0;
         int n;
-        n = _make_hemisphere(data, r, detail - 1, a, ab, ac, ta, tab, tac);
+        n = _make_sphere(data, r, detail - 1, a, ab, ac, ta, tab, tac);
         total += n; data += n * 24;
-        n = _make_hemisphere(data, r, detail - 1, b, bc, ab, tb, tbc, tab);
+        n = _make_sphere(data, r, detail - 1, b, bc, ab, tb, tbc, tab);
         total += n; data += n * 24;
-        n = _make_hemisphere(data, r, detail - 1, c, ac, bc, tc, tac, tbc);
+        n = _make_sphere(data, r, detail - 1, c, ac, bc, tc, tac, tbc);
         total += n; data += n * 24;
-        n = _make_hemisphere(data, r, detail - 1, ab, bc, ac, tab, tbc, tac);
+        n = _make_sphere(data, r, detail - 1, ab, bc, ac, tab, tbc, tac);
         total += n; data += n * 24;
         return total;
     }
 }
 
-void make_hemisphere(float *data, float r, int detail) {
+void make_sphere(float *data, float r, int detail) {
     // detail, triangles, floats
     // 0, 4, 96
     // 1, 16, 384
@@ -424,9 +424,11 @@ void make_hemisphere(float *data, float r, int detail) {
     // 5, 4096, 98304
     // 6, 16384, 393216
     // 7, 65536, 1572864
-    static int indices[4][3] = {
+    static int indices[8][3] = {
         {4, 3, 0}, {1, 4, 0},
-        {3, 4, 5}, {4, 1, 5}
+        {3, 4, 5}, {4, 1, 5},
+        {0, 3, 2}, {0, 2, 1},
+        {5, 2, 3}, {5, 1, 2}
     };
     static float positions[6][3] = {
         { 0, 0,-1}, { 1, 0, 0},
@@ -439,8 +441,8 @@ void make_hemisphere(float *data, float r, int detail) {
         {0, 0}, {0, 1}
     };
     int total = 0;
-    for (int i = 0; i < 4; i++) {
-        int n = _make_hemisphere(
+    for (int i = 0; i < 8; i++) {
+        int n = _make_sphere(
             data, r, detail,
             positions[indices[i][0]],
             positions[indices[i][1]],

@@ -1478,6 +1478,8 @@ int main(int argc, char **argv) {
             ortho = 0;
             fov = 65;
 
+            render_sky(&sky_attrib, player, sky_buffer);
+            glClear(GL_DEPTH_BUFFER_BIT);
             render_chunks(&block_attrib, player);
             render_players(&block_attrib, player);
 

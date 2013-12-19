@@ -18,7 +18,8 @@ void main() {
         discard;
     }
     vec3 fog_color = vec3(texture2D(sampler2, vec2(timer, fog_height)));
-    float p = sin(timer * 2.0 * pi - pi / 2.0) / 2.0 + 0.5;
+    float p = sin(timer * 2.0 * pi - pi * 5.0 / 8.0);
+    p = clamp(p + 1.0, 0.0, 1.0);
     vec3 light_color = vec3(p * 0.5);
     vec3 ambient = vec3(p * 0.3 + 0.2);
     if (color == vec3(1.0)) {

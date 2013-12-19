@@ -1474,12 +1474,14 @@ int main(int argc, char **argv) {
         }
         
         // HANDLE MOVEMENT //
+        float vx = 0, vy = 0, vz = 0;
+        int sz = 0;
+        int sx = 0;
+        
         if (inventory_screen) {
             int sel = mouse_to_inventory(width, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
             inventory.highlighted = sel;
         } else {
-            int sz = 0;
-            int sx = 0;
             if (!typing) {
                 float m = dt * 1.0;
                 ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
@@ -1494,7 +1496,6 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
                 if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
             }
-            float vx, vy, vz;
             get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
             if (!typing) {
                 if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
@@ -1524,31 +1525,32 @@ int main(int argc, char **argv) {
                     vx = 0; vy = 0; vz = 1;
                 }
             }
-            float speed = flying ? 20 : 5;
-            int step = 8;
-            float ut = dt / step;
-            vx = vx * ut * speed;
-            vy = vy * ut * speed;
-            vz = vz * ut * speed;
-            for (int i = 0; i < step; i++) {
-                if (flying) {
-                    dy = 0;
-                }
-                else {
-                    dy -= ut * 25;
-                    dy = MAX(dy, -250);
-                }
-                x += vx;
-                y += vy + dy * ut;
-                z += vz;
-                if (collide(2, &x, &y, &z)) {
-                    dy = 0;
-                }
+        }
+        float speed = flying ? 20 : 5;
+        int step = 8;
+        float ut = dt / step;
+        vx = vx * ut * speed;
+        vy = vy * ut * speed;
+        vz = vz * ut * speed;
+        for (int i = 0; i < step; i++) {
+            if (flying) {
+                dy = 0;
             }
-            if (y < 0) {
-                y = highest_block(x, z) + 2;
+            else {
+                dy -= ut * 25;
+                dy = MAX(dy, -250);
             }
-            
+            x += vx;
+            y += vy + dy * ut;
+            z += vz;
+            if (collide(2, &x, &y, &z)) {
+                dy = 0;
+            }
+        }
+        if (y < 0) {
+            y = highest_block(x, z) + 2;
+        }
+        if (!inventory_screen) {
             // HANDLE CLICKS //
             if (left_click && exclusive) {
                 left_click = 0;

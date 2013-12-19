@@ -937,7 +937,7 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n)
     char text_buffer[16];
     float ts = INVENTORY_FONT_SIZE;
     if (item.count == INVENTORY_UNLIMITED)
-        snprintf(text_buffer, 16, "inf");
+        snprintf(text_buffer, 16, CREATIVE_MODE ? "" : "inf");
     else
         snprintf(text_buffer, 16, "%d", item.count);
     x += ts * (2.5 - strlen(text_buffer));
@@ -1256,7 +1256,7 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
 }
 
-int find_usable_inventory_slot(int w) {
+int find_matching_inventory_slot(int w) {
     //Try for same type
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
         if (inventory.items[item].w == w && inventory.items[item].count < MAX_SLOT_SIZE)
@@ -1266,6 +1266,14 @@ int find_usable_inventory_slot(int w) {
         if (inventory.items[item].w == 0)
             return item;
     return -1;
+}
+
+int find_usable_inventory_slot(int w) {
+    //Try for infinite
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
+        if (inventory.items[item].w == w && inventory.items[item].count == INVENTORY_UNLIMITED)
+            return -1; //Don't let them pick it up
+    return find_matching_inventory_slot(w);
 }
 
 void create_window() {
@@ -1443,7 +1451,25 @@ int main(int argc, char **argv) {
         y = highest_block(x, z) + 2;
     }
     
-    
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
+        if (CREATIVE_MODE) {
+            if (is_selectable(item + 1)) {
+                inventory.items[item].count = INVENTORY_UNLIMITED;
+                inventory.items[item].w = item + 1;
+            } else {
+                inventory.items[item].count = 0;
+                inventory.items[item].w = 0;
+            }
+        } else {
+            if (inventory.items[item].count == INVENTORY_UNLIMITED || inventory.items[item].count > 64) {
+                inventory.items[item].count = 64;
+            }
+        }
+        if (inventory.items[item].count <= 0) {
+            inventory.items[item].count = 0;
+            inventory.items[item].w = 0;
+        }
+    }
     
     glfwGetCursorPos(window, &px, &py);
     double previous = glfwGetTime();
@@ -1491,12 +1517,6 @@ int main(int argc, char **argv) {
         if (inventory_screen) {
             int sel = mouse_to_inventory(width, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
             inventory.highlighted = sel;
-            if (glfwGetKey(window, CRAFT_KEY_INFINITE)) {
-                if (inventory.items[inventory.highlighted].count == INVENTORY_UNLIMITED)
-                    inventory.items[inventory.highlighted].count = MAX_SLOT_SIZE;
-                else
-                    inventory.items[inventory.highlighted].count = INVENTORY_UNLIMITED;
-            }
         } else {
             if (!typing) {
                 float m = dt * 1.0;
@@ -1620,7 +1640,6 @@ int main(int argc, char **argv) {
                     //                inventory.selected = hw;
                 }
             }
-            
             if (drop) {
                 drop = 0;
                 int amount = 1;

@@ -1422,10 +1422,14 @@ int main(int argc, char **argv) {
         float ts = 12;
         float tx = ts / 2;
         float ty = height - ts;
+        int hour = time_of_day() * 24;
+        char am_pm = hour < 12 ? 'a' : 'p';
+        hour = hour % 12;
+        hour = hour ? hour : 12;
         snprintf(
-            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d",
+            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d%cm %d",
             chunked(x), chunked(z), x, y, z,
-            player_count, chunk_count, fps.fps);
+            player_count, chunk_count, hour, am_pm, fps.fps);
         render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
         for (int i = 0; i < MAX_MESSAGES; i++) {
             int index = (message_index + i) % MAX_MESSAGES;

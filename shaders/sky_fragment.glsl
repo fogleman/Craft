@@ -6,6 +6,6 @@ uniform float timer;
 varying vec2 fragment_uv;
 
 void main() {
-    vec2 uv = vec2(0.25, fragment_uv.y);
+    vec2 uv = vec2(timer, fragment_uv.t);
     gl_FragColor = texture2D(sampler, uv);
 }

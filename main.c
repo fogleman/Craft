@@ -64,6 +64,7 @@ typedef struct {
     GLuint uv;
     GLuint matrix;
     GLuint sampler;
+    GLuint sampler2;
     GLuint camera;
     GLuint timer;
 } Attrib;
@@ -112,6 +113,15 @@ int is_selectable(int w) {
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
+}
+
+float time_of_day() {
+    float t;
+    t = glfwGetTime();
+    t = t + DAY_LENGTH / 4.0;
+    t = t / DAY_LENGTH;
+    t = t - (int)t;
+    return t;
 }
 
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
@@ -751,7 +761,8 @@ void render_chunks(Attrib *attrib, Player *player) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
     glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, glfwGetTime());
+    glUniform1i(attrib->sampler2, 2);
+    glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
         if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
@@ -773,7 +784,7 @@ void render_players(Attrib *attrib, Player *player) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
     glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, glfwGetTime());
+    glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < player_count; i++) {
         Player *other = players + i;
         if (other != player) {
@@ -790,7 +801,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
-    glUniform1f(attrib->timer, glfwGetTime());
+    glUniform1f(attrib->timer, time_of_day());
     draw_triangles_3d(attrib, buffer, 1024 * 3);
 }
 
@@ -833,7 +844,7 @@ void render_item(Attrib *attrib) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, glfwGetTime());
+    glUniform1f(attrib->timer, time_of_day());
     if (is_plant(block_type)) {
         GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, block_type);
         draw_plant(attrib, buffer);
@@ -1103,6 +1114,7 @@ int main(int argc, char **argv) {
     block_attrib.uv = glGetAttribLocation(program, "uv");
     block_attrib.matrix = glGetUniformLocation(program, "matrix");
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
+    block_attrib.sampler2 = glGetUniformLocation(program, "sampler2");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
 

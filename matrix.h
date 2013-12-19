@@ -22,6 +22,6 @@ void set_matrix_2d(float *matrix, int width, int height);
 void set_matrix_3d(
     float *matrix, int width, int height,
     float x, float y, float z, float rx, float ry, float fov, int ortho);
-void set_matrix_item(float *matrix, int width, int height, float space, float size, int slot, int slots, float yoff);
+void set_matrix_item(float *matrix, int width, int height, float size, float xoff, float yoff);
 
 #endif

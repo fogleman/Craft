@@ -873,48 +873,59 @@ void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel) {
     del_buffer(buffer);
 }
 
-void render_inventory_items(Attrib *attrib, float x, float y, float n, int row) {
-    float matrix[16];
-    GLuint buffer;
-    
+void render_inventory_item(Attrib *attrib, Item item, float x, float y, float size) {
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, glfwGetTime());
     
-    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
-        int block = inventory.items[item + (row * INVENTORY_SLOTS)].w;
-        
-        if (block == 0)
-            continue;
-        
-        if (inventory.items[item + (row * INVENTORY_SLOTS)].count == 0)
-            continue;
-        
-        set_matrix_item(matrix, width, height, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * .75, item, INVENTORY_SLOTS, y);
-        
-        // render selected item
-        if (is_plant(block)) {
-            glDeleteBuffers(1, &buffer);
-            buffer = gen_plant_buffer(0, 0, 0, 0.5, block);
-        }
-        else {
-            buffer = gen_cube_buffer(0, 0, 0, 0.5, block);
-        }
-        glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-        
-        if (is_plant(block)) {
-            draw_plant(attrib, buffer);
-            del_buffer(buffer);
-        }
-        else {
-            draw_cube(attrib, buffer);
-            del_buffer(buffer);
-        }
+    float matrix[16];
+    GLuint buffer;
+
+    set_matrix_item(matrix, width, height, size, x, y);
+    
+    // render selected item
+    if (is_plant(item.w)) {
+        glDeleteBuffers(1, &buffer);
+        buffer = gen_plant_buffer(0, 0, 0, 0.5, item.w);
+    }
+    else {
+        buffer = gen_cube_buffer(0, 0, 0, 0.5, item.w);
+    }
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    
+    if (is_plant(item.w)) {
+        draw_plant(attrib, buffer);
+        del_buffer(buffer);
+    }
+    else {
+        draw_cube(attrib, buffer);
+        del_buffer(buffer);
     }
 }
 
-void render_inventory_text(Attrib *attrib, float x, float y, float n, int row) {
+void render_inventory_items(Attrib *attrib, float x, float y, float size, int row) {
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        Item block = inventory.items[item + (row * INVENTORY_SLOTS)];
+        
+        if (block.w == 0)
+            continue;
+        
+        if (block.count == 0)
+            continue;
+
+        /* 1  ...  0  ... -1 */
+        /* 0 1 2 3 4 5 6 7 8 */
+        /* 1 ...  0  ...-1 */
+        /* 0 1 2 3 4 5 6 7 */
+        float slotoff = ((float)item - (float)(INVENTORY_SLOTS - 1) / 2) * 1.5;
+        float xpos = x + slotoff * size;
+        
+        render_inventory_item(attrib, block, xpos, y, size * 0.75);
+    }
+}
+
+void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n) {
     float matrix[16];
     // render text
     set_matrix_2d(matrix, width, height);
@@ -922,24 +933,29 @@ void render_inventory_text(Attrib *attrib, float x, float y, float n, int row) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1);
+    
+    char text_buffer[16];
+    float ts = INVENTORY_FONT_SIZE;
+    snprintf(
+             text_buffer, 16, "%d", item.count);
+    x += ts * (2.5 - strlen(text_buffer));
+    print(attrib, LEFT,
+          x, y, ts, text_buffer);
+}
+
+void render_inventory_texts(Attrib *attrib, float x, float y, float n, int row) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
-        int block = inventory.items[item + (row * INVENTORY_SLOTS)].w;
+        Item block = inventory.items[item + (row * INVENTORY_SLOTS)];
         
-        if (block == 0)
+        if (block.w == 0)
             continue;
-        if (inventory.items[item + (row * INVENTORY_SLOTS)].count <= 1)
+        if (block.count <= 1)
             continue;
         
-        char text_buffer[16];
-        float ts = INVENTORY_FONT_SIZE;
         float sep = INVENTORY_ITEM_SIZE * 1.5;
         float tx = width / 2 + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
         float ty = y == 0 ? sep / 3 : y - sep / 3;
-        snprintf(
-                 text_buffer, 16, "%d", inventory.items[item + (row * INVENTORY_SLOTS)].count);
-        tx += ts * (2.5 - strlen(text_buffer));
-        print(attrib, LEFT,
-              tx, ty, ts, text_buffer);
+        render_inventory_text(attrib, block, tx, ty, n);
     }
 }
 
@@ -947,9 +963,9 @@ void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_a
                           float x, float y, float n, int sel) {
     render_inventory_bar(window_attrib, x, y, n, sel);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_items(item_attrib, x, 0, n, 0);
+    render_inventory_items(item_attrib, x, y, n / 1.5, 0);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_text(text_attrib, x, 0, n, 0);
+    render_inventory_texts(text_attrib, x, y, n, 0);
 }
 
 void render_inventory_screen(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
@@ -957,15 +973,19 @@ void render_inventory_screen(Attrib *window_attrib, Attrib *item_attrib, Attrib 
     for (int row = 0; row < INVENTORY_ROWS; row ++) {
         render_inventory_bar(window_attrib, x, y + n*row, n, sel - (row * INVENTORY_SLOTS));
         glClear(GL_DEPTH_BUFFER_BIT);
-        render_inventory_items(item_attrib, x, y + n*row, n, row);
+        render_inventory_items(item_attrib, x, y + n*row, n / 1.5, row);
         glClear(GL_DEPTH_BUFFER_BIT);
-        render_inventory_text(text_attrib, x, y + n*row, n, row);
+        render_inventory_texts(text_attrib, x, y + n*row, n, row);
     }
 }
 
 void render_inventory_held(Attrib *item_attrib, Attrib *text_attrib,
                            float x, float y, float n) {
-    
+    render_inventory_item(item_attrib, inventory.holding, x, height - y, (n / 1.5) * 0.75);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    float sep = INVENTORY_ITEM_SIZE * 1.5;
+    render_inventory_text(text_attrib, inventory.holding, x, (height - y) - sep / 3, n);
 }
 
 int mouse_to_inventory(int width, int height, float x, float y, float n) {
@@ -1717,6 +1737,9 @@ int main(int argc, char **argv) {
         
         if (inventory_screen) {
             render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
+            if (inventory.holding.count > 0) {
+                render_inventory_held(&block_attrib, &text_attrib, px, py, INVENTORY_ITEM_SIZE * 1.5);
+            }
         }
         
         // swap buffers

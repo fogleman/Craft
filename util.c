@@ -17,17 +17,14 @@ double rand_double() {
     return (double)rand() / (double)RAND_MAX;
 }
 
-void update_fps(FPS *fps, int show) {
+void update_fps(FPS *fps) {
     fps->frames++;
     double now = glfwGetTime();
     double elapsed = now - fps->since;
     if (elapsed >= 1) {
-        int result = fps->frames / elapsed;
+        fps->fps = round(fps->frames / elapsed);
         fps->frames = 0;
         fps->since = now;
-        if (show) {
-            printf("%d\n", result);
-        }
     }
 }
 
@@ -43,13 +40,17 @@ char *load_file(const char *path) {
     return data;
 }
 
-GLuint gen_buffer(GLenum target, GLsizei size, GLfloat *data) {
+GLuint gen_buffer(GLsizei size, GLfloat *data) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
-    glBindBuffer(target, buffer);
-    glBufferData(target, size, data, GL_STATIC_DRAW);
-    glBindBuffer(target, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     return buffer;
+}
+
+void del_buffer(GLuint buffer) {
+    glDeleteBuffers(1, &buffer);
 }
 
 GLfloat *malloc_faces(int components, int faces) {
@@ -58,7 +59,7 @@ GLfloat *malloc_faces(int components, int faces) {
 
 GLuint gen_faces(int components, int faces, GLfloat *data) {
     GLuint buffer = gen_buffer(
-        GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * components * faces, data);
+        sizeof(GLfloat) * 6 * components * faces, data);
     free(data);
     return buffer;
 }

@@ -64,7 +64,7 @@ void client_position(float x, float y, float z, float rx, float ry) {
         (pz - z) * (pz - z) +
         (prx - rx) * (prx - rx) +
         (pry - ry) * (pry - ry);
-    if (distance < 0.1) {
+    if (distance < 0.0001) {
         return;
     }
     px = x; py = y; pz = z; prx = rx; pry = ry;

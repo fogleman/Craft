@@ -167,8 +167,8 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 }
 
 GLuint gen_sky_buffer() {
-    float data[6144];
-    make_hemisphere(data, 192, 3);
+    float data[24576];
+    make_hemisphere(data, 192, 4);
     return gen_buffer(sizeof(data), data);
 }
 
@@ -789,9 +789,9 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
         matrix, width, height, 0, s->y, 0, s->rx, s->ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 0);
+    glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, glfwGetTime());
-    draw_triangles_3d(attrib, buffer, 256 * 3);
+    draw_triangles_3d(attrib, buffer, 1024 * 3);
 }
 
 void render_wireframe(Attrib *attrib, Player *player) {
@@ -1078,6 +1078,14 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     load_png_texture("font.png");
+
+    GLuint sky;
+    glGenTextures(1, &sky);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, sky);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    load_png_texture("sky.png");
 
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};

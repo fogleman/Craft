@@ -442,8 +442,8 @@ void make_hemisphere(float *data, float r, int detail) {
     };
     static float uvs[6][3] = {
         {0, 0}, {0, 0},
-        {0,-1/16.0}, {0, 0},
-        {0, 1/16.0}, {0, 0}
+        {0, 1}, {0, 0},
+        {0, 1}, {0, 0}
     };
     int total = 0;
     for (int i = 0; i < 4; i++) {

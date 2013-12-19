@@ -984,8 +984,10 @@ void render_inventory_held(Attrib *item_attrib, Attrib *text_attrib,
     render_inventory_item(item_attrib, inventory.holding, x, height - y, (n / 1.5) * 0.75);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    float sep = INVENTORY_ITEM_SIZE * 1.5;
-    render_inventory_text(text_attrib, inventory.holding, x, (height - y) - sep / 3, n);
+    if (inventory.holding.count > 1) {
+        float sep = INVENTORY_ITEM_SIZE * 1.5;
+        render_inventory_text(text_attrib, inventory.holding, x, (height - y) - sep / 3, n);
+    }
 }
 
 int mouse_to_inventory(int width, int height, float x, float y, float n) {
@@ -1185,7 +1187,51 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
             
-            //TODO: something
+            int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
+            if (inventory.holding.count == 0) {
+                if (sel != -1) {
+                    //Pick up half
+                    int pickup = ceil(inventory.items[sel].count / 2.);
+                    
+                    inventory.holding.count = pickup;
+                    if (inventory.holding.count > 0)
+                        inventory.holding.w = inventory.items[sel].w;
+                    
+                    inventory.items[sel].count -= pickup;
+                    if (inventory.items[sel].count == 0)
+                        inventory.items[sel].w = 0;
+                }
+            } else {
+                if (sel == -1) {
+                    //Throw one
+                    inventory.holding.count --;
+                    if (inventory.holding.count == 0)
+                        inventory.holding.w = 0;
+                } else {
+                    //Place one
+                    if (inventory.items[sel].w == 0) {
+                        //Into empty
+                        inventory.items[sel].count = 1;
+                        inventory.items[sel].w = inventory.holding.w;
+
+                        inventory.holding.count --;
+                        if (inventory.holding.count == 0)
+                            inventory.holding.w = 0;
+                    } else {
+                        if (inventory.items[sel].w == inventory.holding.w) {
+                            //Into same type
+                            if (inventory.items[sel].count < 64) {
+                                //Append with one
+                                inventory.items[sel].count ++;
+
+                                inventory.holding.count --;
+                                if (inventory.holding.count == 0)
+                                    inventory.holding.w = 0;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {

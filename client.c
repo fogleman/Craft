@@ -87,9 +87,16 @@ void client_block(int x, int y, int z, int w, int s) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d\n", x, y, z, w, s);
-    client_send(buffer);
+    {
+        char buffer[1024];
+        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d\n", x, y, z, w, s);
+        client_send(buffer);
+    }
+    {
+        char buffer[1024];
+        snprintf(buffer, 1024, "B,%d,%d,%d,%d\n", x, y, z, w);
+        client_send(buffer);
+    }
 }
 
 void client_talk(char *text) {

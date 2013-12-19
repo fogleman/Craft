@@ -179,8 +179,8 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 }
 
 GLuint gen_sky_buffer() {
-    float data[49152];
-    make_sphere(data, 384, 4);
+    float data[12288];
+    make_sphere(data, 384, 3);
     return gen_buffer(sizeof(data), data);
 }
 
@@ -807,7 +807,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, time_of_day());
-    draw_triangles_3d(attrib, buffer, 2048 * 3);
+    draw_triangles_3d(attrib, buffer, 512 * 3);
 }
 
 void render_wireframe(Attrib *attrib, Player *player) {

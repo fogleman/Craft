@@ -802,7 +802,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     float matrix[16];
     set_matrix_3d(
         matrix, width, height, 0, 0, 0, s->rx, s->ry,
-        16, 1024, fov, ortho);
+        16, 1024, fov, 0);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);

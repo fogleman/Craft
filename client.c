@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "client.h"
 #include "tinycthread.h"
+#include "config.h"
 
 #define QUEUE_SIZE 65536
 #define BUFFER_SIZE 4096
@@ -82,13 +83,20 @@ void client_chunk(int p, int q, int key) {
     client_send(buffer);
 }
 
-void client_block(int x, int y, int z, int w) {
+void client_block(int x, int y, int z, int w, int s) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "B,%d,%d,%d,%d\n", x, y, z, w);
-    client_send(buffer);
+    {
+        char buffer[1024];
+        snprintf(buffer, 1024, "B,%d,%d,%d,%d,%d\n", x, y, z, w, s);
+        client_send(buffer);
+    }
+    {
+        char buffer[1024];
+        snprintf(buffer, 1024, "B,%d,%d,%d,%d\n", x, y, z, w);
+        client_send(buffer);
+    }
 }
 
 void client_talk(char *text) {
@@ -101,6 +109,18 @@ void client_talk(char *text) {
     char buffer[1024];
     snprintf(buffer, 1024, "T,%s\n", text);
     client_send(buffer);
+}
+
+void client_inventory(Inventory inventory) {
+    if (!client_enabled) {
+        return;
+    }
+    
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
+        char buffer[1024];
+        snprintf(buffer, 1024, "I,%d,%d,%d\n", inventory.items[item].w, item, inventory.items[item].count);
+        client_send(buffer);
+    }
 }
 
 int client_recv(char *data, int length) {

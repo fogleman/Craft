@@ -7,7 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include <time.h>
+#include <unistd.h>
 #include "client.h"
 #include "config.h"
 #include "cube.h"
@@ -29,6 +31,16 @@
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
+
+typedef struct {
+    int index;
+    int glIndex;
+} Texture;
+
+static Texture BlockTexture     = {0, GL_TEXTURE0};
+static Texture FontTexture      = {1, GL_TEXTURE1};
+static Texture InventoryTexture = {2, GL_TEXTURE2};
+static Texture SkyTexture       = {3, GL_TEXTURE3};
 
 typedef struct {
     Map map;
@@ -77,17 +89,20 @@ static int chunk_count = 0;
 static Player players[MAX_PLAYERS];
 static int player_count = 0;
 static int exclusive = 1;
+static int drop = 0;
 static int left_click = 0;
 static int right_click = 0;
 static int middle_click = 0;
 static int observe1 = 0;
 static int observe2 = 0;
 static int flying = 0;
-static int block_type = 1;
 static int ortho = 0;
 static float fov = 65;
 static int typing = 0;
 static char typing_buffer[MAX_TEXT_LENGTH] = {0};
+static Inventory inventory;
+static int inventory_screen = 0;
+static int inventory_toggle = 0;
 
 int is_plant(int w) {
     return w > 16;
@@ -211,6 +226,19 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
+GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
+    int length = INVENTORY_SLOTS;
+    GLfloat *data = malloc_faces(4, length);
+    x -= n * (length - 1) / 2;
+    for (int i = 0; i < length; i ++) {
+        make_inventory(
+            data + i * 24,
+            x, y, n / 2, n / 2, sel == i ? 1 : 0);
+        x += n;
+    }
+    return gen_faces(4, length, data);
+}
+
 void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -253,6 +281,13 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    draw_triangles_2d(attrib, buffer, length * 6);
+    glDisable(GL_BLEND);
+}
+
 void draw_chunk(Attrib *attrib, Chunk *chunk) {
     draw_triangles_3d(attrib, chunk->buffer, chunk->faces * 6);
 }
@@ -278,6 +313,17 @@ void draw_plant(Attrib *attrib, GLuint buffer) {
 
 void draw_player(Attrib *attrib, Player *player) {
     draw_cube(attrib, player->buffer);
+}
+
+void print(
+    Attrib *attrib, int justify,
+    float x, float y, float n, char *text)
+{
+    int length = strlen(text);
+    x -= n * justify * (length - 1) / 2;
+    GLuint buffer = gen_text_buffer(x, y, n, text);
+    draw_text(attrib, buffer, length);
+    del_buffer(buffer);
 }
 
 Player *find_player(int id) {
@@ -735,7 +781,7 @@ void set_block(int x, int y, int z, int w) {
     if (chunked(z + 1) != q) {
         _set_block(p, q + 1, x, y, z, -w);
     }
-    client_block(x, y, z, w);
+    client_block(x, y, z, w, inventory.selected);
 }
 
 int get_block(int x, int y, int z) {
@@ -761,8 +807,8 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
-    glUniform1i(attrib->sampler, 0);
-    glUniform1i(attrib->sampler2, 2);
+    glUniform1i(attrib->sampler, BlockTexture.index);
+    glUniform1i(attrib->sampler2, SkyTexture.index);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -786,7 +832,7 @@ void render_players(Attrib *attrib, Player *player) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
-    glUniform1i(attrib->sampler, 0);
+    glUniform1i(attrib->sampler, BlockTexture.index);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < player_count; i++) {
         Player *other = players + i;
@@ -803,7 +849,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
         matrix, width, height, 0, 0, 0, s->rx, s->ry, fov, 0);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 2);
+    glUniform1i(attrib->sampler, SkyTexture.index);
     glUniform1f(attrib->timer, time_of_day());
     draw_triangles_3d(attrib, buffer, 512 * 3);
 }
@@ -840,26 +886,6 @@ void render_crosshairs(Attrib *attrib) {
     glDisable(GL_COLOR_LOGIC_OP);
 }
 
-void render_item(Attrib *attrib) {
-    float matrix[16];
-    set_matrix_item(matrix, width, height);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform3f(attrib->camera, 0, 0, 5);
-    glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, time_of_day());
-    if (is_plant(block_type)) {
-        GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, block_type);
-        draw_plant(attrib, buffer);
-        del_buffer(buffer);
-    }
-    else {
-        GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, block_type);
-        draw_cube(attrib, buffer);
-        del_buffer(buffer);
-    }
-}
-
 void render_text(
     Attrib *attrib, int justify, float x, float y, float n, char *text)
 {
@@ -867,7 +893,7 @@ void render_text(
     set_matrix_2d(matrix, width, height);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 1);
+    glUniform1i(attrib->sampler, FontTexture.index);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
@@ -875,62 +901,216 @@ void render_text(
     del_buffer(buffer);
 }
 
+void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel) {
+    float matrix[16];
+    set_matrix_2d(matrix, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, InventoryTexture.index);
+
+    GLuint buffer = gen_inventory_buffers(x, y, n, sel);
+
+    draw_inventory(attrib, buffer, INVENTORY_SLOTS);
+    del_buffer(buffer);
+}
+
+void render_inventory_item(Attrib *attrib, Item item, float x, float y, float size) {
+    glUseProgram(attrib->program);
+    glUniform3f(attrib->camera, 0, 0, 5);
+    glUniform1i(attrib->sampler, BlockTexture.index);
+    glUniform1f(attrib->timer, M_PI_2);
+
+    float matrix[16];
+    GLuint buffer;
+
+    set_matrix_item(matrix, width, height, size, x, y);
+
+    // render selected item
+    if (is_plant(item.w)) {
+        glDeleteBuffers(1, &buffer);
+        buffer = gen_plant_buffer(0, 0, 0, 0.5, item.w);
+    }
+    else {
+        buffer = gen_cube_buffer(0, 0, 0, 0.5, item.w);
+    }
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+
+    if (is_plant(item.w)) {
+        draw_plant(attrib, buffer);
+        del_buffer(buffer);
+    }
+    else {
+        draw_cube(attrib, buffer);
+        del_buffer(buffer);
+    }
+}
+
+void render_inventory_items(Attrib *attrib, float x, float y, float size, int row) {
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        Item block = inventory.items[item + (row * INVENTORY_SLOTS)];
+
+        if (block.w == 0)
+            continue;
+
+        if (block.count == 0)
+            continue;
+
+        /* 1  ...  0  ... -1 */
+        /* 0 1 2 3 4 5 6 7 8 */
+        /* 1 ...  0  ...-1 */
+        /* 0 1 2 3 4 5 6 7 */
+        float slotoff = ((float)item - (float)(INVENTORY_SLOTS - 1) / 2) * 1.5;
+        float xpos = x + slotoff * size;
+
+        render_inventory_item(attrib, block, xpos, y, size * 0.75);
+    }
+}
+
+void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n) {
+    float matrix[16];
+    // render text
+    set_matrix_2d(matrix, width, height);
+
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, FontTexture.index);
+
+    char text_buffer[16];
+    float ts = INVENTORY_FONT_SIZE;
+    if (item.count == INVENTORY_UNLIMITED)
+        snprintf(text_buffer, 16, CREATIVE_MODE ? "" : "inf");
+    else
+        snprintf(text_buffer, 16, "%d", item.count);
+    x += ts * (2.5 - strlen(text_buffer));
+    print(attrib, LEFT,
+        x, y, ts, text_buffer);
+}
+
+void render_inventory_texts(Attrib *attrib, float x, float y, float n, int row) {
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        Item block = inventory.items[item + (row * INVENTORY_SLOTS)];
+
+        if (block.w == 0)
+            continue;
+        if (block.count <= 1)
+            continue;
+
+        float sep = INVENTORY_ITEM_SIZE * 1.5;
+        float tx = width / 2 + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
+        float ty = y == 0 ? sep / 3 : y - sep / 3;
+        render_inventory_text(attrib, block, tx, ty, n);
+    }
+}
+
+void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
+                          float x, float y, float n, int sel) {
+    render_inventory_bar(window_attrib, x, y, n, sel);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    render_inventory_items(item_attrib, x, y, n / 1.5, 0);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    render_inventory_texts(text_attrib, x, y, n, 0);
+}
+
+void render_inventory_screen(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
+                      float x, float y, float n, int sel) {
+    for (int row = 0; row < INVENTORY_ROWS; row ++) {
+        render_inventory_bar(window_attrib, x, y + n*row, n, sel - (row * INVENTORY_SLOTS));
+        glClear(GL_DEPTH_BUFFER_BIT);
+        render_inventory_items(item_attrib, x, y + n*row, n / 1.5, row);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        render_inventory_texts(text_attrib, x, y + n*row, n, row);
+    }
+}
+
+void render_inventory_held(Attrib *item_attrib, Attrib *text_attrib,
+                           float x, float y, float n) {
+    render_inventory_item(item_attrib, inventory.holding, x, height - y, (n / 1.5) * 0.75);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    if (inventory.holding.count > 1) {
+        float sep = INVENTORY_ITEM_SIZE * 1.5;
+        render_inventory_text(text_attrib, inventory.holding, x, (height - y) - sep / 3, n);
+    }
+}
+
+int mouse_to_inventory(int width, int height, float x, float y, float n) {
+    /* .. 0 .. 1 .. 2 .. 3 .. 4 .. 5 .. 6 .. 7 .. 8 .. */
+    /* |---------------------------------------------| */
+    int xcell = round((INVENTORY_SLOTS - 1) / 2. + ((x - width / 2.) / n));
+    int ycell = 0.5 - (y - height / 2.) / n;
+
+    if (xcell < 0 || ycell < 0 || xcell >= INVENTORY_SLOTS || ycell >= INVENTORY_ROWS)
+        return -1;
+
+    return xcell + (ycell * INVENTORY_SLOTS);
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         return;
     }
-    if (key == GLFW_KEY_BACKSPACE) {
-        if (typing) {
-            int n = strlen(typing_buffer);
-            if (n > 0) {
-                typing_buffer[n - 1] = '\0';
+    if (!inventory_screen) {
+        if (key == GLFW_KEY_BACKSPACE) {
+            if (typing) {
+                int n = strlen(typing_buffer);
+                if (n > 0) {
+                    typing_buffer[n - 1] = '\0';
+                }
             }
         }
     }
     if (action != GLFW_PRESS) {
         return;
     }
-    if (key == GLFW_KEY_ESCAPE) {
-        if (typing) {
-            typing = 0;
+    if (!inventory_screen) {
+        if (key == GLFW_KEY_ESCAPE) {
+            if (typing) {
+                typing = 0;
+            }
+            else if (exclusive) {
+                exclusive = 0;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
         }
-        else if (exclusive) {
-            exclusive = 0;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-    }
-    if (key == GLFW_KEY_ENTER) {
-        if (typing) {
-            typing = 0;
-            client_talk(typing_buffer);
-        }
-        else {
-            if (mods & GLFW_MOD_SUPER) {
-                right_click = 1;
+        if (key == GLFW_KEY_ENTER) {
+            if (typing) {
+                typing = 0;
+                client_talk(typing_buffer);
             }
             else {
-                left_click = 1;
+                if (mods & GLFW_MOD_SUPER) {
+                    right_click = 1;
+                }
+                else {
+                    left_click = 1;
+                }
             }
         }
     }
     if (!typing) {
-        if (key == CRAFT_KEY_FLY) {
-            flying = !flying;
+        if (!inventory_screen) {
+            if (key == CRAFT_KEY_FLY) {
+                flying = !flying;
+            }
+            if (key >= '1' && key <= '9') {
+                inventory.selected = key - '1';
+            }
+            if (key == CRAFT_KEY_BLOCK_TYPE) {
+                inventory.selected = (inventory.selected + 1) % INVENTORY_SLOTS;
+            }
+            if (key == CRAFT_KEY_DROP) {
+                drop = 1;
+            }
+            if (key == CRAFT_KEY_OBSERVE) {
+                observe1 = (observe1 + 1) % player_count;
+            }
+            if (key == CRAFT_KEY_OBSERVE_INSET) {
+                observe2 = (observe2 + 1) % player_count;
+            }
         }
-        if (key >= '1' && key <= '9') {
-            block_type = key - '1' + 1;
-        }
-        if (key == '0') {
-            block_type = 10;
-        }
-        if (key == CRAFT_KEY_BLOCK_TYPE) {
-            block_type = block_type % 15 + 1;
-        }
-        if (key == CRAFT_KEY_OBSERVE) {
-            observe1 = (observe1 + 1) % player_count;
-        }
-        if (key == CRAFT_KEY_OBSERVE_INSET) {
-            observe2 = (observe2 + 1) % player_count;
+        if (key == CRAFT_KEY_INVENTORY) {
+            inventory_toggle = 1;
         }
     }
 }
@@ -946,7 +1126,7 @@ void on_char(GLFWwindow *window, unsigned int u) {
             }
         }
     }
-    else {
+    else if (!inventory_screen) {
         if (u == CRAFT_KEY_CHAT) {
             typing = 1;
             typing_buffer[0] = '\0';
@@ -963,16 +1143,16 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     static double ypos = 0;
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
-        block_type++;
-        if (block_type > 15) {
-            block_type = 1;
+        inventory.selected++;
+        if (inventory.selected >= INVENTORY_SLOTS) {
+            inventory.selected = 0;
         }
         ypos = 0;
     }
     if (ypos > SCROLL_THRESHOLD) {
-        block_type--;
-        if (block_type < 1) {
-            block_type = 15;
+        inventory.selected--;
+        if (inventory.selected < 0) {
+            inventory.selected = INVENTORY_SLOTS - 1;
         }
         ypos = 0;
     }
@@ -992,20 +1172,166 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             }
         }
         else {
-            exclusive = 1;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            if (inventory_screen) {
+                double mx, my;
+                glfwGetCursorPos(window, &mx, &my);
+
+                int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
+                if (inventory.holding.count == 0) {
+                    if (sel != -1) {
+                        //Pick up
+                        inventory.holding.count = inventory.items[sel].count;
+                        inventory.holding.w = inventory.items[sel].w;
+                        inventory.items[sel].count = 0;
+                        inventory.items[sel].w = 0;
+                    }
+                } else {
+                    if (sel == -1) {
+                        //Throw
+                        inventory.holding.count = 0;
+                        inventory.holding.w = 0;
+                    } else {
+                        //Place
+                        if (inventory.items[sel].w == 0) {
+                            //Into empty
+                            inventory.items[sel].count = inventory.holding.count;
+                            inventory.items[sel].w = inventory.holding.w;
+                            inventory.holding.count = 0;
+                            inventory.holding.w = 0;
+                        } else {
+                            if (inventory.items[sel].w == inventory.holding.w && inventory.holding.count != INVENTORY_UNLIMITED) {
+                                //Into same type
+                                if (inventory.holding.count + inventory.items[sel].count <= 64) {
+                                    //Append all
+                                    inventory.items[sel].count += inventory.holding.count;
+                                    inventory.holding.count = 0;
+                                    inventory.holding.w = 0;
+                                } else {
+                                    //Append with leftover
+                                    inventory.holding.count -= 64 - inventory.items[sel].count;
+                                    inventory.items[sel].count = 64;
+                                }
+                            } else {
+                                //Into diff type
+                                Item cache;
+                                cache.count = inventory.holding.count;
+                                cache.w = inventory.holding.w;
+
+                                inventory.holding = inventory.items[sel];
+                                inventory.items[sel] = cache;
+                            }
+
+                        }
+                    }
+                }
+            } else {
+                exclusive = 1;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
         }
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (exclusive) {
             right_click = 1;
+        } else if (inventory_screen) {
+            double mx, my;
+            glfwGetCursorPos(window, &mx, &my);
+
+            int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
+            if (inventory.items[sel].count != INVENTORY_UNLIMITED) {
+                if (inventory.holding.count == 0) {
+                    if (sel != -1) {
+                        //Pick up half
+                        int pickup = ceil(inventory.items[sel].count / 2.);
+
+                        inventory.holding.count = pickup;
+                        if (inventory.holding.count > 0)
+                            inventory.holding.w = inventory.items[sel].w;
+
+                        inventory.items[sel].count -= pickup;
+                        if (inventory.items[sel].count == 0)
+                            inventory.items[sel].w = 0;
+                    }
+                } else {
+                    if (sel == -1) {
+                        //Throw one
+                        inventory.holding.count --;
+                        if (inventory.holding.count == 0)
+                            inventory.holding.w = 0;
+                    } else {
+                        //Place one
+                        if (inventory.items[sel].w == 0) {
+                            //Into empty
+                            inventory.items[sel].count = 1;
+                            inventory.items[sel].w = inventory.holding.w;
+
+                            inventory.holding.count --;
+                            if (inventory.holding.count == 0)
+                                inventory.holding.w = 0;
+                        } else {
+                            if (inventory.items[sel].w == inventory.holding.w) {
+                                //Into same type
+                                if (inventory.items[sel].count < 64) {
+                                    //Append with one
+                                    inventory.items[sel].count ++;
+
+                                    inventory.holding.count --;
+                                    if (inventory.holding.count == 0)
+                                        inventory.holding.w = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
         if (exclusive) {
             middle_click = 1;
+        } if (inventory_screen) {
+            double mx, my;
+            glfwGetCursorPos(window, &mx, &my);
+
+            //TODO: something
         }
     }
+}
+
+Item get_current_item() {
+    return inventory.items[inventory.selected];
+}
+
+int get_current_block() {
+    return get_current_item().w;
+}
+
+int get_current_count() {
+    return get_current_item().count;
+}
+
+int find_matching_inventory_slot(int w) {
+    //Try for same type
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
+        if (inventory.items[item].w == w)
+            return item;
+    return -1;
+}
+
+int find_usable_inventory_slot(int w) {
+    //Try for infinite
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
+        if (inventory.items[item].w == w && inventory.items[item].count == INVENTORY_UNLIMITED)
+            return -1; //Don't let them pick it up
+    //Try for same type
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
+        if (inventory.items[item].w == w && inventory.items[item].count < MAX_SLOT_SIZE)
+            return item;
+    //Try for empty
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
+        if (inventory.items[item].w == 0)
+            return item;
+    return -1;
 }
 
 void create_window() {
@@ -1024,6 +1350,14 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
+    // Set dir
+    char *base = dirname(argv[0]);
+
+    if (chdir(base)) {
+        return 1;
+    }
+    setenv("PWD", base, 1);
+
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {
@@ -1079,7 +1413,7 @@ int main(int argc, char **argv) {
 
     GLuint texture;
     glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(BlockTexture.glIndex);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1087,15 +1421,23 @@ int main(int argc, char **argv) {
 
     GLuint font;
     glGenTextures(1, &font);
-    glActiveTexture(GL_TEXTURE1);
+    glActiveTexture(FontTexture.glIndex);
     glBindTexture(GL_TEXTURE_2D, font);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     load_png_texture("font.png");
 
+    GLuint inventory_texture;
+    glGenTextures(1, &inventory_texture);
+    glActiveTexture(InventoryTexture.glIndex);
+    glBindTexture(GL_TEXTURE_2D, inventory_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    load_png_texture("inventory.png");
+
     GLuint sky;
     glGenTextures(1, &sky);
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(SkyTexture.glIndex);
     glBindTexture(GL_TEXTURE_2D, sky);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1106,6 +1448,7 @@ int main(int argc, char **argv) {
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
+    Attrib inventory_attrib = {0};
     Attrib sky_attrib = {0};
     GLuint program;
 
@@ -1134,6 +1477,14 @@ int main(int argc, char **argv) {
     text_attrib.uv = glGetAttribLocation(program, "uv");
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
+
+    program = load_program(
+        "shaders/inventory_vertex.glsl", "shaders/inventory_fragment.glsl");
+    inventory_attrib.program = program;
+    inventory_attrib.position = glGetAttribLocation(program, "position");
+    inventory_attrib.uv = glGetAttribLocation(program, "uv");
+    inventory_attrib.matrix = glGetUniformLocation(program, "matrix");
+    inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
 
     program = load_program(
         "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
@@ -1168,10 +1519,37 @@ int main(int argc, char **argv) {
     double px = 0;
     double py = 0;
 
-    int loaded = db_load_state(&x, &y, &z, &rx, &ry);
+    inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
+
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
+        inventory.items[item].count = 0;
+        inventory.items[item].w     = 0;
+    }
+
+    int loaded = db_load_state(&x, &y, &z, &rx, &ry, &inventory);
     ensure_chunks(x, y, z, 1);
     if (!loaded) {
         y = highest_block(x, z) + 2;
+    }
+
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
+        if (CREATIVE_MODE) {
+            if (is_selectable(item + 1)) {
+                inventory.items[item].count = INVENTORY_UNLIMITED;
+                inventory.items[item].w = item + 1;
+            } else {
+                inventory.items[item].count = 0;
+                inventory.items[item].w = 0;
+            }
+        } else {
+            if (inventory.items[item].count == INVENTORY_UNLIMITED || inventory.items[item].count > 64) {
+                inventory.items[item].count = 64;
+            }
+        }
+        if (inventory.items[item].count <= 0) {
+            inventory.items[item].count = 0;
+            inventory.items[item].w = 0;
+        }
     }
 
     glfwGetCursorPos(window, &px, &py);
@@ -1213,50 +1591,56 @@ int main(int argc, char **argv) {
         }
 
         // HANDLE MOVEMENT //
+        float vx = 0, vy = 0, vz = 0;
         int sz = 0;
         int sx = 0;
-        if (!typing) {
-            float m = dt * 1.0;
-            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
-            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
-            if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
-            if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
-            if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
-            if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
-            if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
-            if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
-            if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
-            if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
-            if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
-        }
-        float vx, vy, vz;
-        get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
-        if (!typing) {
-            if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
-                if (flying) {
-                    vy = 1;
+
+        if (inventory_screen) {
+            int sel = mouse_to_inventory(width, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
+            inventory.highlighted = sel;
+        } else {
+            if (!typing) {
+                float m = dt * 1.0;
+                ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
+                fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
+                if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
+                if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
+                if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
+                if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
+                if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
+                if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
+                if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
+                if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
+                if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
+            }
+            get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
+            if (!typing) {
+                if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
+                    if (flying) {
+                        vy = 1;
+                    }
+                    else if (dy == 0) {
+                        dy = 8;
+                    }
                 }
-                else if (dy == 0) {
-                    dy = 8;
+                if (glfwGetKey(window, CRAFT_KEY_XM)) {
+                    vx = -1; vy = 0; vz = 0;
                 }
-            }
-            if (glfwGetKey(window, CRAFT_KEY_XM)) {
-                vx = -1; vy = 0; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_XP)) {
-                vx = 1; vy = 0; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_YM)) {
-                vx = 0; vy = -1; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_YP)) {
-                vx = 0; vy = 1; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_ZM)) {
-                vx = 0; vy = 0; vz = -1;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_ZP)) {
-                vx = 0; vy = 0; vz = 1;
+                if (glfwGetKey(window, CRAFT_KEY_XP)) {
+                    vx = 1; vy = 0; vz = 0;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_YM)) {
+                    vx = 0; vy = -1; vz = 0;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_YP)) {
+                    vx = 0; vy = 1; vz = 0;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_ZM)) {
+                    vx = 0; vy = 0; vz = -1;
+                }
+                if (glfwGetKey(window, CRAFT_KEY_ZP)) {
+                    vx = 0; vy = 0; vz = 1;
+                }
             }
         }
         float speed = flying ? 20 : 5;
@@ -1283,39 +1667,105 @@ int main(int argc, char **argv) {
         if (y < 0) {
             y = highest_block(x, z) + 2;
         }
+        if (!inventory_screen) {
+            // HANDLE CLICKS //
+            if (left_click && exclusive) {
+                left_click = 0;
+                int hx, hy, hz;
+                int hw = hit_test(0, x, y, z, rx, ry,
+                    &hx, &hy, &hz);
+                if (hy > 0 && hy < 256 && is_destructable(hw)) {
+                    if (is_selectable(hw)) {
+                        int slot = find_usable_inventory_slot(hw);
 
-        // HANDLE CLICKS //
-        if (left_click) {
-            left_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(0, x, y, z, rx, ry,
-                &hx, &hy, &hz);
-            if (hy > 0 && hy < 256 && is_destructable(hw)) {
-                set_block(hx, hy, hz, 0);
-                int above = get_block(hx, hy + 1, hz);
-                if (is_plant(above)) {
-                    set_block(hx, hy + 1, hz, 0);
+                        if (slot != -1) {
+                            inventory.items[slot].w = hw;
+                            inventory.items[slot].count ++;
+                            db_set_slot(hw, slot, inventory.items[slot].count);
+                        }
+                    }
+
+                    set_block(hx, hy, hz, 0);
+                    int above = get_block(hx, hy + 1, hz);
+                    if (is_plant(above)) {
+                        set_block(hx, hy + 1, hz, 0);
+                    }
+                }
+            }
+            if (right_click && exclusive) {
+                right_click = 0;
+                int hx, hy, hz;
+                int hw = hit_test(1, x, y, z, rx, ry,
+                    &hx, &hy, &hz);
+                if (hy > 0 && hy < 256 && is_obstacle(hw)) {
+                    if (get_current_count() > 0 &&
+                        !player_intersects_block(2, x, y, z, hx, hy, hz)) {
+
+                        set_block(hx, hy, hz, get_current_block());
+
+                        if (get_current_count() != INVENTORY_UNLIMITED) {
+                            inventory.items[inventory.selected].count --;
+                            if (get_current_count() == 0)
+                                inventory.items[inventory.selected].w = 0;
+                            db_set_slot(get_current_block(), inventory.selected, get_current_count());
+                        }
+                    }
+                }
+            }
+            if (middle_click && exclusive) {
+                middle_click = 0;
+                int hx, hy, hz;
+                int hw = hit_test(0, x, y, z, rx, ry,
+                    &hx, &hy, &hz);
+                if (is_selectable(hw)) {
+                    int slot = find_matching_inventory_slot(hw);
+                    if (slot != -1) {
+                        if (slot < INVENTORY_SLOTS) {
+                            //On your bar
+                            inventory.selected = slot;
+                        } else {
+                            //In your inv
+                            if (CREATIVE_MODE) {
+                                //Replace held item with new item
+                                Item cache;
+                                cache.w = inventory.items[inventory.selected].w;
+                                cache.count = inventory.items[inventory.selected].count;
+
+                                inventory.items[inventory.selected].w = inventory.items[slot].w;
+                                inventory.items[inventory.selected].count = inventory.items[slot].count;
+
+                                inventory.items[slot].w = cache.w;
+                                inventory.items[slot].count = cache.count;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (drop) {
+                drop = 0;
+                int amount = 1;
+                if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
+                    amount = 64;
+
+                if (inventory.items[inventory.selected].count != INVENTORY_UNLIMITED) {
+                    inventory.items[inventory.selected].count -= amount;
+                    if (get_current_count() <= 0) {
+                        inventory.items[inventory.selected].count = 0;
+                        inventory.items[inventory.selected].w = 0;
+                    }
                 }
             }
         }
-        if (right_click) {
-            right_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(1, x, y, z, rx, ry,
-                &hx, &hy, &hz);
-            if (hy > 0 && hy < 256 && is_obstacle(hw)) {
-                if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(hx, hy, hz, block_type);
-                }
-            }
-        }
-        if (middle_click) {
-            middle_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(0, x, y, z, rx, ry,
-                &hx, &hy, &hz);
-            if (is_selectable(hw)) {
-                block_type = hw;
+
+        if (inventory_toggle) {
+            inventory_toggle = 0;
+            inventory_screen = !inventory_screen;
+            exclusive = !inventory_screen;
+            if (exclusive) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            } else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
         }
 
@@ -1373,14 +1823,10 @@ int main(int argc, char **argv) {
                     messages[message_index], MAX_TEXT_LENGTH, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
-            char format[32];
-            snprintf(format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
-            char name[MAX_NAME_LENGTH];
-            if (sscanf(buffer, format, &pid, name) == 2) {
-                Player *player = find_player(pid);
-                if (player) {
-                    strncpy(player->name, name, MAX_NAME_LENGTH);
-                }
+            int islot, iw, icount;
+            if (sscanf(buffer, "I,%d,%d,%d", &islot, &iw, &icount) == 3) {
+                inventory.items[islot].w = iw;
+                inventory.items[islot].count = icount;
             }
         }
 
@@ -1412,7 +1858,6 @@ int main(int argc, char **argv) {
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
         render_crosshairs(&line_attrib);
-        render_item(&block_attrib);
 
         // RENDER TEXT //
         char text_buffer[1024];
@@ -1448,11 +1893,20 @@ int main(int argc, char **argv) {
             render_text(&text_attrib, CENTER,
                 width / 2, height / 2 - ts - 24, ts, other->name);
         }
+        // RENDER INVENTORY //
+
+        render_inventory(&inventory_attrib, &block_attrib, &text_attrib, width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
+
+        if (inventory_screen) {
+            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
+            if (inventory.holding.count > 0) {
+                render_inventory_held(&block_attrib, &text_attrib, px, py, INVENTORY_ITEM_SIZE * 1.5);
+            }
+        }
 
         // RENDER PICTURE IN PICTURE //
         if (observe2) {
             player = players + observe2;
-
             int pw = 256;
             int ph = 256;
             int pad = 3;
@@ -1483,12 +1937,11 @@ int main(int argc, char **argv) {
             glClear(GL_DEPTH_BUFFER_BIT);
             render_text(&text_attrib, CENTER, pw / 2, ts, ts, player->name);
         }
-
         // swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    db_save_state(x, y, z, rx, ry);
+    db_save_state(x, y, z, rx, ry, inventory);
     db_close();
     glfwTerminate();
     client_stop();

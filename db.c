@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "db.h"
 #include "sqlite3.h"
+#include "config.h"
 
 static int db_enabled = 0;
 static sqlite3 *db;
@@ -8,6 +9,8 @@ static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *update_chunk_stmt;
 static sqlite3_stmt *get_key_stmt;
 static sqlite3_stmt *set_key_stmt;
+static sqlite3_stmt *get_slot_stmt;
+static sqlite3_stmt *set_slot_stmt;
 
 void db_enable() {
     db_enabled = 1;
@@ -41,6 +44,11 @@ int db_init(char *path) {
         "    z int not null,"
         "    w int not null"
         ");"
+        "create table if not exists inventory ("
+        "    w int not null,"
+        "    slot int not null,"
+        "    count int not null"
+        ");"
         "create table if not exists key ("
         "    p int not null,"
         "    q int not null,"
@@ -48,6 +56,7 @@ int db_init(char *path) {
         ");"
         "create index if not exists block_xyz_idx on block (x, y, z);"
         "create unique index if not exists block_pqxyz_idx on block (p, q, x, y, z);"
+        "create unique index if not exists inventory_slot_idx on inventory (slot);"
         "create unique index if not exists key_pq_idx on key (p, q);";
 
     static const char *insert_block_query =
@@ -63,7 +72,14 @@ int db_init(char *path) {
     static const char *set_key_query =
         "insert or replace into key (p, q, key) "
         "values (?, ?, ?);";
-
+    
+    static const char *get_slot_query =
+        "select w, count from inventory where slot = ?;";
+    
+    static const char *set_slot_query =
+        "insert or replace into inventory (w, slot, count) "
+        "values (?, ?, ?);";
+    
     int rc;
     rc = sqlite3_open(path, &db);
     if (rc) return rc;
@@ -76,6 +92,10 @@ int db_init(char *path) {
     rc = sqlite3_prepare_v2(db, get_key_query, -1, &get_key_stmt, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, set_key_query, -1, &set_key_stmt, NULL);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(db, get_slot_query, -1, &get_slot_stmt, NULL);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(db, set_slot_query, -1, &set_slot_stmt, NULL);
     if (rc) return rc;
     db_begin_transaction();
     return 0;
@@ -90,6 +110,8 @@ void db_close() {
     sqlite3_finalize(update_chunk_stmt);
     sqlite3_finalize(get_key_stmt);
     sqlite3_finalize(set_key_stmt);
+    sqlite3_finalize(get_slot_stmt);
+    sqlite3_finalize(set_slot_stmt);
     sqlite3_close(db);
 }
 
@@ -115,7 +137,7 @@ void db_commit() {
     db_begin_transaction();
 }
 
-void db_save_state(float x, float y, float z, float rx, float ry) {
+void db_save_state(float x, float y, float z, float rx, float ry, Inventory inventory) {
     if (!db_enabled) {
         return;
     }
@@ -131,9 +153,24 @@ void db_save_state(float x, float y, float z, float rx, float ry) {
     sqlite3_bind_double(stmt, 5, ry);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
+    
+    static const char *query2 =
+        "insert into inventory (w, slot, count) values (?, ?, ?);";
+    sqlite3_exec(db, "delete from inventory;", NULL, NULL, NULL);
+    for (int slot = 0; slot < INVENTORY_SLOTS * INVENTORY_ROWS; slot ++) {
+        if (inventory.items[slot].w == 0 || inventory.items[slot].count == 0)
+            continue;
+        
+        sqlite3_prepare_v2(db, query2, -1, &stmt, NULL);
+        sqlite3_bind_int(stmt, 1, inventory.items[slot].w);
+        sqlite3_bind_int(stmt, 2, slot);
+        sqlite3_bind_int(stmt, 3, inventory.items[slot].count);
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+    }
 }
 
-int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
+int db_load_state(float *x, float *y, float *z, float *rx, float *ry, Inventory *inventory) {
     if (!db_enabled) {
         return 0;
     }
@@ -151,6 +188,20 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
         result = 1;
     }
     sqlite3_finalize(stmt);
+    
+    static const char *query2 =
+    "select w, count from inventory where slot = ?;";
+    for (int slot = 0; slot < INVENTORY_SLOTS * INVENTORY_ROWS; slot ++) {
+        sqlite3_prepare_v2(db, query2, -1, &stmt, NULL);
+        sqlite3_bind_int(stmt, 1, slot);
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            (*inventory).items[slot].w = sqlite3_column_int(stmt, 0);
+            (*inventory).items[slot].count = sqlite3_column_int(stmt, 1);
+            if ((*inventory).items[slot].count == 0)
+                (*inventory).items[slot].w = 0;
+        }
+        sqlite3_finalize(stmt);
+    }
     return result;
 }
 
@@ -206,4 +257,32 @@ void db_set_key(int p, int q, int key) {
     sqlite3_bind_int(set_key_stmt, 2, q);
     sqlite3_bind_int(set_key_stmt, 3, key);
     sqlite3_step(set_key_stmt);
+}
+
+Item db_get_slot(int slot) {
+    Item item;
+
+    if (!db_enabled) {
+        return item;
+    }
+
+    sqlite3_reset(get_slot_stmt);
+    sqlite3_bind_int(get_slot_stmt, 1, slot);
+    
+    if (sqlite3_step(get_slot_stmt) == SQLITE_ROW) {
+        item.w = sqlite3_column_int(get_slot_stmt, 0);
+        item.count = sqlite3_column_int(get_slot_stmt, 1);
+    }
+    return item;
+}
+
+void db_set_slot(int w, int slot, int count) {
+    if (!db_enabled) {
+        return;
+    }
+    sqlite3_reset(set_slot_stmt);
+    sqlite3_bind_int(set_slot_stmt, 1, w);
+    sqlite3_bind_int(set_slot_stmt, 1, slot);
+    sqlite3_bind_int(set_slot_stmt, 1, count);
+    sqlite3_step(set_slot_stmt);
 }

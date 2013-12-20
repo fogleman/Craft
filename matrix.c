@@ -1,6 +1,7 @@
 #include <math.h>
 #include "matrix.h"
 #include "util.h"
+#include "config.h"
 
 void normalize(float *x, float *y, float *z) {
     float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
@@ -203,14 +204,13 @@ void set_matrix_3d(
     mat_multiply(matrix, a, matrix);
 }
 
-void set_matrix_item(float *matrix, int width, int height) {
+void set_matrix_item(float *matrix, int width, int height, float size, float xoff, float yoff) {
     float a[16];
     float b[16];
     float aspect = (float)width / height;
-    float size = 64;
     float box = height / size / 2;
-    float xoffset = 1 - size / width * 2;
-    float yoffset = 1 - size / height * 2;
+    float xoffset = 1 - (xoff / width * 2);
+    float yoffset = 1 - (yoff / height * 2);
     mat_identity(a);
     mat_rotate(b, 0, 1, 0, -PI / 4);
     mat_multiply(a, b, a);

@@ -20,6 +20,18 @@ typedef struct {
     double since;
 } FPS;
 
+typedef struct {
+    int w;
+    int count;
+} Item;
+
+typedef struct {
+    Item *items;
+    int selected;
+    int highlighted;
+    Item holding;
+} Inventory;
+
 int rand_int(int n);
 double rand_double();
 void update_fps(FPS *fps);

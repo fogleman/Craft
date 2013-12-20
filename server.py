@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 import traceback
+import maps
 
 HOST = '0.0.0.0'
 PORT = 4080
@@ -209,9 +210,6 @@ class Model(object):
             client.send(KEY, p, q, max_rowid)
     def on_block(self, client, x, y, z, w, s=0):
         x, y, z, w, s = map(int, (x, y, z, w, s))
-        if y <= 0 or y > 255 or w < 0 or w > 11:
-    def on_block(self, client, x, y, z, w):
-        x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or y > 255 or w < 0 or w > 15:
             return
         if (w == 0):

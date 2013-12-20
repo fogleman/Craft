@@ -33,6 +33,16 @@
 #define RIGHT 2
 
 typedef struct {
+    int index;
+    int glIndex;
+} Texture;
+
+static Texture BlockTexture     = {0, GL_TEXTURE0};
+static Texture FontTexture      = {1, GL_TEXTURE1};
+static Texture InventoryTexture = {2, GL_TEXTURE2};
+static Texture SkyTexture       = {3, GL_TEXTURE3};
+
+typedef struct {
     Map map;
     int p;
     int q;
@@ -797,8 +807,8 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
-    glUniform1i(attrib->sampler, 0);
-    glUniform1i(attrib->sampler2, 2);
+    glUniform1i(attrib->sampler, BlockTexture.index);
+    glUniform1i(attrib->sampler2, SkyTexture.index);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -822,7 +832,7 @@ void render_players(Attrib *attrib, Player *player) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
-    glUniform1i(attrib->sampler, 0);
+    glUniform1i(attrib->sampler, BlockTexture.index);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < player_count; i++) {
         Player *other = players + i;
@@ -839,7 +849,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
         matrix, width, height, 0, 0, 0, s->rx, s->ry, fov, 0);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 3);
+    glUniform1i(attrib->sampler, SkyTexture.index);
     glUniform1f(attrib->timer, time_of_day());
     draw_triangles_3d(attrib, buffer, 512 * 3);
 }
@@ -883,7 +893,7 @@ void render_text(
     set_matrix_2d(matrix, width, height);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 1);
+    glUniform1i(attrib->sampler, FontTexture.index);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
@@ -897,7 +907,7 @@ void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel) {
     glClear(GL_DEPTH_BUFFER_BIT);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 2);
+    glUniform1i(attrib->sampler, InventoryTexture.index);
 
     GLuint buffer = gen_inventory_buffers(x, y, n, sel);
 
@@ -908,7 +918,7 @@ void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel) {
 void render_inventory_item(Attrib *attrib, Item item, float x, float y, float size) {
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
-    glUniform1i(attrib->sampler, 0);
+    glUniform1i(attrib->sampler, BlockTexture.index);
     glUniform1f(attrib->timer, M_PI_2);
 
     float matrix[16];
@@ -964,7 +974,7 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n)
 
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 1);
+    glUniform1i(attrib->sampler, FontTexture.index);
 
     char text_buffer[16];
     float ts = INVENTORY_FONT_SIZE;
@@ -1403,7 +1413,7 @@ int main(int argc, char **argv) {
 
     GLuint texture;
     glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(BlockTexture.glIndex);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1411,7 +1421,7 @@ int main(int argc, char **argv) {
 
     GLuint font;
     glGenTextures(1, &font);
-    glActiveTexture(GL_TEXTURE1);
+    glActiveTexture(FontTexture.glIndex);
     glBindTexture(GL_TEXTURE_2D, font);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1419,7 +1429,7 @@ int main(int argc, char **argv) {
 
     GLuint inventory_texture;
     glGenTextures(1, &inventory_texture);
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(InventoryTexture.glIndex);
     glBindTexture(GL_TEXTURE_2D, inventory_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1427,7 +1437,7 @@ int main(int argc, char **argv) {
 
     GLuint sky;
     glGenTextures(1, &sky);
-    glActiveTexture(GL_TEXTURE3);
+    glActiveTexture(SkyTexture.glIndex);
     glBindTexture(GL_TEXTURE_2D, sky);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

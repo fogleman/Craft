@@ -137,7 +137,7 @@ void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
 }
 
 void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
-                       float *vx, float *vy, float *vz) {
+    float *vx, float *vy, float *vz) {
     *vx = 0; *vy = 0; *vz = 0;
     if (!sz && !sx) {
         return;
@@ -222,8 +222,8 @@ GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
     x -= n * (length - 1) / 2;
     for (int i = 0; i < length; i ++) {
         make_inventory(
-                       data + i * 24,
-                       x, y, n / 2, n / 2, sel == i ? 1 : 0);
+            data + i * 24,
+            x, y, n / 2, n / 2, sel == i ? 1 : 0);
         x += n;
     }
     return gen_faces(4, length, data);
@@ -235,11 +235,11 @@ void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
     glEnableVertexAttribArray(attrib->normal);
     glEnableVertexAttribArray(attrib->uv);
     glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 8, 0);
+        sizeof(GLfloat) * 8, 0);
     glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
+        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
     glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
+        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
@@ -252,9 +252,9 @@ void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
     glEnableVertexAttribArray(attrib->position);
     glEnableVertexAttribArray(attrib->uv);
     glVertexAttribPointer(attrib->position, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 4, 0);
+        sizeof(GLfloat) * 4, 0);
     glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
+        sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->uv);
@@ -265,7 +265,7 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
     glVertexAttribPointer(
-                          attrib->position, components, GL_FLOAT, GL_FALSE, 0, 0);
+        attrib->position, components, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_LINES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -327,7 +327,7 @@ Player *find_player(int id) {
 }
 
 void update_player(Player *player,
-                   float x, float y, float z, float rx, float ry, int interpolate)
+    float x, float y, float z, float rx, float ry, int interpolate)
 {
     if (interpolate) {
         State *s1 = &player->state1;
@@ -359,13 +359,13 @@ void interpolate_player(Player *player) {
     t1 = MAX(t1, 0.1);
     float p = MIN(t2 / t1, 1);
     update_player(
-                  player,
-                  s1->x + (s2->x - s1->x) * p,
-                  s1->y + (s2->y - s1->y) * p,
-                  s1->z + (s2->z - s1->z) * p,
-                  s1->rx + (s2->rx - s1->rx) * p,
-                  s1->ry + (s2->ry - s1->ry) * p,
-                  0);
+        player,
+        s1->x + (s2->x - s1->x) * p,
+        s1->y + (s2->y - s1->y) * p,
+        s1->z + (s2->z - s1->z) * p,
+        s1->rx + (s2->rx - s1->rx) * p,
+        s1->ry + (s2->ry - s1->ry) * p,
+        0);
 }
 
 void delete_player(int id) {
@@ -479,10 +479,10 @@ int highest_block(float x, float z) {
 }
 
 int _hit_test(
-              Map *map, float max_distance, int previous,
-              float x, float y, float z,
-              float vx, float vy, float vz,
-              int *hx, int *hy, int *hz)
+    Map *map, float max_distance, int previous,
+    float x, float y, float z,
+    float vx, float vy, float vz,
+    int *hx, int *hy, int *hz)
 {
     int m = 32;
     int px = 0;
@@ -511,8 +511,8 @@ int _hit_test(
 }
 
 int hit_test(
-             int previous, float x, float y, float z, float rx, float ry,
-             int *bx, int *by, int *bz)
+    int previous, float x, float y, float z, float rx, float ry,
+    int *bx, int *by, int *bz)
 {
     int result = 0;
     float best = 0;
@@ -527,10 +527,10 @@ int hit_test(
         }
         int hx, hy, hz;
         int hw = _hit_test(&chunk->map, 8, previous,
-                           x, y, z, vx, vy, vz, &hx, &hy, &hz);
+            x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
             float d = sqrtf(
-                            powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
+                powf(hx - x, 2) + powf(hy - y, 2) + powf(hz - z, 2));
             if (best == 0 || d < best) {
                 best = d;
                 *bx = hx; *by = hy; *bz = hz;
@@ -583,9 +583,9 @@ int collide(int height, float *x, float *y, float *z) {
 }
 
 int player_intersects_block(
-                            int height,
-                            float x, float y, float z,
-                            int hx, int hy, int hz)
+    int height,
+    float x, float y, float z,
+    int hx, int hy, int hz)
 {
     int nx = roundf(x);
     int ny = roundf(y);
@@ -599,8 +599,8 @@ int player_intersects_block(
 }
 
 void exposed_faces(
-                   Map *map, int x, int y, int z,
-                   int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
+    Map *map, int x, int y, int z,
+    int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
 {
     *f1 = is_transparent(map_get(map, x - 1, y, z));
     *f2 = is_transparent(map_get(map, x + 1, y, z));
@@ -645,14 +645,14 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (is_plant(e->w)) {
             float rotation = simplex3(e->x, e->y, e->z, 4, 0.5, 2) * 360;
             make_plant(
-                       data + offset,
-                       e->x, e->y, e->z, 0.5, e->w, rotation);
+                data + offset,
+                e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
             make_cube(
-                      data + offset,
-                      f1, f2, f3, f4, f5, f6,
-                      e->x, e->y, e->z, 0.5, e->w);
+                data + offset,
+                f1, f2, f3, f4, f5, f6,
+                e->x, e->y, e->z, 0.5, e->w);
         }
         offset += total * 48;
     } END_MAP_FOR_EACH;
@@ -793,7 +793,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     int q = chunked(s->z);
     float matrix[16];
     set_matrix_3d(
-                  matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -818,7 +818,7 @@ void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-                  matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -848,7 +848,7 @@ void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-                  matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {
@@ -974,7 +974,7 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n)
         snprintf(text_buffer, 16, "%d", item.count);
     x += ts * (2.5 - strlen(text_buffer));
     print(attrib, LEFT,
-          x, y, ts, text_buffer);
+        x, y, ts, text_buffer);
 }
 
 void render_inventory_texts(Attrib *attrib, float x, float y, float n, int row) {
@@ -1336,7 +1336,7 @@ void create_window() {
         window_height = modes[mode_count - 1].height;
     }
     window = glfwCreateWindow(
-                              window_width, window_height, "Craft", monitor, NULL);
+        window_width, window_height, "Craft", monitor, NULL);
 }
 
 int main(int argc, char **argv) {
@@ -1443,7 +1443,7 @@ int main(int argc, char **argv) {
     GLuint program;
     
     program = load_program(
-                           "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
+        "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     block_attrib.program = program;
     block_attrib.position = glGetAttribLocation(program, "position");
     block_attrib.normal = glGetAttribLocation(program, "normal");
@@ -1455,13 +1455,13 @@ int main(int argc, char **argv) {
     block_attrib.timer = glGetUniformLocation(program, "timer");
     
     program = load_program(
-                           "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
+        "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
     line_attrib.program = program;
     line_attrib.position = glGetAttribLocation(program, "position");
     line_attrib.matrix = glGetUniformLocation(program, "matrix");
     
     program = load_program(
-                           "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
+        "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
     text_attrib.program = program;
     text_attrib.position = glGetAttribLocation(program, "position");
     text_attrib.uv = glGetAttribLocation(program, "uv");
@@ -1469,7 +1469,7 @@ int main(int argc, char **argv) {
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
     
     program = load_program(
-                           "shaders/inventory_vertex.glsl", "shaders/inventory_fragment.glsl");
+        "shaders/inventory_vertex.glsl", "shaders/inventory_fragment.glsl");
     inventory_attrib.program = program;
     inventory_attrib.position = glGetAttribLocation(program, "position");
     inventory_attrib.uv = glGetAttribLocation(program, "uv");
@@ -1477,7 +1477,7 @@ int main(int argc, char **argv) {
     inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
     
     program = load_program(
-                           "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
+        "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
     sky_attrib.program = program;
     sky_attrib.position = glGetAttribLocation(program, "position");
     sky_attrib.normal = glGetAttribLocation(program, "normal");
@@ -1663,7 +1663,7 @@ int main(int argc, char **argv) {
                 left_click = 0;
                 int hx, hy, hz;
                 int hw = hit_test(0, x, y, z, rx, ry,
-                                  &hx, &hy, &hz);
+                    &hx, &hy, &hz);
                 if (hy > 0 && hy < 256 && is_destructable(hw)) {
                     if (is_selectable(hw)) {
                         int slot = find_usable_inventory_slot(hw);
@@ -1686,7 +1686,7 @@ int main(int argc, char **argv) {
                 right_click = 0;
                 int hx, hy, hz;
                 int hw = hit_test(1, x, y, z, rx, ry,
-                                  &hx, &hy, &hz);
+                    &hx, &hy, &hz);
                 if (hy > 0 && hy < 256 && is_obstacle(hw)) {
                     if (get_current_count() > 0 &&
                         !player_intersects_block(2, x, y, z, hx, hy, hz)) {
@@ -1706,7 +1706,7 @@ int main(int argc, char **argv) {
                 middle_click = 0;
                 int hx, hy, hz;
                 int hw = hit_test(0, x, y, z, rx, ry,
-                                  &hx, &hy, &hz);
+                    &hx, &hy, &hz);
                 if (is_selectable(hw)) {
                     int slot = find_matching_inventory_slot(hw);
                     if (slot != -1) {
@@ -1767,7 +1767,7 @@ int main(int argc, char **argv) {
             int pid;
             float ux, uy, uz, urx, ury;
             if (sscanf(buffer, "U,%d,%f,%f,%f,%f,%f",
-                       &pid, &ux, &uy, &uz, &urx, &ury) == 6)
+                &pid, &ux, &uy, &uz, &urx, &ury) == 6)
             {
                 me->id = pid;
                 x = ux; y = uy; z = uz; rx = urx; ry = ury;
@@ -1775,7 +1775,7 @@ int main(int argc, char **argv) {
             }
             int bp, bq, bx, by, bz, bw;
             if (sscanf(buffer, "B,%d,%d,%d,%d,%d,%d",
-                       &bp, &bq, &bx, &by, &bz, &bw) == 6)
+                &bp, &bq, &bx, &by, &bz, &bw) == 6)
             {
                 _set_block(bp, bq, bx, by, bz, bw);
                 if (player_intersects_block(2, x, y, z, bx, by, bz)) {
@@ -1784,7 +1784,7 @@ int main(int argc, char **argv) {
             }
             float px, py, pz, prx, pry;
             if (sscanf(buffer, "P,%d,%f,%f,%f,%f,%f",
-                       &pid, &px, &py, &pz, &prx, &pry) == 6)
+                &pid, &px, &py, &pz, &prx, &pry) == 6)
             {
                 Player *player = find_player(pid);
                 if (!player && player_count < MAX_PLAYERS) {
@@ -1810,7 +1810,7 @@ int main(int argc, char **argv) {
                 char *text = buffer + 2;
                 printf("%s\n", text);
                 snprintf(
-                         messages[message_index], MAX_TEXT_LENGTH, "%s", text);
+                    messages[message_index], MAX_TEXT_LENGTH, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
             int islot, iw, icount;

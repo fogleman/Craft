@@ -1303,11 +1303,7 @@ int get_current_count() {
 int find_matching_inventory_slot(int w) {
     //Try for same type
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
-        if (inventory.items[item].w == w && inventory.items[item].count < MAX_SLOT_SIZE)
-            return item;
-    //Try for empty
-    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
-        if (inventory.items[item].w == 0)
+        if (inventory.items[item].w == w)
             return item;
     return -1;
 }
@@ -1317,7 +1313,15 @@ int find_usable_inventory_slot(int w) {
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
         if (inventory.items[item].w == w && inventory.items[item].count == INVENTORY_UNLIMITED)
             return -1; //Don't let them pick it up
-    return find_matching_inventory_slot(w);
+    //Try for same type
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
+        if (inventory.items[item].w == w && inventory.items[item].count < MAX_SLOT_SIZE)
+            return item;
+    //Try for empty
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++)
+        if (inventory.items[item].w == 0)
+            return item;
+    return -1;
 }
 
 void create_window() {
@@ -1704,7 +1708,27 @@ int main(int argc, char **argv) {
                 int hw = hit_test(0, x, y, z, rx, ry,
                                   &hx, &hy, &hz);
                 if (is_selectable(hw)) {
-                    //                inventory.selected = hw;
+                    int slot = find_matching_inventory_slot(hw);
+                    if (slot != -1) {
+                        if (slot < INVENTORY_SLOTS) {
+                            //On your bar
+                            inventory.selected = slot;
+                        } else {
+                            //In your inv
+                            if (CREATIVE_MODE) {
+                                //Replace held item with new item
+                                Item cache;
+                                cache.w = inventory.items[inventory.selected].w;
+                                cache.count = inventory.items[inventory.selected].count;
+                                
+                                inventory.items[inventory.selected].w = inventory.items[slot].w;
+                                inventory.items[inventory.selected].count = inventory.items[slot].count;
+                                
+                                inventory.items[slot].w = cache.w;
+                                inventory.items[slot].count = cache.count;
+                            }
+                        }
+                    }
                 }
             }
             

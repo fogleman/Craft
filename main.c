@@ -26,8 +26,6 @@
 #define MAX_RECV_LENGTH 1024
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
-#define ZNEAR 0.125
-#define ZFAR 256
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
@@ -120,7 +118,7 @@ int chunked(float x) {
 float time_of_day() {
     float t;
     t = glfwGetTime();
-    t = t + DAY_LENGTH / 5.0;
+    t = t + DAY_LENGTH / 3.0;
     t = t / DAY_LENGTH;
     t = t - (int)t;
     return t;
@@ -180,7 +178,7 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 
 GLuint gen_sky_buffer() {
     float data[12288];
-    make_sphere(data, 384, 3);
+    make_sphere(data, 1, 3);
     return gen_buffer(sizeof(data), data);
 }
 
@@ -751,15 +749,15 @@ int get_block(int x, int y, int z) {
     return 0;
 }
 
-void render_chunks(Attrib *attrib, Player *player) {
+int render_chunks(Attrib *attrib, Player *player) {
+    int result = 0;
     State *s = &player->state;
     ensure_chunks(s->x, s->y, s->z, 0);
     int p = chunked(s->x);
     int q = chunked(s->z);
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry,
-        ZNEAR, ZFAR, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -775,15 +773,16 @@ void render_chunks(Attrib *attrib, Player *player) {
             continue;
         }
         draw_chunk(attrib, chunk);
+        result += chunk->faces;
     }
+    return result;
 }
 
 void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry,
-        ZNEAR, ZFAR, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -801,8 +800,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, 0, 0, 0, s->rx, s->ry,
-        16, 1024, fov, 0);
+        matrix, width, height, 0, 0, 0, s->rx, s->ry, fov, 0);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
@@ -814,8 +812,7 @@ void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry,
-        ZNEAR, ZFAR, fov, ortho);
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {
@@ -1415,7 +1412,7 @@ int main(int argc, char **argv) {
         glClear(GL_DEPTH_BUFFER_BIT);
         render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
-        render_chunks(&block_attrib, player);
+        int face_count = render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);
         render_wireframe(&line_attrib, player);
 
@@ -1434,9 +1431,9 @@ int main(int argc, char **argv) {
         hour = hour % 12;
         hour = hour ? hour : 12;
         snprintf(
-            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d%cm %d",
+            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
             chunked(x), chunked(z), x, y, z,
-            player_count, chunk_count, hour, am_pm, fps.fps);
+            player_count, chunk_count, face_count * 2, hour, am_pm, fps.fps);
         render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
         for (int i = 0; i < MAX_MESSAGES; i++) {
             int index = (message_index + i) % MAX_MESSAGES;

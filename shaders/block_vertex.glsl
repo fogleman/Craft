@@ -23,7 +23,6 @@ void main() {
     fog_factor = pow(clamp(camera_distance / 192.0, 0.0, 1.0), 4.0);
     float dy = position.y - camera.y;
     float dx = distance(position.xz, camera.xz);
-    fog_height = atan(dy, dx) * 2 / pi;
-    fog_height = 1.0 - abs(fog_height);
+    fog_height = 1.0 - (atan(dy, dx) + pi / 2) / pi;
     diffuse = max(0.0, dot(normal, light_direction));
 }

@@ -236,14 +236,14 @@ class Model(object):
                 client.inventory[s]["count"] -= 1
                 if (client.inventory[slot]["count"] == 0):
                     client.inventory[slot]["type"] = 0
-                client.send(INVENTORY, s, client.inventory[s]["type"], client.inventory[s]["count"])
+                #client.send(INVENTORY, s, client.inventory[s]["type"], client.inventory[s]["count"])
             else:
                 for slot in xrange(INVENTORY_SLOTS):
                     if client.inventory[slot]["type"] == w:
                         client.inventory[slot]["count"] -= 1
                         if (client.inventory[slot]["count"] == 0):
                             client.inventory[slot]["type"] = 0
-                        client.send(INVENTORY, slot, client.inventory[slot]["type"], client.inventory[slot]["count"])
+                        #client.send(INVENTORY, slot, client.inventory[slot]["type"], client.inventory[slot]["count"])
 
         p, q = chunked(x), chunked(z)
         query = (
@@ -336,10 +336,10 @@ class Model(object):
                 if other.inventory[slot]["count"] + count > 64:
                     count -= 64 - abs(other.inventory[slot]["count"])
                     other.inventory[slot]["count"] = 64
-                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                    #other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
                 else:
                     other.inventory[slot]["count"] += count
-                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                    #other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
                     return
         for slot in xrange(INVENTORY_SLOTS):
             if other.inventory[slot]["type"] == 0:
@@ -347,11 +347,11 @@ class Model(object):
                     count -= 64
                     other.inventory[slot]["type"] = w
                     other.inventory[slot]["count"] = 64
-                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                    #other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
                 else:
                     other.inventory[slot]["type"] = w
                     other.inventory[slot]["count"] = count
-                    other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
+                    #other.send(INVENTORY, slot, other.inventory[slot]["type"], other.inventory[slot]["count"])
                     return
 
     def dump_inventory(self, client):
@@ -389,7 +389,8 @@ class Model(object):
             client.send(TALK, text)
     def send_inventory(self, client):
         for slot in xrange(INVENTORY_SLOTS):
-            client.send(INVENTORY, slot, client.inventory[slot]["type"], client.inventory[slot]["count"])
+            pass
+            #client.send(INVENTORY, slot, client.inventory[slot]["type"], client.inventory[slot]["count"])
 
 def main():
     host, port = HOST, PORT

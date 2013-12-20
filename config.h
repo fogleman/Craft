@@ -1,6 +1,9 @@
 #ifndef _config_h_
 #define _config_h_
 
+// From math.h
+#define M_PI_2 1.57079632679489661923132169163975144   /* pi/2           */
+
 // app parameters
 #define FULLSCREEN 0
 #define WINDOW_WIDTH 1024

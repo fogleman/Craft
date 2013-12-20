@@ -118,7 +118,7 @@ int chunked(float x) {
 float time_of_day() {
     float t;
     t = glfwGetTime();
-    t = t + DAY_LENGTH / 5.0;
+    t = t + DAY_LENGTH / 3.0;
     t = t / DAY_LENGTH;
     t = t - (int)t;
     return t;
@@ -749,7 +749,8 @@ int get_block(int x, int y, int z) {
     return 0;
 }
 
-void render_chunks(Attrib *attrib, Player *player) {
+int render_chunks(Attrib *attrib, Player *player) {
+    int result = 0;
     State *s = &player->state;
     ensure_chunks(s->x, s->y, s->z, 0);
     int p = chunked(s->x);
@@ -772,7 +773,9 @@ void render_chunks(Attrib *attrib, Player *player) {
             continue;
         }
         draw_chunk(attrib, chunk);
+        result += chunk->faces;
     }
+    return result;
 }
 
 void render_players(Attrib *attrib, Player *player) {
@@ -1402,7 +1405,7 @@ int main(int argc, char **argv) {
         glClear(GL_DEPTH_BUFFER_BIT);
         render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
-        render_chunks(&block_attrib, player);
+        int face_count = render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);
         render_wireframe(&line_attrib, player);
 
@@ -1421,9 +1424,9 @@ int main(int argc, char **argv) {
         hour = hour % 12;
         hour = hour ? hour : 12;
         snprintf(
-            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d%cm %d",
+            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
             chunked(x), chunked(z), x, y, z,
-            player_count, chunk_count, hour, am_pm, fps.fps);
+            player_count, chunk_count, face_count * 2, hour, am_pm, fps.fps);
         render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
         for (int i = 0; i < MAX_MESSAGES; i++) {
             int index = (message_index + i) % MAX_MESSAGES;

@@ -186,7 +186,7 @@ void set_matrix_3d(
     float b[16];
     float aspect = (float)width / height;
     mat_identity(a);
-    mat_translate(b, -x, -y - 0.1, -z);
+    mat_translate(b, -x, -y, -z);
     mat_multiply(a, b, a);
     mat_rotate(b, cosf(rx), 0, sinf(rx), ry);
     mat_multiply(a, b, a);
@@ -197,7 +197,7 @@ void set_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, fov, aspect, 1 / 8.0, 256.0);
+        mat_perspective(b, fov, aspect, 0.125, 256);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);

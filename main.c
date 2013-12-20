@@ -1267,7 +1267,7 @@ int main(int argc, char **argv) {
          *   For example: vx*dt*speed*4+1 = deltaX * [1/(pad-.1)] + 1
          *   The 2.734375 = gravity * (minSteps -1)/minSteps^2 = 25*7/64
          */
-        int step = MAX(MAX(8,ABS(vy*speed+dy-dt*dt*2.734375)*4.2+1), MAX(ABS(vx*dt*speed*4.2),ABS(vz*dt*speed*4.2))+1);
+        int step = MAX(MAX(8,ABS(vy*speed+dy-dt*2.734375)*dt*4.2+1), MAX(ABS(vx*dt*speed*4.2),ABS(vz*dt*speed*4.2))+1);
         float ut = dt / step;
         vx = vx * ut * speed;
         vy = vy * ut * speed;

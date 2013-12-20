@@ -839,7 +839,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
         matrix, width, height, 0, 0, 0, s->rx, s->ry, fov, 0);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 2);
+    glUniform1i(attrib->sampler, 3);
     glUniform1f(attrib->timer, time_of_day());
     draw_triangles_3d(attrib, buffer, 512 * 3);
 }
@@ -909,8 +909,8 @@ void render_inventory_item(Attrib *attrib, Item item, float x, float y, float si
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, glfwGetTime());
-    
+    glUniform1f(attrib->timer, M_PI_2);
+
     float matrix[16];
     GLuint buffer;
 
@@ -1421,10 +1421,21 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("inventory.png");
     
+    GLuint sky;
+    glGenTextures(1, &sky);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, sky);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    load_png_texture("sky.png");
+
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib inventory_attrib = {0};
+    Attrib sky_attrib = {0};
     GLuint program;
     
     program = load_program(
@@ -1461,12 +1472,23 @@ int main(int argc, char **argv) {
     inventory_attrib.matrix = glGetUniformLocation(program, "matrix");
     inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
     
+    program = load_program(
+                           "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
+    sky_attrib.program = program;
+    sky_attrib.position = glGetAttribLocation(program, "position");
+    sky_attrib.normal = glGetAttribLocation(program, "normal");
+    sky_attrib.uv = glGetAttribLocation(program, "uv");
+    sky_attrib.matrix = glGetUniformLocation(program, "matrix");
+    sky_attrib.sampler = glGetUniformLocation(program, "sampler");
+    sky_attrib.timer = glGetUniformLocation(program, "timer");
+
     FPS fps = {0, 0, 0};
     int message_index = 0;
     char messages[MAX_MESSAGES][MAX_TEXT_LENGTH] = {0};
     double last_commit = glfwGetTime();
     double last_update = glfwGetTime();
-    
+    GLuint sky_buffer = gen_sky_buffer();
+
     Player *me = players;
     me->id = 0;
     me->name[0] = '\0';
@@ -1692,10 +1714,12 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
                     amount = 64;
                 
-                inventory.items[inventory.selected].count -= amount;
-                if (get_current_count() <= 0) {
-                    inventory.items[inventory.selected].count = 0;
-                    inventory.items[inventory.selected].w = 0;
+                if (inventory.items[inventory.selected].count != INVENTORY_UNLIMITED) {
+                    inventory.items[inventory.selected].count -= amount;
+                    if (get_current_count() <= 0) {
+                        inventory.items[inventory.selected].count = 0;
+                        inventory.items[inventory.selected].w = 0;
+                    }
                 }
             }
         }
@@ -1811,9 +1835,9 @@ int main(int argc, char **argv) {
         hour = hour % 12;
         hour = hour ? hour : 12;
         snprintf(
-                 text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d] %d",
-                 chunked(x), chunked(z), x, y, z,
-                 player_count, chunk_count, fps.fps);
+            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
+            chunked(x), chunked(z), x, y, z,
+            player_count, chunk_count, face_count * 2, hour, am_pm, fps.fps);
         render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
         for (int i = 0; i < MAX_MESSAGES; i++) {
             int index = (message_index + i) % MAX_MESSAGES;
@@ -1870,7 +1894,9 @@ int main(int argc, char **argv) {
             height = ph;
             ortho = 0;
             fov = 65;
-            
+
+            render_sky(&sky_attrib, player, sky_buffer);
+            glClear(GL_DEPTH_BUFFER_BIT);
             render_chunks(&block_attrib, player);
             render_players(&block_attrib, player);
             

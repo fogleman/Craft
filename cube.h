@@ -31,4 +31,6 @@ void make_inventory(
     float *data,
     float x, float y, float n, float m, int s);
 
+void make_sphere(float *data, float r, int detail);
+
 #endif

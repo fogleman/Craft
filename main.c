@@ -1,5 +1,5 @@
 #ifndef __APPLE_CC__
-#include <GL/glew.h>
+    #include <GL/glew.h>
 #endif
 
 #include <GLFW/glfw3.h>
@@ -306,8 +306,8 @@ void draw_player(Attrib *attrib, Player *player) {
 }
 
 void print(
-           Attrib *attrib, int justify,
-           float x, float y, float n, char *text)
+    Attrib *attrib, int justify,
+    float x, float y, float n, char *text)
 {
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
@@ -612,7 +612,7 @@ void exposed_faces(
 
 void gen_chunk_buffer(Chunk *chunk) {
     Map *map = &chunk->map;
-    
+
     int faces = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
@@ -626,7 +626,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         }
         faces += total;
     } END_MAP_FOR_EACH;
-    
+
     GLfloat *data = malloc_faces(8, faces);
     int offset = 0;
     MAP_FOR_EACH(map, e) {
@@ -656,7 +656,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         }
         offset += total * 48;
     } END_MAP_FOR_EACH;
-    
+
     del_buffer(chunk->buffer);
     chunk->buffer = gen_faces(8, faces, data);
     chunk->faces = faces;
@@ -898,9 +898,9 @@ void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
-    
+
     GLuint buffer = gen_inventory_buffers(x, y, n, sel);
-    
+
     draw_inventory(attrib, buffer, INVENTORY_SLOTS);
     del_buffer(buffer);
 }
@@ -915,7 +915,7 @@ void render_inventory_item(Attrib *attrib, Item item, float x, float y, float si
     GLuint buffer;
 
     set_matrix_item(matrix, width, height, size, x, y);
-    
+
     // render selected item
     if (is_plant(item.w)) {
         glDeleteBuffers(1, &buffer);
@@ -925,7 +925,7 @@ void render_inventory_item(Attrib *attrib, Item item, float x, float y, float si
         buffer = gen_cube_buffer(0, 0, 0, 0.5, item.w);
     }
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    
+
     if (is_plant(item.w)) {
         draw_plant(attrib, buffer);
         del_buffer(buffer);
@@ -939,10 +939,10 @@ void render_inventory_item(Attrib *attrib, Item item, float x, float y, float si
 void render_inventory_items(Attrib *attrib, float x, float y, float size, int row) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item + (row * INVENTORY_SLOTS)];
-        
+
         if (block.w == 0)
             continue;
-        
+
         if (block.count == 0)
             continue;
 
@@ -952,7 +952,7 @@ void render_inventory_items(Attrib *attrib, float x, float y, float size, int ro
         /* 0 1 2 3 4 5 6 7 */
         float slotoff = ((float)item - (float)(INVENTORY_SLOTS - 1) / 2) * 1.5;
         float xpos = x + slotoff * size;
-        
+
         render_inventory_item(attrib, block, xpos, y, size * 0.75);
     }
 }
@@ -961,11 +961,11 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n)
     float matrix[16];
     // render text
     set_matrix_2d(matrix, width, height);
-    
+
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1);
-    
+
     char text_buffer[16];
     float ts = INVENTORY_FONT_SIZE;
     if (item.count == INVENTORY_UNLIMITED)
@@ -980,12 +980,12 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float n)
 void render_inventory_texts(Attrib *attrib, float x, float y, float n, int row) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item + (row * INVENTORY_SLOTS)];
-        
+
         if (block.w == 0)
             continue;
         if (block.count <= 1)
             continue;
-        
+
         float sep = INVENTORY_ITEM_SIZE * 1.5;
         float tx = width / 2 + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
         float ty = y == 0 ? sep / 3 : y - sep / 3;
@@ -1032,7 +1032,7 @@ int mouse_to_inventory(int width, int height, float x, float y, float n) {
 
     if (xcell < 0 || ycell < 0 || xcell >= INVENTORY_SLOTS || ycell >= INVENTORY_ROWS)
         return -1;
-    
+
     return xcell + (ycell * INVENTORY_SLOTS);
 }
 
@@ -1165,7 +1165,7 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             if (inventory_screen) {
                 double mx, my;
                 glfwGetCursorPos(window, &mx, &my);
-                
+
                 int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
                 if (inventory.holding.count == 0) {
                     if (sel != -1) {
@@ -1206,11 +1206,11 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
                                 Item cache;
                                 cache.count = inventory.holding.count;
                                 cache.w = inventory.holding.w;
-                                
+
                                 inventory.holding = inventory.items[sel];
                                 inventory.items[sel] = cache;
                             }
-                    
+
                         }
                     }
                 }
@@ -1226,18 +1226,18 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
         } else if (inventory_screen) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
-            
+
             int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
             if (inventory.items[sel].count != INVENTORY_UNLIMITED) {
                 if (inventory.holding.count == 0) {
                     if (sel != -1) {
                         //Pick up half
                         int pickup = ceil(inventory.items[sel].count / 2.);
-                        
+
                         inventory.holding.count = pickup;
                         if (inventory.holding.count > 0)
                             inventory.holding.w = inventory.items[sel].w;
-                        
+
                         inventory.items[sel].count -= pickup;
                         if (inventory.items[sel].count == 0)
                             inventory.items[sel].w = 0;
@@ -1282,7 +1282,7 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
         } if (inventory_screen) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
-            
+
             //TODO: something
         }
     }
@@ -1342,12 +1342,12 @@ void create_window() {
 int main(int argc, char **argv) {
     // Set dir
     char *base = dirname(argv[0]);
-    
+
     if (chdir(base)) {
         return 1;
     }
     setenv("PWD", base, 1);
-    
+
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {
@@ -1389,18 +1389,18 @@ int main(int argc, char **argv) {
     glfwSetCharCallback(window, on_char);
     glfwSetMouseButtonCallback(window, on_mouse_button);
     glfwSetScrollCallback(window, on_scroll);
-    
-#ifndef __APPLE__
-    if (glewInit() != GLEW_OK) {
-        return -1;
-    }
-#endif
-    
+
+    #ifndef __APPLE__
+        if (glewInit() != GLEW_OK) {
+            return -1;
+        }
+    #endif
+
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glLogicOp(GL_INVERT);
     glClearColor(0.53, 0.81, 0.92, 1.00);
-    
+
     GLuint texture;
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);
@@ -1408,7 +1408,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("texture.png");
-    
+
     GLuint font;
     glGenTextures(1, &font);
     glActiveTexture(GL_TEXTURE1);
@@ -1416,7 +1416,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     load_png_texture("font.png");
-    
+
     GLuint inventory_texture;
     glGenTextures(1, &inventory_texture);
     glActiveTexture(GL_TEXTURE2);
@@ -1424,7 +1424,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("inventory.png");
-    
+
     GLuint sky;
     glGenTextures(1, &sky);
     glActiveTexture(GL_TEXTURE3);
@@ -1441,7 +1441,7 @@ int main(int argc, char **argv) {
     Attrib inventory_attrib = {0};
     Attrib sky_attrib = {0};
     GLuint program;
-    
+
     program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     block_attrib.program = program;
@@ -1453,13 +1453,13 @@ int main(int argc, char **argv) {
     block_attrib.sampler2 = glGetUniformLocation(program, "sampler2");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
-    
+
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
     line_attrib.program = program;
     line_attrib.position = glGetAttribLocation(program, "position");
     line_attrib.matrix = glGetUniformLocation(program, "matrix");
-    
+
     program = load_program(
         "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
     text_attrib.program = program;
@@ -1467,7 +1467,7 @@ int main(int argc, char **argv) {
     text_attrib.uv = glGetAttribLocation(program, "uv");
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
-    
+
     program = load_program(
         "shaders/inventory_vertex.glsl", "shaders/inventory_fragment.glsl");
     inventory_attrib.program = program;
@@ -1475,7 +1475,7 @@ int main(int argc, char **argv) {
     inventory_attrib.uv = glGetAttribLocation(program, "uv");
     inventory_attrib.matrix = glGetUniformLocation(program, "matrix");
     inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
-    
+
     program = load_program(
         "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
     sky_attrib.program = program;
@@ -1498,30 +1498,30 @@ int main(int argc, char **argv) {
     me->name[0] = '\0';
     me->buffer = 0;
     player_count = 1;
-    
+
     float x = (rand_double() - 0.5) * 10000;
     float z = (rand_double() - 0.5) * 10000;
     float y = 0;
     float rx = 0;
     float ry = 0;
     float dy = 0;
-    
+
     double px = 0;
     double py = 0;
-    
+
     inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
-    
+
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].count = 0;
         inventory.items[item].w     = 0;
     }
-    
+
     int loaded = db_load_state(&x, &y, &z, &rx, &ry, &inventory);
     ensure_chunks(x, y, z, 1);
     if (!loaded) {
         y = highest_block(x, z) + 2;
     }
-    
+
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         if (CREATIVE_MODE) {
             if (is_selectable(item + 1)) {
@@ -1541,23 +1541,23 @@ int main(int argc, char **argv) {
             inventory.items[item].w = 0;
         }
     }
-    
+
     glfwGetCursorPos(window, &px, &py);
     double previous = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
-        
+
         update_fps(&fps);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
-        
+
         if (now - last_commit > COMMIT_INTERVAL) {
             last_commit = now;
             db_commit();
         }
-        
+
         // HANDLE MOUSE INPUT //
         if (exclusive && (px || py)) {
             double mx, my;
@@ -1579,12 +1579,12 @@ int main(int argc, char **argv) {
         else {
             glfwGetCursorPos(window, &px, &py);
         }
-        
+
         // HANDLE MOVEMENT //
         float vx = 0, vy = 0, vz = 0;
         int sz = 0;
         int sx = 0;
-        
+
         if (inventory_screen) {
             int sel = mouse_to_inventory(width, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
             inventory.highlighted = sel;
@@ -1667,14 +1667,14 @@ int main(int argc, char **argv) {
                 if (hy > 0 && hy < 256 && is_destructable(hw)) {
                     if (is_selectable(hw)) {
                         int slot = find_usable_inventory_slot(hw);
-                        
+
                         if (slot != -1) {
                             inventory.items[slot].w = hw;
                             inventory.items[slot].count ++;
                             db_set_slot(hw, slot, inventory.items[slot].count);
                         }
                     }
-                    
+
                     set_block(hx, hy, hz, 0);
                     int above = get_block(hx, hy + 1, hz);
                     if (is_plant(above)) {
@@ -1690,9 +1690,9 @@ int main(int argc, char **argv) {
                 if (hy > 0 && hy < 256 && is_obstacle(hw)) {
                     if (get_current_count() > 0 &&
                         !player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                        
+
                         set_block(hx, hy, hz, get_current_block());
-                        
+
                         if (get_current_count() != INVENTORY_UNLIMITED) {
                             inventory.items[inventory.selected].count --;
                             if (get_current_count() == 0)
@@ -1720,10 +1720,10 @@ int main(int argc, char **argv) {
                                 Item cache;
                                 cache.w = inventory.items[inventory.selected].w;
                                 cache.count = inventory.items[inventory.selected].count;
-                                
+
                                 inventory.items[inventory.selected].w = inventory.items[slot].w;
                                 inventory.items[inventory.selected].count = inventory.items[slot].count;
-                                
+
                                 inventory.items[slot].w = cache.w;
                                 inventory.items[slot].count = cache.count;
                             }
@@ -1731,13 +1731,13 @@ int main(int argc, char **argv) {
                     }
                 }
             }
-            
+
             if (drop) {
                 drop = 0;
                 int amount = 1;
                 if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
                     amount = 64;
-                
+
                 if (inventory.items[inventory.selected].count != INVENTORY_UNLIMITED) {
                     inventory.items[inventory.selected].count -= amount;
                     if (get_current_count() <= 0) {
@@ -1747,7 +1747,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        
+
         if (inventory_toggle) {
             inventory_toggle = 0;
             inventory_screen = !inventory_screen;
@@ -1758,7 +1758,7 @@ int main(int argc, char **argv) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
         }
-        
+
         // HANDLE DATA FROM SERVER //
         char buffer[MAX_RECV_LENGTH];
         int count = 0;
@@ -1819,13 +1819,13 @@ int main(int argc, char **argv) {
                 inventory.items[islot].count = icount;
             }
         }
-        
+
         // SEND DATA TO SERVER //
         if (now - last_update > 0.1) {
             last_update = now;
             client_position(x, y, z, rx, ry);
         }
-        
+
         // PREPARE TO RENDER //
         observe1 = observe1 % player_count;
         observe2 = observe2 % player_count;
@@ -1835,7 +1835,7 @@ int main(int argc, char **argv) {
             interpolate_player(players + i);
         }
         Player *player = players + observe1;
-        
+
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -1844,11 +1844,11 @@ int main(int argc, char **argv) {
         int face_count = render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);
         render_wireframe(&line_attrib, player);
-        
+
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
         render_crosshairs(&line_attrib);
-        
+
         // RENDER TEXT //
         char text_buffer[1024];
         float ts = 12;
@@ -1884,9 +1884,9 @@ int main(int argc, char **argv) {
                 width / 2, height / 2 - ts - 24, ts, other->name);
         }
         // RENDER INVENTORY //
-        
+
         render_inventory(&inventory_attrib, &block_attrib, &text_attrib, width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
-        
+
         if (inventory_screen) {
             render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
             if (inventory.holding.count > 0) {
@@ -1902,7 +1902,7 @@ int main(int argc, char **argv) {
             int pad = 3;
             int sw = pw + pad * 2;
             int sh = ph + pad * 2;
-            
+
             glEnable(GL_SCISSOR_TEST);
             glScissor(width - sw - 32 + pad, 32 - pad, sw, sh);
             glClearColor(0, 0, 0, 1);
@@ -1913,7 +1913,7 @@ int main(int argc, char **argv) {
             glDisable(GL_SCISSOR_TEST);
             glClear(GL_DEPTH_BUFFER_BIT);
             glViewport(width - pw - 32, 32, pw, ph);
-            
+
             width = pw;
             height = ph;
             ortho = 0;
@@ -1923,7 +1923,7 @@ int main(int argc, char **argv) {
             glClear(GL_DEPTH_BUFFER_BIT);
             render_chunks(&block_attrib, player);
             render_players(&block_attrib, player);
-            
+
             glClear(GL_DEPTH_BUFFER_BIT);
             render_text(&text_attrib, CENTER, pw / 2, ts, ts, player->name);
         }

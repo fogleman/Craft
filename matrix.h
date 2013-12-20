@@ -21,8 +21,7 @@ void mat_ortho(
 void set_matrix_2d(float *matrix, int width, int height);
 void set_matrix_3d(
     float *matrix, int width, int height,
-    float x, float y, float z, float rx, float ry,
-    float znear, float zfar, float fov, int ortho);
+    float x, float y, float z, float rx, float ry, float fov, int ortho);
 void set_matrix_item(float *matrix, int width, int height);
 
 #endif

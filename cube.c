@@ -368,9 +368,9 @@ void make_character(
 }
 
 int _make_sphere(
-                  float *data, float r, int detail,
-                  float *a, float *b, float *c,
-                  float *ta, float *tb, float *tc)
+    float *data, float r, int detail,
+    float *a, float *b, float *c,
+    float *ta, float *tb, float *tc)
 {
     if (detail == 0) {
         float *d = data;
@@ -442,20 +442,20 @@ void make_sphere(float *data, float r, int detail) {
     int total = 0;
     for (int i = 0; i < 8; i++) {
         int n = _make_sphere(
-                             data, r, detail,
-                             positions[indices[i][0]],
-                             positions[indices[i][1]],
-                             positions[indices[i][2]],
-                             uvs[indices[i][0]],
-                             uvs[indices[i][1]],
-                             uvs[indices[i][2]]);
+            data, r, detail,
+            positions[indices[i][0]],
+            positions[indices[i][1]],
+            positions[indices[i][2]],
+            uvs[indices[i][0]],
+            uvs[indices[i][1]],
+            uvs[indices[i][2]]);
         total += n; data += n * 24;
     }
 }
 
 void make_inventory(
-                    float *data,
-                    float x, float y, float n, float m, int s)
+    float *data,
+    float x, float y, float n, float m, int s)
 {
     float *d = data;
     float z = 0.5;

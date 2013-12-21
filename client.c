@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#define snprintf _snprintf
+#define close closesocket
+#else
+#include <netdb.h>
 #include <unistd.h>
+#endif
 #include "client.h"
 #include "tinycthread.h"
 
@@ -16,7 +22,7 @@ static thrd_t recv_thread;
 static mtx_t mutex;
 
 void client_enable() {
-    client_enabled = 1;
+     client_enabled = 1;
 }
 
 void client_disable() {
@@ -139,7 +145,11 @@ int recv_worker(void *arg) {
             if (done) {
                 break;
             }
+#ifdef _WIN32
+            Sleep(1);
+#else
             sleep(0);
+#endif
         }
     }
     return 0;

@@ -1894,23 +1894,10 @@ int main(int argc, char **argv) {
             snprintf(text_buffer, 1024, "> %s", typing_buffer);
             render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
         }
-        if (player != me) {
-            render_text(&text_attrib, CENTER, width / 2, ts, ts, player->name);
-        }
         Player *other = player_crosshair(player);
         if (other) {
             render_text(&text_attrib, CENTER,
                 width / 2, height / 2 - ts - 24, ts, other->name);
-        }
-        // RENDER INVENTORY //
-
-        render_inventory(&inventory_attrib, &block_attrib, &text_attrib, width / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
-
-        if (inventory_screen) {
-            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, width / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
-            if (inventory.holding.count > 0) {
-                render_inventory_held(&block_attrib, &text_attrib, px, py, INVENTORY_ITEM_SIZE * 1.5);
-            }
         }
 
         // RENDER PICTURE IN PICTURE //
@@ -1948,6 +1935,23 @@ int main(int argc, char **argv) {
             render_text(&text_attrib, CENTER, pw / 2, ts, ts, player->name);
 
             width = ow, height = oh;
+            glViewport(0, 0, width, height);
+        }
+        // RENDER INVENTORY //
+
+        int inv_offset = (observe2 ? 288 : 0);
+
+        render_inventory(&inventory_attrib, &block_attrib, &text_attrib, (width - inv_offset) / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5, inventory.selected);
+
+        if (inventory_screen) {
+            render_inventory_screen(&inventory_attrib, &block_attrib, &text_attrib, (width - inv_offset) / 2, height / 2, INVENTORY_ITEM_SIZE * 1.5, inventory.highlighted);
+            if (inventory.holding.count > 0) {
+                render_inventory_held(&block_attrib, &text_attrib, px, py, INVENTORY_ITEM_SIZE * 1.5);
+            }
+        }
+        player = players + observe1;
+        if (player != me) {
+            render_text(&text_attrib, CENTER, width / 2, ts, ts, player->name);
         }
         // swap buffers
         glfwSwapBuffers(window);

@@ -180,10 +180,6 @@ void client_start() {
     if (!client_enabled) {
         return;
     }
-    #ifdef _WIN32
-        WSADATA wsa_data;
-        WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    #endif
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
         perror("thrd_create");

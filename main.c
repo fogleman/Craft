@@ -1,3 +1,7 @@
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <math.h>
@@ -1021,6 +1025,10 @@ void create_window() {
 }
 
 int main(int argc, char **argv) {
+    #ifdef _WIN32
+        WSADATA wsa_data;
+        WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    #endif
     srand(time(NULL));
     rand();
     if (argc == 2 || argc == 3) {

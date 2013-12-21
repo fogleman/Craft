@@ -1,7 +1,4 @@
-#ifndef __APPLE_CC__
-    #include <GL/glew.h>
-#endif
-
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
@@ -1066,11 +1063,9 @@ int main(int argc, char **argv) {
     glfwSetMouseButtonCallback(window, on_mouse_button);
     glfwSetScrollCallback(window, on_scroll);
 
-    #ifndef __APPLE__
-        if (glewInit() != GLEW_OK) {
-            return -1;
-        }
-    #endif
+    if (glewInit() != GLEW_OK) {
+        return -1;
+    }
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);

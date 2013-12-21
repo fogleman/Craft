@@ -17,7 +17,9 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 
 #### Mac OS X
 
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it. You may use [Homebrew](http://brew.sh) to simplify the installation:
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
+if you don't already have it. You may use [Homebrew](http://brew.sh) to simplify
+the installation:
 
     brew install cmake
 
@@ -28,21 +30,27 @@ Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 
 #### Windows
 
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don't already have it.
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
+and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`. Use the
+following CMake command instead of the one described in the next section.
+
+    cmake -G "MinGW Makefiles"
 
 ### Compile and Run
 
-Once you have the dependencies (see above), run the following commands in your terminal.
+Once you have the dependencies (see above), run the following commands in your
+terminal.
 
     git clone https://github.com/fogleman/Craft.git
     cd Craft
-    cmake . -DCMAKE_BUILD_TYPE=Release
+    cmake .
     make
     ./craft
 
 ### Multiplayer
 
-You can run your own server or connect to mine. The server uses the same SQLite database format as the client running standalone.
+You can run your own server or connect to mine. The server uses the same SQLite
+database format as the client running standalone.
 
 #### Client
 

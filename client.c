@@ -1,14 +1,15 @@
+#ifdef _WIN32
+    #include <windows.h>
+    #define close closesocket
+    #define sleep Sleep
+#else
+    #include <netdb.h>
+    #include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-#include <windows.h>
-#define snprintf _snprintf
-#define close closesocket
-#else
-#include <netdb.h>
-#include <unistd.h>
-#endif
 #include "client.h"
 #include "tinycthread.h"
 
@@ -22,7 +23,7 @@ static thrd_t recv_thread;
 static mtx_t mutex;
 
 void client_enable() {
-     client_enabled = 1;
+    client_enabled = 1;
 }
 
 void client_disable() {
@@ -145,11 +146,7 @@ int recv_worker(void *arg) {
             if (done) {
                 break;
             }
-#ifdef _WIN32
-            Sleep(1);
-#else
             sleep(0);
-#endif
         }
     }
     return 0;
@@ -183,6 +180,10 @@ void client_start() {
     if (!client_enabled) {
         return;
     }
+    #ifdef _WIN32
+        WSADATA wsa_data;
+        WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    #endif
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
         perror("thrd_create");

@@ -997,7 +997,7 @@ void render_inventory_texts(Attrib *attrib, float x, float y, float n, int row) 
             continue;
 
         float sep = INVENTORY_ITEM_SIZE * 1.5;
-        float tx = width / 2 + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
+        float tx = x + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
         float ty = y == 0 ? sep / 3 : y - sep / 3;
         render_inventory_text(attrib, block, tx, ty, n);
     }
@@ -1034,11 +1034,11 @@ void render_inventory_held(Attrib *item_attrib, Attrib *text_attrib,
     }
 }
 
-int mouse_to_inventory(int width, int height, float x, float y, float n) {
+int mouse_to_inventory(int screen_width, int screen_height, float x, float y, float n) {
     /* .. 0 .. 1 .. 2 .. 3 .. 4 .. 5 .. 6 .. 7 .. 8 .. */
     /* |---------------------------------------------| */
-    int xcell = round((INVENTORY_SLOTS - 1) / 2. + ((x - width / 2.) / n));
-    int ycell = 0.5 - (y - height / 2.) / n;
+    int xcell = round((INVENTORY_SLOTS - 1) / 2. + ((x - screen_width / 2.) / n));
+    int ycell = 0.5 - (y - screen_height / 2.) / n;
 
     if (xcell < 0 || ycell < 0 || xcell >= INVENTORY_SLOTS || ycell >= INVENTORY_ROWS)
         return -1;
@@ -1176,7 +1176,8 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
                 double mx, my;
                 glfwGetCursorPos(window, &mx, &my);
 
-                int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
+                int inv_offset = (observe2 ? 288 : 0);
+                int sel = mouse_to_inventory(width - inv_offset, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
                 if (inventory.holding.count == 0) {
                     if (sel != -1) {
                         //Pick up
@@ -1237,7 +1238,8 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
             double mx, my;
             glfwGetCursorPos(window, &mx, &my);
 
-            int sel = mouse_to_inventory(width, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
+            int inv_offset = (observe2 ? 288 : 0);
+            int sel = mouse_to_inventory(width - inv_offset, height, mx, my, INVENTORY_ITEM_SIZE * 1.5);
             if (inventory.items[sel].count != INVENTORY_UNLIMITED) {
                 if (inventory.holding.count == 0) {
                     if (sel != -1) {
@@ -1596,7 +1598,8 @@ int main(int argc, char **argv) {
         int sx = 0;
 
         if (inventory_screen) {
-            int sel = mouse_to_inventory(width, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
+            int inv_offset = (observe2 ? 288 : 0);
+            int sel = mouse_to_inventory(width - inv_offset, height, px, py, INVENTORY_ITEM_SIZE * 1.5);
             inventory.highlighted = sel;
         } else {
             if (!typing) {

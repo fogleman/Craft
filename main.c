@@ -85,6 +85,7 @@ static int observe1 = 0;
 static int observe2 = 0;
 static int flying = 0;
 static int block_type = 1;
+static int scale = 1;
 static int ortho = 0;
 static float fov = 65;
 static int typing = 0;
@@ -123,6 +124,17 @@ float time_of_day() {
     t = t / DAY_LENGTH;
     t = t - (int)t;
     return t;
+}
+
+int get_scale_factor() {
+    int window_width, window_height;
+    int buffer_width, buffer_height;
+    glfwGetWindowSize(window, &window_width, &window_height);
+    glfwGetFramebufferSize(window, &buffer_width, &buffer_height);
+    int result = buffer_width / window_width;
+    result = MAX(1, result);
+    result = MIN(2, result);
+    return result;
 }
 
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
@@ -843,7 +855,7 @@ void render_crosshairs(Attrib *attrib) {
 
 void render_item(Attrib *attrib) {
     float matrix[16];
-    set_matrix_item(matrix, width, height);
+    set_matrix_item(matrix, width, height, scale);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, 0, 0, 5);
@@ -1177,6 +1189,7 @@ int main(int argc, char **argv) {
         y = highest_block(x, z) + 2;
     }
 
+    scale = get_scale_factor();
     glfwGetCursorPos(window, &px, &py);
     double previous = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
@@ -1419,7 +1432,7 @@ int main(int argc, char **argv) {
 
         // RENDER TEXT //
         char text_buffer[1024];
-        float ts = 12;
+        float ts = 12 * scale;
         float tx = ts / 2;
         float ty = height - ts;
         int hour = time_of_day() * 24;
@@ -1456,22 +1469,23 @@ int main(int argc, char **argv) {
         if (observe2) {
             player = players + observe2;
 
-            int pw = 256;
-            int ph = 256;
-            int pad = 3;
+            int pw = 256 * scale;
+            int ph = 256 * scale;
+            int offset = 32 * scale;
+            int pad = 3 * scale;
             int sw = pw + pad * 2;
             int sh = ph + pad * 2;
 
             glEnable(GL_SCISSOR_TEST);
-            glScissor(width - sw - 32 + pad, 32 - pad, sw, sh);
+            glScissor(width - sw - offset + pad, offset - pad, sw, sh);
             glClearColor(0, 0, 0, 1);
             glClear(GL_COLOR_BUFFER_BIT);
-            glScissor(width - pw - 32, 32, pw, ph);
+            glScissor(width - pw - offset, offset, pw, ph);
             glClearColor(0.53, 0.81, 0.92, 1.00);
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_SCISSOR_TEST);
             glClear(GL_DEPTH_BUFFER_BIT);
-            glViewport(width - pw - 32, 32, pw, ph);
+            glViewport(width - pw - offset, offset, pw, ph);
 
             width = pw;
             height = ph;

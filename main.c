@@ -175,7 +175,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 GLuint gen_crosshair_buffer() {
     int x = width / 2;
     int y = height / 2;
-    int p = 10;
+    int p = 10 * scale;
     float data[] = {
         x, y - p, x, y + p,
         x - p, y, x + p, y
@@ -844,7 +844,7 @@ void render_crosshairs(Attrib *attrib) {
     float matrix[16];
     set_matrix_2d(matrix, width, height);
     glUseProgram(attrib->program);
-    glLineWidth(4);
+    glLineWidth(4 * scale);
     glEnable(GL_COLOR_LOGIC_OP);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     GLuint crosshair_buffer = gen_crosshair_buffer();

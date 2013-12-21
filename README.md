@@ -32,9 +32,10 @@ the installation:
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`. Use the
-following CMake command instead of the one described in the next section.
+following commands in place of the ones described in the next section.
 
     cmake -G "MinGW Makefiles"
+    mingw32-make
 
 ### Compile and Run
 

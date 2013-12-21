@@ -18,7 +18,7 @@ include_directories(tinycthread)
 
 if (APPLE)
     target_link_libraries(craft glfw ${GLFW_LIBRARIES})
-elif(LINUX)
+elseif(LINUX)
     target_link_libraries(craft glfw dl ${GLFW_LIBRARIES})
 else()
     target_link_libraries(craft glfw ws2_32.lib ${GLFW_LIBRARIES})

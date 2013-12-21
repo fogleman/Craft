@@ -1823,6 +1823,15 @@ int main(int argc, char **argv) {
                     messages[message_index], MAX_TEXT_LENGTH, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
+            char format[32];
+            snprintf(format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
+            char name[MAX_NAME_LENGTH];
+            if (sscanf(buffer, format, &pid, name) == 2) {
+                Player *player = find_player(pid);
+                if (player) {
+                    strncpy(player->name, name, MAX_NAME_LENGTH);
+                }
+            }
             int islot, iw, icount;
             if (sscanf(buffer, "I,%d,%d,%d", &islot, &iw, &icount) == 3) {
                 inventory.items[islot].w = iw;
@@ -1912,6 +1921,7 @@ int main(int argc, char **argv) {
             int pad = 3;
             int sw = pw + pad * 2;
             int sh = ph + pad * 2;
+            int ow = width, oh = height;
 
             glEnable(GL_SCISSOR_TEST);
             glScissor(width - sw - 32 + pad, 32 - pad, sw, sh);
@@ -1936,6 +1946,8 @@ int main(int argc, char **argv) {
 
             glClear(GL_DEPTH_BUFFER_BIT);
             render_text(&text_attrib, CENTER, pw / 2, ts, ts, player->name);
+
+            width = ow, height = oh;
         }
         // swap buffers
         glfwSwapBuffers(window);

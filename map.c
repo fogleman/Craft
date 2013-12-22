@@ -21,7 +21,7 @@ int hash(int x, int y, int z) {
 void map_alloc(Map *map) {
     map->mask = 0xfff;
     map->size = 0;
-    map->data = (Entry *)calloc(map->mask + 1, sizeof(Entry));
+    map->data = (MapEntry *)calloc(map->mask + 1, sizeof(MapEntry));
 }
 
 void map_free(Map *map) {
@@ -30,7 +30,7 @@ void map_free(Map *map) {
 
 void map_set(Map *map, int x, int y, int z, int w) {
     unsigned int index = hash(x, y, z) & map->mask;
-    Entry *entry = map->data + index;
+    MapEntry *entry = map->data + index;
     int overwrite = 0;
     while (!EMPTY_ENTRY(entry)) {
         if (entry->x == x && entry->y == y && entry->z == z) {
@@ -57,7 +57,7 @@ void map_set(Map *map, int x, int y, int z, int w) {
 
 int map_get(Map *map, int x, int y, int z) {
     unsigned int index = hash(x, y, z) & map->mask;
-    Entry *entry = map->data + index;
+    MapEntry *entry = map->data + index;
     while (!EMPTY_ENTRY(entry)) {
         if (entry->x == x && entry->y == y && entry->z == z) {
             return entry->w;
@@ -72,7 +72,7 @@ void map_grow(Map *map) {
     Map new_map;
     new_map.mask = (map->mask << 1) | 1;
     new_map.size = 0;
-    new_map.data = (Entry *)calloc(new_map.mask + 1, sizeof(Entry));
+    new_map.data = (MapEntry *)calloc(new_map.mask + 1, sizeof(MapEntry));
     MAP_FOR_EACH(map, entry) {
         map_set(&new_map, entry->x, entry->y, entry->z, entry->w);
     } END_MAP_FOR_EACH;

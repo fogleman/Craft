@@ -6,11 +6,11 @@
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
 #define VSYNC 1
-#define SHOW_FPS 0
 #define SCROLL_THRESHOLD 0.1
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
+#define DAY_LENGTH 300
 
 // key bindings
 #define CRAFT_KEY_QUIT 'Q'
@@ -20,7 +20,8 @@
 #define CRAFT_KEY_RIGHT 'D'
 #define CRAFT_KEY_JUMP GLFW_KEY_SPACE
 #define CRAFT_KEY_FLY GLFW_KEY_TAB
-#define CRAFT_KEY_TELEPORT 'P'
+#define CRAFT_KEY_OBSERVE 'O'
+#define CRAFT_KEY_OBSERVE_INSET 'P'
 #define CRAFT_KEY_INVERT_MOUSE_Y 'I'
 #define CRAFT_KEY_BLOCK_TYPE 'E'
 #define CRAFT_KEY_ZOOM GLFW_KEY_LEFT_SHIFT
@@ -41,8 +42,3 @@
 #define COMMIT_INTERVAL 5
 
 #endif
-
-
-    if (key == 'I') {
-        invert_mouse_y = !invert_mouse_y;
-    }

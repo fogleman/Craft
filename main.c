@@ -1,5 +1,13 @@
 #ifdef _WIN32
     #include <windows.h>
+#else
+    #include <libgen.h>
+    #include <unistd.h>
+#endif
+
+#ifdef __APPLE__
+    #include <CoreServices/CoreServices.h>
+    #include <sys/stat.h>
 #endif
 
 #include <GL/glew.h>
@@ -1040,6 +1048,17 @@ int main(int argc, char **argv) {
     #ifdef _WIN32
         WSADATA wsa_data;
         WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    #else
+        chdir(dirname(argv[0]));
+    #endif
+    char settings_path[1024] = ".";
+    #ifdef __APPLE__
+        FSRef ref;
+        FSFindFolder(
+            kUserDomain, kApplicationSupportFolderType, kCreateFolder, &ref);
+        FSRefMakePath(&ref, settings_path, 1024);
+        strncat(settings_path, "/Craft", 1024);
+        mkdir(settings_path, S_IRWXU);
     #endif
     srand(time(NULL));
     rand();
@@ -1051,7 +1070,8 @@ int main(int argc, char **argv) {
         }
         if (USE_CACHE) {
             char path[1024];
-            snprintf(path, 1024, "cache.%s.%d.db", hostname, port);
+            snprintf(path, 1024, "%s/cache.%s.%d.db",
+                settings_path, hostname, port);
             db_enable();
             if (db_init(path)) {
                 return -1;
@@ -1062,8 +1082,10 @@ int main(int argc, char **argv) {
         client_start();
     }
     else {
+        char path[1024];
+        snprintf(path, 1024, "%s/%s", settings_path, DB_PATH);
         db_enable();
-        if (db_init(DB_PATH)) {
+        if (db_init(path)) {
             return -1;
         }
     }

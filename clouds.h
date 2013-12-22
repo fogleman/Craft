@@ -1,7 +1,7 @@
 #ifndef _clouds_h_
 #define _clouds_h_
 
-#include "craftcommonstructs.h"
+
 #include "config.h"
 
 
@@ -18,15 +18,6 @@ enum SEASON_MODIFIER {
     SEASON_M_SEVERE
 };
 
-enum CLOUD_MODE {
-    CLOUD_MODE_STABLE,
-    CLOUD_MODE_BUILDING,
-    CLOUD_MODE_BUILDING_FAST,
-    CLOUD_MODE_DECAYING,
-    CLOUD_MODE_DECAYING_FAST,
-    CLOUD_MODE_DECLINING
-};
-
 typedef struct {
     //transform for layer
     float matrix[16];
@@ -36,15 +27,9 @@ typedef struct {
 
 typedef struct {
     float x,y,z;        //cloud centre position
-    float dx,dy,dz;
-    float sx,sy,sz;
-    int layers_count;
-    int cloud_mode;
-    int cloud_life;
-    int cloud_ticks;
-    int *lifetime;
-    int lifetimelength;
-    int lifetimelength_subcounter;
+    int layers;
+    GLUint buffer;
+    GLUint faces;
     CloudLayer **layers;
 } Cloud;
 
@@ -58,7 +43,9 @@ typedef struct {
     int cloud_count;
     Cloud **clouds;
     
-    int cloud_vertex_buffer;
+
+    GLUint cloud_vertex_buffer;
+
 } Weather;
 
 

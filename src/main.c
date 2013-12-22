@@ -20,6 +20,7 @@
 #include "sign.h"
 #include "util.h"
 #include "world.h"
+#include "clouds.h"
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
@@ -1838,9 +1839,22 @@ int main(int argc, char **argv) {
     me->buffer = 0;
     player_count = 1;
 
+
     // LOAD STATE FROM DATABASE //
     int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
     ensure_chunks(s->x, s->y, s->z, 1);
+    float x = (rand_double() - 0.5) * 10000;
+    float z = (rand_double() - 0.5) * 10000;
+    float y = 0;
+    float rx = 0;
+    float ry = 0;
+    float dy = 0;
+
+    double px = 0;
+    double py = 0;
+
+    create_clouds();
+    
     if (!loaded) {
         s->y = highest_block(s->x, s->z) + 2;
     }
@@ -1855,6 +1869,10 @@ int main(int argc, char **argv) {
 
         // FRAME RATE //
         update_fps(&fps);
+        
+        //update clouds
+        update_clouds();
+        
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
@@ -1901,8 +1919,10 @@ int main(int argc, char **argv) {
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
+
         render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
+
         int face_count = render_chunks(&block_attrib, player);
         render_signs(&text_attrib, player);
         render_sign(&text_attrib, player);
@@ -1910,6 +1930,9 @@ int main(int argc, char **argv) {
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);
         }
+
+        render_clouds(&block_attrib);
+        
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -2012,6 +2035,7 @@ int main(int argc, char **argv) {
     // SHUTDOWN //
     db_save_state(s->x, s->y, s->z, s->rx, s->ry);
     db_close();
+    cleanup_clouds();
     glfwTerminate();
     client_stop();
     return 0;

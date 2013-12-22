@@ -37,6 +37,9 @@
 #define CRAFT_KEY_ZM 'B'
 #define CRAFT_KEY_ZP 'N'
 
+// other input settings
+#define MOUSE_INVERT_Y 0
+
 // advanced parameters
 #define CHUNK_SIZE 32
 #define COMMIT_INTERVAL 5

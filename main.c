@@ -88,7 +88,6 @@ static int block_type = 1;
 static int scale = 1;
 static int ortho = 0;
 static float fov = 65;
-static int invert_mouse_y = 0;
 static int typing = 0;
 static char typing_buffer[MAX_TEXT_LENGTH] = {0};
 
@@ -946,9 +945,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_OBSERVE_INSET) {
             observe2 = (observe2 + 1) % player_count;
         }
-         if (key == CRAFT_KEY_INVERT_MOUSE_Y) {
-            invert_mouse_y = !invert_mouse_y;
-        }
     }
 }
 
@@ -1217,7 +1213,7 @@ int main(int argc, char **argv) {
             float m = 0.0025;
             rx += (mx - px) * m;
             
-            if (invert_mouse_y) {
+            if (MOUSE_INVERT_Y) {
                 ry += (my - py) * m;
             } else {
                 ry -= (my - py) * m;

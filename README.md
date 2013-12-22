@@ -71,7 +71,6 @@ database format as the client running standalone.
 - E to cycle through the block types.
 - Tab to toggle between walking and flying.
 - ZXCVBN to move in exact directions along the XYZ axes.
-- I to toggle the inversion of the mouse Y axis.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
 - O to observe players in the main view.

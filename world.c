@@ -62,6 +62,8 @@ void create_world(Map *map, int p, int q) {
                     }
                 }
             }
+            
+            /*
             // clouds
             if (SHOW_CLOUDS) {
                 for (int y = 64; y < 72; y++) {
@@ -72,6 +74,7 @@ void create_world(Map *map, int p, int q) {
                     }
                 }
             }
+             */
         }
     }
 }

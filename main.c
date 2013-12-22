@@ -18,6 +18,7 @@
 #include "noise.h"
 #include "util.h"
 #include "world.h"
+#include "clouds.h"
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
@@ -1298,6 +1299,8 @@ int main(int argc, char **argv) {
     double px = 0;
     double py = 0;
 
+    create_clouds();
+    
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
     ensure_chunks(x, y, z, 1);
     if (!loaded) {
@@ -1312,6 +1315,10 @@ int main(int argc, char **argv) {
         glViewport(0, 0, width, height);
 
         update_fps(&fps);
+        
+        //update clouds
+        update_clouds();
+        
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
@@ -1536,13 +1543,18 @@ int main(int argc, char **argv) {
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
+
         render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
+
         int face_count = render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);
         }
+
+        render_clouds(&block_attrib);
+        
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -1639,6 +1651,7 @@ int main(int argc, char **argv) {
     }
     db_save_state(x, y, z, rx, ry);
     db_close();
+    cleanup_clouds();
     glfwTerminate();
     client_stop();
     return 0;

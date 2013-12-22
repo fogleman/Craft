@@ -60,12 +60,15 @@ void create_world(Map *map, int p, int q) {
                     }
                 }
             }
+            
+            /*
             // clouds
             for (int y = 64; y < 72; y++) {
                 if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75) {
                     map_set(map, x, y, z, 16);
                 }
             }
+             */
         }
     }
 }

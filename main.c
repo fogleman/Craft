@@ -65,9 +65,10 @@ typedef struct {
     GLuint uv;
     GLuint matrix;
     GLuint sampler;
-    GLuint sampler2;
     GLuint camera;
     GLuint timer;
+    GLuint extra1;
+    GLuint extra2;
 } Attrib;
 
 static GLFWwindow *window;
@@ -124,6 +125,18 @@ float time_of_day() {
     t = t / DAY_LENGTH;
     t = t - (int)t;
     return t;
+}
+
+float get_daylight() {
+    float timer = time_of_day();
+    if (timer < 0.5) {
+        float t = (timer - 0.25) * 100;
+        return 1 / (1 + powf(2, -t));
+    }
+    else {
+        float t = (timer - 0.90) * 100;
+        return 1 - 1 / (1 + powf(2, -t));
+    }
 }
 
 int get_scale_factor() {
@@ -775,7 +788,8 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
     glUniform1i(attrib->sampler, 0);
-    glUniform1i(attrib->sampler2, 2);
+    glUniform1i(attrib->extra1, 2);
+    glUniform1f(attrib->extra2, get_daylight());
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -1132,7 +1146,8 @@ int main(int argc, char **argv) {
     block_attrib.uv = glGetAttribLocation(program, "uv");
     block_attrib.matrix = glGetUniformLocation(program, "matrix");
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
-    block_attrib.sampler2 = glGetUniformLocation(program, "sampler2");
+    block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
+    block_attrib.extra2 = glGetUniformLocation(program, "daylight");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
 

@@ -65,9 +65,6 @@ void create_world(Map *map, int p, int q) {
                 if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75) {
                     map_set(map, x, y, z, 16);
                 }
-                if (simplex3(-x * 0.01, -y * 0.1, -z * 0.01, 8, 0.5, 2) > 0.75) {
-                    map_set(map, x, y + 20, z, 16);
-                }
             }
         }
     }

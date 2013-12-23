@@ -17,7 +17,7 @@ static sqlite3_stmt *set_key_stmt;
 static Ring ring;
 static thrd_t worker_thread;
 static mtx_t mutex;
-static cnd_t condition;
+static int stop_flag = 0;
 
 void db_enable() {
     db_enabled = 1;
@@ -72,7 +72,6 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, get_key_query, -1, &get_key_stmt, NULL);
     if (rc) return rc;
-    // db_begin_transaction();
     db_worker_start(path);
     return 0;
 }
@@ -81,7 +80,6 @@ void db_close() {
     if (!db_enabled) {
         return;
     }
-    // db_commit_transaction();
     sqlite3_finalize(load_map_stmt);
     sqlite3_finalize(get_key_stmt);
     sqlite3_close(db);
@@ -105,10 +103,13 @@ int db_worker_run(void *arg) {
     rc = sqlite3_prepare_v2(
         worker_db, set_key_query, -1, &set_key_stmt, NULL);
     if (rc) return rc;
+    db_begin_transaction();
     while (1) {
-        cnd_wait(&condition, &mutex);
+        if (stop_flag) {
+            break;
+        }
         int count = 0;
-        while (1) {
+        while (count < 1024) {
             int ok, p, q, x, y, z, w, key;
             mtx_lock(&mutex);
             ok = ring_get(&ring, &p, &q, &x, &y, &z, &w, &key);
@@ -124,12 +125,16 @@ int db_worker_run(void *arg) {
                 _db_insert_block(p, q, x, y, z, w);
             }
         }
-        if (!count) {
-            break;
+        printf("%d, %d\n", count, ring_size(&ring));
+        if (count) {
+            db_commit();
         }
+        sleep(1);
     }
+    db_commit_transaction();
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(set_key_stmt);
+    sqlite3_close(worker_db);
     return 0;
 }
 
@@ -139,7 +144,6 @@ void db_worker_start(char *path) {
     }
     ring_alloc(&ring, 1024);
     mtx_init(&mutex, mtx_plain);
-    cnd_init(&condition);
     thrd_create(&worker_thread, db_worker_run, path);
 }
 
@@ -147,11 +151,10 @@ void db_worker_stop() {
     if (!db_enabled) {
         return;
     }
-    // signal
+    stop_flag = 1;
     thrd_join(worker_thread, NULL);
     ring_free(&ring);
     mtx_destroy(&mutex);
-    cnd_destroy(&condition);
 }
 
 void db_begin_transaction() {
@@ -222,7 +225,6 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
     mtx_lock(&mutex);
     ring_put(&ring, p, q, x, y, z, w, 0);
     mtx_unlock(&mutex);
-    cnd_signal(&condition);
 }
 
 void _db_insert_block(int p, int q, int x, int y, int z, int w) {
@@ -272,7 +274,6 @@ void db_set_key(int p, int q, int key) {
     mtx_lock(&mutex);
     ring_put(&ring, p, q, 0, 0, 0, 0, key);
     mtx_unlock(&mutex);
-    cnd_signal(&condition);
 }
 
 void _db_set_key(int p, int q, int key) {

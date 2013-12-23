@@ -20,6 +20,15 @@ int ring_full(Ring *ring) {
     return ring->start == (ring->end + 1) % ring->capacity;
 }
 
+int ring_size(Ring *ring) {
+    if (ring->end >= ring->start) {
+        return ring->end - ring->start;
+    }
+    else {
+        return ring->capacity - (ring->start - ring->end);
+    }
+}
+
 void ring_grow(Ring *ring) {
     Ring new_ring;
     ring_alloc(&new_ring, ring->capacity * 2);

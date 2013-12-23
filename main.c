@@ -1201,10 +1201,10 @@ int main(int argc, char **argv) {
         double dt = MIN(now - previous, 0.2);
         previous = now;
 
-        if (now - last_commit > COMMIT_INTERVAL) {
-            last_commit = now;
-            db_commit();
-        }
+        // if (now - last_commit > COMMIT_INTERVAL) {
+        //     last_commit = now;
+        //     db_commit();
+        // }
 
         // HANDLE MOUSE INPUT //
         if (exclusive && (px || py)) {

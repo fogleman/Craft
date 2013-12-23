@@ -109,7 +109,7 @@ int db_worker_run(void *arg) {
             break;
         }
         int count = 0;
-        while (count < 1024) {
+        while (1) {
             int ok, p, q, x, y, z, w, key;
             mtx_lock(&mutex);
             ok = ring_get(&ring, &p, &q, &x, &y, &z, &w, &key);
@@ -161,14 +161,14 @@ void db_begin_transaction() {
     if (!db_enabled) {
         return;
     }
-    sqlite3_exec(db, "begin transaction;", NULL, NULL, NULL);
+    sqlite3_exec(worker_db, "begin transaction;", NULL, NULL, NULL);
 }
 
 void db_commit_transaction() {
     if (!db_enabled) {
         return;
     }
-    sqlite3_exec(db, "commit transaction;", NULL, NULL, NULL);
+    sqlite3_exec(worker_db, "commit transaction;", NULL, NULL, NULL);
 }
 
 void db_commit() {

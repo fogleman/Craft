@@ -1,8 +1,15 @@
+#ifdef _WIN32
+    #include <windows.h>
+    #define close closesocket
+    #define sleep Sleep
+#else
+    #include <netdb.h>
+    #include <unistd.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
 #include <string.h>
-#include <unistd.h>
 #include "client.h"
 #include "tinycthread.h"
 

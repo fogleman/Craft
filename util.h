@@ -1,10 +1,7 @@
 #ifndef _util_h_
 #define _util_h_
 
-#ifndef __APPLE_CC__
-    #include <GL/glew.h>
-#endif
-
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #define PI 3.14159265359

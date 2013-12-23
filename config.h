@@ -10,6 +10,7 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
+#define DAY_LENGTH 300
 
 // key bindings
 #define CRAFT_KEY_QUIT 'Q'

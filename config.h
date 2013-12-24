@@ -23,6 +23,9 @@
 #define SHOW_CHAT_TEXT 1
 #define SHOW_PLAYER_NAMES 1
 
+#define MAX_NAME_LENGTH 32
+
+
 // key bindings
 #define CRAFT_KEY_QUIT 'Q'
 #define CRAFT_KEY_FORWARD 'W'

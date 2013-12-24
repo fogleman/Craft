@@ -1,7 +1,9 @@
 #ifndef _clouds_h_
 #define _clouds_h_
 
+#include "craftcommonstructs.h"
 #include "config.h"
+
 
 enum SEASON {
     SEASON_SUMMER,
@@ -25,9 +27,9 @@ typedef struct {
 
 typedef struct {
     float x,y,z;        //cloud centre position
-    int layers;
-    GLUint buffer;
-    GLUint faces;
+    float dx,dy,dz;
+    float sx,sy,sz;
+    int layers_count;
     CloudLayer **layers;
 } Cloud;
 
@@ -41,16 +43,16 @@ typedef struct {
     int cloud_count;
     Cloud **clouds;
     
-    GLUint cloud_vertex_buffer;
+    int cloud_vertex_buffer;
 } Weather;
 
 
 Weather *weather;
 
 void create_clouds();
-void update_clouds();
-void render_clouds(Attrib *attrib, void (*draw_triangles_3d)(Attrib *attrib, GLuint buffer, int count));
+void update_clouds(Player *player);
+void render_clouds(Attrib *attrib,int width, int height, Player *player, float fov, int ortho);
 void cleanup_clouds();
-void add_cloud();
+void add_cloud(Player *player);
 
 #endif

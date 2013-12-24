@@ -18,6 +18,7 @@
 #include "util.h"
 #include "world.h"
 #include "clouds.h"
+#include "craftcommonstructs.h"
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
@@ -26,7 +27,6 @@
 #define DELETE_CHUNK_RADIUS 12
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
-#define MAX_NAME_LENGTH 32
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
@@ -35,43 +35,9 @@
 #define OBSERVE_YOU_ME 2
 #define OBSERVE_YOU 3
 
-typedef struct {
-    Map map;
-    int p;
-    int q;
-    int faces;
-    int dirty;
-    GLuint buffer;
-} Chunk;
 
-typedef struct {
-    float x;
-    float y;
-    float z;
-    float rx;
-    float ry;
-    float t;
-} State;
 
-typedef struct {
-    int id;
-    char name[MAX_NAME_LENGTH];
-    State state;
-    State state1;
-    State state2;
-    GLuint buffer;
-} Player;
 
-typedef struct {
-    GLuint program;
-    GLuint position;
-    GLuint normal;
-    GLuint uv;
-    GLuint matrix;
-    GLuint sampler;
-    GLuint camera;
-    GLuint timer;
-} Attrib;
 
 static GLFWwindow *window;
 static Chunk chunks[MAX_CHUNKS];
@@ -1020,6 +986,7 @@ int main(int argc, char **argv) {
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
+    Attrib cloud_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -1032,6 +999,20 @@ int main(int argc, char **argv) {
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
+    
+    program = load_program(
+                           "shaders/cloud_vertex.glsl", "shaders/cloud_fragment.glsl");
+    cloud_attrib.program = program;
+    cloud_attrib.position = glGetAttribLocation(program, "position");
+    cloud_attrib.normal = glGetAttribLocation(program, "normal");
+    cloud_attrib.uv = glGetAttribLocation(program, "uv");
+    cloud_attrib.matrix = glGetUniformLocation(program, "matrix");
+    cloud_attrib.model = glGetUniformLocation(program, "model");
+    cloud_attrib.sampler = glGetUniformLocation(program, "sampler");
+    cloud_attrib.camera = glGetUniformLocation(program, "camera");
+    cloud_attrib.timer = glGetUniformLocation(program, "timer");
+    
+    
 
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
@@ -1086,8 +1067,6 @@ int main(int argc, char **argv) {
 
         update_fps(&fps);
         
-        //update clouds
-        update_clouds();
         
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
@@ -1309,6 +1288,9 @@ int main(int argc, char **argv) {
         if (observe == OBSERVE_YOU_ME || observe == OBSERVE_YOU) {
             player = players + follow;
         }
+        
+        //update clouds
+        update_clouds(player);
 
         delete_chunks();
 
@@ -1316,9 +1298,10 @@ int main(int argc, char **argv) {
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
         render_chunks(&block_attrib, width, height, player);
+        render_clouds(&cloud_attrib, width, height, player,fov,ortho);
         render_players(&block_attrib, width, height, player);
         render_wireframe(&line_attrib, width, height, player);
-        render_clouds(&block_attrib);
+
         
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);

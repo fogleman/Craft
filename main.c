@@ -1070,6 +1070,7 @@ int main(int argc, char **argv) {
             if (db_init(path)) {
                 return -1;
             }
+            db_writer_start(path);
         }
         client_enable();
         client_connect(hostname, port);
@@ -1080,6 +1081,7 @@ int main(int argc, char **argv) {
         if (db_init(DB_PATH)) {
             return -1;
         }
+        db_writer_start(DB_PATH);
     }
     if (!glfwInit()) {
         return -1;
@@ -1178,7 +1180,6 @@ int main(int argc, char **argv) {
     FPS fps = {0, 0, 0};
     int message_index = 0;
     char messages[MAX_MESSAGES][MAX_TEXT_LENGTH] = {0};
-    double last_commit = glfwGetTime();
     double last_update = glfwGetTime();
     GLuint sky_buffer = gen_sky_buffer();
 
@@ -1215,11 +1216,6 @@ int main(int argc, char **argv) {
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
-
-        // if (now - last_commit > COMMIT_INTERVAL) {
-        //     last_commit = now;
-        //     db_commit();
-        // }
 
         // HANDLE MOUSE INPUT //
         if (exclusive && (px || py)) {
@@ -1520,6 +1516,7 @@ int main(int argc, char **argv) {
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    db_writer_stop();
     db_save_state(x, y, z, rx, ry);
     db_close();
     glfwTerminate();

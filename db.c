@@ -74,7 +74,6 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(reader, get_key_query, -1, &get_key_stmt, NULL);
     if (rc) return rc;
-    db_writer_start(path);
     return 0;
 }
 
@@ -82,58 +81,10 @@ void db_close() {
     if (!db_enabled) {
         return;
     }
+    // db_writer_stop();
     sqlite3_finalize(load_map_stmt);
     sqlite3_finalize(get_key_stmt);
     sqlite3_close(reader);
-    db_writer_stop();
-}
-
-int db_writer_run(void *arg) {
-    char *path = (char *)arg;
-    static const char *insert_block_query =
-        "insert or replace into block (p, q, x, y, z, w) "
-        "values (?, ?, ?, ?, ?, ?);";
-    static const char *set_key_query =
-        "insert or replace into key (p, q, key) "
-        "values (?, ?, ?);";
-    int rc;
-    rc = sqlite3_open(path, &writer);
-    if (rc) return rc;
-    rc = sqlite3_prepare_v2(
-        writer, insert_block_query, -1, &insert_block_stmt, NULL);
-    if (rc) return rc;
-    rc = sqlite3_prepare_v2(
-        writer, set_key_query, -1, &set_key_stmt, NULL);
-    if (rc) return rc;
-    db_begin_transaction();
-    time_t last_commit = time(NULL);
-    while (1) {
-        int p, q, x, y, z, w, key;
-        mtx_lock(&mtx);
-        while (!ring_get(&ring, &p, &q, &x, &y, &z, &w, &key)) {
-            cnd_wait(&cnd, &mtx);
-        }
-        mtx_unlock(&mtx);
-        if (key < 0) {
-            break;
-        }
-        else if (key) {
-            _db_set_key(p, q, key);
-        }
-        else {
-            _db_insert_block(p, q, x, y, z, w);
-        }
-        time_t now = time(NULL);
-        if (now - last_commit >= 5) {
-            last_commit = now;
-            db_commit();
-        }
-    }
-    db_commit_transaction();
-    sqlite3_finalize(insert_block_stmt);
-    sqlite3_finalize(set_key_stmt);
-    sqlite3_close(writer);
-    return 0;
 }
 
 void db_writer_start(char *path) {
@@ -160,26 +111,52 @@ void db_writer_stop() {
     ring_free(&ring);
 }
 
-void db_begin_transaction() {
-    if (!db_enabled) {
-        return;
+int db_writer_run(void *arg) {
+    char *path = (char *)arg;
+    static const char *insert_block_query =
+        "insert or replace into block (p, q, x, y, z, w) "
+        "values (?, ?, ?, ?, ?, ?);";
+    static const char *set_key_query =
+        "insert or replace into key (p, q, key) "
+        "values (?, ?, ?);";
+    int rc;
+    rc = sqlite3_open(path, &writer);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(
+        writer, insert_block_query, -1, &insert_block_stmt, NULL);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(
+        writer, set_key_query, -1, &set_key_stmt, NULL);
+    if (rc) return rc;
+    time_t last_commit = time(NULL);
+    sqlite3_exec(writer, "begin;", NULL, NULL, NULL);
+    while (1) {
+        int p, q, x, y, z, w, key;
+        mtx_lock(&mtx);
+        while (!ring_get(&ring, &p, &q, &x, &y, &z, &w, &key)) {
+            cnd_wait(&cnd, &mtx);
+        }
+        mtx_unlock(&mtx);
+        if (key < 0) {
+            break;
+        }
+        else if (key) {
+            _db_set_key(p, q, key);
+        }
+        else {
+            _db_insert_block(p, q, x, y, z, w);
+        }
+        time_t now = time(NULL);
+        if (now - last_commit >= 5) {
+            last_commit = now;
+            sqlite3_exec(writer, "commit; begin;", NULL, NULL, NULL);
+        }
     }
-    sqlite3_exec(writer, "begin transaction;", NULL, NULL, NULL);
-}
-
-void db_commit_transaction() {
-    if (!db_enabled) {
-        return;
-    }
-    sqlite3_exec(writer, "commit transaction;", NULL, NULL, NULL);
-}
-
-void db_commit() {
-    if (!db_enabled) {
-        return;
-    }
-    db_commit_transaction();
-    db_begin_transaction();
+    sqlite3_exec(writer, "commit;", NULL, NULL, NULL);
+    sqlite3_finalize(insert_block_stmt);
+    sqlite3_finalize(set_key_stmt);
+    sqlite3_close(writer);
+    return 0;
 }
 
 void db_save_state(float x, float y, float z, float rx, float ry) {

@@ -1,7 +1,11 @@
 #ifndef _clouds_h_
 #define _clouds_h_
 
+<<<<<<< HEAD
 
+=======
+#include "craftcommonstructs.h"
+>>>>>>> committing changes to files. Moved cloud update method in main to use player struct.
 #include "config.h"
 
 
@@ -27,9 +31,9 @@ typedef struct {
 
 typedef struct {
     float x,y,z;        //cloud centre position
-    int layers;
-    GLUint buffer;
-    GLUint faces;
+    float dx,dy,dz;
+    float sx,sy,sz;
+    int layers_count;
     CloudLayer **layers;
 } Cloud;
 
@@ -43,9 +47,13 @@ typedef struct {
     int cloud_count;
     Cloud **clouds;
     
+<<<<<<< HEAD
 
     GLUint cloud_vertex_buffer;
 
+=======
+    int cloud_vertex_buffer;
+>>>>>>> committing changes to files. Moved cloud update method in main to use player struct.
 } Weather;
 
 
@@ -55,7 +63,10 @@ void create_clouds();
 void update_clouds(Player *player);
 void render_clouds(Attrib *attrib,int width, int height, Player *player, float fov, int ortho);
 void cleanup_clouds();
+<<<<<<< HEAD
 void remove_cloud(Cloud *c);
+=======
+>>>>>>> committing changes to files. Moved cloud update method in main to use player struct.
 void add_cloud(Player *player);
 
 #endif

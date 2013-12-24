@@ -3,18 +3,14 @@
 #include "noise.h"
 #include "config.h"
 #include "util.h"
-<<<<<<< HEAD
 #include "cube.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "math.h"
 #include "matrix.h"
-#include "time.h"
-#include "craftcommonstructs.h"
-=======
+
 #include <stdio.h>
 #include <stdlib.h>
->>>>>>> Added basic control for improved clouds
 
 void create_clouds() {
     printf("[CLOUDS] Create clouds called\n");
@@ -25,7 +21,6 @@ void create_clouds() {
     weather->season_modifier = SEASON_M_NORMAL; //Normal season
     
     //set a prevailaing wind direction.
-
     weather->x_prevailing_winds = 1.0f;
     weather->z_prevailing_winds = 0.0f;
     
@@ -35,301 +30,37 @@ void create_clouds() {
     
     weather->cloud_count = 0;
     weather->clouds = (Cloud**)malloc(MAXIMUM_CLOUDS * sizeof(Cloud*));
-<<<<<<< HEAD
-    /*
-    int points = (6 * 3);
-    float dataBuffer[3 * points + 3 * points + 2 * points];
-    float *data = &(dataBuffer[0]);
-    
-    
-            2       4
-     
-     1                      6
-     
-            3       5
-     
-     
-    
-    float small_size_length = 1.0f;
-    float old_size_length = small_size_length * 1.5f;
-    
-    float angleOne =    M_PI/2.0f;
-    float angleTwo =    M_PI/4.0f;
-    float angleThree =  M_PI/8.0f;
-    float angleFour =   M_PI/10.0f;
-    
-    float ypos = -0.5f;
-
-    *(data++) = small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 1.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleOne); *(data++) = ypos; *(data++) = small_size_length * sin(angleOne);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-
-    *(data++) = small_size_length * cos(angleTwo); *(data++) = ypos; *(data++) = small_size_length * sin(angleTwo);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    *(data++) = -small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleThree); *(data++) = ypos; *(data++) = small_size_length * sin(angleThree);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-    
-    *(data++) = small_size_length * cos(angleFour); *(data++) = ypos; *(data++) = small_size_length * sin(angleFour);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    
-    ypos = 0.0f;
-    small_size_length *= 1.5f;
-    
-    *(data++) = small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 1.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleOne); *(data++) = ypos; *(data++) = small_size_length * sin(angleOne);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-    
-    *(data++) = small_size_length * cos(angleTwo); *(data++) = ypos; *(data++) = small_size_length * sin(angleTwo);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    *(data++) = -small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleThree); *(data++) = ypos; *(data++) = small_size_length * sin(angleThree);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-    
-    *(data++) = small_size_length * cos(angleFour); *(data++) = ypos; *(data++) = small_size_length * sin(angleFour);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    
-    ypos = 15.5f;
-    small_size_length = old_size_length;
-    
-    *(data++) = small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 1.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleOne); *(data++) = ypos; *(data++) = small_size_length * sin(angleOne);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-    
-    *(data++) = small_size_length * cos(angleTwo); *(data++) = ypos; *(data++) = small_size_length * sin(angleTwo);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    *(data++) = -small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleThree); *(data++) = ypos; *(data++) = small_size_length * sin(angleThree);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-    
-    *(data++) = small_size_length * cos(angleFour); *(data++) = ypos; *(data++) = small_size_length * sin(angleFour);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    weather->cloud_vertex_buffer = gen_buffer(sizeof(dataBuffer), dataBuffer);
-    */
-    GLfloat *data = malloc_faces(8, 6);
-    make_cube(data, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.5, 16);
-    weather->cloud_vertex_buffer = gen_faces(8, 6, data);
-    
-=======
     
     float data[144];
     weather->cloud_vertex_buffer = gen_buffer(sizeof(data), data);
->>>>>>> Added basic control for improved clouds
     
 }
 
 
 
-
-<<<<<<< HEAD
 void update_clouds(Player *player) {
-=======
-void update_clouds() {
->>>>>>> Added basic control for improved clouds
-    weather->season_lifecycle_current++;
-    
-    if(weather->season_lifecycle_current > weather->season_lifecycle_max){
-        //season change
-        weather->season_lifecycle_current = 0;
-        weather->season++;
-        printf("[CLOUDS] Season changed");
-        
-        weather->season = weather->season > SEASON_SPRING ? SEASON_SUMMER : weather->season;
-    }
-    
-    //update prevailing winds
-<<<<<<< HEAD
+
+
     int i;
     for(i=0; i<weather->cloud_count; i++){
         
-        Cloud *c = (weather->clouds)[i];
-        //delete clouds that have strayed too far from the player, or have degenerated.
-        State *s = &player->state;
-        if ((pow(s->x - (((weather->clouds)[i])->x),2) + pow(s->z - (((weather->clouds)[i])->z),2)) > pow(300,2)  || c->cloud_life <= 0) {
-            
-            
-            remove_cloud(c);
-            weather->clouds[i] = NULL;
-
-            
-            int j;
-            for (j=i+1; j<weather->cloud_count; j++) {
-                weather->clouds[j-1] = weather->clouds[j];
-            }
-            weather->cloud_count--;
-            i--;
-        } else {
-            
-            //individual clouds move with the prevailing wind, and with some slight
-            //variation
-            c->lifetimelength_subcounter++;
-            
-            if (c->lifetimelength_subcounter > 2000) {
-                c->lifetimelength_subcounter = 0;
-                c->cloud_ticks++;
-                
-                
-                if (c->cloud_ticks < c->lifetimelength_subcounter) {
-                    int next_state = c->lifetime[c->cloud_ticks];
-                    float state_float = next_state/RAND_MAX;
-                    
-                    if (c->cloud_mode ==  CLOUD_MODE_STABLE) {
-                        if (state_float < 0.6) {
-                            c->cloud_mode = CLOUD_MODE_STABLE;
-                        } else if(state_float < 0.8){
-                            if (state_float > 0.78) {
-                                c->cloud_mode = CLOUD_MODE_BUILDING_FAST;
-                            } else {
-                                c->cloud_mode = CLOUD_MODE_BUILDING;
-                            }
-                        } else if(state_float < 1){
-                            if (state_float > 0.98) {
-                                c->cloud_mode = CLOUD_MODE_DECAYING_FAST;
-                            } else {
-                                c->cloud_mode = CLOUD_MODE_DECAYING;
-                            }
-                        }
-                    } else if (c->cloud_mode == CLOUD_MODE_BUILDING || c->cloud_mode ==  CLOUD_MODE_BUILDING_FAST) {
-                        if (state_float < 0.4) {
-                            c->cloud_mode = CLOUD_MODE_BUILDING;
-                        } else if (state_float < 0.6) {
-                            c->cloud_mode = CLOUD_MODE_STABLE;
-                        } else if (state_float < 0.8) {
-                            c->cloud_mode = CLOUD_MODE_BUILDING_FAST;
-                        } else if(state_float < 1){
-                            if (state_float > 0.98) {
-                                c->cloud_mode = CLOUD_MODE_DECAYING_FAST;
-                            } else {
-                                c->cloud_mode = CLOUD_MODE_DECAYING;
-                            }
-                        }
-                    } else if (c->cloud_mode == CLOUD_MODE_DECAYING || c->cloud_mode ==  CLOUD_MODE_DECAYING_FAST) {
-                        if (state_float < 0.2) {
-                            c->cloud_mode = CLOUD_MODE_DECAYING;
-                        } else if (state_float < 0.7) {
-                            c->cloud_mode = CLOUD_MODE_STABLE;
-                        } else if (state_float < 0.8) {
-                            c->cloud_mode = CLOUD_MODE_DECAYING_FAST;
-                        } else if(state_float < 1){
-                            if (state_float > 0.98) {
-                                c->cloud_mode = CLOUD_MODE_BUILDING_FAST;
-                            } else {
-                                c->cloud_mode = CLOUD_MODE_BUILDING;
-                            }
-                        }
-                    }
-                    
-                    
-                } else {
-                    c->cloud_mode = CLOUD_MODE_DECLINING;
-                }
-            }
-            
-            c->x += weather->x_prevailing_winds;
-            c->z += weather->z_prevailing_winds;
-            
-            c->x += ((weather->clouds)[i])->dx;
-            c->y += ((weather->clouds)[i])->dy;
-            c->z += ((weather->clouds)[i])->dz;
-            
-            
-            if (c->cloud_mode == CLOUD_MODE_BUILDING) {
-                c->cloud_life++;
-                
-                c->sx += 0.01 + (rand() / RAND_MAX) * 0.01;
-                c->sy += 0.01 + (rand() / RAND_MAX) * 0.01;
-                c->sz += 0.01 + (rand() / RAND_MAX) * 0.01;
-                
-            } else if (c->cloud_mode == CLOUD_MODE_BUILDING_FAST) {
-                c->cloud_life += 2;
-                
-                c->sx += 0.01 + (rand() / RAND_MAX) * 0.03;
-                c->sy += 0.01 + (rand() / RAND_MAX) * 0.03;
-                c->sz += 0.01 + (rand() / RAND_MAX) * 0.03;
-                
-            } else if (c->cloud_mode == CLOUD_MODE_DECAYING) {
-                c->cloud_life--;
-                c->sx -= 0.01 + (rand() / RAND_MAX) * 0.01;
-                c->sy -= 0.01 + (rand() / RAND_MAX) * 0.01;
-                c->sz -= 0.01 + (rand() / RAND_MAX) * 0.01;
-            } else if (c->cloud_mode == CLOUD_MODE_DECAYING_FAST) {
-                c->cloud_life -= 2;
-                c->sx -= 0.01 + (rand() / RAND_MAX) * 0.03;
-                c->sy -= 0.01 + (rand() / RAND_MAX) * 0.03;
-                c->sz -= 0.01 + (rand() / RAND_MAX) * 0.03;
-            } else if(c->cloud_mode == CLOUD_MODE_DECLINING){
-                
-                c->sx -= 0.001 + (rand() / RAND_MAX) * 0.005;
-                c->sy -= 0.001 + (rand() / RAND_MAX) * 0.005;
-                c->sz -= 0.001 + (rand() / RAND_MAX) * 0.005;
-                c->cloud_life = 10000;
-            }
-            
-            if (c->cloud_life <= 0) {
-                c->cloud_mode = CLOUD_MODE_DECLINING;
-                c->cloud_life = 10000;
-            }
-            
-            if (c->sx < 0 || c->sy < 0 || c->sz < 0) {
-                c->cloud_life = 0;
-            }
-            
-            
-        }
+        //individual clouds move with the prevailing wind, and with some slight
+        //variation
+        
+        ((weather->clouds)[i])->x += weather->x_prevailing_winds;
+        ((weather->clouds)[i])->z += weather->z_prevailing_winds;
+        
+        ((weather->clouds)[i])->x += ((weather->clouds)[i])->dx;
+        ((weather->clouds)[i])->y += ((weather->clouds)[i])->dy;
+        ((weather->clouds)[i])->z += ((weather->clouds)[i])->dz;
     }
     
     //add new cloud if required.
     add_cloud(player);
-=======
-    
-    //move clouds with prevailing winds.
-    
-    //delete clouds that have strayed too far from the player, or have degenerated.
-    
-    //add new cloud if required.
-    add_cloud();
->>>>>>> Added basic control for improved clouds
     
 }
 
 
-<<<<<<< HEAD
 void add_cloud(Player *player){
     //certain types of weather will force less clouds to be allowed.
     int weather_cloud_max_modifier = 0;
@@ -436,44 +167,4 @@ void remove_cloud(Cloud *c){
     free(c->lifetime);
     free(c);
     printf("[CLOUDS] Remove cloud called\n");
-=======
-void add_cloud(){
-    //certain types of weather will force less clouds to be allowed.
-    int weather_cloud_max_modifier = 0;
-    if(weather->cloud_count < MAXIMUM_CLOUDS - weather_cloud_max_modifier){
-        weather->clouds[weather->cloud_count] = (Cloud*)malloc(sizeof(Cloud));
-        weather->cloud_count++;
-        
-        
-        
-        printf("[Cloud] Added new cloud\n");
-    }
 }
-
-
-void render_clouds(Attrib *attrib, void (*draw_triangles_3d)(Attrib *attrib, GLuint buffer, int count)) {
-    for(i=0; i<weather->cloud_count; i++){
-        render_cloud((weather->clouds)[i]);
-    }
->>>>>>> Added basic control for improved clouds
-}
-
-void cleanup_clouds() {
-    printf("[CLOUDS] Cleanup clouds called\n");
-    printf("[CLOUDS] Removing %d clouds.\n",weather->cloud_count);
-    int i;
-    for(i=0; i<weather->cloud_count; i++){
-<<<<<<< HEAD
-        remove_cloud((weather->clouds)[i]);
-=======
-        free((weather->clouds)[i]);
->>>>>>> Added basic control for improved clouds
-    }
-    free(weather->clouds);
-    
-    free(weather);
-<<<<<<< HEAD
-}
-=======
-}
->>>>>>> Added basic control for improved clouds

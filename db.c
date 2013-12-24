@@ -81,7 +81,6 @@ void db_close() {
     if (!db_enabled) {
         return;
     }
-    // db_writer_stop();
     sqlite3_finalize(load_map_stmt);
     sqlite3_finalize(get_key_stmt);
     sqlite3_close(reader);

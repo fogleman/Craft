@@ -4,6 +4,7 @@ uniform sampler2D sampler;
 uniform sampler2D sky_sampler;
 uniform float timer;
 uniform float daylight;
+uniform bool show_sky_dome;
 
 varying vec2 fragment_uv;
 varying float fog_factor;
@@ -18,11 +19,14 @@ void main() {
         discard;
     }
     bool cloud = color == vec3(1.0, 1.0, 1.0);
-    vec3 fog_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));
     vec3 light_color = vec3(daylight * 0.6);
     vec3 ambient = vec3(daylight * 0.2 + 0.2);
     vec3 light = ambient + light_color * (cloud ? 1.0 - diffuse : diffuse);
     color = min(color * light, vec3(1.0));
+    vec3 fog_color = vec3(0.53, 0.81, 0.92);
+    if (show_sky_dome) {
+        fog_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));
+    }
     color = mix(color, fog_color, fog_factor);
     gl_FragColor = vec4(color, 1.0);
 }

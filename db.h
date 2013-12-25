@@ -2,7 +2,6 @@
 #define _db_h_
 
 #include "map.h"
-#include "sqlite3.h"
 
 void db_enable();
 void db_disable();

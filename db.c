@@ -8,16 +8,14 @@
 
 static int db_enabled = 0;
 
-static sqlite3 *reader;
+static sqlite3 *db;
+static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *load_map_stmt;
 static sqlite3_stmt *get_key_stmt;
-
-static sqlite3 *writer;
-static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *set_key_stmt;
 
 static Ring ring;
-static thrd_t writer_thread;
+static thrd_t worker_thread;
 static mtx_t mtx;
 static cnd_t cnd;
 
@@ -61,19 +59,32 @@ int db_init(char *path) {
         "create index if not exists block_xyz_idx on block (x, y, z);"
         "create unique index if not exists block_pqxyz_idx on block (p, q, x, y, z);"
         "create unique index if not exists key_pq_idx on key (p, q);";
+    static const char *insert_block_query =
+        "insert or replace into block (p, q, x, y, z, w) "
+        "values (?, ?, ?, ?, ?, ?);";
     static const char *load_map_query =
         "select x, y, z, w from block where p = ? and q = ?;";
     static const char *get_key_query =
         "select key from key where p = ? and q = ?;";
+    static const char *set_key_query =
+        "insert or replace into key (p, q, key) "
+        "values (?, ?, ?);";
     int rc;
-    rc = sqlite3_open(path, &reader);
+    rc = sqlite3_open(path, &db);
     if (rc) return rc;
-    rc = sqlite3_exec(reader, create_query, NULL, NULL, NULL);
+    rc = sqlite3_exec(db, create_query, NULL, NULL, NULL);
     if (rc) return rc;
-    rc = sqlite3_prepare_v2(reader, load_map_query, -1, &load_map_stmt, NULL);
+    rc = sqlite3_prepare_v2(
+        db, insert_block_query, -1, &insert_block_stmt, NULL);
     if (rc) return rc;
-    rc = sqlite3_prepare_v2(reader, get_key_query, -1, &get_key_stmt, NULL);
+    rc = sqlite3_prepare_v2(db, load_map_query, -1, &load_map_stmt, NULL);
     if (rc) return rc;
+    rc = sqlite3_prepare_v2(db, get_key_query, -1, &get_key_stmt, NULL);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(db, set_key_query, -1, &set_key_stmt, NULL);
+    if (rc) return rc;
+    sqlite3_exec(db, "begin;", NULL, NULL, NULL);
+    db_worker_start();
     return 0;
 }
 
@@ -81,22 +92,26 @@ void db_close() {
     if (!db_enabled) {
         return;
     }
+    db_worker_stop();
+    sqlite3_exec(db, "commit;", NULL, NULL, NULL);
+    sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(load_map_stmt);
     sqlite3_finalize(get_key_stmt);
-    sqlite3_close(reader);
+    sqlite3_finalize(set_key_stmt);
+    sqlite3_close(db);
 }
 
-void db_writer_start(char *path) {
+void db_worker_start(char *path) {
     if (!db_enabled) {
         return;
     }
     ring_alloc(&ring, 1024);
     mtx_init(&mtx, mtx_plain);
     cnd_init(&cnd);
-    thrd_create(&writer_thread, db_writer_run, path);
+    thrd_create(&worker_thread, db_worker_run, path);
 }
 
-void db_writer_stop() {
+void db_worker_stop() {
     if (!db_enabled) {
         return;
     }
@@ -104,31 +119,13 @@ void db_writer_stop() {
     ring_put(&ring, 0, 0, 0, 0, 0, 0, -1);
     cnd_signal(&cnd);
     mtx_unlock(&mtx);
-    thrd_join(writer_thread, NULL);
+    thrd_join(worker_thread, NULL);
     cnd_destroy(&cnd);
     mtx_destroy(&mtx);
     ring_free(&ring);
 }
 
-int db_writer_run(void *arg) {
-    char *path = (char *)arg;
-    static const char *insert_block_query =
-        "insert or replace into block (p, q, x, y, z, w) "
-        "values (?, ?, ?, ?, ?, ?);";
-    static const char *set_key_query =
-        "insert or replace into key (p, q, key) "
-        "values (?, ?, ?);";
-    int rc;
-    rc = sqlite3_open(path, &writer);
-    if (rc) return rc;
-    rc = sqlite3_prepare_v2(
-        writer, insert_block_query, -1, &insert_block_stmt, NULL);
-    if (rc) return rc;
-    rc = sqlite3_prepare_v2(
-        writer, set_key_query, -1, &set_key_stmt, NULL);
-    if (rc) return rc;
-    time_t last_commit = time(NULL);
-    sqlite3_exec(writer, "begin;", NULL, NULL, NULL);
+int db_worker_run(void *arg) {
     while (1) {
         int p, q, x, y, z, w, key;
         mtx_lock(&mtx);
@@ -145,17 +142,12 @@ int db_writer_run(void *arg) {
         else {
             _db_insert_block(p, q, x, y, z, w);
         }
-        time_t now = time(NULL);
-        if (now - last_commit >= 5) {
-            last_commit = now;
-            sqlite3_exec(writer, "commit; begin;", NULL, NULL, NULL);
-        }
     }
-    sqlite3_exec(writer, "commit;", NULL, NULL, NULL);
-    sqlite3_finalize(insert_block_stmt);
-    sqlite3_finalize(set_key_stmt);
-    sqlite3_close(writer);
     return 0;
+}
+
+void db_commit() {
+    sqlite3_exec(db, "commit; begin;", NULL, NULL, NULL);
 }
 
 void db_save_state(float x, float y, float z, float rx, float ry) {
@@ -165,8 +157,8 @@ void db_save_state(float x, float y, float z, float rx, float ry) {
     static const char *query =
         "insert into state (x, y, z, rx, ry) values (?, ?, ?, ?, ?);";
     sqlite3_stmt *stmt;
-    sqlite3_exec(reader, "delete from state;", NULL, NULL, NULL);
-    sqlite3_prepare_v2(reader, query, -1, &stmt, NULL);
+    sqlite3_exec(db, "delete from state;", NULL, NULL, NULL);
+    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
     sqlite3_bind_double(stmt, 1, x);
     sqlite3_bind_double(stmt, 2, y);
     sqlite3_bind_double(stmt, 3, z);
@@ -184,7 +176,7 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
         "select x, y, z, rx, ry from state;";
     int result = 0;
     sqlite3_stmt *stmt;
-    sqlite3_prepare_v2(reader, query, -1, &stmt, NULL);
+    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         *x = sqlite3_column_double(stmt, 0);
         *y = sqlite3_column_double(stmt, 1);

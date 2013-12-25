@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
 #include "db.h"
 #include "ring.h"
 #include "sqlite3.h"
@@ -15,7 +12,7 @@ static sqlite3_stmt *get_key_stmt;
 static sqlite3_stmt *set_key_stmt;
 
 static Ring ring;
-static thrd_t worker_thread;
+static thrd_t thrd;
 static mtx_t mtx;
 static cnd_t cnd;
 
@@ -108,7 +105,7 @@ void db_worker_start(char *path) {
     ring_alloc(&ring, 1024);
     mtx_init(&mtx, mtx_plain);
     cnd_init(&cnd);
-    thrd_create(&worker_thread, db_worker_run, path);
+    thrd_create(&thrd, db_worker_run, path);
 }
 
 void db_worker_stop() {
@@ -119,7 +116,7 @@ void db_worker_stop() {
     ring_put(&ring, 0, 0, 0, 0, 0, 0, -1);
     cnd_signal(&cnd);
     mtx_unlock(&mtx);
-    thrd_join(worker_thread, NULL);
+    thrd_join(thrd, NULL);
     cnd_destroy(&cnd);
     mtx_destroy(&mtx);
     ring_free(&ring);

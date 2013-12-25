@@ -304,6 +304,7 @@ class Model(object):
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
     def send_talk(self, text):
+        log(text)
         for client in self.clients:
             client.send(TALK, text)
 

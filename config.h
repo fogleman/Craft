@@ -34,6 +34,7 @@
 #define CRAFT_KEY_FLY GLFW_KEY_TAB
 #define CRAFT_KEY_OBSERVE 'O'
 #define CRAFT_KEY_OBSERVE_INSET 'P'
+#define CRAFT_KEY_INVERT_MOUSE_Y 'I'
 #define CRAFT_KEY_BLOCK_TYPE 'E'
 #define CRAFT_KEY_ZOOM GLFW_KEY_LEFT_SHIFT
 #define CRAFT_KEY_ORTHO 'F'
@@ -47,6 +48,9 @@
 #define CRAFT_KEY_YP 'V'
 #define CRAFT_KEY_ZM 'B'
 #define CRAFT_KEY_ZP 'N'
+
+// other input settings
+#define MOUSE_INVERT_Y 0
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 6

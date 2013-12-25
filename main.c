@@ -68,6 +68,7 @@ typedef struct {
     GLuint extra1;
     GLuint extra2;
     GLuint extra3;
+    GLuint extra4;
 } Attrib;
 
 static GLFWwindow *window;
@@ -790,6 +791,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, get_daylight());
     glUniform1i(attrib->extra3, SHOW_SKY_DOME);
+    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * 32);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -1149,6 +1151,7 @@ int main(int argc, char **argv) {
     block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
     block_attrib.extra2 = glGetUniformLocation(program, "daylight");
     block_attrib.extra3 = glGetUniformLocation(program, "show_sky_dome");
+    block_attrib.extra4 = glGetUniformLocation(program, "fog_distance");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
 

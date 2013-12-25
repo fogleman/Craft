@@ -1,4 +1,5 @@
 #include <math.h>
+#include "config.h"
 #include "matrix.h"
 #include "util.h"
 
@@ -196,7 +197,9 @@ void set_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, fov, aspect, 0.125, 256);
+        float znear = 0.125;
+        float zfar = RENDER_CHUNK_RADIUS * 32 + 64;
+        mat_perspective(b, fov, aspect, znear, zfar);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);

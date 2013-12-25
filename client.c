@@ -192,9 +192,9 @@ void client_stop() {
         return;
     }
     close(sd);
-    if (thrd_join(recv_thread, NULL) != thrd_success) {
-        perror("thrd_join");
-        exit(1);
-    }
-    mtx_destroy(&mutex);
+    // if (thrd_join(recv_thread, NULL) != thrd_success) {
+    //     perror("thrd_join");
+    //     exit(1);
+    // }
+    // mtx_destroy(&mutex);
 }

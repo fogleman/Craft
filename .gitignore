@@ -4,6 +4,8 @@ CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
 craft
+log.txt
 *.o
 *.db
 *.exe
+

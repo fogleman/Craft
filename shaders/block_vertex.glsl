@@ -2,6 +2,7 @@
 
 uniform mat4 matrix;
 uniform vec3 camera;
+uniform bool show_sky_dome;
 
 attribute vec4 position;
 attribute vec3 normal;
@@ -21,7 +22,9 @@ void main() {
     diffuse = max(0.0, dot(normal, light_direction));
     float camera_distance = distance(camera, vec3(position));
     fog_factor = pow(clamp(camera_distance / 192.0, 0.0, 1.0), 4.0);
-    float dy = position.y - camera.y;
-    float dx = distance(position.xz, camera.xz);
-    fog_height = 1.0 - (atan(dy, dx) + pi / 2) / pi;
+    if (show_sky_dome) {
+        float dy = position.y - camera.y;
+        float dx = distance(position.xz, camera.xz);
+        fog_height = 1.0 - (atan(dy, dx) + pi / 2) / pi;
+    }
 }

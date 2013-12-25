@@ -1412,7 +1412,8 @@ int main(int argc, char **argv) {
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
             char format[32];
-            snprintf(format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
+            snprintf(
+                format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
             char name[MAX_NAME_LENGTH];
             if (sscanf(buffer, format, &pid, name) == 2) {
                 Player *player = find_player(pid);

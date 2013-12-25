@@ -29,12 +29,10 @@
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
-#define CREATE_CHUNK_RADIUS 6
-#define RENDER_CHUNK_RADIUS 6
-#define DELETE_CHUNK_RADIUS 12
 #define MAX_RECV_LENGTH 1024
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
+
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
@@ -73,9 +71,12 @@ typedef struct {
     GLuint uv;
     GLuint matrix;
     GLuint sampler;
-    GLuint sampler2;
     GLuint camera;
     GLuint timer;
+    GLuint extra1;
+    GLuint extra2;
+    GLuint extra3;
+    GLuint extra4;
 } Attrib;
 
 static GLFWwindow *window;
@@ -132,6 +133,18 @@ float time_of_day() {
     t = t / DAY_LENGTH;
     t = t - (int)t;
     return t;
+}
+
+float get_daylight() {
+    float timer = time_of_day();
+    if (timer < 0.5) {
+        float t = (timer - 0.25) * 100;
+        return 1 / (1 + powf(2, -t));
+    }
+    else {
+        float t = (timer - 0.90) * 100;
+        return 1 - 1 / (1 + powf(2, -t));
+    }
 }
 
 int get_scale_factor() {
@@ -783,7 +796,10 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
     glUniform1i(attrib->sampler, 0);
-    glUniform1i(attrib->sampler2, 2);
+    glUniform1i(attrib->extra1, 2);
+    glUniform1f(attrib->extra2, get_daylight());
+    glUniform1i(attrib->extra3, SHOW_SKY_DOME);
+    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * 32);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -1154,7 +1170,10 @@ int main(int argc, char **argv) {
     block_attrib.uv = glGetAttribLocation(program, "uv");
     block_attrib.matrix = glGetUniformLocation(program, "matrix");
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
-    block_attrib.sampler2 = glGetUniformLocation(program, "sampler2");
+    block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
+    block_attrib.extra2 = glGetUniformLocation(program, "daylight");
+    block_attrib.extra3 = glGetUniformLocation(program, "show_sky_dome");
+    block_attrib.extra4 = glGetUniformLocation(program, "fog_distance");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
 
@@ -1441,50 +1460,69 @@ int main(int argc, char **argv) {
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
-        render_sky(&sky_attrib, player, sky_buffer);
-        glClear(GL_DEPTH_BUFFER_BIT);
+        if (SHOW_SKY_DOME) {
+            render_sky(&sky_attrib, player, sky_buffer);
+            glClear(GL_DEPTH_BUFFER_BIT);
+        }
         int face_count = render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);
-        render_wireframe(&line_attrib, player);
+        if (SHOW_WIREFRAME) {
+            render_wireframe(&line_attrib, player);
+        }
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
-        render_crosshairs(&line_attrib);
-        render_item(&block_attrib);
+        if (SHOW_CROSSHAIRS) {
+            render_crosshairs(&line_attrib);
+        }
+        if (SHOW_ITEM) {
+            render_item(&block_attrib);
+        }
 
         // RENDER TEXT //
         char text_buffer[1024];
         float ts = 12 * scale;
         float tx = ts / 2;
         float ty = height - ts;
-        int hour = time_of_day() * 24;
-        char am_pm = hour < 12 ? 'a' : 'p';
-        hour = hour % 12;
-        hour = hour ? hour : 12;
-        snprintf(
-            text_buffer, 1024, "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-            chunked(x), chunked(z), x, y, z,
-            player_count, chunk_count, face_count * 2, hour, am_pm, fps.fps);
-        render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
-        for (int i = 0; i < MAX_MESSAGES; i++) {
-            int index = (message_index + i) % MAX_MESSAGES;
-            if (strlen(messages[index])) {
-                ty -= ts * 2;
-                render_text(&text_attrib, LEFT, tx, ty, ts, messages[index]);
+        if (SHOW_INFO_TEXT) {
+            int hour = time_of_day() * 24;
+            char am_pm = hour < 12 ? 'a' : 'p';
+            hour = hour % 12;
+            hour = hour ? hour : 12;
+            snprintf(
+                text_buffer, 1024,
+                "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
+                chunked(x), chunked(z), x, y, z,
+                player_count, chunk_count,
+                face_count * 2, hour, am_pm, fps.fps);
+            render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
+            ty -= ts * 2;
+        }
+        if (SHOW_CHAT_TEXT) {
+            for (int i = 0; i < MAX_MESSAGES; i++) {
+                int index = (message_index + i) % MAX_MESSAGES;
+                if (strlen(messages[index])) {
+                    render_text(&text_attrib, LEFT, tx, ty, ts,
+                        messages[index]);
+                    ty -= ts * 2;
+                }
             }
         }
         if (typing) {
-            ty -= ts * 2;
             snprintf(text_buffer, 1024, "> %s", typing_buffer);
             render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
+            ty -= ts * 2;
         }
-        if (player != me) {
-            render_text(&text_attrib, CENTER, width / 2, ts, ts, player->name);
-        }
-        Player *other = player_crosshair(player);
-        if (other) {
-            render_text(&text_attrib, CENTER,
-                width / 2, height / 2 - ts - 24, ts, other->name);
+        if (SHOW_PLAYER_NAMES) {
+            if (player != me) {
+                render_text(&text_attrib, CENTER, width / 2, ts, ts,
+                    player->name);
+            }
+            Player *other = player_crosshair(player);
+            if (other) {
+                render_text(&text_attrib, CENTER,
+                    width / 2, height / 2 - ts - 24, ts, other->name);
+            }
         }
 
         // RENDER PICTURE IN PICTURE //
@@ -1514,13 +1552,17 @@ int main(int argc, char **argv) {
             ortho = 0;
             fov = 65;
 
-            render_sky(&sky_attrib, player, sky_buffer);
-            glClear(GL_DEPTH_BUFFER_BIT);
+            if (SHOW_SKY_DOME) {
+                render_sky(&sky_attrib, player, sky_buffer);
+                glClear(GL_DEPTH_BUFFER_BIT);
+            }
             render_chunks(&block_attrib, player);
             render_players(&block_attrib, player);
-
             glClear(GL_DEPTH_BUFFER_BIT);
-            render_text(&text_attrib, CENTER, pw / 2, ts, ts, player->name);
+            if (SHOW_PLAYER_NAMES) {
+                render_text(&text_attrib, CENTER, pw / 2, ts, ts,
+                    player->name);
+            }
         }
 
         // swap buffers

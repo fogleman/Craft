@@ -49,6 +49,9 @@
 #define CRAFT_KEY_ZP 'N'
 
 // advanced parameters
+#define CREATE_CHUNK_RADIUS 6
+#define RENDER_CHUNK_RADIUS 6
+#define DELETE_CHUNK_RADIUS 12
 #define CHUNK_SIZE 32
 #define COMMIT_INTERVAL 5
 

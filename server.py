@@ -16,6 +16,7 @@ CHUNK_SIZE = 32
 BUFFER_SIZE = 1024
 SPAWN_POINT = (0, 0, 0, 0, 0)
 DB_PATH = 'craft.db'
+LOG_PATH = 'log.txt'
 COMMIT_INTERVAL = 5
 
 YOU = 'U'
@@ -29,7 +30,10 @@ NICK = 'N'
 
 def log(*args):
     now = datetime.datetime.utcnow()
-    print now, ' '.join(map(str, args))
+    line = ' '.join(map(str, (now,) + args))
+    print line
+    with open(LOG_PATH, 'a') as fp:
+        fp.write('%s\n' % line)
 
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))

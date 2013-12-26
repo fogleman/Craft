@@ -19,6 +19,10 @@ void main() {
     if (color == vec3(1.0, 0.0, 1.0)) {
         discard;
     }
+    if (color == vec3(0.0, 0.4, 0.6)) {
+        gl_FragColor = vec4(0.00, 0.33, 0.58, 0.7);
+        return;
+    }
     bool cloud = color == vec3(1.0, 1.0, 1.0);
     vec3 light_color = vec3(daylight * 0.6);
     vec3 ambient = vec3(daylight * 0.2 + 0.2);

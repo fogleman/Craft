@@ -203,6 +203,21 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     return gen_buffer(sizeof(data), data);
 }
 
+GLuint gen_water_buffer(float x, float y, float z, float n) {
+    float data[96];
+    make_cube_faces(
+        data,
+        0, 0, 1, 0, 0, 0,
+        0, 0, 255, 0, 0, 0,
+        x, y - n, z, n);
+    make_cube_faces(
+        data + 48,
+        0, 0, 0, 1, 0, 0,
+        0, 0, 0, 255, 0, 0,
+        x, y + n, z, n);
+    return gen_buffer(sizeof(data), data);
+}
+
 GLuint gen_sky_buffer() {
     float data[12288];
     make_sphere(data, 1, 3);
@@ -305,6 +320,10 @@ void draw_plant(Attrib *attrib, GLuint buffer) {
 
 void draw_player(Attrib *attrib, Player *player) {
     draw_cube(attrib, player->buffer);
+}
+
+void draw_water(Attrib *attrib, GLuint buffer) {
+    draw_triangles_3d(attrib, buffer, 12);
 }
 
 Player *find_player(int id) {
@@ -807,6 +826,13 @@ int render_chunks(Attrib *attrib, Player *player) {
         draw_chunk(attrib, chunk);
         result += chunk->faces;
     }
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    GLuint buffer = gen_water_buffer(
+        s->x, 14 + sinf(glfwGetTime() * 2) * 0.05, s->z, 256);
+    draw_water(attrib, buffer);
+    del_buffer(buffer);
+    glDisable(GL_BLEND);
     return result;
 }
 

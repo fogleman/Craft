@@ -26,6 +26,6 @@ void main() {
     if (show_sky_dome) {
         float dy = position.y - camera.y;
         float dx = distance(position.xz, camera.xz);
-        fog_height = 1.0 - (atan(dy, dx) + pi / 2) / pi;
+        fog_height = (atan(dy, dx) + pi / 2) / pi;
     }
 }

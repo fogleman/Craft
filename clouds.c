@@ -20,7 +20,7 @@ void create_clouds() {
     weather->season_modifier = SEASON_M_NORMAL; //Normal season
     
     //set a prevailaing wind direction.
-    weather->x_prevailing_winds = 0.01f;
+    weather->x_prevailing_winds = 0.03f;
     weather->z_prevailing_winds = 0.0f;
     
     //set a lifecycle current and max
@@ -322,12 +322,12 @@ void add_cloud(Player *player){
         State *s = &player->state;
         
         c->x = s->x + (rand() % 400) - 200;
-        c->y = s->y + (rand() % 400) - 200;
+        c->y = s->y + 0;
         c->z = s->z + (rand() % 400) - 200;
         
-        c->sx = (rand() % 30) + 1.0f;
+        c->sx = (rand() % 30) + 10.0f;
         c->sy = (rand() % 4) + 1.0f;
-        c->sz = (rand() % 30) + 1.0f;
+        c->sz = (rand() % 30) + 10.0f;
         
         c->cloud_mode = CLOUD_MODE_STABLE;
         c->cloud_life = 5000;
@@ -355,7 +355,7 @@ void render_cloud(Cloud *cloud, Attrib *attrib){
     glGetUniformfv(attrib->program, attrib->model, matrix);
     
     mat_identity(matrix);
-    mat_translate(matrix,cloud->x, 30 + cloud->y, cloud->z);
+    mat_translate(matrix,cloud->x, 80 + cloud->y, cloud->z);
     
     
     mat_scale(matrix, cloud->sx,cloud->sy,cloud->sz);

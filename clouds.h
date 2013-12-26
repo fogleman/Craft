@@ -22,6 +22,15 @@ enum SEASON_MODIFIER {
     SEASON_M_SEVERE
 };
 
+enum CLOUD_MODE {
+    CLOUD_MODE_STABLE,
+    CLOUD_MODE_BUILDING,
+    CLOUD_MODE_BUILDING_FAST,
+    CLOUD_MODE_DECAYING,
+    CLOUD_MODE_DECAYING_FAST,
+    CLOUD_MODE_DECLINING
+};
+
 typedef struct {
     //transform for layer
     float matrix[16];
@@ -34,6 +43,12 @@ typedef struct {
     float dx,dy,dz;
     float sx,sy,sz;
     int layers_count;
+    int cloud_mode;
+    int cloud_life;
+    int cloud_ticks;
+    int *lifetime;
+    int lifetimelength;
+    int lifetimelength_subcounter;
     CloudLayer **layers;
 } Cloud;
 
@@ -64,9 +79,13 @@ void update_clouds(Player *player);
 void render_clouds(Attrib *attrib,int width, int height, Player *player, float fov, int ortho);
 void cleanup_clouds();
 <<<<<<< HEAD
+<<<<<<< HEAD
 void remove_cloud(Cloud *c);
 =======
 >>>>>>> committing changes to files. Moved cloud update method in main to use player struct.
+=======
+void remove_cloud(Cloud *c);
+>>>>>>> Added code to simulate cloud building and decay. It is currently very rudimentary and needs some improvement. Clouds will also need change parameters to be based on season.
 void add_cloud(Player *player);
 
 #endif

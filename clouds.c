@@ -8,9 +8,14 @@
 #include <stdlib.h>
 #include "math.h"
 #include "matrix.h"
+<<<<<<< HEAD
 
 #include <stdio.h>
 #include <stdlib.h>
+=======
+#include "time.h"
+#include "craftcommonstructs.h"
+>>>>>>> Added code to simulate cloud building and decay. It is currently very rudimentary and needs some improvement. Clouds will also need change parameters to be based on season.
 
 void create_clouds() {
     printf("[CLOUDS] Create clouds called\n");
@@ -52,8 +57,7 @@ void update_clouds(Player *player) {
         
         ((weather->clouds)[i])->x += ((weather->clouds)[i])->dx;
         ((weather->clouds)[i])->y += ((weather->clouds)[i])->dy;
-        ((weather->clouds)[i])->z += ((weather->clouds)[i])->dz;
-    }
+        ((weather->clouds)[i])->z += ((weather->clouds)[i])->dz;    }
     
     //add new cloud if required.
     add_cloud(player);
@@ -113,7 +117,7 @@ void render_cloud(Cloud *cloud, Attrib *attrib){
     glGetUniformfv(attrib->program, attrib->model, matrix);
     
     mat_identity(matrix);
-    mat_translate(matrix,cloud->x, 80 + cloud->y, cloud->z);
+    mat_translate(matrix,cloud->x, 30 + cloud->y, cloud->z);
     
     
     mat_scale(matrix, cloud->sx,cloud->sy,cloud->sz);
@@ -167,4 +171,17 @@ void remove_cloud(Cloud *c){
     free(c->lifetime);
     free(c);
     printf("[CLOUDS] Remove cloud called\n");
+
+}
+
+void cleanup_clouds() {
+    printf("[CLOUDS] Cleanup clouds called\n");
+    printf("[CLOUDS] Removing %d clouds.\n",weather->cloud_count);
+    int i;
+    for(i=0; i<weather->cloud_count; i++){
+        remove_cloud((weather->clouds)[i]);
+    }
+    free(weather->clouds);
+    
+    free(weather);
 }

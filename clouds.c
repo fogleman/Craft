@@ -8,14 +8,9 @@
 #include <stdlib.h>
 #include "math.h"
 #include "matrix.h"
-<<<<<<< HEAD
 
 #include <stdio.h>
 #include <stdlib.h>
-=======
-#include "time.h"
-#include "craftcommonstructs.h"
->>>>>>> Added code to simulate cloud building and decay. It is currently very rudimentary and needs some improvement. Clouds will also need change parameters to be based on season.
 
 void create_clouds() {
     printf("[CLOUDS] Create clouds called\n");
@@ -117,7 +112,7 @@ void render_cloud(Cloud *cloud, Attrib *attrib){
     glGetUniformfv(attrib->program, attrib->model, matrix);
     
     mat_identity(matrix);
-    mat_translate(matrix,cloud->x, 30 + cloud->y, cloud->z);
+    mat_translate(matrix,cloud->x, 80 + cloud->y, cloud->z);
     
     
     mat_scale(matrix, cloud->sx,cloud->sy,cloud->sz);

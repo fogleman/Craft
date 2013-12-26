@@ -98,52 +98,14 @@ void db_close() {
     sqlite3_close(db);
 }
 
-void db_worker_start(char *path) {
-    if (!db_enabled) {
-        return;
-    }
-    ring_alloc(&ring, 1024);
-    mtx_init(&mtx, mtx_plain);
-    cnd_init(&cnd);
-    thrd_create(&thrd, db_worker_run, path);
-}
-
-void db_worker_stop() {
-    if (!db_enabled) {
-        return;
-    }
+void db_commit() {
     mtx_lock(&mtx);
-    ring_put(&ring, 0, 0, 0, 0, 0, 0, -1);
+    ring_put_commit(&ring);
     cnd_signal(&cnd);
     mtx_unlock(&mtx);
-    thrd_join(thrd, NULL);
-    cnd_destroy(&cnd);
-    mtx_destroy(&mtx);
-    ring_free(&ring);
 }
 
-int db_worker_run(void *arg) {
-    while (1) {
-        int p, q, x, y, z, w, key;
-        mtx_lock(&mtx);
-        while (!ring_get(&ring, &p, &q, &x, &y, &z, &w, &key)) {
-            cnd_wait(&cnd, &mtx);
-        }
-        mtx_unlock(&mtx);
-        if (key < 0) {
-            break;
-        }
-        else if (key) {
-            _db_set_key(p, q, key);
-        }
-        else {
-            _db_insert_block(p, q, x, y, z, w);
-        }
-    }
-    return 0;
-}
-
-void db_commit() {
+void _db_commit() {
     sqlite3_exec(db, "commit; begin;", NULL, NULL, NULL);
 }
 
@@ -191,7 +153,7 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
         return;
     }
     mtx_lock(&mtx);
-    ring_put(&ring, p, q, x, y, z, w, 0);
+    ring_put_block(&ring, p, q, x, y, z, w);
     cnd_signal(&cnd);
     mtx_unlock(&mtx);
 }
@@ -241,7 +203,7 @@ void db_set_key(int p, int q, int key) {
         return;
     }
     mtx_lock(&mtx);
-    ring_put(&ring, p, q, 0, 0, 0, 0, key);
+    ring_put_key(&ring, p, q, key);
     cnd_signal(&cnd);
     mtx_unlock(&mtx);
 }
@@ -252,4 +214,55 @@ void _db_set_key(int p, int q, int key) {
     sqlite3_bind_int(set_key_stmt, 2, q);
     sqlite3_bind_int(set_key_stmt, 3, key);
     sqlite3_step(set_key_stmt);
+}
+
+void db_worker_start(char *path) {
+    if (!db_enabled) {
+        return;
+    }
+    ring_alloc(&ring, 1024);
+    mtx_init(&mtx, mtx_plain);
+    cnd_init(&cnd);
+    thrd_create(&thrd, db_worker_run, path);
+}
+
+void db_worker_stop() {
+    if (!db_enabled) {
+        return;
+    }
+    mtx_lock(&mtx);
+    ring_put_exit(&ring);
+    cnd_signal(&cnd);
+    mtx_unlock(&mtx);
+    thrd_join(thrd, NULL);
+    cnd_destroy(&cnd);
+    mtx_destroy(&mtx);
+    ring_free(&ring);
+}
+
+int db_worker_run(void *arg) {
+    int running = 1;
+    while (running) {
+        RingEntry e;
+        mtx_lock(&mtx);
+        while (!ring_get(&ring, &e)) {
+            cnd_wait(&cnd, &mtx);
+        }
+        mtx_unlock(&mtx);
+        switch (e.type) {
+            case BLOCK:
+                _db_insert_block(e.p, e.q, e.x, e.y, e.z, e.w);
+                break;
+            case KEY:
+                _db_set_key(e.p, e.q, e.key);
+                break;
+            case COMMIT:
+                _db_commit();
+                break;
+            case EXIT:
+                running = 0;
+                break;
+        }
+    }
+    return 0;
 }

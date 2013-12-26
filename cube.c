@@ -396,9 +396,9 @@ int _make_sphere(
         normalize(ac + 0, ac + 1, ac + 2);
         normalize(bc + 0, bc + 1, bc + 2);
         float tab[2], tac[2], tbc[2];
-        tab[0] = 0; tab[1] = acosf(ab[1]) / PI;
-        tac[0] = 0; tac[1] = acosf(ac[1]) / PI;
-        tbc[0] = 0; tbc[1] = acosf(bc[1]) / PI;
+        tab[0] = 0; tab[1] = 1 - acosf(ab[1]) / PI;
+        tac[0] = 0; tac[1] = 1 - acosf(ac[1]) / PI;
+        tbc[0] = 0; tbc[1] = 1 - acosf(bc[1]) / PI;
         int total = 0;
         int n;
         n = _make_sphere(data, r, detail - 1, a, ab, ac, ta, tab, tac);
@@ -436,8 +436,8 @@ void make_sphere(float *data, float r, int detail) {
     };
     static float uvs[6][3] = {
         {0, 0.5}, {0, 0.5},
-        {0, 1}, {0, 0.5},
-        {0, 0}, {0, 0.5}
+        {0, 0}, {0, 0.5},
+        {0, 1}, {0, 0.5}
     };
     int total = 0;
     for (int i = 0; i < 8; i++) {

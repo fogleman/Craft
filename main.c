@@ -793,7 +793,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, light);
     glUniform1i(attrib->extra3, SHOW_SKY_DOME);
-    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * 32);
+    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
     glUniform3f(attrib->extra5, 0.59 * light, 0.74 * light, 0.85 * light);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {

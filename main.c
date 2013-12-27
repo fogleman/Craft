@@ -441,22 +441,37 @@ int chunk_distance(Chunk *chunk, int p, int q) {
 }
 
 int chunk_visible(Chunk *chunk, float *matrix) {
-    for (int dp = 0; dp <= 1; dp++) {
-        for (int dq = 0; dq <= 1; dq++) {
-            for (int y = 0; y < 128; y += 16) {
-                float vec[4] = {
-                    (chunk->p + dp) * CHUNK_SIZE - dp,
-                    y,
-                    (chunk->q + dq) * CHUNK_SIZE - dq,
-                    1};
-                mat_vec_multiply(vec, matrix, vec);
-                if (vec[3] >= 0) {
-                    return 1;
-                }
-            }
+    int x = chunk->p * CHUNK_SIZE - 1;
+    int z = chunk->q * CHUNK_SIZE - 1;
+    int d = CHUNK_SIZE + 1;
+    float points[4][2] = {
+        {x + 0, z + 0},
+        {x + d, z + 0},
+        {x + 0, z + d},
+        {x + d, z + d}
+    };
+    float x1, x2, y1, y2, z1, z2;
+    x1 = y1 = z1 = 2;
+    x2 = y2 = z2 = -2;
+    for (int y = 0; y <= 256; y += 32) {
+        for (int i = 0; i < 4; i++) {
+            float vec[4] = {points[i][0], y, points[i][1], 1};
+            mat_vec_multiply(vec, matrix, vec);
+            float nx = vec[0] / vec[3];
+            float ny = vec[1] / vec[3];
+            float nz = vec[2] / vec[3];
+            x1 = MIN(x1, nx); x2 = MAX(x2, nx);
+            y1 = MIN(y1, ny); y2 = MAX(y2, ny);
+            z1 = MIN(z1, nz); z2 = MAX(z2, nz);
         }
     }
-    return 0;
+    if (x2 < -1 || y2 < -1 || z2 < -1) {
+        return 0;
+    }
+    if (x1 > 1 || y1 > 1 || z1 > 1) {
+        return 0;
+    }
+    return 1;
 }
 
 int highest_block(float x, float z) {
@@ -801,7 +816,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, light);
     glUniform1i(attrib->extra3, SHOW_SKY_DOME);
-    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * 32);
+    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
     glUniform3f(attrib->extra5, 0.59 * light, 0.74 * light, 0.85 * light);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
@@ -809,7 +824,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
             continue;
         }
-        if (s->y < 100 && !chunk_visible(chunk, matrix)) {
+        if (!chunk_visible(chunk, matrix)) {
             continue;
         }
         draw_chunk(attrib, chunk);

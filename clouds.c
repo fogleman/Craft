@@ -12,6 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void increase_cloud_body(Cloud *c);
+void decrease_cloud_body(Cloud *c);
+
 void create_clouds() {
     printf("[CLOUDS] Create clouds called\n");
     weather = (Weather*)malloc(sizeof(Weather));
@@ -76,6 +79,10 @@ void update_clouds(float player_x, float player_z) {
             //variation
             c->lifetimelength_subcounter++;
             
+            if (c->lifetimelength_subcounter % 20 == 0) {
+                increase_cloud_body(c);
+            }
+            
             if (c->lifetimelength_subcounter > 2000) {
                 c->lifetimelength_subcounter = 0;
                 c->cloud_ticks++;
@@ -101,6 +108,76 @@ void update_clouds(float player_x, float player_z) {
     
 }
 
+void increase_cloud_body(Cloud *c){
+    
+    
+    int rw = rand()%(c->hmWidth);
+    int rh = rand()%(c->hmDepth);
+    int index = rw + (c->hmWidth * rh);
+    
+    //we have landed on an already placed bit, this is what we want.
+    if (c->heightmap[index] > 0) {
+        if (rand() % 100 < 20) {
+            c->heightmap[index]++;  //20% chance of sticking straight away
+        } else {
+            //otherwise, we want to explore around to see if we can fall down.
+            int indexesw[] = {rw-1,rw-1,rw-1,rw,rw+1,rw+1,rw+1,rw};
+            int indexesh[] = {rh-1,rh,rh+1,rh+1,rh+1,rh,rh-1,rh-1};
+            int position = rand()%8;
+            int placed = 0;
+            int counter = 0;
+            while (placed == 0) {
+                
+                //if we have traversed the locations around and have not found a suitable place.
+                if (counter == 8) {
+                    placed = 1;
+                    c->heightmap[index]++;
+                } else {
+                    //otherwise, check the next candidate position.
+                    int nextw = indexesw[position];
+                    int nexth = indexesh[position];
+                    
+                    if (nextw >= 0 && nextw < c->hmWidth && nexth >= 0 && nexth < c->hmDepth) {
+                        if (c->heightmap[nextw + (c->hmWidth * nexth)] < c->heightmap[index]) {
+                            c->heightmap[nextw + (c->hmWidth * nexth)]++;
+                            
+                            placed = 1;
+                        }
+                    }
+                    
+                    position = (position+1)%8;
+                }
+                
+                counter++;
+            }
+        }
+    } else {
+        int indexesw[] = {rw-1,rw-1,rw-1,rw,rw+1,rw+1,rw+1,rw};
+        int indexesh[] = {rh-1,rh,rh+1,rh+1,rh+1,rh,rh-1,rh-1};
+        int position = 0;
+        int found = 0;
+        while (found == 0 && position < 8) {
+            int nextw = indexesw[position];
+            int nexth = indexesh[position];
+            
+            if (nextw >= 0 && nextw < c->hmWidth && nexth >= 0 && nexth < c->hmDepth) {
+                if (c->heightmap[nextw + (c->hmWidth * nexth)] > c->heightmap[index]) {
+                    c->heightmap[index]++;
+                    found = 1;
+                }
+            }
+            
+            position++;
+        }
+    }
+}
+
+
+void decrease_cloud_body(Cloud *c){
+    int index = (rand()%(c->hmWidth)) + (c->hmWidth * (rand()%(c->hmDepth)));
+    c->heightmap[index]--;
+}
+
 
 void add_cloud(float player_x, float player_z){
     //certain types of weather will force less clouds to be allowed.
@@ -116,7 +193,17 @@ void add_cloud(float player_x, float player_z){
         c->heightmap = (int*)calloc(sizeof(int),c->hmWidth * c->hmDepth);
         
         //seed an initial value
-        c->heightmap[(rand()%(c->hmWidth)) + (c->hmWidth * (rand()%(c->hmDepth)))] = 1;
+        int index = (c->hmWidth/2) + (c->hmDepth/2 * c->hmWidth);
+        c->heightmap[index] = 1;
+        c->heightmap[index++] = 1;
+        index += c->hmWidth - 1;
+        c->heightmap[index] = 1;
+        c->heightmap[index++] = 1;
+        
+        int max = (rand() % 100) + 10;
+        for (index = 0; index <max; index++) {
+            increase_cloud_body(c);
+        }
         
         c->cloud_ticks = 0;
         c->lifetimelength_subcounter = 0;
@@ -170,15 +257,20 @@ void render_cloud(Cloud *cloud, CloudAttrib *attrib){
     for (i=0; i<cloud->hmWidth; i++) {
         for (j=0; j<cloud->hmDepth; j++) {
             mat_translate_existing(matrix,0,0,1);
-            if(cloud->heightmap[i*(cloud->hmDepth) + j] > 0){
+            int heightval = cloud->heightmap[i*(cloud->hmDepth) + j];
+            if(heightval > 0){
                 
-                //mat_scale(matrix, cloud->sx,cloud->sy,cloud->sz);
+                float up = heightval/2.0f;
+                mat_translate_existing(matrix,0,up,0);
+                mat_scale(matrix, 1,heightval,1);
                 glUniformMatrix4fv(attrib->model, 1, GL_FALSE, matrix);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
+                mat_translate_existing(matrix,0,-up,0);
+                mat_scale(matrix, 1,1.0f/heightval,1);
             
             }
         }
-        mat_translate_existing(matrix,1,0,0);
+        mat_translate_existing(matrix,1,0,-cloud->hmDepth);
     }
     
     glUniformMatrix4fv(attrib->model, 1, GL_FALSE, matrix_prev);

@@ -2,6 +2,7 @@
 
 uniform sampler2D sampler;
 uniform float timer;
+uniform vec3 cloudColour;
 
 varying vec2 fragment_uv;
 varying float diffuse;
@@ -21,5 +22,6 @@ void main() {
     }
     vec3 light = ambient + light_color * diffuse;
     color = min(color * light, vec3(1.0));
+    color = color * cloudColour;
     gl_FragColor = vec4(color, 1.0);
 }

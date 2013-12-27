@@ -42,6 +42,7 @@ typedef struct {
     float x,y,z;        //cloud centre position
     float dx,dy,dz;
     float sx,sy,sz;
+    float r,g,b;
     int layers_count;
     int cloud_mode;
     int cloud_life;

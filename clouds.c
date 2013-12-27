@@ -52,7 +52,8 @@ void update_clouds(Player *player) {
         
         ((weather->clouds)[i])->x += ((weather->clouds)[i])->dx;
         ((weather->clouds)[i])->y += ((weather->clouds)[i])->dy;
-        ((weather->clouds)[i])->z += ((weather->clouds)[i])->dz;    }
+        ((weather->clouds)[i])->z += ((weather->clouds)[i])->dz;    
+  }
     
     //add new cloud if required.
     add_cloud(player);
@@ -78,9 +79,13 @@ void add_cloud(Player *player){
         //randomly distribute around the player
         State *s = &player->state;
         
-        c->x = s->x + (rand() % 400) - 200;
+        c->x = s->x + (rand() % 800) - 400;
         c->y = s->y + 0;
-        c->z = s->z + (rand() % 400) - 200;
+        c->z = s->z + (rand() % 800) - 400;
+        
+        c->r = 0.8f;
+        c->g = 0.8f;
+        c->b = rand()/RAND_MAX;
         
         c->sx = (rand() % 30) + 10.0f;
         c->sy = (rand() % 4) + 1.0f;
@@ -118,6 +123,7 @@ void render_cloud(Cloud *cloud, Attrib *attrib){
     mat_scale(matrix, cloud->sx,cloud->sy,cloud->sz);
     glUniformMatrix4fv(attrib->model, 1, GL_FALSE, matrix);
     
+    glUniform3f(attrib->cloudColour, cloud->r, cloud->g, cloud->b);
     
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glUniformMatrix4fv(attrib->model, 1, GL_FALSE, matrix_prev);

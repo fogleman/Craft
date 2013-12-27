@@ -1820,7 +1820,7 @@ int main(int argc, char **argv) {
     cloud_attrib.sampler = glGetUniformLocation(program, "sampler");
     cloud_attrib.camera = glGetUniformLocation(program, "camera");
     cloud_attrib.timer = glGetUniformLocation(program, "timer");
-    
+    cloud_attrib.cloudColour = glGetUniformLocation(program, "cloudColour");
     
 
     program = load_program(

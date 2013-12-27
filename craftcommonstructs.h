@@ -27,6 +27,7 @@ typedef struct {
     GLuint sampler;
     GLuint camera;
     GLuint timer;
+    GLuint cloudColour;
 } Attrib;
 
 typedef struct {

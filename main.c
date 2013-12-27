@@ -445,7 +445,7 @@ int chunk_visible(Chunk *chunk, float *matrix) {
     float x1, x2, y1, y2, z1, z2;
     x1 = y1 = z1 = 2;
     x2 = y2 = z2 = -2;
-    for (int y = 0; y < 256; y += 32) {
+    for (int y = 0; y <= 256; y += 32) {
         for (int i = 0; i < 4; i++) {
             float vec[4] = {points[i][0], y, points[i][1], 1};
             mat_vec_multiply(vec, matrix, vec);

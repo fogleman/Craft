@@ -145,7 +145,7 @@ void create_clouds() {
 
 
 
-void update_clouds(Player *player) {
+void update_clouds(float player_x, float player_z) {
     weather->season_lifecycle_current++;
     
     if(weather->season_lifecycle_current > weather->season_lifecycle_max){
@@ -163,8 +163,8 @@ void update_clouds(Player *player) {
         
         Cloud *c = (weather->clouds)[i];
         //delete clouds that have strayed too far from the player, or have degenerated.
-        State *s = &player->state;
-        if ((pow(s->x - (((weather->clouds)[i])->x),2) + pow(s->z - (((weather->clouds)[i])->z),2)) > pow(500,2)  || c->cloud_life <= 0) {
+        
+        if ((pow(player_x - (((weather->clouds)[i])->x),2) + pow(player_z - (((weather->clouds)[i])->z),2)) > pow(500,2)  || c->cloud_life <= 0) {
             
             
             remove_cloud(c);
@@ -298,12 +298,12 @@ void update_clouds(Player *player) {
     }
     
     //add new cloud if required.
-    add_cloud(player);
+    add_cloud(player_x, player_z);
     
 }
 
 
-void add_cloud(Player *player){
+void add_cloud(float player_x, float player_z){
     //certain types of weather will force less clouds to be allowed.
     int weather_cloud_max_modifier = 0;
     if(weather->cloud_count < MAXIMUM_CLOUDS - weather_cloud_max_modifier){
@@ -319,11 +319,11 @@ void add_cloud(Player *player){
         c->dz = (rand()/RAND_MAX) * 0.01 - 0.005;
         
         //randomly distribute around the player
-        State *s = &player->state;
         
-        c->x = s->x + (rand() % 800) - 400;
-        c->y = s->y + 0;
-        c->z = s->z + (rand() % 800) - 400;
+        
+        c->x = player_x + (rand() % 800) - 400;
+        c->y = 0;
+        c->z = player_z + (rand() % 800) - 400;
         
         c->r = 0.8f;
         c->g = 0.8f;
@@ -350,7 +350,7 @@ void add_cloud(Player *player){
     }
 }
 
-void render_cloud(Cloud *cloud, Attrib *attrib){
+void render_cloud(Cloud *cloud, CloudAttrib *attrib){
     
     float matrix[16];
     
@@ -371,16 +371,15 @@ void render_cloud(Cloud *cloud, Attrib *attrib){
     glUniformMatrix4fv(attrib->model, 1, GL_FALSE, matrix_prev);
 }
 
-void render_clouds(Attrib *attrib,int width, int height, Player *player, float fov, int ortho) {
+void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, float z, float rx, float ry, float fov, int ortho) {
     int i;
 
-    State *s = &player->state;
 
     float matrix[16];
-    set_matrix_3d( matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    set_matrix_3d( matrix, width, height, x,y,z,rx,ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform3f(attrib->camera, s->x, s->y, s->z);
+    glUniform3f(attrib->camera, x,y,z);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, glfwGetTime());
     

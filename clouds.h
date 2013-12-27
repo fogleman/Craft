@@ -1,8 +1,10 @@
 #ifndef _clouds_h_
 #define _clouds_h_
 
-#include "craftcommonstructs.h"
 #include "config.h"
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 
 enum SEASON {
@@ -62,14 +64,27 @@ typedef struct {
     int cloud_vertex_buffer;
 } Weather;
 
+typedef struct {
+    GLuint program;
+    GLuint position;
+    GLuint normal;
+    GLuint uv;
+    GLuint matrix;
+    GLuint sampler;
+    GLuint camera;
+    GLuint timer;
+    GLuint model;
+    GLuint cloudColour;
+} CloudAttrib;
+
 
 Weather *weather;
 
 void create_clouds();
-void update_clouds(Player *player);
-void render_clouds(Attrib *attrib,int width, int height, Player *player, float fov, int ortho);
+void update_clouds(float x, float z);
+void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, float z, float rx, float ry, float fov, int ortho);
 void cleanup_clouds();
 void remove_cloud(Cloud *c);
-void add_cloud(Player *player);
+void add_cloud(float player_x, float player_z);
 
 #endif

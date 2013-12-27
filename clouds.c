@@ -38,30 +38,165 @@ void create_clouds() {
 
 
 
-void update_clouds(Player *player) {
-
-
+void update_clouds(float player_x, float player_z) {
+    weather->season_lifecycle_current++;
+    
+    if(weather->season_lifecycle_current > weather->season_lifecycle_max){
+        //season change
+        weather->season_lifecycle_current = 0;
+        weather->season++;
+        printf("[CLOUDS] Season changed");
+        
+        weather->season = weather->season > SEASON_SPRING ? SEASON_SUMMER : weather->season;
+    }
+    
+    //update prevailing winds
     int i;
     for(i=0; i<weather->cloud_count; i++){
         
-        //individual clouds move with the prevailing wind, and with some slight
-        //variation
+        Cloud *c = (weather->clouds)[i];
+        //delete clouds that have strayed too far from the player, or have degenerated.
         
-        ((weather->clouds)[i])->x += weather->x_prevailing_winds;
-        ((weather->clouds)[i])->z += weather->z_prevailing_winds;
-        
-        ((weather->clouds)[i])->x += ((weather->clouds)[i])->dx;
-        ((weather->clouds)[i])->y += ((weather->clouds)[i])->dy;
-        ((weather->clouds)[i])->z += ((weather->clouds)[i])->dz;    
-  }
+        if ((pow(player_x - (((weather->clouds)[i])->x),2) + pow(player_z - (((weather->clouds)[i])->z),2)) > pow(500,2)  || c->cloud_life <= 0) {
+            
+            
+            remove_cloud(c);
+            weather->clouds[i] = NULL;
+
+            
+            int j;
+            for (j=i+1; j<weather->cloud_count; j++) {
+                weather->clouds[j-1] = weather->clouds[j];
+            }
+            weather->cloud_count--;
+            i--;
+        } else {
+            
+            //individual clouds move with the prevailing wind, and with some slight
+            //variation
+            c->lifetimelength_subcounter++;
+            
+            if (c->lifetimelength_subcounter > 2000) {
+                c->lifetimelength_subcounter = 0;
+                c->cloud_ticks++;
+                
+                
+                if (c->cloud_ticks < c->lifetimelength_subcounter) {
+                    int next_state = c->lifetime[c->cloud_ticks];
+                    float state_float = next_state/RAND_MAX;
+                    
+                    if (c->cloud_mode ==  CLOUD_MODE_STABLE) {
+                        if (state_float < 0.6) {
+                            c->cloud_mode = CLOUD_MODE_STABLE;
+                        } else if(state_float < 0.8){
+                            if (state_float > 0.78) {
+                                c->cloud_mode = CLOUD_MODE_BUILDING_FAST;
+                            } else {
+                                c->cloud_mode = CLOUD_MODE_BUILDING;
+                            }
+                        } else if(state_float < 1){
+                            if (state_float > 0.98) {
+                                c->cloud_mode = CLOUD_MODE_DECAYING_FAST;
+                            } else {
+                                c->cloud_mode = CLOUD_MODE_DECAYING;
+                            }
+                        }
+                    } else if (c->cloud_mode == CLOUD_MODE_BUILDING || c->cloud_mode ==  CLOUD_MODE_BUILDING_FAST) {
+                        if (state_float < 0.4) {
+                            c->cloud_mode = CLOUD_MODE_BUILDING;
+                        } else if (state_float < 0.6) {
+                            c->cloud_mode = CLOUD_MODE_STABLE;
+                        } else if (state_float < 0.8) {
+                            c->cloud_mode = CLOUD_MODE_BUILDING_FAST;
+                        } else if(state_float < 1){
+                            if (state_float > 0.98) {
+                                c->cloud_mode = CLOUD_MODE_DECAYING_FAST;
+                            } else {
+                                c->cloud_mode = CLOUD_MODE_DECAYING;
+                            }
+                        }
+                    } else if (c->cloud_mode == CLOUD_MODE_DECAYING || c->cloud_mode ==  CLOUD_MODE_DECAYING_FAST) {
+                        if (state_float < 0.2) {
+                            c->cloud_mode = CLOUD_MODE_DECAYING;
+                        } else if (state_float < 0.7) {
+                            c->cloud_mode = CLOUD_MODE_STABLE;
+                        } else if (state_float < 0.8) {
+                            c->cloud_mode = CLOUD_MODE_DECAYING_FAST;
+                        } else if(state_float < 1){
+                            if (state_float > 0.98) {
+                                c->cloud_mode = CLOUD_MODE_BUILDING_FAST;
+                            } else {
+                                c->cloud_mode = CLOUD_MODE_BUILDING;
+                            }
+                        }
+                    }
+                    
+                    
+                } else {
+                    c->cloud_mode = CLOUD_MODE_DECLINING;
+                }
+            }
+            
+            c->x += weather->x_prevailing_winds;
+            c->z += weather->z_prevailing_winds;
+            
+            c->x += ((weather->clouds)[i])->dx;
+            c->y += ((weather->clouds)[i])->dy;
+            c->z += ((weather->clouds)[i])->dz;
+            
+            
+            if (c->cloud_mode == CLOUD_MODE_BUILDING) {
+                c->cloud_life++;
+                
+                c->sx += 0.01 + (rand() / RAND_MAX) * 0.01;
+                c->sy += 0.01 + (rand() / RAND_MAX) * 0.01;
+                c->sz += 0.01 + (rand() / RAND_MAX) * 0.01;
+                
+            } else if (c->cloud_mode == CLOUD_MODE_BUILDING_FAST) {
+                c->cloud_life += 2;
+                
+                c->sx += 0.01 + (rand() / RAND_MAX) * 0.03;
+                c->sy += 0.01 + (rand() / RAND_MAX) * 0.03;
+                c->sz += 0.01 + (rand() / RAND_MAX) * 0.03;
+                
+            } else if (c->cloud_mode == CLOUD_MODE_DECAYING) {
+                c->cloud_life--;
+                c->sx -= 0.01 + (rand() / RAND_MAX) * 0.01;
+                c->sy -= 0.01 + (rand() / RAND_MAX) * 0.01;
+                c->sz -= 0.01 + (rand() / RAND_MAX) * 0.01;
+            } else if (c->cloud_mode == CLOUD_MODE_DECAYING_FAST) {
+                c->cloud_life -= 2;
+                c->sx -= 0.01 + (rand() / RAND_MAX) * 0.03;
+                c->sy -= 0.01 + (rand() / RAND_MAX) * 0.03;
+                c->sz -= 0.01 + (rand() / RAND_MAX) * 0.03;
+            } else if(c->cloud_mode == CLOUD_MODE_DECLINING){
+                
+                c->sx -= 0.001 + (rand() / RAND_MAX) * 0.005;
+                c->sy -= 0.001 + (rand() / RAND_MAX) * 0.005;
+                c->sz -= 0.001 + (rand() / RAND_MAX) * 0.005;
+                c->cloud_life = 10000;
+            }
+            
+            if (c->cloud_life <= 0) {
+                c->cloud_mode = CLOUD_MODE_DECLINING;
+                c->cloud_life = 10000;
+            }
+            
+            if (c->sx < 0 || c->sy < 0 || c->sz < 0) {
+                c->cloud_life = 0;
+            }
+            
+            
+        }
+    }
     
     //add new cloud if required.
-    add_cloud(player);
+    add_cloud(player_x, player_z);
     
 }
 
 
-void add_cloud(Player *player){
+void add_cloud(float player_x, float player_z){
     //certain types of weather will force less clouds to be allowed.
     int weather_cloud_max_modifier = 0;
     if(weather->cloud_count < MAXIMUM_CLOUDS - weather_cloud_max_modifier){
@@ -77,11 +212,11 @@ void add_cloud(Player *player){
         c->dz = (rand()/RAND_MAX) * 0.01 - 0.005;
         
         //randomly distribute around the player
-        State *s = &player->state;
         
-        c->x = s->x + (rand() % 800) - 400;
-        c->y = s->y + 0;
-        c->z = s->z + (rand() % 800) - 400;
+        
+        c->x = player_x + (rand() % 800) - 400;
+        c->y = 0;
+        c->z = player_z + (rand() % 800) - 400;
         
         c->r = 0.8f;
         c->g = 0.8f;
@@ -108,7 +243,7 @@ void add_cloud(Player *player){
     }
 }
 
-void render_cloud(Cloud *cloud, Attrib *attrib){
+void render_cloud(Cloud *cloud, CloudAttrib *attrib){
     
     float matrix[16];
     
@@ -129,16 +264,15 @@ void render_cloud(Cloud *cloud, Attrib *attrib){
     glUniformMatrix4fv(attrib->model, 1, GL_FALSE, matrix_prev);
 }
 
-void render_clouds(Attrib *attrib,int width, int height, Player *player, float fov, int ortho) {
+void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, float z, float rx, float ry, float fov, int ortho) {
     int i;
 
-    State *s = &player->state;
 
     float matrix[16];
-    set_matrix_3d( matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    set_matrix_3d( matrix, width, height, x,y,z,rx,ry, fov, ortho);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform3f(attrib->camera, s->x, s->y, s->z);
+    glUniform3f(attrib->camera, x,y,z);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, glfwGetTime());
     

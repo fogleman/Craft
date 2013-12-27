@@ -21,7 +21,6 @@
 #include "util.h"
 #include "world.h"
 #include "clouds.h"
-#include "craftcommonstructs.h"
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
@@ -1791,7 +1790,7 @@ int main(int argc, char **argv) {
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
-    Attrib cloud_attrib = {0};
+    CloudAttrib cloud_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -1936,13 +1935,9 @@ int main(int argc, char **argv) {
         }
 
         Player *player = players + observe1;
-
-        if (observe == OBSERVE_YOU_ME || observe == OBSERVE_YOU) {
-            player = players + follow;
-        }
-        
+        State *s = &(player->state);
         //update clouds
-        update_clouds(player);
+        update_clouds(s->x,s->z);
 
         delete_chunks();
 
@@ -1962,7 +1957,9 @@ int main(int argc, char **argv) {
             render_wireframe(&line_attrib, player);
         }
 
-        render_clouds(&block_attrib);
+        
+        
+        render_clouds(&cloud_attrib, width,height,s->x,s->y,s->z,s->rx,s->ry,fov,ortho);
         
 
         // RENDER HUD //

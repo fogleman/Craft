@@ -1,12 +1,10 @@
 #ifndef _clouds_h_
 #define _clouds_h_
 
-<<<<<<< HEAD
-
-=======
-#include "craftcommonstructs.h"
->>>>>>> committing changes to files. Moved cloud update method in main to use player struct.
 #include "config.h"
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 
 enum SEASON {
@@ -63,30 +61,33 @@ typedef struct {
     int cloud_count;
     Cloud **clouds;
     
-<<<<<<< HEAD
 
     GLUint cloud_vertex_buffer;
 
-=======
-    int cloud_vertex_buffer;
->>>>>>> committing changes to files. Moved cloud update method in main to use player struct.
 } Weather;
+
+typedef struct {
+    GLuint program;
+    GLuint position;
+    GLuint normal;
+    GLuint uv;
+    GLuint matrix;
+    GLuint sampler;
+    GLuint camera;
+    GLuint timer;
+    GLuint model;
+    GLuint cloudColour;
+} CloudAttrib;
 
 
 Weather *weather;
 
 void create_clouds();
-void update_clouds(Player *player);
-void render_clouds(Attrib *attrib,int width, int height, Player *player, float fov, int ortho);
+void update_clouds(float x, float z);
+void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, float z, float rx, float ry, float fov, int ortho);
 void cleanup_clouds();
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 void remove_cloud(Cloud *c);
-=======
->>>>>>> committing changes to files. Moved cloud update method in main to use player struct.
-=======
-void remove_cloud(Cloud *c);
->>>>>>> Added code to simulate cloud building and decay. It is currently very rudimentary and needs some improvement. Clouds will also need change parameters to be based on season.
-void add_cloud(Player *player);
+void add_cloud(float player_x, float player_z);
 
 #endif

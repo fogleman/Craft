@@ -117,13 +117,15 @@ GLuint load_program(const char *path1, const char *path2) {
 void flip_image_vertical(
     unsigned char *data, unsigned int width, unsigned int height)
 {
-    unsigned char new_data[width * height * 4];
-    unsigned int stride = width * 4;
+    unsigned int size = width * height * 4;
+    unsigned int stride = sizeof(char) * width * 4;
+    unsigned char *new_data = malloc(sizeof(char) * size);
     for (unsigned int i = 0; i < height; i++) {
         unsigned int j = height - i - 1;
         memcpy(new_data + j * stride, data + i * stride, stride);
     }
-    memcpy(data, new_data, sizeof(new_data));
+    memcpy(data, new_data, size);
+    free(new_data);
 }
 
 void load_png_texture(const char *file_name) {

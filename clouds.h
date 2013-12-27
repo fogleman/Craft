@@ -38,9 +38,13 @@ typedef struct {
 
 typedef struct {
     float x,y,z;        //cloud centre position
-    float dx,dy,dz;
-    float sx,sy,sz;
-    float r,g,b;
+    float dx,dy,dz;     //cloud movement
+    
+    float r,g,b;        //cloud colour
+    
+    int *heightmap;    //height map for boxes
+    int hmWidth,hmDepth;
+    
     int layers_count;
     int cloud_mode;
     int cloud_life;

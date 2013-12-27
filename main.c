@@ -841,14 +841,32 @@ int render_chunks(Attrib *attrib, Player *player) {
         draw_chunk(attrib, chunk);
         result += chunk->faces;
     }
+    return result;
+}
+
+void render_water(Attrib *attrib, Player *player) {
+    State *s = &player->state;
+    float light = get_daylight();
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform3f(attrib->camera, s->x, s->y, s->z);
+    glUniform1i(attrib->extra1, 2);
+    glUniform1f(attrib->extra2, light);
+    glUniform1i(attrib->extra3, SHOW_SKY_DOME);
+    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
+    glUniform3f(attrib->extra5, 0.59 * light, 0.74 * light, 0.85 * light);
+    glUniform1f(attrib->timer, time_of_day());
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     GLuint buffer = gen_water_buffer(
-        s->x, 14 + sinf(glfwGetTime() * 2) * 0.05, s->z, 256);
+        s->x, 14 + sinf(glfwGetTime() * 2) * 0.05, s->z,
+        RENDER_CHUNK_RADIUS * CHUNK_SIZE);
     draw_water(attrib, buffer);
     del_buffer(buffer);
     glDisable(GL_BLEND);
-    return result;
 }
 
 void render_players(Attrib *attrib, Player *player) {
@@ -1181,6 +1199,7 @@ int main(int argc, char **argv) {
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
+    Attrib water_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -1222,6 +1241,21 @@ int main(int argc, char **argv) {
     sky_attrib.matrix = glGetUniformLocation(program, "matrix");
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
+
+    program = load_program(
+        "shaders/water_vertex.glsl", "shaders/water_fragment.glsl");
+    water_attrib.program = program;
+    water_attrib.position = glGetAttribLocation(program, "position");
+    water_attrib.normal = glGetAttribLocation(program, "normal");
+    water_attrib.uv = glGetAttribLocation(program, "uv");
+    water_attrib.matrix = glGetUniformLocation(program, "matrix");
+    water_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
+    water_attrib.extra2 = glGetUniformLocation(program, "daylight");
+    water_attrib.extra3 = glGetUniformLocation(program, "show_sky_dome");
+    water_attrib.extra4 = glGetUniformLocation(program, "fog_distance");
+    water_attrib.extra5 = glGetUniformLocation(program, "fog_color");
+    water_attrib.camera = glGetUniformLocation(program, "camera");
+    water_attrib.timer = glGetUniformLocation(program, "timer");
 
     FPS fps = {0, 0, 0};
     int message_index = 0;
@@ -1494,6 +1528,7 @@ int main(int argc, char **argv) {
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);
         }
+        render_water(&water_attrib, player);
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);

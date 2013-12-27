@@ -3,6 +3,7 @@
 
 void normalize(float *x, float *y, float *z);
 void mat_scale(float *matrix, float sx, float sy, float sz);
+void mat_translate_existing(float *matrix, float dx, float dy, float dz);
 void mat_identity(float *matrix);
 void mat_translate(float *matrix, float dx, float dy, float dz);
 void mat_rotate(float *matrix, float x, float y, float z, float angle);

@@ -15,6 +15,12 @@ void mat_scale(float *matrix, float sx, float sy, float sz){
     matrix[15] = 1;
 }
 
+void mat_translate_existing(float *matrix, float dx, float dy, float dz){
+    matrix[12] += dx;
+    matrix[13] += dy;
+    matrix[14] += dz;
+}
+
 void mat_identity(float *matrix) {
     matrix[0] = 1;
     matrix[1] = 0;

@@ -4,7 +4,7 @@
 #include "util.h"
 
 void make_cube_faces(
-    float *data,
+    float *data, float ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
     int wleft, int wright, int wtop, int wbottom, int wfront, int wback,
     float x, float y, float z, float n)
@@ -21,21 +21,27 @@ void make_cube_faces(
         *(d++) = x - n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = -1; *(d++) = 0; *(d++) = 0;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[0][0];
         *(d++) = x - n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = -1; *(d++) = 0; *(d++) = 0;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[0][3];
         *(d++) = x - n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = -1; *(d++) = 0; *(d++) = 0;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[0][2];
         *(d++) = x - n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = -1; *(d++) = 0; *(d++) = 0;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[0][0];
         *(d++) = x - n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = -1; *(d++) = 0; *(d++) = 0;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[0][1];
         *(d++) = x - n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = -1; *(d++) = 0; *(d++) = 0;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[0][3];
     }
     if (right) {
         w = wright;
@@ -43,21 +49,27 @@ void make_cube_faces(
         *(d++) = x + n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 1; *(d++) = 0; *(d++) = 0;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[1][0];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 1; *(d++) = 0; *(d++) = 0;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[1][3];
         *(d++) = x + n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = 1; *(d++) = 0; *(d++) = 0;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[1][1];
         *(d++) = x + n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 1; *(d++) = 0; *(d++) = 0;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[1][0];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = 1; *(d++) = 0; *(d++) = 0;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[1][2];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 1; *(d++) = 0; *(d++) = 0;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[1][3];
     }
     if (top) {
         w = wtop;
@@ -65,21 +77,27 @@ void make_cube_faces(
         *(d++) = x - n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 1; *(d++) = 0;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[2][0];
         *(d++) = x - n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 1; *(d++) = 0;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[2][1];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 1; *(d++) = 0;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[2][3];
         *(d++) = x - n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 1; *(d++) = 0;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[2][0];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 1; *(d++) = 0;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[2][3];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 1; *(d++) = 0;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[2][2];
     }
     if (bottom) {
         w = wbottom;
@@ -87,21 +105,27 @@ void make_cube_faces(
         *(d++) = x - n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 0; *(d++) = -1; *(d++) = 0;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[3][0];
         *(d++) = x + n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 0; *(d++) = -1; *(d++) = 0;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[3][2];
         *(d++) = x + n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = 0; *(d++) = -1; *(d++) = 0;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[3][3];
         *(d++) = x - n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 0; *(d++) = -1; *(d++) = 0;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[3][0];
         *(d++) = x + n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = 0; *(d++) = -1; *(d++) = 0;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[3][3];
         *(d++) = x - n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = 0; *(d++) = -1; *(d++) = 0;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[3][1];
     }
     if (front) {
         w = wfront;
@@ -109,21 +133,27 @@ void make_cube_faces(
         *(d++) = x - n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 0; *(d++) = -1;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[4][0];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 0; *(d++) = -1;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[4][3];
         *(d++) = x + n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 0; *(d++) = -1;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[4][2];
         *(d++) = x - n; *(d++) = y - n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 0; *(d++) = -1;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[4][0];
         *(d++) = x - n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 0; *(d++) = -1;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[4][1];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z - n;
         *(d++) = 0; *(d++) = 0; *(d++) = -1;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[4][3];
     }
     if (back) {
         w = wback;
@@ -131,26 +161,32 @@ void make_cube_faces(
         *(d++) = x - n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 0; *(d++) = 1;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[5][0];
         *(d++) = x + n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 0; *(d++) = 1;
         *(d++) = a + du; *(d++) = a + dv;
+        *(d++) = ao[5][2];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 0; *(d++) = 1;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[5][3];
         *(d++) = x - n; *(d++) = y - n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 0; *(d++) = 1;
         *(d++) = b + du; *(d++) = a + dv;
+        *(d++) = ao[5][0];
         *(d++) = x + n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 0; *(d++) = 1;
         *(d++) = a + du; *(d++) = b + dv;
+        *(d++) = ao[5][3];
         *(d++) = x - n; *(d++) = y + n; *(d++) = z + n;
         *(d++) = 0; *(d++) = 0; *(d++) = 1;
         *(d++) = b + du; *(d++) = b + dv;
+        *(d++) = ao[5][1];
     }
 }
 
 void make_cube(
-    float *data,
+    float *data, float ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
@@ -160,7 +196,7 @@ void make_cube(
     wleft = wright = wfront = wback = w + 16;
     wtop = w + 32;
     make_cube_faces(
-        data,
+        data, ao,
         left, right, top, bottom, front, back,
         wleft, wright, wtop, wbottom, wfront, wback,
         x, y, z, n);
@@ -184,95 +220,120 @@ void make_plant(
     *(d++) = x; *(d++) = y - n; *(d++) = z - n;
     *(d++) = -1; *(d++) = 0; *(d++) = 0;
     *(d++) = a + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y + n; *(d++) = z + n;
     *(d++) = -1; *(d++) = 0; *(d++) = 0;
     *(d++) = b + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y + n; *(d++) = z - n;
     *(d++) = -1; *(d++) = 0; *(d++) = 0;
     *(d++) = a + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y - n; *(d++) = z - n;
     *(d++) = -1; *(d++) = 0; *(d++) = 0;
     *(d++) = a + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y - n; *(d++) = z + n;
     *(d++) = -1; *(d++) = 0; *(d++) = 0;
     *(d++) = b + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y + n; *(d++) = z + n;
     *(d++) = -1; *(d++) = 0; *(d++) = 0;
     *(d++) = b + du; *(d++) = b + dv;
+    *(d++) = 0;
     // right
     *(d++) = x; *(d++) = y - n; *(d++) = z - n;
     *(d++) = 1; *(d++) = 0; *(d++) = 0;
     *(d++) = b + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y + n; *(d++) = z + n;
     *(d++) = 1; *(d++) = 0; *(d++) = 0;
     *(d++) = a + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y - n; *(d++) = z + n;
     *(d++) = 1; *(d++) = 0; *(d++) = 0;
     *(d++) = a + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y - n; *(d++) = z - n;
     *(d++) = 1; *(d++) = 0; *(d++) = 0;
     *(d++) = b + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y + n; *(d++) = z - n;
     *(d++) = 1; *(d++) = 0; *(d++) = 0;
     *(d++) = b + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x; *(d++) = y + n; *(d++) = z + n;
     *(d++) = 1; *(d++) = 0; *(d++) = 0;
     *(d++) = a + du; *(d++) = b + dv;
+    *(d++) = 0;
     // front
     *(d++) = x - n; *(d++) = y - n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = a + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x + n; *(d++) = y + n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = b + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x + n; *(d++) = y - n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = b + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x - n; *(d++) = y - n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = a + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x - n; *(d++) = y + n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = a + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x + n; *(d++) = y + n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = -1;
     *(d++) = b + du; *(d++) = b + dv;
+    *(d++) = 0;
     // back
     *(d++) = x - n; *(d++) = y - n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = b + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x + n; *(d++) = y - n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = a + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x + n; *(d++) = y + n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = a + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x - n; *(d++) = y - n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = b + du; *(d++) = a + dv;
+    *(d++) = 0;
     *(d++) = x + n; *(d++) = y + n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = a + du; *(d++) = b + dv;
+    *(d++) = 0;
     *(d++) = x - n; *(d++) = y + n; *(d++) = z;
     *(d++) = 0; *(d++) = 0; *(d++) = 1;
     *(d++) = b + du; *(d++) = b + dv;
+    *(d++) = 0;
     float ma[16];
     float mb[16];
     mat_identity(ma);
     mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 3, 8);
+    mat_apply(data, ma, 24, 3, 9);
     mat_translate(mb, px, py, pz);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 0, 8);
+    mat_apply(data, ma, 24, 0, 9);
 }
 
 void make_player(
     float *data,
     float x, float y, float z, float rx, float ry)
 {
+    float ao[6][4] = {0};
     make_cube_faces(
-        data,
+        data, ao,
         1, 1, 1, 1, 1, 1,
         226, 224, 241, 209, 225, 227,
         0, 0, 0, 0.4);
@@ -283,10 +344,10 @@ void make_player(
     mat_multiply(ma, mb, ma);
     mat_rotate(mb, cosf(rx), 0, sinf(rx), -ry);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, 3, 8);
+    mat_apply(data, ma, 36, 3, 9);
     mat_translate(mb, x, y, z);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, 0, 8);
+    mat_apply(data, ma, 36, 0, 9);
 }
 
 void make_cube_wireframe(float *data, float x, float y, float z, float n) {

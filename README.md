@@ -1,6 +1,8 @@
 ## Craft
 
-A simple Minecraft clone written in C using modern OpenGL (shaders).
+Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
+
+http://www.michaelfogleman.com/craft/
 
 ![](https://raw.github.com/fogleman/Craft/master/screenshot1.png)
 
@@ -10,8 +12,17 @@ A simple Minecraft clone written in C using modern OpenGL (shaders).
 * More than 10 types of blocks and more can be added easily.
 * Supports plants (grass, flowers, trees, etc.) and transparency (glass).
 * Simple clouds in the sky (they don't move).
+* Day / night cycles and a textured sky dome.
 * World changes persisted in a sqlite3 database.
 * Multiplayer support!
+
+### Download
+
+Mac and Windows binaries are available on the website.
+
+http://www.michaelfogleman.com/craft/
+
+See below to run from source.
 
 ### Install Dependencies
 

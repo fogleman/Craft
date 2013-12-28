@@ -61,6 +61,7 @@ typedef struct {
     GLuint position;
     GLuint normal;
     GLuint uv;
+    GLuint ao;
     GLuint matrix;
     GLuint sampler;
     GLuint camera;
@@ -208,22 +209,23 @@ GLuint gen_sky_buffer() {
 }
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_faces(8, 6);
-    make_cube(data, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
-    return gen_faces(8, 6, data);
+    GLfloat *data = malloc_faces(9, 6);
+    int ao[6][4] = {0};
+    make_cube(data, ao, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
+    return gen_faces(9, 6, data);
 }
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_faces(8, 4);
+    GLfloat *data = malloc_faces(9, 4);
     float rotation = simplex3(x, y, z, 4, 0.5, 2) * 360;
     make_plant(data, x, y, z, n, w, rotation);
-    return gen_faces(8, 4, data);
+    return gen_faces(9, 4, data);
 }
 
 GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
-    GLfloat *data = malloc_faces(8, 6);
+    GLfloat *data = malloc_faces(9, 6);
     make_player(data, x, y, z, rx, ry);
-    return gen_faces(8, 6, data);
+    return gen_faces(9, 6, data);
 }
 
 GLuint gen_text_buffer(float x, float y, float n, char *text) {
@@ -234,6 +236,28 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
         x += n;
     }
     return gen_faces(4, length, data);
+}
+
+void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glEnableVertexAttribArray(attrib->position);
+    glEnableVertexAttribArray(attrib->normal);
+    glEnableVertexAttribArray(attrib->uv);
+    glEnableVertexAttribArray(attrib->ao);
+    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 9, 0);
+    glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 3));
+    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
+    glVertexAttribPointer(attrib->ao, 1, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 8));
+    glDrawArrays(GL_TRIANGLES, 0, count);
+    glDisableVertexAttribArray(attrib->position);
+    glDisableVertexAttribArray(attrib->normal);
+    glDisableVertexAttribArray(attrib->uv);
+    glDisableVertexAttribArray(attrib->ao);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
@@ -279,11 +303,11 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
 }
 
 void draw_chunk(Attrib *attrib, Chunk *chunk) {
-    draw_triangles_3d(attrib, chunk->buffer, chunk->faces * 6);
+    draw_triangles_3d_ao(attrib, chunk->buffer, chunk->faces * 6);
 }
 
 void draw_item(Attrib *attrib, GLuint buffer, int count) {
-    draw_triangles_3d(attrib, buffer, count);
+    draw_triangles_3d_ao(attrib, buffer, count);
 }
 
 void draw_text(Attrib *attrib, GLuint buffer, int length) {
@@ -669,7 +693,7 @@ void occlusion(Map *map, int x, int y, int z, int result[6][4]) {
             int corner = neighbors[lookup[i][j][0]];
             int side1 = neighbors[lookup[i][j][1]];
             int side2 = neighbors[lookup[i][j][2]];
-            int value = side1 && side2 ? 0 : 3 - (corner + side1 + side2);
+            int value = side1 && side2 ? 3 : corner + side1 + side2;
             result[i][j] = value;
         }
     }
@@ -692,7 +716,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         faces += total;
     } END_MAP_FOR_EACH;
 
-    GLfloat *data = malloc_faces(8, faces);
+    GLfloat *data = malloc_faces(9, faces);
     int offset = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
@@ -714,16 +738,18 @@ void gen_chunk_buffer(Chunk *chunk) {
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
+            int ao[6][4];
+            occlusion(map, e->x, e->y, e->z, ao);
             make_cube(
-                data + offset,
+                data + offset, ao,
                 f1, f2, f3, f4, f5, f6,
                 e->x, e->y, e->z, 0.5, e->w);
         }
-        offset += total * 48;
+        offset += total * 54;
     } END_MAP_FOR_EACH;
 
     del_buffer(chunk->buffer);
-    chunk->buffer = gen_faces(8, faces, data);
+    chunk->buffer = gen_faces(9, faces, data);
     chunk->faces = faces;
     chunk->dirty = 0;
 }
@@ -1221,6 +1247,7 @@ int main(int argc, char **argv) {
     block_attrib.position = glGetAttribLocation(program, "position");
     block_attrib.normal = glGetAttribLocation(program, "normal");
     block_attrib.uv = glGetAttribLocation(program, "uv");
+    block_attrib.ao = glGetAttribLocation(program, "ao");
     block_attrib.matrix = glGetUniformLocation(program, "matrix");
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
     block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");

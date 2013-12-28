@@ -7,8 +7,10 @@ uniform float fog_distance;
 attribute vec4 position;
 attribute vec3 normal;
 attribute vec2 uv;
+attribute float ao;
 
 varying vec2 fragment_uv;
+varying float fragment_ao;
 varying float fog_factor;
 varying float fog_height;
 varying float diffuse;
@@ -19,6 +21,7 @@ const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
 void main() {
     gl_Position = matrix * position;
     fragment_uv = uv;
+    fragment_ao = ao;
     diffuse = max(0.0, dot(normal, light_direction));
     float camera_distance = distance(camera, vec3(position));
     fog_factor = pow(clamp(camera_distance / fog_distance, 0.0, 1.0), 4.0);

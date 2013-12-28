@@ -344,10 +344,10 @@ void make_player(
     mat_multiply(ma, mb, ma);
     mat_rotate(mb, cosf(rx), 0, sinf(rx), -ry);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, 3, 8);
+    mat_apply(data, ma, 36, 3, 9);
     mat_translate(mb, x, y, z);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, 0, 8);
+    mat_apply(data, ma, 36, 0, 9);
 }
 
 void make_cube_wireframe(float *data, float x, float y, float z, float n) {

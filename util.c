@@ -128,7 +128,7 @@ void flip_image_vertical(
     free(new_data);
 }
 
-void load_png_texture(const char *file_name) {
+void load_png_texture(const char *file_name, GLint level) {
     unsigned int error;
     unsigned char *data;
     unsigned int width, height;
@@ -137,7 +137,7 @@ void load_png_texture(const char *file_name) {
         fprintf(stderr, "error %u: %s\n", error, lodepng_error_text(error));
     }
     flip_image_vertical(data, width, height);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+    glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, data);
     free(data);
 }

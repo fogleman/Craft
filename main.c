@@ -1213,9 +1213,14 @@ int main(int argc, char **argv) {
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    load_png_texture("texture.png");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
+    load_png_texture("texture0.png", 0);
+    load_png_texture("texture1.png", 1);
+    load_png_texture("texture2.png", 2);
+    load_png_texture("texture3.png", 3);
+    load_png_texture("texture4.png", 4);
 
     GLuint font;
     glGenTextures(1, &font);
@@ -1223,7 +1228,7 @@ int main(int argc, char **argv) {
     glBindTexture(GL_TEXTURE_2D, font);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    load_png_texture("font.png");
+    load_png_texture("font.png", 0);
 
     GLuint sky;
     glGenTextures(1, &sky);
@@ -1233,7 +1238,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    load_png_texture("sky.png");
+    load_png_texture("sky.png", 0);
 
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};

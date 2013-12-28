@@ -13,7 +13,6 @@
 #define DAY_LENGTH 300
 
 // rendering options
-#define SHOW_SKY_DOME 1
 #define SHOW_PLANTS 1
 #define SHOW_CLOUDS 1
 #define SHOW_TREES 1

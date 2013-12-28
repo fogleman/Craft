@@ -68,8 +68,6 @@ typedef struct {
     GLuint extra1;
     GLuint extra2;
     GLuint extra3;
-    GLuint extra4;
-    GLuint extra5;
 } Attrib;
 
 static GLFWwindow *window;
@@ -868,9 +866,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->sampler, 0);
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, light);
-    glUniform1i(attrib->extra3, SHOW_SKY_DOME);
-    glUniform1f(attrib->extra4, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
-    glUniform3f(attrib->extra5, 0.59 * light, 0.74 * light, 0.85 * light);
+    glUniform1f(attrib->extra3, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -1185,6 +1181,7 @@ int main(int argc, char **argv) {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glLogicOp(GL_INVERT);
+    glClearColor(0, 0, 0, 1);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -1228,9 +1225,7 @@ int main(int argc, char **argv) {
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
     block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
     block_attrib.extra2 = glGetUniformLocation(program, "daylight");
-    block_attrib.extra3 = glGetUniformLocation(program, "show_sky_dome");
-    block_attrib.extra4 = glGetUniformLocation(program, "fog_distance");
-    block_attrib.extra5 = glGetUniformLocation(program, "fog_color");
+    block_attrib.extra3 = glGetUniformLocation(program, "fog_distance");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
 
@@ -1517,13 +1512,10 @@ int main(int argc, char **argv) {
         Player *player = players + observe1;
 
         // RENDER 3-D SCENE //
-        glClearColor(0.59 * light, 0.74 * light, 0.85 * light, 1.00);
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
-        if (SHOW_SKY_DOME) {
-            render_sky(&sky_attrib, player, sky_buffer);
-            glClear(GL_DEPTH_BUFFER_BIT);
-        }
+        render_sky(&sky_attrib, player, sky_buffer);
+        glClear(GL_DEPTH_BUFFER_BIT);
         int face_count = render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);
         if (SHOW_WIREFRAME) {
@@ -1598,10 +1590,6 @@ int main(int argc, char **argv) {
 
             glEnable(GL_SCISSOR_TEST);
             glScissor(width - sw - offset + pad, offset - pad, sw, sh);
-            glClearColor(0, 0, 0, 1);
-            glClear(GL_COLOR_BUFFER_BIT);
-            glScissor(width - pw - offset, offset, pw, ph);
-            glClearColor(0.59 * light, 0.74 * light, 0.85 * light, 1.00);
             glClear(GL_COLOR_BUFFER_BIT);
             glDisable(GL_SCISSOR_TEST);
             glClear(GL_DEPTH_BUFFER_BIT);
@@ -1612,10 +1600,8 @@ int main(int argc, char **argv) {
             ortho = 0;
             fov = 65;
 
-            if (SHOW_SKY_DOME) {
-                render_sky(&sky_attrib, player, sky_buffer);
-                glClear(GL_DEPTH_BUFFER_BIT);
-            }
+            render_sky(&sky_attrib, player, sky_buffer);
+            glClear(GL_DEPTH_BUFFER_BIT);
             render_chunks(&block_attrib, player);
             render_players(&block_attrib, player);
             glClear(GL_DEPTH_BUFFER_BIT);

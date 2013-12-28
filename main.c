@@ -210,7 +210,7 @@ GLuint gen_sky_buffer() {
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(9, 6);
-    int ao[6][4] = {0};
+    float ao[6][4] = {0};
     make_cube(data, ao, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
     return gen_faces(9, 6, data);
 }
@@ -638,7 +638,7 @@ void exposed_faces(
     *f6 = is_transparent(map_get(map, x, y, z + 1));
 }
 
-void occlusion(Map *map, int x, int y, int z, int result[6][4]) {
+void occlusion(Map *map, int x, int y, int z, float result[6][4]) {
     static int lookup[6][4][3] =
     {
         {
@@ -694,7 +694,7 @@ void occlusion(Map *map, int x, int y, int z, int result[6][4]) {
             int side1 = neighbors[lookup[i][j][1]];
             int side2 = neighbors[lookup[i][j][2]];
             int value = side1 && side2 ? 3 : corner + side1 + side2;
-            result[i][j] = value;
+            result[i][j] = value / 3.0;
         }
     }
 }
@@ -738,7 +738,7 @@ void gen_chunk_buffer(Chunk *chunk) {
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
-            int ao[6][4];
+            float ao[6][4];
             occlusion(map, e->x, e->y, e->z, ao);
             make_cube(
                 data + offset, ao,

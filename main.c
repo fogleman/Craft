@@ -616,6 +616,67 @@ void exposed_faces(
     *f6 = is_transparent(map_get(map, x, y, z + 1));
 }
 
+void occlusion(Map *map, int x, int y, int z, int result[6][4]) {
+    static int lookup[6][4][3] =
+    {
+        {
+            {0, 1, 3},
+            {2, 1, 5},
+            {6, 3, 7},
+            {8, 5, 7}
+        },
+        {
+            {18, 19, 21},
+            {20, 19, 23},
+            {24, 21, 25},
+            {26, 23, 25}
+        },
+        {
+            {6, 7, 15},
+            {8, 7, 17},
+            {24, 15, 25},
+            {26, 17, 25}
+        },
+        {
+            {0, 1, 9},
+            {2, 1, 11},
+            {18, 9, 19},
+            {20, 11, 19}
+        },
+        {
+            {0, 3, 9},
+            {6, 3, 15},
+            {18, 9, 21},
+            {24, 15, 21}
+        },
+        {
+            {2, 5, 11},
+            {8, 5, 17},
+            {20, 11, 23},
+            {26, 17, 23}
+        }
+    };
+    int neighbors[27];
+    int index = 0;
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                int w = map_get(map, x + dx, y + dy, z + dz);
+                neighbors[index++] = !is_transparent(w);
+            }
+        }
+    }
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < 4; j++) {
+            int corner = neighbors[lookup[i][j][0]];
+            int side1 = neighbors[lookup[i][j][1]];
+            int side2 = neighbors[lookup[i][j][2]];
+            int value = side1 && side2 ? 0 : 3 - (corner + side1 + side2);
+            result[i][j] = value;
+        }
+    }
+}
+
 void gen_chunk_buffer(Chunk *chunk) {
     Map *map = &chunk->map;
 

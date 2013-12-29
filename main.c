@@ -69,7 +69,6 @@ typedef struct {
     GLuint position;
     GLuint normal;
     GLuint uv;
-    GLuint ao;
     GLuint matrix;
     GLuint sampler;
     GLuint camera;
@@ -251,20 +250,16 @@ void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glEnableVertexAttribArray(attrib->position);
     glEnableVertexAttribArray(attrib->normal);
     glEnableVertexAttribArray(attrib->uv);
-    glEnableVertexAttribArray(attrib->ao);
     glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, 0);
     glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(attrib->uv, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
-    glVertexAttribPointer(attrib->ao, 1, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 8));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
     glDisableVertexAttribArray(attrib->uv);
-    glDisableVertexAttribArray(attrib->ao);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -436,7 +431,7 @@ Player *player_crosshair(Player *player) {
         }
         float p = player_crosshair_distance(player, other);
         float d = player_player_distance(player, other);
-        if (p / d < threshold) {
+        if (d < 96 && p / d < threshold) {
             if (best == 0 || d < best) {
                 best = d;
                 result = other;
@@ -858,17 +853,12 @@ void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
     _set_block(p, q, x, y, z, w);
-    if (chunked(x - 1) != p) {
-        _set_block(p - 1, q, x, y, z, -w);
-    }
-    if (chunked(x + 1) != p) {
-        _set_block(p + 1, q, x, y, z, -w);
-    }
-    if (chunked(z - 1) != q) {
-        _set_block(p, q - 1, x, y, z, -w);
-    }
-    if (chunked(z + 1) != q) {
-        _set_block(p, q + 1, x, y, z, -w);
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dz = -1; dz <= 1; dz++) {
+            if (chunked(x + dx) != p || chunked(z + dz) != q) {
+                _set_block(p + dx, q + dz, x, y, z, -w);
+            }
+        }
     }
     client_block(x, y, z, w);
 }
@@ -1273,7 +1263,6 @@ int main(int argc, char **argv) {
     block_attrib.position = glGetAttribLocation(program, "position");
     block_attrib.normal = glGetAttribLocation(program, "normal");
     block_attrib.uv = glGetAttribLocation(program, "uv");
-    block_attrib.ao = glGetAttribLocation(program, "ao");
     block_attrib.matrix = glGetUniformLocation(program, "matrix");
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
     block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");

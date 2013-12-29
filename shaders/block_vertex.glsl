@@ -21,7 +21,7 @@ const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
 void main() {
     gl_Position = matrix * position;
     fragment_uv = uv;
-    fragment_ao = ao;
+    fragment_ao = 0.4 + (1.0 - ao) * 0.6;
     diffuse = max(0.0, dot(normal, light_direction));
     float camera_distance = distance(camera, vec3(position));
     fog_factor = pow(clamp(camera_distance / fog_distance, 0.0, 1.0), 4.0);

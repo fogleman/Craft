@@ -162,11 +162,11 @@ def main():
     #     set_blocks(cuboid(-1, 1, 1, 32, z, z), CEMENT)
     #     set_blocks(cuboid(-1, 1, 1, 32, -z, -z), CEMENT)
     # for x in range(0, 1024, 8):
-    #     set_block(x, 32, 0 CEMENT)
-    #     set_block(-x, 32, , CEMENT)
+    #     set_block(x, 32, 0, CEMENT)
+    #     set_block(-x, 32, 0, CEMENT)
     # for z in range(0, 1024, 8):
-    #     set_block(0, 32, z CEMENT)
-    #     set_block(0, 32, -, CEMENT)
+    #     set_block(0, 32, z, CEMENT)
+    #     set_block(0, 32, -z, CEMENT)
     # set_blocks(pyramid(32, 32+64-1, 12, 32, 32+64-1), COBBLE)
     # outer = circle_y(0, 11, 0, 176 + 3, True)
     # inner = circle_y(0, 11, 0, 176 - 3, True)

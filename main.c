@@ -629,19 +629,7 @@ int player_intersects_block(
     return 0;
 }
 
-void exposed_faces(
-    Map *map, int x, int y, int z,
-    int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
-{
-    *f1 = is_transparent(map_get(map, x - 1, y, z));
-    *f2 = is_transparent(map_get(map, x + 1, y, z));
-    *f3 = is_transparent(map_get(map, x, y + 1, z));
-    *f4 = is_transparent(map_get(map, x, y - 1, z)) && (y > 0);
-    *f5 = is_transparent(map_get(map, x, y, z - 1));
-    *f6 = is_transparent(map_get(map, x, y, z + 1));
-}
-
-void occlusion(Map *map, int x, int y, int z, float result[6][4]) {
+void occlusion(char neighbors[27], float result[6][4]) {
     static int lookup[6][4][3] =
     {
         {
@@ -681,16 +669,6 @@ void occlusion(Map *map, int x, int y, int z, float result[6][4]) {
             {26, 17, 23}
         }
     };
-    int neighbors[27];
-    int index = 0;
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                int w = map_get(map, x + dx, y + dy, z + dz);
-                neighbors[index++] = !is_transparent(w);
-            }
-        }
-    }
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 4; j++) {
             int corner = neighbors[lookup[i][j][0]];
@@ -703,15 +681,37 @@ void occlusion(Map *map, int x, int y, int z, float result[6][4]) {
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
+    static char blocks[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2];
+    static char neighbors[27];
+    memset(blocks, 0, sizeof(blocks));
+    memset(neighbors, 0, sizeof(neighbors));
+    int ox = chunk->p * CHUNK_SIZE - 1;
+    int oy = -1;
+    int oz = chunk->q * CHUNK_SIZE - 1;
+
     Map *map = &chunk->map;
+
+    MAP_FOR_EACH(map, e) {
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
+        blocks[x][y][z] = e->w;
+    } END_MAP_FOR_EACH;
 
     int faces = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
             continue;
         }
-        int f1, f2, f3, f4, f5, f6;
-        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
+        int f1 = is_transparent(blocks[x - 1][y][z]);
+        int f2 = is_transparent(blocks[x + 1][y][z]);
+        int f3 = is_transparent(blocks[x][y + 1][z]);
+        int f4 = is_transparent(blocks[x][y - 1][z]) && (y > 0);
+        int f5 = is_transparent(blocks[x][y][z - 1]);
+        int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
@@ -725,8 +725,15 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (e->w <= 0) {
             continue;
         }
-        int f1, f2, f3, f4, f5, f6;
-        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
+        int f1 = is_transparent(blocks[x - 1][y][z]);
+        int f2 = is_transparent(blocks[x + 1][y][z]);
+        int f3 = is_transparent(blocks[x][y + 1][z]);
+        int f4 = is_transparent(blocks[x][y - 1][z]) && (y > 0);
+        int f5 = is_transparent(blocks[x][y][z - 1]);
+        int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
@@ -741,8 +748,17 @@ void gen_chunk_buffer(Chunk *chunk) {
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
+            int index = 0;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        int w = blocks[x + dx][y + dy][z + dz];
+                        neighbors[index++] = !is_transparent(w);
+                    }
+                }
+            }
             float ao[6][4];
-            occlusion(map, e->x, e->y, e->z, ao);
+            occlusion(neighbors, ao);
             make_cube(
                 data + offset, ao,
                 f1, f2, f3, f4, f5, f6,
@@ -855,9 +871,16 @@ void set_block(int x, int y, int z, int w) {
     _set_block(p, q, x, y, z, w);
     for (int dx = -1; dx <= 1; dx++) {
         for (int dz = -1; dz <= 1; dz++) {
-            if (chunked(x + dx) != p || chunked(z + dz) != q) {
-                _set_block(p + dx, q + dz, x, y, z, -w);
+            if (dx == 0 && dz == 0) {
+                continue;
             }
+            if (dx && chunked(x + dx) == p) {
+                continue;
+            }
+            if (dz && chunked(z + dz) == q) {
+                continue;
+            }
+            _set_block(p + dx, q + dz, x, y, z, -w);
         }
     }
     client_block(x, y, z, w);

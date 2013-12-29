@@ -25,6 +25,8 @@ SOFTWARE.
 */
 
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define F2 0.3660254037844386f
 #define G2 0.21132486540518713f
@@ -40,7 +42,7 @@ const static float GRAD3[16][3] = {
     { 1, 0,-1}, {-1, 0,-1}, { 0,-1, 1}, { 0, 1, 1}
 };
 
-const static unsigned char PERM[] = {
+static unsigned char PERM[] = {
     151, 160, 137,  91,  90,  15, 131,  13,
     201,  95,  96,  53, 194, 233,   7, 225,
     140,  36, 103,  30,  69, 142,   8,  99,
@@ -106,6 +108,20 @@ const static unsigned char PERM[] = {
     222, 114,  67,  29,  24,  72, 243, 141,
     128, 195,  78,  66, 215,  61, 156, 180
 };
+
+void seed(unsigned int x) {
+    srand(x);
+    for (int i = 255; i > 0; i--) {
+        int j;
+        int n = i + 1;
+        while (n <= (j = rand() / (RAND_MAX / n)));
+        unsigned char a = PERM[i];
+        unsigned char b = PERM[j];
+        PERM[i] = b;
+        PERM[j] = a;
+    }
+    memcpy(PERM + 256, PERM, sizeof(unsigned char) * 256);
+}
 
 float noise2(float x, float y) {
     int i1, j1, I, J, c;

@@ -99,6 +99,9 @@ void db_close() {
 }
 
 void db_commit() {
+    if (!db_enabled) {
+        return;
+    }
     mtx_lock(&mtx);
     ring_put_commit(&ring);
     cnd_signal(&cnd);

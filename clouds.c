@@ -185,7 +185,7 @@ void update_clouds(float player_x, float player_z) {
             //variation
             c->lifetimelength_subcounter++;
             
-            if (c->lifetimelength_subcounter % 20 == 0) {
+            if (c->lifetimelength_subcounter % 5 == 0) {
                 increase_cloud_body(c);
             }
             
@@ -214,7 +214,18 @@ void update_clouds(float player_x, float player_z) {
     
 }
 
+
 void increase_cloud_body(Cloud *c){
+    int rw = rand()%(c->hmWidth - 4);
+    int rh = rand()%(c->hmDepth - 4);
+    rw += 2;
+    rh += 2;
+    
+    
+    
+}
+
+void increase_cloud_body_deposition(Cloud *c){
     
     
     int rw = rand()%(c->hmWidth);
@@ -293,8 +304,8 @@ void add_cloud(float player_x, float player_z){
         c->lifetimelength = 16 + (rand() % 10);
         c->lifetime = malloc(c->lifetimelength * sizeof(int));
         
-        c->hmWidth = 16;
-        c->hmDepth = 16;
+        c->hmWidth = 64;
+        c->hmDepth = 64;
         
         c->heightmap = (int*)calloc(sizeof(int),c->hmWidth * c->hmDepth);
         

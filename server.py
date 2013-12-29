@@ -214,18 +214,12 @@ class Model(object):
         )
         self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
         self.send_block(client, p, q, x, y, z, w)
-        if chunked(x - 1) != p:
-            self.execute(query, dict(p=p - 1, q=q, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p - 1, q, x, y, z, -w)
-        if chunked(x + 1) != p:
-            self.execute(query, dict(p=p + 1, q=q, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p + 1, q, x, y, z, -w)
-        if chunked(z - 1) != q:
-            self.execute(query, dict(p=p, q=q - 1, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p, q - 1, x, y, z, -w)
-        if chunked(z + 1) != q:
-            self.execute(query, dict(p=p, q=q + 1, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p, q + 1, x, y, z, -w)
+        for dx in range(-1, 2):
+            for dz in range(-1, 2):
+                if chunked(x + dx) != p or chunked(z + dz) != q:
+                    np, nq = p + dx, q + dz
+                    self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
+                    self.send_block(client, np, nq, x, y, z, -w)
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)

@@ -850,17 +850,12 @@ void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
     _set_block(p, q, x, y, z, w);
-    if (chunked(x - 1) != p) {
-        _set_block(p - 1, q, x, y, z, -w);
-    }
-    if (chunked(x + 1) != p) {
-        _set_block(p + 1, q, x, y, z, -w);
-    }
-    if (chunked(z - 1) != q) {
-        _set_block(p, q - 1, x, y, z, -w);
-    }
-    if (chunked(z + 1) != q) {
-        _set_block(p, q + 1, x, y, z, -w);
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dz = -1; dz <= 1; dz++) {
+            if (chunked(x + dx) != p || chunked(z + dz) != q) {
+                _set_block(p + dx, q + dz, x, y, z, -w);
+            }
+        }
     }
     client_block(x, y, z, w);
 }

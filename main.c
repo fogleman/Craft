@@ -61,7 +61,6 @@ typedef struct {
     GLuint position;
     GLuint normal;
     GLuint uv;
-    GLuint ao;
     GLuint matrix;
     GLuint sampler;
     GLuint camera;
@@ -243,20 +242,16 @@ void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glEnableVertexAttribArray(attrib->position);
     glEnableVertexAttribArray(attrib->normal);
     glEnableVertexAttribArray(attrib->uv);
-    glEnableVertexAttribArray(attrib->ao);
     glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, 0);
     glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(attrib->uv, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
-    glVertexAttribPointer(attrib->ao, 1, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 8));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
     glDisableVertexAttribArray(attrib->uv);
-    glDisableVertexAttribArray(attrib->ao);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -1242,7 +1237,6 @@ int main(int argc, char **argv) {
     block_attrib.position = glGetAttribLocation(program, "position");
     block_attrib.normal = glGetAttribLocation(program, "normal");
     block_attrib.uv = glGetAttribLocation(program, "uv");
-    block_attrib.ao = glGetAttribLocation(program, "ao");
     block_attrib.matrix = glGetUniformLocation(program, "matrix");
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
     block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");

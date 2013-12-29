@@ -61,7 +61,6 @@ typedef struct {
     GLuint position;
     GLuint normal;
     GLuint uv;
-    GLuint ao;
     GLuint matrix;
     GLuint sampler;
     GLuint camera;
@@ -243,20 +242,16 @@ void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glEnableVertexAttribArray(attrib->position);
     glEnableVertexAttribArray(attrib->normal);
     glEnableVertexAttribArray(attrib->uv);
-    glEnableVertexAttribArray(attrib->ao);
     glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, 0);
     glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(attrib->uv, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
-    glVertexAttribPointer(attrib->ao, 1, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 8));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
     glDisableVertexAttribArray(attrib->uv);
-    glDisableVertexAttribArray(attrib->ao);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -428,7 +423,7 @@ Player *player_crosshair(Player *player) {
         }
         float p = player_crosshair_distance(player, other);
         float d = player_player_distance(player, other);
-        if (p / d < threshold) {
+        if (d < 96 && p / d < threshold) {
             if (best == 0 || d < best) {
                 best = d;
                 result = other;
@@ -626,19 +621,7 @@ int player_intersects_block(
     return 0;
 }
 
-void exposed_faces(
-    Map *map, int x, int y, int z,
-    int *f1, int *f2, int *f3, int *f4, int *f5, int *f6)
-{
-    *f1 = is_transparent(map_get(map, x - 1, y, z));
-    *f2 = is_transparent(map_get(map, x + 1, y, z));
-    *f3 = is_transparent(map_get(map, x, y + 1, z));
-    *f4 = is_transparent(map_get(map, x, y - 1, z)) && (y > 0);
-    *f5 = is_transparent(map_get(map, x, y, z - 1));
-    *f6 = is_transparent(map_get(map, x, y, z + 1));
-}
-
-void occlusion(Map *map, int x, int y, int z, float result[6][4]) {
+void occlusion(char neighbors[27], float result[6][4]) {
     static int lookup[6][4][3] =
     {
         {
@@ -678,16 +661,6 @@ void occlusion(Map *map, int x, int y, int z, float result[6][4]) {
             {26, 17, 23}
         }
     };
-    int neighbors[27];
-    int index = 0;
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                int w = map_get(map, x + dx, y + dy, z + dz);
-                neighbors[index++] = !is_transparent(w);
-            }
-        }
-    }
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 4; j++) {
             int corner = neighbors[lookup[i][j][0]];
@@ -700,15 +673,39 @@ void occlusion(Map *map, int x, int y, int z, float result[6][4]) {
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
+    static char blocks[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2];
+    static char neighbors[27];
+    memset(blocks, 0, sizeof(blocks));
+    memset(neighbors, 0, sizeof(neighbors));
+    int ox = chunk->p * CHUNK_SIZE - 1;
+    int oy = -1;
+    int oz = chunk->q * CHUNK_SIZE - 1;
+
     Map *map = &chunk->map;
 
+    // first pass - populate blocks array
+    MAP_FOR_EACH(map, e) {
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
+        blocks[x][y][z] = e->w;
+    } END_MAP_FOR_EACH;
+
+    // second pass - count exposed faces
     int faces = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
             continue;
         }
-        int f1, f2, f3, f4, f5, f6;
-        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
+        int f1 = is_transparent(blocks[x - 1][y][z]);
+        int f2 = is_transparent(blocks[x + 1][y][z]);
+        int f3 = is_transparent(blocks[x][y + 1][z]);
+        int f4 = is_transparent(blocks[x][y - 1][z]) && (y > 0);
+        int f5 = is_transparent(blocks[x][y][z - 1]);
+        int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
@@ -716,14 +713,22 @@ void gen_chunk_buffer(Chunk *chunk) {
         faces += total;
     } END_MAP_FOR_EACH;
 
+    // third pass - generate geometry
     GLfloat *data = malloc_faces(9, faces);
     int offset = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
             continue;
         }
-        int f1, f2, f3, f4, f5, f6;
-        exposed_faces(map, e->x, e->y, e->z, &f1, &f2, &f3, &f4, &f5, &f6);
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
+        int f1 = is_transparent(blocks[x - 1][y][z]);
+        int f2 = is_transparent(blocks[x + 1][y][z]);
+        int f3 = is_transparent(blocks[x][y + 1][z]);
+        int f4 = is_transparent(blocks[x][y - 1][z]) && (y > 0);
+        int f5 = is_transparent(blocks[x][y][z - 1]);
+        int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
@@ -738,8 +743,17 @@ void gen_chunk_buffer(Chunk *chunk) {
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
+            int index = 0;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        int w = blocks[x + dx][y + dy][z + dz];
+                        neighbors[index++] = !is_transparent(w);
+                    }
+                }
+            }
             float ao[6][4];
-            occlusion(map, e->x, e->y, e->z, ao);
+            occlusion(neighbors, ao);
             make_cube(
                 data + offset, ao,
                 f1, f2, f3, f4, f5, f6,
@@ -835,6 +849,23 @@ void ensure_chunks(float x, float y, float z, int force) {
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w) {
+    // TODO: remove this check after server data is cleaned up
+    int ok = 0;
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dz = -1; dz <= 1; dz++) {
+            if (chunked(x + dx) == p && chunked(z + dz) == q &&
+                chunked(x) == p - dx && chunked(z) == q - dz)
+            {
+                ok = 1;
+            }
+        }
+    }
+    if (!ok) {
+        printf("Invalid _set_block call: (%d, %d) (%d, %d, %d) %d\n",
+            p, q, x, y, z, w);
+        return;
+    }
+    // END TODO
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
@@ -850,17 +881,19 @@ void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
     _set_block(p, q, x, y, z, w);
-    if (chunked(x - 1) != p) {
-        _set_block(p - 1, q, x, y, z, -w);
-    }
-    if (chunked(x + 1) != p) {
-        _set_block(p + 1, q, x, y, z, -w);
-    }
-    if (chunked(z - 1) != q) {
-        _set_block(p, q - 1, x, y, z, -w);
-    }
-    if (chunked(z + 1) != q) {
-        _set_block(p, q + 1, x, y, z, -w);
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dz = -1; dz <= 1; dz++) {
+            if (dx == 0 && dz == 0) {
+                continue;
+            }
+            if (dx && chunked(x + dx) == p) {
+                continue;
+            }
+            if (dz && chunked(z + dz) == q) {
+                continue;
+            }
+            _set_block(p + dx, q + dz, x, y, z, -w);
+        }
     }
     client_block(x, y, z, w);
 }
@@ -1252,7 +1285,6 @@ int main(int argc, char **argv) {
     block_attrib.position = glGetAttribLocation(program, "position");
     block_attrib.normal = glGetAttribLocation(program, "normal");
     block_attrib.uv = glGetAttribLocation(program, "uv");
-    block_attrib.ao = glGetAttribLocation(program, "ao");
     block_attrib.matrix = glGetUniformLocation(program, "matrix");
     block_attrib.sampler = glGetUniformLocation(program, "sampler");
     block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
@@ -1533,7 +1565,6 @@ int main(int argc, char **argv) {
         }
 
         // PREPARE TO RENDER //
-        float light = get_daylight();
         observe1 = observe1 % player_count;
         observe2 = observe2 % player_count;
         delete_chunks();

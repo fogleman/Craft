@@ -216,10 +216,15 @@ class Model(object):
         self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):
             for dz in range(-1, 2):
-                if chunked(x + dx) != p or chunked(z + dz) != q:
-                    np, nq = p + dx, q + dz
-                    self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
-                    self.send_block(client, np, nq, x, y, z, -w)
+                if dx == 0 and dz == 0:
+                    continue
+                if dx and chunked(x + dx) == p:
+                    continue
+                if dz and chunked(z + dz) == q:
+                    continue
+                np, nq = p + dx, q + dz
+                self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
+                self.send_block(client, np, nq, x, y, z, -w)
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)

@@ -4,7 +4,7 @@
 #include "util.h"
 
 void make_cube_faces(
-    float *data, int ao[6][4],
+    float *data, float ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
     int wleft, int wright, int wtop, int wbottom, int wfront, int wback,
     float x, float y, float z, float n)
@@ -186,7 +186,7 @@ void make_cube_faces(
 }
 
 void make_cube(
-    float *data, int ao[6][4],
+    float *data, float ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
@@ -331,7 +331,7 @@ void make_player(
     float *data,
     float x, float y, float z, float rx, float ry)
 {
-    int ao[6][4] = {0};
+    float ao[6][4] = {0};
     make_cube_faces(
         data, ao,
         1, 1, 1, 1, 1, 1,

@@ -20,10 +20,10 @@ void main() {
     }
     bool cloud = color == vec3(1.0, 1.0, 1.0);
     float ao = cloud ? fragment_ao * 0.2 : fragment_ao;
-    vec3 light_color = vec3(daylight * 0.6 - ao * 0.2);
-    vec3 ambient = vec3(daylight * 0.2 + 0.2 - ao * 0.1);
+    vec3 light_color = vec3(daylight * 0.5 - ao * 0.4);
+    vec3 ambient = vec3(daylight * 0.3 + 0.2 - ao * 0.3);
     vec3 light = ambient + light_color * (cloud ? 1.0 - diffuse : diffuse);
-    color = min(color * light, vec3(1.0));
+    color = clamp(color * light, vec3(0.0), vec3(1.0));
     vec3 sky_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));
     color = mix(color, sky_color, fog_factor);
     gl_FragColor = vec4(color, 1.0);

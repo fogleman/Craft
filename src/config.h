@@ -11,6 +11,7 @@
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
 #define DAY_LENGTH 300
+#define PLAYER_NAME_DISTANCE 96 // Maximum distance to display a player's name at
 
 // rendering options
 #define SHOW_PLANTS 1

@@ -1540,7 +1540,6 @@ int main(int argc, char **argv) {
         }
 
         // PREPARE TO RENDER //
-        float light = get_daylight();
         observe1 = observe1 % player_count;
         observe2 = observe2 % player_count;
         delete_chunks();

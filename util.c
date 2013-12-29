@@ -119,7 +119,7 @@ void flip_image_vertical(
 {
     unsigned int size = width * height * 4;
     unsigned int stride = sizeof(char) * width * 4;
-    unsigned char *new_data = malloc(sizeof(char) * size);
+    unsigned char *new_data = malloc(sizeof(unsigned char) * size);
     for (unsigned int i = 0; i < height; i++) {
         unsigned int j = height - i - 1;
         memcpy(new_data + j * stride, data + i * stride, stride);

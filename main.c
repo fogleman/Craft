@@ -703,7 +703,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         int f1 = is_transparent(blocks[x - 1][y][z]);
         int f2 = is_transparent(blocks[x + 1][y][z]);
         int f3 = is_transparent(blocks[x][y + 1][z]);
-        int f4 = is_transparent(blocks[x][y - 1][z]) && (y > 0);
+        int f4 = is_transparent(blocks[x][y - 1][z]) && (e->y > 0);
         int f5 = is_transparent(blocks[x][y][z - 1]);
         int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -726,7 +726,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         int f1 = is_transparent(blocks[x - 1][y][z]);
         int f2 = is_transparent(blocks[x + 1][y][z]);
         int f3 = is_transparent(blocks[x][y + 1][z]);
-        int f4 = is_transparent(blocks[x][y - 1][z]) && (y > 0);
+        int f4 = is_transparent(blocks[x][y - 1][z]) && (e->y > 0);
         int f5 = is_transparent(blocks[x][y][z - 1]);
         int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;

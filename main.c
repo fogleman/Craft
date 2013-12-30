@@ -217,6 +217,28 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
+GLuint gen_sign_buffer(
+    float x, float y, float z, float n,
+    int face, int justify, char *text)
+{
+    int length = strlen(text);
+    int face_dx[4] = {0, 0, -1, 1};
+    int face_dz[4] = {-1, 1, 0, 0};
+    int dx = face_dx[face];
+    int dz = face_dz[face];
+    x += face_dz[face] * 0.55;
+    z += face_dx[face] * 0.55;
+    x -= n * dx * justify * (length - 1) / 2;
+    z -= n * dz * justify * (length - 1) / 2;
+    GLfloat *data = malloc_faces(5, length);
+    for (int i = 0; i < length; i++) {
+        make_character_3d(data + i * 30, x, y, z, n / 2, n, text[i]);
+        x += n * dx;
+        z += n * dz;
+    }
+    return gen_faces(5, length, data);
+}
+
 void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -231,6 +253,20 @@ void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
+    glDisableVertexAttribArray(attrib->uv);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void draw_triangles_3d_text(Attrib *attrib, GLuint buffer, int count) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glEnableVertexAttribArray(attrib->position);
+    glEnableVertexAttribArray(attrib->uv);
+    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 5, 0);
+    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 5, (GLvoid *)(sizeof(GLfloat) * 3));
+    glDrawArrays(GL_TRIANGLES, 0, count);
+    glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->uv);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -289,6 +325,13 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     draw_triangles_2d(attrib, buffer, length * 6);
+    glDisable(GL_BLEND);
+}
+
+void draw_sign(Attrib *attrib, GLuint buffer, int length) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    draw_triangles_3d_text(attrib, buffer, length * 6);
     glDisable(GL_BLEND);
 }
 
@@ -1022,11 +1065,31 @@ void render_text(
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1);
+    glUniform1i(attrib->extra1, 1);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
+}
+
+void render_sign(
+    Attrib *attrib, Player *player, int justify,
+    float x, float y, float z, float n, char *text)
+{
+    State *s = &player->state;
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 3);
+    glUniform1i(attrib->extra1, 0);
+    for (int i = 0; i < 4; i++) {
+        GLuint buffer = gen_sign_buffer(x, y, z, n, i, justify, text);
+        draw_sign(attrib, buffer, strlen(text));
+        del_buffer(buffer);
+    }
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -1262,6 +1325,14 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     load_png_texture("sky.png");
 
+    GLuint sign;
+    glGenTextures(1, &sign);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, sign);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    load_png_texture("sign.png");
+
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
@@ -1296,6 +1367,7 @@ int main(int argc, char **argv) {
     text_attrib.uv = glGetAttribLocation(program, "uv");
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
+    text_attrib.extra1 = glGetUniformLocation(program, "shaded");
 
     program = load_program(
         "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
@@ -1574,6 +1646,8 @@ int main(int argc, char **argv) {
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);
         }
+        render_sign(&text_attrib, player, CENTER, 2348, 13, 4162, 0.125, "Hello");
+        render_sign(&text_attrib, player, CENTER, 2349, 13, 4162, 0.125, "World!");
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);

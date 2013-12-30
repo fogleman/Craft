@@ -430,6 +430,32 @@ void make_character(
     *(d++) = du + 0; *(d++) = dv + b - p;
 }
 
+void make_character_3d(
+    float *data,
+    float x, float y, float z, float n, float m, char c)
+{
+    float *d = data;
+    float s = 0.0625;
+    float a = s;
+    float b = s * 2;
+    int w = c - 32;
+    float du = (w % 16) * a;
+    float dv = 1 - (w / 16) * b - b;
+    float p = 0;
+    *(d++) = x - n; *(d++) = y - m; *(d++) = z;
+    *(d++) = du + 0; *(d++) = dv + p;
+    *(d++) = x + n; *(d++) = y - m; *(d++) = z;
+    *(d++) = du + a; *(d++) = dv + p;
+    *(d++) = x + n; *(d++) = y + m; *(d++) = z;
+    *(d++) = du + a; *(d++) = dv + b - p;
+    *(d++) = x - n; *(d++) = y - m; *(d++) = z;
+    *(d++) = du + 0; *(d++) = dv + p;
+    *(d++) = x + n; *(d++) = y + m; *(d++) = z;
+    *(d++) = du + a; *(d++) = dv + b - p;
+    *(d++) = x - n; *(d++) = y + m; *(d++) = z;
+    *(d++) = du + 0; *(d++) = dv + b - p;
+}
+
 int _make_sphere(
     float *data, float r, int detail,
     float *a, float *b, float *c,

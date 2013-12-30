@@ -10,163 +10,102 @@
 #include "matrix.h"
 #include "time.h"
 
-void increase_cloud_body(Cloud *c);
-void decrease_cloud_body(Cloud *c);
+void set_vertex(GLfloat *d,float x,float y,float z,float nx,float ny,float nz,float r,float g, float b, int *index);
 
 void create_clouds() {
     printf("[CLOUDS] Create clouds called\n");
     weather = (Weather*)malloc(sizeof(Weather));
     
-    //choose a starting season.
-    weather->season = SEASON_SUMMER; //default to summer for now
-    weather->season_modifier = SEASON_M_NORMAL; //Normal season
-    
     //set a prevailaing wind direction.
     weather->x_prevailing_winds = 0.03f;
     weather->z_prevailing_winds = 0.0f;
     
-    //set a lifecycle current and max
-    weather->season_lifecycle_current = 0;
-    weather->season_lifecycle_max = 10000;
+    weather->initial_generation = MAXIMUM_CLOUDS;
     
     weather->cloud_count = 0;
     weather->clouds = (Cloud**)malloc(MAXIMUM_CLOUDS * sizeof(Cloud*));
-    /*
-    int points = (6 * 3);
-    float dataBuffer[3 * points + 3 * points + 2 * points];
-    float *data = &(dataBuffer[0]);
+   
+    GLfloat *data = malloc(sizeof(GLfloat) * 6 * 9 * 6);
     
-    
-            2       4
-     
-     1                      6
-     
-            3       5
-     
-     
-    
-    float small_size_length = 1.0f;
-    float old_size_length = small_size_length * 1.5f;
-    
-    float angleOne =    M_PI/2.0f;
-    float angleTwo =    M_PI/4.0f;
-    float angleThree =  M_PI/8.0f;
-    float angleFour =   M_PI/10.0f;
-    
-    float ypos = -0.5f;
+    float n = 1.0f;
+    int index = 0;
 
-    *(data++) = small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 1.0f; *(data++) = 0.5f;
+    // -z
+    set_vertex(data,-n,n,-n,0,0,-1,1.0,1.0,1.0, &index);
+    set_vertex(data, n,n,-n,0,0,-1,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,-n,0,0,-1,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length * cos(angleOne); *(data++) = ypos; *(data++) = small_size_length * sin(angleOne);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-
-    *(data++) = small_size_length * cos(angleTwo); *(data++) = ypos; *(data++) = small_size_length * sin(angleTwo);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
+    set_vertex(data, n,n,-n,0,0,-1,1.0,1.0,1.0, &index);
+    set_vertex(data,n,-n,-n,0,0,-1,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,-n,0,0,-1,1.0,1.0,1.0, &index);
     
-    *(data++) = -small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.0f; *(data++) = 0.5f;
+    // +z
+    set_vertex(data,-n,n,n,0,0,1,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,n,0,0,1,1.0,1.0,1.0, &index);
+    set_vertex(data, n,n,n,0,0,1,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length * cos(angleThree); *(data++) = ypos; *(data++) = small_size_length * sin(angleThree);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
+    set_vertex(data, n,n,n,0,0,1,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,n,0,0,1,1.0,1.0,1.0, &index);
+    set_vertex(data,n,-n,n,0,0,1,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length * cos(angleFour); *(data++) = ypos; *(data++) = small_size_length * sin(angleFour);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
+    // +x
+    set_vertex(data,n,n, n,1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,-n,-n,1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,n,-n,1,0,0,1.0,1.0,1.0, &index);
     
+    set_vertex(data,n,-n,-n,1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,n, n,1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,-n,n,1,0,0,1.0,1.0,1.0, &index);
     
-    ypos = 0.0f;
-    small_size_length *= 1.5f;
+    // -x
+    set_vertex(data,-n,n, n,-1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,n,-n,-1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,-n,-1,0,0,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 1.0f; *(data++) = 0.5f;
+    set_vertex(data,-n,n, n,-1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,-n,-1,0,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,n,-1,0,0,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length * cos(angleOne); *(data++) = ypos; *(data++) = small_size_length * sin(angleOne);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
+    // +y
+    set_vertex(data,-n,n,n,0,1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,n, n,0,1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,n,-n,0,1,0,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length * cos(angleTwo); *(data++) = ypos; *(data++) = small_size_length * sin(angleTwo);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
+    set_vertex(data,n,n, n,0,1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,n,-n,0,1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,n,-n,0,1,0,1.0,1.0,1.0, &index);
     
-    *(data++) = -small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.0f; *(data++) = 0.5f;
+    // -y
+    set_vertex(data,-n,-n,-n,0,-1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,-n, -n,0,-1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,n,-n,n,0,-1,0,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length * cos(angleThree); *(data++) = ypos; *(data++) = small_size_length * sin(angleThree);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
+    set_vertex(data,n,-n, n,0,-1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,n,0,-1,0,1.0,1.0,1.0, &index);
+    set_vertex(data,-n,-n,-n,0,-1,0,1.0,1.0,1.0, &index);
     
-    *(data++) = small_size_length * cos(angleFour); *(data++) = ypos; *(data++) = small_size_length * sin(angleFour);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    
-    ypos = 15.5f;
-    small_size_length = old_size_length;
-    
-    *(data++) = small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 1.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleOne); *(data++) = ypos; *(data++) = small_size_length * sin(angleOne);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-    
-    *(data++) = small_size_length * cos(angleTwo); *(data++) = ypos; *(data++) = small_size_length * sin(angleTwo);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    *(data++) = -small_size_length; *(data++) = ypos; *(data++) = 0;
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.0f; *(data++) = 0.5f;
-    
-    *(data++) = small_size_length * cos(angleThree); *(data++) = ypos; *(data++) = small_size_length * sin(angleThree);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.6f; *(data++) = 0.0f;
-    
-    *(data++) = small_size_length * cos(angleFour); *(data++) = ypos; *(data++) = small_size_length * sin(angleFour);
-    *(data++) = 0; *(data++) = -1.0f; *(data++) = 0;
-    *(data++) = 0.3f; *(data++) = 0.0f;
-    
-    weather->cloud_vertex_buffer = gen_buffer(sizeof(dataBuffer), dataBuffer);
-    */
-    GLfloat *data = malloc_faces(8, 6);
-    make_cube(data, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.5, 16);
-    weather->cloud_vertex_buffer = gen_faces(8, 6, data);
+    weather->cloud_vertex_buffer = gen_faces(9, 6, data);
     
     
 }
 
+void set_vertex(GLfloat *d,float x,float y,float z,float nx,float ny,float nz,float r,float g, float b, int *index){
+    d[(*index)++] = x; d[(*index)++] = y; d[(*index)++] = z;
+    d[(*index)++] = nx; d[(*index)++] = ny; d[(*index)++] = nz;
+    d[(*index)++] = r; d[(*index)++] = g; d[(*index)++] = b;
+}
 
 
-
-void update_clouds(float player_x, float player_z) {
-    weather->season_lifecycle_current++;
+void update_clouds(float player_x, float player_z, float rx, float rz) {
     
-    if(weather->season_lifecycle_current > weather->season_lifecycle_max){
-        //season change
-        weather->season_lifecycle_current = 0;
-        weather->season++;
-        printf("[CLOUDS] Season changed");
-        
-        weather->season = weather->season > SEASON_SPRING ? SEASON_SUMMER : weather->season;
-    }
-    
-    //update prevailing winds
+
     int i;
     for(i=0; i<weather->cloud_count; i++){
         
         Cloud *c = (weather->clouds)[i];
         //delete clouds that have strayed too far from the player, or have degenerated.
         
-        if ((pow(player_x - (((weather->clouds)[i])->x),2) + pow(player_z - (((weather->clouds)[i])->z),2)) > pow(500,2)  || c->cloud_life <= 0) {
+        if ((pow(player_x - (((weather->clouds)[i])->x),2) + pow(player_z - (((weather->clouds)[i])->z),2)) > pow(500,2)) {
             
             
             remove_cloud(c);
@@ -181,23 +120,6 @@ void update_clouds(float player_x, float player_z) {
             i--;
         } else {
             
-            //individual clouds move with the prevailing wind, and with some slight
-            //variation
-            c->lifetimelength_subcounter++;
-            
-            if (c->lifetimelength_subcounter % 5 == 0) {
-                increase_cloud_body(c);
-            }
-            
-            if (c->lifetimelength_subcounter > 2000) {
-                c->lifetimelength_subcounter = 0;
-                c->cloud_ticks++;
-            }
-            
-            if (c->cloud_ticks > 50) {
-                c->cloud_life = 0;
-            }
-            
             c->x += weather->x_prevailing_winds;
             c->z += weather->z_prevailing_winds;
             
@@ -210,150 +132,79 @@ void update_clouds(float player_x, float player_z) {
     }
     
     //add new cloud if required.
-    add_cloud(player_x, player_z);
+    add_cloud(player_x, player_z,rx,rz);
     
 }
 
-
-void increase_cloud_body(Cloud *c){
-    int rw = rand()%(c->hmWidth - 4);
-    int rh = rand()%(c->hmDepth - 4);
-    rw += 2;
-    rh += 2;
-    
-    
-    
-}
-
-void increase_cloud_body_deposition(Cloud *c){
-    
-    
-    int rw = rand()%(c->hmWidth);
-    int rh = rand()%(c->hmDepth);
-    int index = rw + (c->hmWidth * rh);
-    
-    //we have landed on an already placed bit, this is what we want.
-    if (c->heightmap[index] > 0) {
-        if (rand() % 100 < 20) {
-            c->heightmap[index]++;  //20% chance of sticking straight away
-        } else {
-            //otherwise, we want to explore around to see if we can fall down.
-            int indexesw[] = {rw-1,rw-1,rw-1,rw,rw+1,rw+1,rw+1,rw};
-            int indexesh[] = {rh-1,rh,rh+1,rh+1,rh+1,rh,rh-1,rh-1};
-            int position = rand()%8;
-            int placed = 0;
-            int counter = 0;
-            while (placed == 0) {
-                
-                //if we have traversed the locations around and have not found a suitable place.
-                if (counter == 8) {
-                    placed = 1;
-                    c->heightmap[index]++;
-                } else {
-                    //otherwise, check the next candidate position.
-                    int nextw = indexesw[position];
-                    int nexth = indexesh[position];
-                    
-                    if (nextw >= 0 && nextw < c->hmWidth && nexth >= 0 && nexth < c->hmDepth) {
-                        if (c->heightmap[nextw + (c->hmWidth * nexth)] < c->heightmap[index]) {
-                            c->heightmap[nextw + (c->hmWidth * nexth)]++;
-                            
-                            placed = 1;
-                        }
-                    }
-                    
-                    position = (position+1)%8;
-                }
-                
-                counter++;
-            }
-        }
-    } else {
-        int indexesw[] = {rw-1,rw-1,rw-1,rw,rw+1,rw+1,rw+1,rw};
-        int indexesh[] = {rh-1,rh,rh+1,rh+1,rh+1,rh,rh-1,rh-1};
-        int position = 0;
-        int found = 0;
-        while (found == 0 && position < 8) {
-            int nextw = indexesw[position];
-            int nexth = indexesh[position];
-            
-            if (nextw >= 0 && nextw < c->hmWidth && nexth >= 0 && nexth < c->hmDepth) {
-                if (c->heightmap[nextw + (c->hmWidth * nexth)] > c->heightmap[index]) {
-                    c->heightmap[index]++;
-                    found = 1;
-                }
-            }
-            
-            position++;
-        }
-    }
-}
-
-
-void decrease_cloud_body(Cloud *c){
-    int index = (rand()%(c->hmWidth)) + (c->hmWidth * (rand()%(c->hmDepth)));
-    c->heightmap[index]--;
-}
-
-
-void add_cloud(float player_x, float player_z){
+void add_cloud(float player_x, float player_z, float rx, float rz){
     //certain types of weather will force less clouds to be allowed.
     int weather_cloud_max_modifier = 0;
     if(weather->cloud_count < MAXIMUM_CLOUDS - weather_cloud_max_modifier){
         Cloud *c = (Cloud*)malloc(sizeof(Cloud));
-        c->lifetimelength = 16 + (rand() % 10);
-        c->lifetime = malloc(c->lifetimelength * sizeof(int));
         
-        c->hmWidth = 64;
-        c->hmDepth = 64;
+        c->hmWidth = 32;
+        c->hmDepth = 32;
         
         c->heightmap = (int*)calloc(sizeof(int),c->hmWidth * c->hmDepth);
         
         //seed an initial value
-        int index = (c->hmWidth/2) + (c->hmDepth/2 * c->hmWidth);
-        c->heightmap[index] = 1;
-        c->heightmap[index++] = 1;
-        index += c->hmWidth - 1;
-        c->heightmap[index] = 1;
-        c->heightmap[index++] = 1;
+        int i,j;
         
-        int max = (rand() % 100) + 10;
-        for (index = 0; index <max; index++) {
-            increase_cloud_body(c);
+        int placed = 0;
+        
+        while (placed == 0) {
+            int x = rand() % 1000;
+            int z = rand() % 1000;
+            for (i=0; i<c->hmWidth; i++) {
+                for (j=0; j<c->hmDepth; j++) {
+                    
+                    
+                    float spx = simplex3( (x+i) * 0.01, 10, (z+j) * 0.01, 8, 0.5, 2);
+                    c->heightmap[i * c->hmDepth + j] = (spx > 0.72) ? (int)(((spx - 0.72) / 0.20) * 5) : 0;
+                    
+                    if (c->heightmap[i * c->hmDepth + j] != 0) {
+                        placed = 1;
+                    }
+                }
+            }
         }
-        
-        c->cloud_ticks = 0;
-        c->lifetimelength_subcounter = 0;
         
         c->dx = (rand()/RAND_MAX) * 0.01 - 0.005;
         c->dz = (rand()/RAND_MAX) * 0.01 - 0.005;
         
-        //randomly distribute around the player
+        //randomly distribute around the player if first time generation
+        if (weather->initial_generation > 0) {
+            weather->initial_generation--;
+            
+            c->x = player_x + (rand() % 800) - 400;
+            c->z = player_z + (rand() % 800) - 400;
+            
+        } else {
+
+            if(rand() % 100 < 50){
+                c->x = player_x + (rand() % 600) - 300;
+                c->z = player_z + ((rand() % 100 < 50) ? 300 : -300);
+            } else {
+                c->x = player_x + ((rand() % 100 < 50) ? 300 : -300);
+                c->z = player_z + (rand() % 600) - 300;
+            }
+        }
+        
+        c->y = rand() % 20;
+        
+        c->sx = (rand() % 10) + 1;
+        c->sy = 1;
+        c->sz = (rand() % 10) + 1;
         
         
-        c->x = player_x + (rand() % 800) - 400;
-        c->y = 0;
-        c->z = player_z + (rand() % 800) - 400;
+        c->r = 1.0f - (rand()%10)/100;
+        c->g = 1.0f - (rand()%10)/100;
+        c->b = 1;
         
-        c->r = 0.8f;
-        c->g = 0.8f;
-        c->b = rand()/RAND_MAX;
-        
-        
-        c->cloud_mode = CLOUD_MODE_STABLE;
-        c->cloud_life = 5000;
         
         weather->clouds[weather->cloud_count] = c;
         weather->cloud_count++;
         
-        int i;
-        for (i=0; i<c->lifetimelength; i++) {
-            c->lifetime[i] = rand();
-        }
-
-        
-        
-        printf("[CLOUDS] Added new cloud\n");
     }
 }
 
@@ -367,6 +218,8 @@ void render_cloud(Cloud *cloud, CloudAttrib *attrib){
     
     mat_identity(matrix);
     mat_translate(matrix,cloud->x - (cloud->hmWidth/2), 80 + cloud->y, cloud->z - (cloud->hmDepth/2));
+    
+    mat_scale(matrix,cloud->sx,cloud->sy,cloud->sz);
     
     glUniform3f(attrib->cloudColour, cloud->r, cloud->g, cloud->b);
    
@@ -403,44 +256,39 @@ void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, 
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, x,y,z);
     glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, glfwGetTime());
+        glUniform1f(attrib->timer, attrib->time);
     
+    glUniform1i(attrib->skysampler, 2);
     
     
     glBindBuffer(GL_ARRAY_BUFFER, weather->cloud_vertex_buffer);
     glEnableVertexAttribArray(attrib->position);
     glEnableVertexAttribArray(attrib->normal);
-    glEnableVertexAttribArray(attrib->uv);
+    glEnableVertexAttribArray(attrib->colour);
     glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 8, 0);
+                          sizeof(GLfloat) * 9, 0);
     glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
+                          sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 3));
+    glVertexAttribPointer(attrib->colour, 3, GL_FLOAT, GL_FALSE,
+                          sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
     
     for(i=0; i<weather->cloud_count; i++){
         render_cloud((weather->clouds)[i], attrib);
     }
-    
 
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
-    glDisableVertexAttribArray(attrib->uv);
+    glDisableVertexAttribArray(attrib->colour);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    //glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix_prev);
 }
 
 void remove_cloud(Cloud *c){
-    free(c->lifetime);
     free(c->heightmap);
     free(c);
-    printf("[CLOUDS] Remove cloud called\n");
 }
 
 void cleanup_clouds() {
-    printf("[CLOUDS] Cleanup clouds called\n");
-    printf("[CLOUDS] Removing %d clouds.\n",weather->cloud_count);
     int i;
     for(i=0; i<weather->cloud_count; i++){
         remove_cloud((weather->clouds)[i]);

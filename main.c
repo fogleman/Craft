@@ -220,7 +220,7 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
 GLuint gen_sign_buffer(float x, float y, float z, int face, char *text) {
     static const int face_dx[4] = {0, 0, -1, 1};
     static const int face_dz[4] = {1, -1, 0, 0};
-    int length = strlen(text);
+    int length = MIN(strlen(text), 48);
     int wrap = 8;
     int rows = length / wrap + ((length % wrap) ? 1 : 0);
     int dx = face_dx[face];
@@ -228,7 +228,7 @@ GLuint gen_sign_buffer(float x, float y, float z, int face, char *text) {
     float n = 1.0 / (wrap + 1);
     x -= n * dx * (MIN(length, wrap) - 1) / 2.0;
     z -= n * dz * (MIN(length, wrap) - 1) / 2.0;
-    y += n * (rows - 1);
+    y += n * (rows - 1) * 0.75;
     float sx = x;
     float sz = z;
     GLfloat *data = malloc_faces(5, length);
@@ -243,7 +243,7 @@ GLuint gen_sign_buffer(float x, float y, float z, int face, char *text) {
         }
         x = sx;
         z = sz;
-        y -= n * 2;
+        y -= n * 1.5;
     }
     return gen_faces(5, length, data);
 }
@@ -1663,7 +1663,7 @@ int main(int argc, char **argv) {
         }
         render_sign(&text_attrib, player, 2348, 13, 4162, 3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
         render_sign(&text_attrib, player, 2349, 13, 4162, 3, "abcdefghijklmnopqrstuvwxyz");
-        render_sign(&text_attrib, player, 2350, 13, 4162, 3, "1234567890!@#$%^&*()-=_+[]");
+        render_sign(&text_attrib, player, 2350, 13, 4162, 3, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);

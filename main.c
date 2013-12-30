@@ -430,9 +430,6 @@ int chunk_distance(Chunk *chunk, int p, int q) {
 }
 
 int chunk_visible(Chunk *chunk, float planes[6][4]) {
-    if (ortho) {
-        return 1;
-    }
     int x = chunk->p * CHUNK_SIZE - 1;
     int z = chunk->q * CHUNK_SIZE - 1;
     int d = CHUNK_SIZE + 1;
@@ -446,7 +443,8 @@ int chunk_visible(Chunk *chunk, float planes[6][4]) {
         {x + 0, 256, z + d},
         {x + d, 256, z + d}
     };
-    for (int i = 0; i < 6; i++) {
+    int p = ortho ? 4 : 6;
+    for (int i = 0; i < p; i++) {
         int in = 0;
         int out = 0;
         for (int j = 0; j < 8; j++) {

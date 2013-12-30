@@ -253,6 +253,12 @@ class Model(object):
                 np, nq = p + dx, q + dz
                 self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
                 self.send_block(client, np, nq, x, y, z, -w)
+        if w == 0:
+            query = (
+                'delete from sign where '
+                'x = :x and y = :y and z = :z;'
+            )
+            self.execute(query, dict(x=x, y=y, z=z))
     def on_sign(self, client, x, y, z, face, text):
         x, y, z, face = map(int, (x, y, z, face))
         if y <= 0 or y > 255:
@@ -261,12 +267,20 @@ class Model(object):
             return
         if len(text) > 48:
             return
-        p, q = chunked(x), chunked(z)
-        query = (
-            'insert or replace into sign (p, q, x, y, z, face, text) '
-            'values (:p, :q, :x, :y, :z, :face, :text);'
-        )
-        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, face=face, text=text))
+        if text:
+            p, q = chunked(x), chunked(z)
+            query = (
+                'insert or replace into sign (p, q, x, y, z, face, text) '
+                'values (:p, :q, :x, :y, :z, :face, :text);'
+            )
+            self.execute(query,
+                dict(p=p, q=q, x=x, y=y, z=z, face=face, text=text))
+        else:
+            query = (
+                'delete from sign where '
+                'x = :x and y = :y and z = :z and face = :face;'
+            )
+            self.execute(query, dict(x=x, y=y, z=z, face=face))
         self.send_sign(client, p, q, x, y, z, face, text)
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))

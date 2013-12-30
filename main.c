@@ -17,6 +17,7 @@
 #include "map.h"
 #include "matrix.h"
 #include "noise.h"
+#include "sign.h"
 #include "util.h"
 #include "world.h"
 
@@ -32,6 +33,7 @@
 
 typedef struct {
     Map map;
+    SignList sign_list;
     int p;
     int q;
     int faces;
@@ -822,9 +824,12 @@ void create_chunk(Chunk *chunk, int p, int q) {
     chunk->dirty = 1;
     chunk->buffer = 0;
     Map *map = &chunk->map;
+    SignList *sign_list = &chunk->sign_list;
     map_alloc(map);
+    sign_list_alloc(sign_list, 16);
     create_world(map, p, q);
     db_load_map(map, p, q);
+    db_load_signs(sign_list, p, q);
     gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
@@ -850,6 +855,7 @@ void delete_chunks() {
         }
         if (delete) {
             map_free(&chunk->map);
+            sign_list_free(&chunk->sign_list);
             del_buffer(chunk->buffer);
             Chunk *other = chunks + (--count);
             memcpy(chunk, other, sizeof(Chunk));

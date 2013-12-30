@@ -15,6 +15,7 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry);
 void db_insert_block(int p, int q, int x, int y, int z, int w);
 void db_insert_sign(
     int p, int q, int x, int y, int z, int face, const char *text);
+void db_delete_signs(int x, int y, int z);
 void db_load_map(Map *map, int p, int q);
 void db_load_signs(SignList *list, int p, int q);
 int db_get_key(int p, int q);

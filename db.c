@@ -8,6 +8,7 @@ static int db_enabled = 0;
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *insert_sign_stmt;
+static sqlite3_stmt *delete_signs_stmt;
 static sqlite3_stmt *load_map_stmt;
 static sqlite3_stmt *load_signs_stmt;
 static sqlite3_stmt *get_key_stmt;
@@ -72,18 +73,20 @@ int db_init(char *path) {
     static const char *insert_block_query =
         "insert or replace into block (p, q, x, y, z, w) "
         "values (?, ?, ?, ?, ?, ?);";
+    static const char *insert_sign_query =
+        "insert or replace into sign (p, q, x, y, z, face, text) "
+        "values (?, ?, ?, ?, ?, ?, ?);";
+    static const char *delete_signs_query =
+        "delete from sign where x = ? and y = ? and z = ?;";
     static const char *load_map_query =
         "select x, y, z, w from block where p = ? and q = ?;";
+    static const char *load_signs_query =
+        "select x, y, z, face, text from sign where p = ? and q = ?;";
     static const char *get_key_query =
         "select key from key where p = ? and q = ?;";
     static const char *set_key_query =
         "insert or replace into key (p, q, key) "
         "values (?, ?, ?);";
-    static const char *insert_sign_query =
-        "insert or replace into sign (p, q, x, y, z, face, text) "
-        "values (?, ?, ?, ?, ?, ?, ?);";
-    static const char *load_signs_query =
-        "select x, y, z, face, text from sign where p = ? and q = ?;";
     int rc;
     rc = sqlite3_open(path, &db);
     if (rc) return rc;
@@ -94,6 +97,9 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(
         db, insert_sign_query, -1, &insert_sign_stmt, NULL);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(
+        db, delete_signs_query, -1, &delete_signs_stmt, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, load_map_query, -1, &load_map_stmt, NULL);
     if (rc) return rc;
@@ -116,6 +122,7 @@ void db_close() {
     sqlite3_exec(db, "commit;", NULL, NULL, NULL);
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(insert_sign_stmt);
+    sqlite3_finalize(delete_signs_stmt);
     sqlite3_finalize(load_map_stmt);
     sqlite3_finalize(load_signs_stmt);
     sqlite3_finalize(get_key_stmt);
@@ -212,6 +219,17 @@ void db_insert_sign(
     sqlite3_bind_int(insert_sign_stmt, 6, face);
     sqlite3_bind_text(insert_sign_stmt, 7, text, -1, NULL);
     sqlite3_step(insert_sign_stmt);
+}
+
+void db_delete_signs(int x, int y, int z) {
+    if (!db_enabled) {
+        return;
+    }
+    sqlite3_reset(delete_signs_stmt);
+    sqlite3_bind_int(delete_signs_stmt, 1, x);
+    sqlite3_bind_int(delete_signs_stmt, 2, y);
+    sqlite3_bind_int(delete_signs_stmt, 3, z);
+    sqlite3_step(delete_signs_stmt);
 }
 
 void db_load_map(Map *map, int p, int q) {

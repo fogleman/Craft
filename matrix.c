@@ -15,15 +15,12 @@ void mat_scale(float *matrix, float sx, float sy, float sz){
     matrix[15] = 1;
 }
 
-<<<<<<< HEAD
 void mat_translate_existing(float *matrix, float dx, float dy, float dz){
     matrix[12] += dx;
     matrix[13] += dy;
     matrix[14] += dz;
 }
 
-=======
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
 void mat_identity(float *matrix) {
     matrix[0] = 1;
     matrix[1] = 0;
@@ -213,13 +210,9 @@ void set_matrix_3d(
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-<<<<<<< HEAD
         float znear = 0.125;
         float zfar = RENDER_CHUNK_RADIUS * 32 + 64;
         mat_perspective(b, fov, aspect, znear, zfar);
-=======
-        mat_perspective(b, fov, aspect, 1 / 8.0, 1256.0);
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);

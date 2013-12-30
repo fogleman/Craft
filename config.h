@@ -10,7 +10,6 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
-<<<<<<< HEAD
 #define DAY_LENGTH 300
 
 // rendering options
@@ -25,10 +24,6 @@
 #define SHOW_PLAYER_NAMES 1
 
 #define MAX_NAME_LENGTH 32
-
-=======
-#define MAX_NAME_LENGTH 32
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
 
 // key bindings
 #define CRAFT_KEY_QUIT 'Q'

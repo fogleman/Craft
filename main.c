@@ -19,10 +19,6 @@
 #include "util.h"
 #include "world.h"
 #include "clouds.h"
-<<<<<<< HEAD
-=======
-#include "craftcommonstructs.h"
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
@@ -34,15 +30,11 @@
 #define DELETE_CHUNK_RADIUS 12
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
-<<<<<<< HEAD
-
-=======
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
 
-<<<<<<< HEAD
+
 typedef struct {
     Map map;
     int p;
@@ -84,11 +76,6 @@ typedef struct {
     GLuint extra2;
     GLuint extra3;
 } Attrib;
-=======
-
-
-
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
 
 
 static GLFWwindow *window;
@@ -1253,12 +1240,8 @@ int main(int argc, char **argv) {
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
-<<<<<<< HEAD
     Attrib sky_attrib = {0};
     CloudAttrib cloud_attrib = {0};
-=======
-    Attrib cloud_attrib = {0};
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
     GLuint program;
 
     program = load_program(
@@ -1281,23 +1264,15 @@ int main(int argc, char **argv) {
     cloud_attrib.program = program;
     cloud_attrib.position = glGetAttribLocation(program, "position");
     cloud_attrib.normal = glGetAttribLocation(program, "normal");
-<<<<<<< HEAD
+
     cloud_attrib.colour = glGetAttribLocation(program, "colour");
-=======
-    cloud_attrib.uv = glGetAttribLocation(program, "uv");
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
     cloud_attrib.matrix = glGetUniformLocation(program, "matrix");
     cloud_attrib.model = glGetUniformLocation(program, "model");
     cloud_attrib.sampler = glGetUniformLocation(program, "sampler");
     cloud_attrib.camera = glGetUniformLocation(program, "camera");
     cloud_attrib.timer = glGetUniformLocation(program, "timer");
-<<<<<<< HEAD
     cloud_attrib.cloudColour = glGetUniformLocation(program, "cloudColour");
     cloud_attrib.skysampler = glGetUniformLocation(program, "sky_sampler");
-=======
-    
-    
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
 
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
@@ -1345,15 +1320,10 @@ int main(int argc, char **argv) {
 
     double px = 0;
     double py = 0;
-
-<<<<<<< HEAD
     
     if (SHOW_CLOUDS) {
         create_clouds();
     }
-=======
-    create_clouds();
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
     
     int loaded = db_load_state(&x, &y, &z, &rx, &ry);
     ensure_chunks(x, y, z, 1);
@@ -1600,8 +1570,6 @@ int main(int argc, char **argv) {
             update_clouds(s->x,s->z,s->rx,s->ry);
         }
         
-        //update clouds
-        update_clouds(player);
 
         delete_chunks();
 
@@ -1609,7 +1577,7 @@ int main(int argc, char **argv) {
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
-<<<<<<< HEAD
+
 
         render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -1625,14 +1593,6 @@ int main(int argc, char **argv) {
             cloud_attrib.time = time_of_day();
             render_clouds(&cloud_attrib, width,height,s->x,s->y,s->z,s->rx,s->ry,fov,ortho);
         }
-
-        
-=======
-        render_chunks(&block_attrib, width, height, player);
-        render_clouds(&cloud_attrib, width, height, player,fov,ortho);
-        render_players(&block_attrib, width, height, player);
-        render_wireframe(&line_attrib, width, height, player);
->>>>>>> c0a5776df729aadb57fb2bc851d0c79b620e757e
 
         
         // RENDER HUD //

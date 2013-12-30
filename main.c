@@ -1016,6 +1016,9 @@ void _set_block(int p, int q, int x, int y, int z, int w) {
         }
     }
     db_insert_block(p, q, x, y, z, w);
+    if (w == 0 && chunked(x) == p && chunked(z) == q) {
+        unset_sign(x, y, z);
+    }
 }
 
 void set_block(int x, int y, int z, int w) {
@@ -1035,9 +1038,6 @@ void set_block(int x, int y, int z, int w) {
             }
             _set_block(p + dx, q + dz, x, y, z, -w);
         }
-    }
-    if (w == 0) {
-        unset_sign(x, y, z);
     }
     client_block(x, y, z, w);
 }

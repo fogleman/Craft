@@ -32,6 +32,7 @@ DISCONNECT = 'D'
 TALK = 'T'
 KEY = 'K'
 NICK = 'N'
+SIGN = 'S'
 
 def log(*args):
     now = datetime.datetime.utcnow()

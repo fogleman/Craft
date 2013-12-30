@@ -960,7 +960,35 @@ void ensure_chunks(float x, float y, float z, int force) {
     chunk_count = count;
 }
 
+void unset_sign(int x, int y, int z) {
+    int p = chunked(x);
+    int q = chunked(z);
+    Chunk *chunk = find_chunk(p, q);
+    if (chunk) {
+        SignList *signs = &chunk->signs;
+        sign_list_remove_all(signs, x, y, z);
+        chunk->dirty = 1;
+    }
+    db_delete_signs(x, y, z);
+}
+
+void unset_sign_face(int x, int y, int z, int face) {
+    int p = chunked(x);
+    int q = chunked(z);
+    Chunk *chunk = find_chunk(p, q);
+    if (chunk) {
+        SignList *signs = &chunk->signs;
+        sign_list_remove(signs, x, y, z, face);
+        chunk->dirty = 1;
+    }
+    db_delete_sign(x, y, z, face);
+}
+
 void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
+    if (strlen(text) == 0) {
+        unset_sign_face(x, y, z, face);
+        return;
+    }
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         SignList *signs = &chunk->signs;
@@ -975,18 +1003,6 @@ void set_sign(int x, int y, int z, int face, const char *text) {
     int q = chunked(z);
     _set_sign(p, q, x, y, z, face, text);
     client_sign(x, y, z, face, text);
-}
-
-void unset_sign(int x, int y, int z) {
-    int p = chunked(x);
-    int q = chunked(z);
-    Chunk *chunk = find_chunk(p, q);
-    if (chunk) {
-        SignList *signs = &chunk->signs;
-        sign_list_remove_all(signs, x, y, z);
-        chunk->dirty = 1;
-    }
-    db_delete_signs(x, y, z);
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w) {

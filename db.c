@@ -8,6 +8,7 @@ static int db_enabled = 0;
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
 static sqlite3_stmt *insert_sign_stmt;
+static sqlite3_stmt *delete_sign_stmt;
 static sqlite3_stmt *delete_signs_stmt;
 static sqlite3_stmt *load_map_stmt;
 static sqlite3_stmt *load_signs_stmt;
@@ -76,6 +77,8 @@ int db_init(char *path) {
     static const char *insert_sign_query =
         "insert or replace into sign (p, q, x, y, z, face, text) "
         "values (?, ?, ?, ?, ?, ?, ?);";
+    static const char *delete_sign_query =
+        "delete from sign where x = ? and y = ? and z = ? and face = ?;";
     static const char *delete_signs_query =
         "delete from sign where x = ? and y = ? and z = ?;";
     static const char *load_map_query =
@@ -97,6 +100,9 @@ int db_init(char *path) {
     if (rc) return rc;
     rc = sqlite3_prepare_v2(
         db, insert_sign_query, -1, &insert_sign_stmt, NULL);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(
+        db, delete_sign_query, -1, &delete_sign_stmt, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(
         db, delete_signs_query, -1, &delete_signs_stmt, NULL);
@@ -122,6 +128,7 @@ void db_close() {
     sqlite3_exec(db, "commit;", NULL, NULL, NULL);
     sqlite3_finalize(insert_block_stmt);
     sqlite3_finalize(insert_sign_stmt);
+    sqlite3_finalize(delete_sign_stmt);
     sqlite3_finalize(delete_signs_stmt);
     sqlite3_finalize(load_map_stmt);
     sqlite3_finalize(load_signs_stmt);
@@ -219,6 +226,18 @@ void db_insert_sign(
     sqlite3_bind_int(insert_sign_stmt, 6, face);
     sqlite3_bind_text(insert_sign_stmt, 7, text, -1, NULL);
     sqlite3_step(insert_sign_stmt);
+}
+
+void db_delete_sign(int x, int y, int z, int face) {
+    if (!db_enabled) {
+        return;
+    }
+    sqlite3_reset(delete_sign_stmt);
+    sqlite3_bind_int(delete_sign_stmt, 1, x);
+    sqlite3_bind_int(delete_sign_stmt, 2, y);
+    sqlite3_bind_int(delete_sign_stmt, 3, z);
+    sqlite3_bind_int(delete_sign_stmt, 4, face);
+    sqlite3_step(delete_sign_stmt);
 }
 
 void db_delete_signs(int x, int y, int z) {

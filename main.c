@@ -727,6 +727,14 @@ void gen_chunk_buffer(Chunk *chunk) {
         int x = e->x - ox;
         int y = e->y - oy;
         int z = e->z - oz;
+        // TODO: this should be unnecessary
+        if (x < 0 || y < 0 || z < 0) {
+            continue;
+        }
+        if (x >= CHUNK_SIZE + 2 || y >= 258 || z >= CHUNK_SIZE + 2) {
+            continue;
+        }
+        // END TODO
         blocks[x][y][z] = e->w;
     } END_MAP_FOR_EACH;
 

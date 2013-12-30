@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include "math.h"
 #include "matrix.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -98,7 +97,6 @@ void set_vertex(GLfloat *d,float x,float y,float z,float nx,float ny,float nz,fl
 
 
 void update_clouds(float player_x, float player_z, float rx, float rz) {
-
     int i;
     for(i=0; i<weather->cloud_count; i++){
         
@@ -126,8 +124,6 @@ void update_clouds(float player_x, float player_z, float rx, float rz) {
             c->x += ((weather->clouds)[i])->dx;
             c->y += ((weather->clouds)[i])->dy;
             c->z += ((weather->clouds)[i])->dz;
-            
-            
         }
     }
     
@@ -209,7 +205,6 @@ void add_cloud(float player_x, float player_z, float rx, float rz){
 }
 
 void render_cloud(Cloud *cloud, CloudAttrib *attrib){
-    
     float matrix[16];
     
     float matrix_prev[16];
@@ -217,6 +212,7 @@ void render_cloud(Cloud *cloud, CloudAttrib *attrib){
     glGetUniformfv(attrib->program, attrib->model, matrix);
     
     mat_identity(matrix);
+    
     mat_translate(matrix,cloud->x - (cloud->hmWidth/2), 80 + cloud->y, cloud->z - (cloud->hmDepth/2));
     
     mat_scale(matrix,cloud->sx,cloud->sy,cloud->sz);
@@ -260,10 +256,10 @@ void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, 
     
     glUniform1i(attrib->skysampler, 2);
     
-    
     glBindBuffer(GL_ARRAY_BUFFER, weather->cloud_vertex_buffer);
     glEnableVertexAttribArray(attrib->position);
     glEnableVertexAttribArray(attrib->normal);
+    
     glEnableVertexAttribArray(attrib->colour);
     glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
                           sizeof(GLfloat) * 9, 0);
@@ -271,10 +267,12 @@ void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, 
                           sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 3));
     glVertexAttribPointer(attrib->colour, 3, GL_FLOAT, GL_FALSE,
                           sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
-    
+
+  
     for(i=0; i<weather->cloud_count; i++){
         render_cloud((weather->clouds)[i], attrib);
     }
+    
 
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
@@ -289,6 +287,7 @@ void remove_cloud(Cloud *c){
 }
 
 void cleanup_clouds() {
+    
     int i;
     for(i=0; i<weather->cloud_count; i++){
         remove_cloud((weather->clouds)[i]);

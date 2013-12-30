@@ -31,10 +31,10 @@
 #define DELETE_CHUNK_RADIUS 12
 #define RECV_BUFFER_SIZE 1024
 #define TEXT_BUFFER_SIZE 256
-
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
+
 
 typedef struct {
     Map map;
@@ -1873,7 +1873,6 @@ int main(int argc, char **argv) {
 
     double px = 0;
     double py = 0;
-
     
     if (SHOW_CLOUDS) {
         create_clouds();
@@ -1971,7 +1970,6 @@ int main(int argc, char **argv) {
         }
 
         
-
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
         if (SHOW_CROSSHAIRS) {

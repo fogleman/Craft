@@ -22,9 +22,8 @@ typedef struct {
     float z_prevailing_winds;
     int cloud_count;
     Cloud **clouds;
-   
-    int cloud_vertex_buffer;
     int initial_generation;
+    int cloud_vertex_buffer;
 } Weather;
 
 typedef struct {
@@ -41,7 +40,6 @@ typedef struct {
     GLuint skysampler;
     float time;
 } CloudAttrib;
-
 
 Weather *weather;
 

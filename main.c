@@ -684,17 +684,45 @@ void occlusion(char neighbors[27], float result[6][4]) {
     }
 }
 
-void gen_sign_buffer(Chunk *chunk) {
+void _gen_sign_buffer(
+    GLfloat *data, float x, float y, float z, int face, const char *text)
+{
     static const int face_dx[4] = {0, 0, -1, 1};
     static const int face_dz[4] = {1, -1, 0, 0};
+    int length = MIN(strlen(text), 48);
+    int wrap = 8;
+    int rows = length / wrap + ((length % wrap) ? 1 : 0);
+    int dx = face_dx[face];
+    int dz = face_dz[face];
+    float n = 1.0 / (wrap + 1);
+    x -= n * dx * (MIN(length, wrap) - 1) / 2.0;
+    z -= n * dz * (MIN(length, wrap) - 1) / 2.0;
+    y += n * (rows - 1) * 0.75;
+    float sx = x;
+    float sz = z;
+    int index = 0;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < wrap && index < length; j++) {
+            make_character_3d(
+                data + index * 30, x, y, z, n / 2, n, face, text[index]);
+            index++;
+            x += n * dx;
+            z += n * dz;
+        }
+        x = sx;
+        z = sz;
+        y -= n * 1.5;
+    }
+}
 
+void gen_sign_buffer(Chunk *chunk) {
     SignList *signs = &chunk->signs;
 
     // first pass - count characters
     int faces = 0;
     for (int i = 0; i < signs->size; i++) {
-        Sign *sign = signs->data + i;
-        int length = MIN(strlen(sign->text), 48);
+        Sign *e = signs->data + i;
+        int length = MIN(strlen(e->text), 48);
         faces += length;
     }
 
@@ -702,39 +730,12 @@ void gen_sign_buffer(Chunk *chunk) {
     GLfloat *data = malloc_faces(5, faces);
     int offset = 0;
     for (int i = 0; i < signs->size; i++) {
-        Sign *sign = signs->data + i;
-        float x = sign->x;
-        float y = sign->y;
-        float z = sign->z;
-        int face = sign->face;
-        char *text = sign->text;
-        int length = MIN(strlen(text), 48);
-        int wrap = 8;
-        int rows = length / wrap + ((length % wrap) ? 1 : 0);
-        int dx = face_dx[face];
-        int dz = face_dz[face];
-        float n = 1.0 / (wrap + 1);
-        x -= n * dx * (MIN(length, wrap) - 1) / 2.0;
-        z -= n * dz * (MIN(length, wrap) - 1) / 2.0;
-        y += n * (rows - 1) * 0.75;
-        float sx = x;
-        float sz = z;
-        int index = 0;
-        for (int row = 0; row < rows; row++) {
-            for (int j = 0; j < wrap && index < length; j++) {
-                make_character_3d(
-                    data + offset + index * 30,
-                    x, y, z, n / 2, n, face, text[index]);
-                index++;
-                x += n * dx;
-                z += n * dz;
-            }
-            x = sx;
-            z = sz;
-            y -= n * 1.5;
-        }
+        Sign *e = signs->data + i;
+        int length = MIN(strlen(e->text), 48);
+        _gen_sign_buffer(data + offset, e->x, e->y, e->z, e->face, e->text);
         offset += length * 30;
     }
+
     del_buffer(chunk->sign_buffer);
     chunk->sign_buffer = gen_faces(5, faces, data);
     chunk->sign_faces = faces;

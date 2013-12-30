@@ -576,6 +576,31 @@ int hit_test(
     return result;
 }
 
+int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
+    State *s = &player->state;
+    int w = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, x, y, z);
+    if (is_obstacle(w)) {
+        int hx, hy, hz;
+        hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+        int dx = hx - *x;
+        int dy = hy - *y;
+        int dz = hz - *z;
+        if (dx == -1 && dy == 0 && dz == 0) {
+            *face = 0; return 1;
+        }
+        if (dx == 1 && dy == 0 && dz == 0) {
+            *face = 1; return 1;
+        }
+        if (dx == 0 && dy == 0 && dz == -1) {
+            *face = 2; return 1;
+        }
+        if (dx == 0 && dy == 0 && dz == 1) {
+            *face = 3; return 1;
+        }
+    }
+    return 0;
+}
+
 int collide(int height, float *x, float *y, float *z) {
     int result = 0;
     int p = chunked(*x);
@@ -1199,7 +1224,16 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ENTER) {
         if (typing) {
             typing = 0;
-            client_talk(typing_buffer);
+            if (typing_buffer[0] == '?') {
+                Player *player = players;
+                int x, y, z, face;
+                if (hit_test_face(player, &x, &y, &z, &face)) {
+                    set_sign(x, y, z, face, typing_buffer + 1);
+                }
+            }
+            else {
+                client_talk(typing_buffer);
+            }
         }
         else {
             if (mods & GLFW_MOD_SUPER) {
@@ -1257,6 +1291,11 @@ void on_char(GLFWwindow *window, unsigned int u) {
         if (u == CRAFT_KEY_COMMAND) {
             typing = 1;
             typing_buffer[0] = '/';
+            typing_buffer[1] = '\0';
+        }
+        if (u == CRAFT_KEY_SIGN) {
+            typing = 1;
+            typing_buffer[0] = '?';
             typing_buffer[1] = '\0';
         }
     }

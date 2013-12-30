@@ -39,6 +39,7 @@
 #define CRAFT_KEY_ORTHO 'F'
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
+#define CRAFT_KEY_SIGN '?'
 
 // keys for moving along axes
 #define CRAFT_KEY_XM 'Z'

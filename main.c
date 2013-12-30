@@ -13,6 +13,7 @@
 #include "config.h"
 #include "cube.h"
 #include "db.h"
+#include "item.h"
 #include "map.h"
 #include "matrix.h"
 #include "noise.h"
@@ -28,12 +29,6 @@
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
-
-const static int items[] = {
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    17, 18, 19, 20, 21, 22, 23
-    // 24, 25, 26, 27, 28, 29
-};
 
 typedef struct {
     Map map;
@@ -92,30 +87,11 @@ static int observe1 = 0;
 static int observe2 = 0;
 static int flying = 0;
 static int item_index = 0;
-static int item_count = sizeof(items) / sizeof(int);
 static int scale = 1;
 static int ortho = 0;
 static float fov = 65;
 static int typing = 0;
 static char typing_buffer[MAX_TEXT_LENGTH] = {0};
-
-int is_plant(int w) {
-    return w >= 17 && w <= 23;
-}
-
-int is_obstacle(int w) {
-    w = ABS(w);
-    return w > 0 && w != 16 && !is_plant(w);
-}
-
-int is_transparent(int w) {
-    w = ABS(w);
-    return w == 0 || w == 10 || w == 15 || is_plant(w);
-}
-
-int is_destructable(int w) {
-    return w > 0 && w != 16;
-}
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);

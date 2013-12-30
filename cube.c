@@ -1,55 +1,8 @@
 #include <math.h>
 #include "cube.h"
+#include "item.h"
 #include "matrix.h"
 #include "util.h"
-
-const static int blocks[256][6] = {
-    // w => (left, right, top, bottom, front, back) tiles
-    {0, 0, 0, 0, 0, 0}, // 0 - empty
-    {16, 16, 32, 0, 16, 16}, // 1 - grass
-    {1, 1, 1, 1, 1, 1}, // 2 - sand
-    {2, 2, 2, 2, 2, 2}, // 3 - stone
-    {3, 3, 3, 3, 3, 3}, // 4 - brick
-    {20, 20, 36, 4, 20, 20}, // 5 - wood
-    {5, 5, 5, 5, 5, 5}, // 6 - cement
-    {6, 6, 6, 6, 6, 6}, // 7 - dirt
-    {7, 7, 7, 7, 7, 7}, // 8 - plank
-    {24, 24, 40, 8, 24, 24}, // 9 - snow
-    {9, 9, 9, 9, 9, 9}, // 10 - glass
-    {10, 10, 10, 10, 10, 10}, // 11 - cobble
-    {11, 11, 11, 11, 11, 11}, // 12 - light stone
-    {12, 12, 12, 12, 12, 12}, // 13 - dark stone
-    {13, 13, 13, 13, 13, 13}, // 14 - chest
-    {14, 14, 14, 14, 14, 14}, // 15 - tree leaves
-    {15, 15, 15, 15, 15, 15}, // 16 - cloud
-    {0, 0, 0, 0, 0, 0}, // 17
-    {0, 0, 0, 0, 0, 0}, // 18
-    {0, 0, 0, 0, 0, 0}, // 19
-    {0, 0, 0, 0, 0, 0}, // 20
-    {0, 0, 0, 0, 0, 0}, // 21
-    {0, 0, 0, 0, 0, 0}, // 22
-    {0, 0, 0, 0, 0, 0}, // 23
-    {17, 17, 17, 17, 17, 17}, // 24 - red wool
-    {18, 18, 18, 18, 18, 18}, // 25 - green wool
-    {19, 19, 19, 19, 19, 19}, // 26 - blue wool
-    {33, 33, 33, 33, 33, 33}, // 27 - orange wool
-    {34, 34, 34, 34, 34, 34}, // 28 - purple wool
-    {35, 35, 35, 35, 35, 35}, // 29 - beige wool
-    {0, 0, 0, 0, 0, 0}, // 30
-    {0, 0, 0, 0, 0, 0}, // 31
-};
-
-const static int plants[256] = {
-    // w => tile
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0 - 16
-    48, // 17 - tall grass
-    49, // 18 - yellow flower
-    50, // 19 - red flower
-    51, // 20 - purple flower
-    52, // 21 - sun flower
-    53, // 22 - white flower
-    54, // 23 - blue flower
-};
 
 void make_cube_faces(
     float *data, float ao[6][4],

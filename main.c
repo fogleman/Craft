@@ -217,17 +217,18 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
-GLuint gen_sign_buffer(
-    float x, float y, float z, float n,
-    int face, int justify, char *text)
-{
+GLuint gen_sign_buffer(float x, float y, float z, int face, char *text) {
     int length = strlen(text);
+    int wrap = 8;
+    int rows = length / wrap + ((length % wrap) ? 1 : 0);
     int face_dx[4] = {0, 0, -1, 1};
     int face_dz[4] = {1, -1, 0, 0};
     int dx = face_dx[face];
     int dz = face_dz[face];
-    x -= n * dx * justify * (length - 1) / 2;
-    z -= n * dz * justify * (length - 1) / 2;
+    float n = 0.125;
+    x -= n * dx * (MIN(length, wrap) - 1) / 2.0;
+    z -= n * dz * (MIN(length, wrap) - 1) / 2.0;
+    y += n * (rows - 1);
     GLfloat *data = malloc_faces(5, length);
     for (int i = 0; i < length; i++) {
         make_character_3d(data + i * 30, x, y, z, n / 2, n, face, text[i]);
@@ -1072,8 +1073,8 @@ void render_text(
 }
 
 void render_sign(
-    Attrib *attrib, Player *player, int justify,
-    float x, float y, float z, float n, char *text)
+    Attrib *attrib, Player *player,
+    float x, float y, float z, int face, char *text)
 {
     State *s = &player->state;
     float matrix[16];
@@ -1083,11 +1084,9 @@ void render_sign(
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 3);
     glUniform1i(attrib->extra1, 0);
-    for (int i = 0; i < 4; i++) {
-        GLuint buffer = gen_sign_buffer(x, y, z, n, i, justify, text);
-        draw_sign(attrib, buffer, strlen(text));
-        del_buffer(buffer);
-    }
+    GLuint buffer = gen_sign_buffer(x, y, z, face, text);
+    draw_sign(attrib, buffer, strlen(text));
+    del_buffer(buffer);
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -1644,8 +1643,8 @@ int main(int argc, char **argv) {
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);
         }
-        render_sign(&text_attrib, player, CENTER, 2348, 13, 4162, 0.125, "Hello");
-        render_sign(&text_attrib, player, CENTER, 2349, 13, 4162, 0.125, "World!");
+        render_sign(&text_attrib, player, 2348, 13, 4162, 3, "Hi!");
+        render_sign(&text_attrib, player, 2349, 13, 4162, 3, "* World! *");
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);

@@ -51,6 +51,7 @@ void sign_list_remove(SignList *list, int x, int y, int z, int face) {
         if (e->x == x && e->y == y && e->z == z && e->face == face) {
             Sign *other = list->data + (--list->size);
             memcpy(e, other, sizeof(Sign));
+            i--;
         }
     }
 }
@@ -61,6 +62,7 @@ void sign_list_remove_all(SignList *list, int x, int y, int z) {
         if (e->x == x && e->y == y && e->z == z) {
             Sign *other = list->data + (--list->size);
             memcpy(e, other, sizeof(Sign));
+            i--;
         }
     }
 }

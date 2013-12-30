@@ -33,12 +33,14 @@
 
 typedef struct {
     Map map;
-    SignList sign_list;
+    SignList signs;
     int p;
     int q;
     int faces;
+    int sign_faces;
     int dirty;
     GLuint buffer;
+    GLuint signs_buffer;
 } Chunk;
 
 typedef struct {
@@ -219,37 +221,6 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
-GLuint gen_sign_buffer(float x, float y, float z, int face, char *text) {
-    static const int face_dx[4] = {0, 0, -1, 1};
-    static const int face_dz[4] = {1, -1, 0, 0};
-    int length = MIN(strlen(text), 48);
-    int wrap = 8;
-    int rows = length / wrap + ((length % wrap) ? 1 : 0);
-    int dx = face_dx[face];
-    int dz = face_dz[face];
-    float n = 1.0 / (wrap + 1);
-    x -= n * dx * (MIN(length, wrap) - 1) / 2.0;
-    z -= n * dz * (MIN(length, wrap) - 1) / 2.0;
-    y += n * (rows - 1) * 0.75;
-    float sx = x;
-    float sz = z;
-    GLfloat *data = malloc_faces(5, length);
-    int index = 0;
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < wrap && index < length; j++) {
-            make_character_3d(
-                data + index * 30, x, y, z, n / 2, n, face, text[index]);
-            index++;
-            x += n * dx;
-            z += n * dz;
-        }
-        x = sx;
-        z = sz;
-        y -= n * 1.5;
-    }
-    return gen_faces(5, length, data);
-}
-
 void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -339,10 +310,10 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
     glDisable(GL_BLEND);
 }
 
-void draw_sign(Attrib *attrib, GLuint buffer, int length) {
+void draw_signs(Attrib *attrib, Chunk *chunk) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_3d_text(attrib, buffer, length * 6);
+    draw_triangles_3d_text(attrib, chunk->signs_buffer, chunk->sign_faces * 6);
     glDisable(GL_BLEND);
 }
 
@@ -713,6 +684,62 @@ void occlusion(char neighbors[27], float result[6][4]) {
     }
 }
 
+void gen_signs_buffer(Chunk *chunk) {
+    static const int face_dx[4] = {0, 0, -1, 1};
+    static const int face_dz[4] = {1, -1, 0, 0};
+
+    SignList *signs = &chunk->signs;
+
+    // first pass - count characters
+    int faces = 0;
+    for (int i = 0; i < signs->size; i++) {
+        Sign *sign = signs->data + i;
+        int length = MIN(strlen(sign->text), 48);
+        faces += length;
+    }
+
+    // second pass - generate geometry
+    GLfloat *data = malloc_faces(5, faces);
+    int offset = 0;
+    for (int i = 0; i < signs->size; i++) {
+        Sign *sign = signs->data + i;
+        float x = sign->x;
+        float y = sign->y;
+        float z = sign->z;
+        int face = sign->face;
+        char *text = sign->text;
+        int length = MIN(strlen(text), 48);
+        int wrap = 8;
+        int rows = length / wrap + ((length % wrap) ? 1 : 0);
+        int dx = face_dx[face];
+        int dz = face_dz[face];
+        float n = 1.0 / (wrap + 1);
+        x -= n * dx * (MIN(length, wrap) - 1) / 2.0;
+        z -= n * dz * (MIN(length, wrap) - 1) / 2.0;
+        y += n * (rows - 1) * 0.75;
+        float sx = x;
+        float sz = z;
+        int index = 0;
+        for (int row = 0; row < rows; row++) {
+            for (int j = 0; j < wrap && index < length; j++) {
+                make_character_3d(
+                    data + offset + index * 30,
+                    x, y, z, n / 2, n, face, text[index]);
+                index++;
+                x += n * dx;
+                z += n * dz;
+            }
+            x = sx;
+            z = sz;
+            y -= n * 1.5;
+        }
+        offset += length * 30;
+    }
+    del_buffer(chunk->signs_buffer);
+    chunk->signs_buffer = gen_faces(5, faces, data);
+    chunk->sign_faces = faces;
+}
+
 void gen_chunk_buffer(Chunk *chunk) {
     static char blocks[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2];
     static char neighbors[27];
@@ -814,6 +841,9 @@ void gen_chunk_buffer(Chunk *chunk) {
     del_buffer(chunk->buffer);
     chunk->buffer = gen_faces(9, faces, data);
     chunk->faces = faces;
+
+    gen_signs_buffer(chunk);
+
     chunk->dirty = 0;
 }
 
@@ -821,15 +851,17 @@ void create_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
+    chunk->sign_faces = 0;
     chunk->dirty = 1;
     chunk->buffer = 0;
+    chunk->signs_buffer = 0;
     Map *map = &chunk->map;
-    SignList *sign_list = &chunk->sign_list;
+    SignList *signs = &chunk->signs;
     map_alloc(map);
-    sign_list_alloc(sign_list, 16);
+    sign_list_alloc(signs, 16);
     create_world(map, p, q);
     db_load_map(map, p, q);
-    db_load_signs(sign_list, p, q);
+    db_load_signs(signs, p, q);
     gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
@@ -855,8 +887,9 @@ void delete_chunks() {
         }
         if (delete) {
             map_free(&chunk->map);
-            sign_list_free(&chunk->sign_list);
+            sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
+            del_buffer(chunk->signs_buffer);
             Chunk *other = chunks + (--count);
             memcpy(chunk, other, sizeof(Chunk));
         }
@@ -997,6 +1030,31 @@ int render_chunks(Attrib *attrib, Player *player) {
     return result;
 }
 
+void render_signs(Attrib *attrib, Player *player) {
+    State *s = &player->state;
+    int p = chunked(s->x);
+    int q = chunked(s->z);
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    float planes[6][4];
+    frustum_planes(planes, matrix);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 3);
+    glUniform1i(attrib->extra1, 0);
+    for (int i = 0; i < chunk_count; i++) {
+        Chunk *chunk = chunks + i;
+        if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+            continue;
+        }
+        if (!chunk_visible(chunk, planes)) {
+            continue;
+        }
+        draw_signs(attrib, chunk);
+    }
+}
+
 void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -1093,23 +1151,6 @@ void render_text(
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
     draw_text(attrib, buffer, length);
-    del_buffer(buffer);
-}
-
-void render_sign(
-    Attrib *attrib, Player *player,
-    float x, float y, float z, int face, char *text)
-{
-    State *s = &player->state;
-    float matrix[16];
-    set_matrix_3d(
-        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 3);
-    glUniform1i(attrib->extra1, 0);
-    GLuint buffer = gen_sign_buffer(x, y, z, face, text);
-    draw_sign(attrib, buffer, strlen(text));
     del_buffer(buffer);
 }
 
@@ -1663,16 +1704,11 @@ int main(int argc, char **argv) {
         render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
         int face_count = render_chunks(&block_attrib, player);
+        render_signs(&text_attrib, player);
         render_players(&block_attrib, player);
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);
         }
-        render_sign(&text_attrib, player, 2348, 13, 4162, 3, "Craft");
-        render_sign(&text_attrib, player, 2349, 13, 4162, 3, "   By   Michael Fogleman");
-        render_sign(&text_attrib, player, 2350, 13, 4162, 0, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
-        render_sign(&text_attrib, player, 2350, 13, 4162, 1, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
-        render_sign(&text_attrib, player, 2350, 13, 4162, 2, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
-        render_sign(&text_attrib, player, 2350, 13, 4162, 3, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
 
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -1755,6 +1791,7 @@ int main(int argc, char **argv) {
             render_sky(&sky_attrib, player, sky_buffer);
             glClear(GL_DEPTH_BUFFER_BIT);
             render_chunks(&block_attrib, player);
+            render_signs(&text_attrib, player);
             render_players(&block_attrib, player);
             glClear(GL_DEPTH_BUFFER_BIT);
             if (SHOW_PLAYER_NAMES) {

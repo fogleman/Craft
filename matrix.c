@@ -193,7 +193,7 @@ void set_matrix_3d(
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
     if (ortho) {
-        int size = 32;
+        int size = ortho;
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {

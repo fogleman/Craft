@@ -68,6 +68,7 @@ typedef struct {
     GLuint extra1;
     GLuint extra2;
     GLuint extra3;
+    GLuint extra4;
 } Attrib;
 
 static GLFWwindow *window;
@@ -926,6 +927,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, light);
     glUniform1f(attrib->extra3, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
+    glUniform1i(attrib->extra4, ortho);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
@@ -1285,6 +1287,7 @@ int main(int argc, char **argv) {
     block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
     block_attrib.extra2 = glGetUniformLocation(program, "daylight");
     block_attrib.extra3 = glGetUniformLocation(program, "fog_distance");
+    block_attrib.extra4 = glGetUniformLocation(program, "ortho");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
 
@@ -1385,7 +1388,7 @@ int main(int argc, char **argv) {
         int sx = 0;
         if (!typing) {
             float m = dt * 1.0;
-            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO);
+            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO) ? 64 : 0;
             fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
             if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
             if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;

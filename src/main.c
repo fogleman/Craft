@@ -1813,14 +1813,14 @@ int main(int argc, char **argv) {
     cloud_attrib.program = program;
     cloud_attrib.position = glGetAttribLocation(program, "position");
     cloud_attrib.normal = glGetAttribLocation(program, "normal");
-    cloud_attrib.uv = glGetAttribLocation(program, "uv");
+    cloud_attrib.colour = glGetAttribLocation(program, "colour");
     cloud_attrib.matrix = glGetUniformLocation(program, "matrix");
     cloud_attrib.model = glGetUniformLocation(program, "model");
     cloud_attrib.sampler = glGetUniformLocation(program, "sampler");
     cloud_attrib.camera = glGetUniformLocation(program, "camera");
     cloud_attrib.timer = glGetUniformLocation(program, "timer");
     cloud_attrib.cloudColour = glGetUniformLocation(program, "cloudColour");
-    
+    cloud_attrib.skysampler = glGetUniformLocation(program, "sky_sampler");
 
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
@@ -1874,7 +1874,10 @@ int main(int argc, char **argv) {
     double px = 0;
     double py = 0;
 
-    create_clouds();
+    
+    if (SHOW_CLOUDS) {
+        create_clouds();
+    }
     
     if (!loaded) {
         s->y = highest_block(s->x, s->z) + 2;
@@ -1936,8 +1939,12 @@ int main(int argc, char **argv) {
 
         Player *player = players + observe1;
         State *s = &(player->state);
-        //update clouds
-        update_clouds(s->x,s->z);
+        
+        
+        if (SHOW_CLOUDS) {
+            //update clouds
+            update_clouds(s->x,s->z,s->rx,s->ry);
+        }
 
         delete_chunks();
 
@@ -1958,8 +1965,11 @@ int main(int argc, char **argv) {
         }
 
         
-        
-        render_clouds(&cloud_attrib, width,height,s->x,s->y,s->z,s->rx,s->ry,fov,ortho);
+        if (SHOW_CLOUDS) {
+            cloud_attrib.time = time_of_day();
+            render_clouds(&cloud_attrib, width,height,s->x,s->y,s->z,s->rx,s->ry,fov,ortho);
+        }
+
         
 
         // RENDER HUD //

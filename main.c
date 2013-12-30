@@ -40,7 +40,7 @@ typedef struct {
     int sign_faces;
     int dirty;
     GLuint buffer;
-    GLuint signs_buffer;
+    GLuint sign_buffer;
 } Chunk;
 
 typedef struct {
@@ -313,7 +313,7 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
 void draw_signs(Attrib *attrib, Chunk *chunk) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_3d_text(attrib, chunk->signs_buffer, chunk->sign_faces * 6);
+    draw_triangles_3d_text(attrib, chunk->sign_buffer, chunk->sign_faces * 6);
     glDisable(GL_BLEND);
 }
 
@@ -684,7 +684,7 @@ void occlusion(char neighbors[27], float result[6][4]) {
     }
 }
 
-void gen_signs_buffer(Chunk *chunk) {
+void gen_sign_buffer(Chunk *chunk) {
     static const int face_dx[4] = {0, 0, -1, 1};
     static const int face_dz[4] = {1, -1, 0, 0};
 
@@ -735,8 +735,8 @@ void gen_signs_buffer(Chunk *chunk) {
         }
         offset += length * 30;
     }
-    del_buffer(chunk->signs_buffer);
-    chunk->signs_buffer = gen_faces(5, faces, data);
+    del_buffer(chunk->sign_buffer);
+    chunk->sign_buffer = gen_faces(5, faces, data);
     chunk->sign_faces = faces;
 }
 
@@ -842,7 +842,7 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->buffer = gen_faces(9, faces, data);
     chunk->faces = faces;
 
-    gen_signs_buffer(chunk);
+    gen_sign_buffer(chunk);
 
     chunk->dirty = 0;
 }
@@ -854,7 +854,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     chunk->sign_faces = 0;
     chunk->dirty = 1;
     chunk->buffer = 0;
-    chunk->signs_buffer = 0;
+    chunk->sign_buffer = 0;
     Map *map = &chunk->map;
     SignList *signs = &chunk->signs;
     map_alloc(map);
@@ -889,7 +889,7 @@ void delete_chunks() {
             map_free(&chunk->map);
             sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
-            del_buffer(chunk->signs_buffer);
+            del_buffer(chunk->sign_buffer);
             Chunk *other = chunks + (--count);
             memcpy(chunk, other, sizeof(Chunk));
         }

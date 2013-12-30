@@ -8,6 +8,7 @@ void mat_rotate(float *matrix, float x, float y, float z, float angle);
 void mat_vec_multiply(float *vector, float *a, float *b);
 void mat_multiply(float *matrix, float *a, float *b);
 void mat_apply(float *data, float *matrix, int count, int offset, int stride);
+void frustum_planes(float planes[6][4], float *matrix);
 void mat_frustum(
     float *matrix, float left, float right, float bottom,
     float top, float znear, float zfar);

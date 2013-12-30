@@ -429,36 +429,45 @@ int chunk_distance(Chunk *chunk, int p, int q) {
     return MAX(dp, dq);
 }
 
-int chunk_visible(Chunk *chunk, float *matrix) {
+int chunk_visible(Chunk *chunk, float planes[6][4]) {
+    if (ortho) {
+        return 1;
+    }
     int x = chunk->p * CHUNK_SIZE - 1;
     int z = chunk->q * CHUNK_SIZE - 1;
     int d = CHUNK_SIZE + 1;
-    float points[4][2] = {
-        {x + 0, z + 0},
-        {x + d, z + 0},
-        {x + 0, z + d},
-        {x + d, z + d}
+    float points[8][3] = {
+        {x + 0, 0, z + 0},
+        {x + d, 0, z + 0},
+        {x + 0, 0, z + d},
+        {x + d, 0, z + d},
+        {x + 0, 256, z + 0},
+        {x + d, 256, z + 0},
+        {x + 0, 256, z + d},
+        {x + d, 256, z + d}
     };
-    float x1, x2, y1, y2, z1, z2;
-    x1 = y1 = z1 = 2;
-    x2 = y2 = z2 = -2;
-    for (int y = 0; y <= 256; y += 32) {
-        for (int i = 0; i < 4; i++) {
-            float vec[4] = {points[i][0], y, points[i][1], 1};
-            mat_vec_multiply(vec, matrix, vec);
-            float nx = vec[0] / vec[3];
-            float ny = vec[1] / vec[3];
-            float nz = vec[2] / vec[3];
-            x1 = MIN(x1, nx); x2 = MAX(x2, nx);
-            y1 = MIN(y1, ny); y2 = MAX(y2, ny);
-            z1 = MIN(z1, nz); z2 = MAX(z2, nz);
+    for (int i = 0; i < 6; i++) {
+        int in = 0;
+        int out = 0;
+        for (int j = 0; j < 8; j++) {
+            float d =
+                planes[i][0] * points[j][0] +
+                planes[i][1] * points[j][1] +
+                planes[i][2] * points[j][2] +
+                planes[i][3];
+            if (d < 0) {
+                out++;
+            }
+            else {
+                in++;
+            }
+            if (in && out) {
+                break;
+            }
         }
-    }
-    if (x2 < -1 || y2 < -1 || z2 < -1) {
-        return 0;
-    }
-    if (x1 > 1 || y1 > 1 || z1 > 1) {
-        return 0;
+        if (in == 0) {
+            return 0;
+        }
     }
     return 1;
 }
@@ -899,6 +908,8 @@ int render_chunks(Attrib *attrib, Player *player) {
     float matrix[16];
     set_matrix_3d(
         matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    float planes[6][4];
+    frustum_planes(planes, matrix);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -913,7 +924,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
             continue;
         }
-        if (!chunk_visible(chunk, matrix)) {
+        if (!chunk_visible(chunk, planes)) {
             continue;
         }
         draw_chunk(attrib, chunk);

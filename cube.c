@@ -415,24 +415,23 @@ void make_character(
     int w = c - 32;
     float du = (w % 16) * a;
     float dv = 1 - (w / 16) * b - b;
-    float p = 0;
     *(d++) = x - n; *(d++) = y - m;
-    *(d++) = du + 0; *(d++) = dv + p;
+    *(d++) = du + 0; *(d++) = dv;
     *(d++) = x + n; *(d++) = y - m;
-    *(d++) = du + a; *(d++) = dv + p;
+    *(d++) = du + a; *(d++) = dv;
     *(d++) = x + n; *(d++) = y + m;
-    *(d++) = du + a; *(d++) = dv + b - p;
+    *(d++) = du + a; *(d++) = dv + b;
     *(d++) = x - n; *(d++) = y - m;
-    *(d++) = du + 0; *(d++) = dv + p;
+    *(d++) = du + 0; *(d++) = dv;
     *(d++) = x + n; *(d++) = y + m;
-    *(d++) = du + a; *(d++) = dv + b - p;
+    *(d++) = du + a; *(d++) = dv + b;
     *(d++) = x - n; *(d++) = y + m;
-    *(d++) = du + 0; *(d++) = dv + b - p;
+    *(d++) = du + 0; *(d++) = dv + b;
 }
 
 void make_character_3d(
     float *data,
-    float x, float y, float z, float n, float m, char c)
+    float x, float y, float z, float n, float m, int face, char c)
 {
     float *d = data;
     float s = 0.0625;
@@ -441,19 +440,18 @@ void make_character_3d(
     int w = c - 32;
     float du = (w % 16) * a;
     float dv = 1 - (w / 16) * b - b;
-    float p = 0;
     *(d++) = x - n; *(d++) = y - m; *(d++) = z;
-    *(d++) = du + 0; *(d++) = dv + p;
+    *(d++) = du + 0; *(d++) = dv;
     *(d++) = x + n; *(d++) = y - m; *(d++) = z;
-    *(d++) = du + a; *(d++) = dv + p;
+    *(d++) = du + a; *(d++) = dv;
     *(d++) = x + n; *(d++) = y + m; *(d++) = z;
-    *(d++) = du + a; *(d++) = dv + b - p;
+    *(d++) = du + a; *(d++) = dv + b;
     *(d++) = x - n; *(d++) = y - m; *(d++) = z;
-    *(d++) = du + 0; *(d++) = dv + p;
+    *(d++) = du + 0; *(d++) = dv;
     *(d++) = x + n; *(d++) = y + m; *(d++) = z;
-    *(d++) = du + a; *(d++) = dv + b - p;
+    *(d++) = du + a; *(d++) = dv + b;
     *(d++) = x - n; *(d++) = y + m; *(d++) = z;
-    *(d++) = du + 0; *(d++) = dv + b - p;
+    *(d++) = du + 0; *(d++) = dv + b;
 }
 
 int _make_sphere(

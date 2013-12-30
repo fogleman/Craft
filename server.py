@@ -111,6 +111,7 @@ class Model(object):
             BLOCK: self.on_block,
             POSITION: self.on_position,
             TALK: self.on_talk,
+            SIGN: self.on_sign,
         }
         self.patterns = [
             (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
@@ -161,6 +162,18 @@ class Model(object):
             'create index if not exists block_xyz_idx on block (x, y, z);',
             'create unique index if not exists block_pqxyz_idx on '
             '    block (p, q, x, y, z);',
+            'create table if not exists sign ('
+            '    p int not null,'
+            '    q int not null,'
+            '    x int not null,'
+            '    y int not null,'
+            '    z int not null,'
+            '    face int not null,'
+            '    text text not null'
+            ');',
+            'create index if not exists sign_pq_idx on sign (p, q);',
+            'create unique index if not exists sign_xyzface_idx on '
+            '    sign (x, y, z, face);',
         ]
         for query in queries:
             self.execute(query)
@@ -209,6 +222,13 @@ class Model(object):
             max_rowid = max(max_rowid, rowid)
         if max_rowid:
             client.send(KEY, p, q, max_rowid)
+        query = (
+            'select x, y, z, face, text from sign where '
+            'p = :p and q = :q;'
+        )
+        rows = self.execute(query, dict(p=p, q=q))
+        for x, y, z, face, text in rows:
+            client.send(SIGN, p, q, x, y, z, face, text)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         if y <= 0 or y > 255:
@@ -233,6 +253,21 @@ class Model(object):
                 np, nq = p + dx, q + dz
                 self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
                 self.send_block(client, np, nq, x, y, z, -w)
+    def on_sign(self, client, x, y, z, face, text):
+        x, y, z, face = map(int, (x, y, z, face))
+        if y <= 0 or y > 255:
+            return
+        if face < 0 or face > 3:
+            return
+        if len(text) > 48:
+            return
+        p, q = chunked(x), chunked(z)
+        query = (
+            'insert or replace into sign (p, q, x, y, z, face, text) '
+            'values (:p, :q, :x, :y, :z, :face, :text);'
+        )
+        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, face=face, text=text))
+        self.send_sign(client, p, q, x, y, z, face, text)
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
@@ -314,6 +349,11 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
+    def send_sign(self, client, p, q, x, y, z, face, text):
+        for other in self.clients:
+            if other == client:
+                continue
+            other.send(SIGN, p, q, x, y, z, face, text)
     def send_talk(self, text):
         log(text)
         for client in self.clients:

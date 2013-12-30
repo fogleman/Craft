@@ -1742,7 +1742,7 @@ int main(int argc, char **argv) {
                     messages[message_index], MAX_TEXT_LENGTH, "%s", text);
                 message_index = (message_index + 1) % MAX_MESSAGES;
             }
-            char format[32];
+            char format[64];
             snprintf(
                 format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
             char name[MAX_NAME_LENGTH];
@@ -1751,6 +1751,16 @@ int main(int argc, char **argv) {
                 if (player) {
                     strncpy(player->name, name, MAX_NAME_LENGTH);
                 }
+            }
+            snprintf(
+                format, sizeof(format),
+                "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%ds", MAX_SIGN_LENGTH - 1);
+            int face;
+            char text[MAX_SIGN_LENGTH];
+            if (sscanf(buffer, format,
+                &bp, &bq, &bx, &by, &bz, &face, text) == 7)
+            {
+                _set_sign(bp, bq, bx, by, bz, face, text);
             }
         }
 

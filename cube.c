@@ -3,6 +3,54 @@
 #include "matrix.h"
 #include "util.h"
 
+const static int blocks[256][6] = {
+    // w => (left, right, top, bottom, front, back) tiles
+    {0, 0, 0, 0, 0, 0}, // 0 - empty
+    {16, 16, 32, 0, 16, 16}, // 1 - grass
+    {1, 1, 1, 1, 1, 1}, // 2 - sand
+    {2, 2, 2, 2, 2, 2}, // 3 - stone
+    {3, 3, 3, 3, 3, 3}, // 4 - brick
+    {20, 20, 36, 4, 20, 20}, // 5 - wood
+    {5, 5, 5, 5, 5, 5}, // 6 - cement
+    {6, 6, 6, 6, 6, 6}, // 7 - dirt
+    {7, 7, 7, 7, 7, 7}, // 8 - plank
+    {24, 24, 40, 8, 24, 24}, // 9 - snow
+    {9, 9, 9, 9, 9, 9}, // 10 - glass
+    {10, 10, 10, 10, 10, 10}, // 11 - cobble
+    {11, 11, 11, 11, 11, 11}, // 12 - light stone
+    {12, 12, 12, 12, 12, 12}, // 13 - dark stone
+    {13, 13, 13, 13, 13, 13}, // 14 - chest
+    {14, 14, 14, 14, 14, 14}, // 15 - tree leaves
+    {15, 15, 15, 15, 15, 15}, // 16 - cloud
+    {0, 0, 0, 0, 0, 0}, // 17
+    {0, 0, 0, 0, 0, 0}, // 18
+    {0, 0, 0, 0, 0, 0}, // 19
+    {0, 0, 0, 0, 0, 0}, // 20
+    {0, 0, 0, 0, 0, 0}, // 21
+    {0, 0, 0, 0, 0, 0}, // 22
+    {0, 0, 0, 0, 0, 0}, // 23
+    {0, 0, 0, 0, 0, 0}, // 24
+    {0, 0, 0, 0, 0, 0}, // 25
+    {0, 0, 0, 0, 0, 0}, // 26
+    {0, 0, 0, 0, 0, 0}, // 27
+    {0, 0, 0, 0, 0, 0}, // 28
+    {0, 0, 0, 0, 0, 0}, // 29
+    {0, 0, 0, 0, 0, 0}, // 30
+    {0, 0, 0, 0, 0, 0}, // 31
+};
+
+const static int plants[256] = {
+    // w => tile
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0 - 16
+    48, // 17 - tall grass
+    49, // 18 - yellow flower
+    50, // 19 - red flower
+    51, // 20 - purple flower
+    52, // 21 - sun flower
+    53, // 22 - white flower
+    54, // 23 - blue flower
+};
+
 void make_cube_faces(
     float *data, float ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
@@ -190,11 +238,12 @@ void make_cube(
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
-    int wleft, wright, wtop, wbottom, wfront, wback;
-    w--;
-    wbottom = w;
-    wleft = wright = wfront = wback = w + 16;
-    wtop = w + 32;
+    int wleft = blocks[w][0];
+    int wright = blocks[w][1];
+    int wtop = blocks[w][2];
+    int wbottom = blocks[w][3];
+    int wfront = blocks[w][4];
+    int wback = blocks[w][5];
     make_cube_faces(
         data, ao,
         left, right, top, bottom, front, back,
@@ -211,9 +260,9 @@ void make_plant(
     float a = 0;
     float b = s;
     float du, dv;
-    w--;
+    w = plants[w];
     du = (w % 16) * s;
-    dv = (w / 16 * 3) * s;
+    dv = (w / 16) * s;
     float x, y, z;
     x = y = z = 0;
     // left

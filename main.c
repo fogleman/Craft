@@ -1772,9 +1772,9 @@ int main(int argc, char **argv) {
                 format, sizeof(format),
                 "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%ds", MAX_SIGN_LENGTH - 1);
             int face;
-            char text[MAX_SIGN_LENGTH];
+            char text[MAX_SIGN_LENGTH] = {0};
             if (sscanf(buffer, format,
-                &bp, &bq, &bx, &by, &bz, &face, text) == 7)
+                &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
             {
                 _set_sign(bp, bq, bx, by, bz, face, text);
             }

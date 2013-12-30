@@ -12,12 +12,17 @@ import traceback
 
 HOST = '0.0.0.0'
 PORT = 4080
-CHUNK_SIZE = 32
-BUFFER_SIZE = 1024
-SPAWN_POINT = (0, 0, 0, 0, 0)
 DB_PATH = 'craft.db'
 LOG_PATH = 'log.txt'
+
+CHUNK_SIZE = 32
+BUFFER_SIZE = 1024
 COMMIT_INTERVAL = 5
+
+SPAWN_POINT = (0, 0, 0, 0, 0)
+ALLOWED_ITEMS = set([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    17, 18, 19, 20, 21, 22, 23])
 
 YOU = 'U'
 BLOCK = 'B'
@@ -205,7 +210,9 @@ class Model(object):
             client.send(KEY, p, q, max_rowid)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
-        if y <= 0 or y > 255 or w < 0 or w > 15:
+        if y <= 0 or y > 255:
+            return
+        if w not in ALLOWED_ITEMS:
             return
         p, q = chunked(x), chunked(z)
         query = (

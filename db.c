@@ -7,7 +7,9 @@ static int db_enabled = 0;
 
 static sqlite3 *db;
 static sqlite3_stmt *insert_block_stmt;
+static sqlite3_stmt *insert_sign_stmt;
 static sqlite3_stmt *load_map_stmt;
+static sqlite3_stmt *load_signs_stmt;
 static sqlite3_stmt *get_key_stmt;
 static sqlite3_stmt *set_key_stmt;
 
@@ -53,9 +55,20 @@ int db_init(char *path) {
         "    q int not null,"
         "    key int not null"
         ");"
-        "create index if not exists block_xyz_idx on block (x, y, z);"
+        "create table if not exists sign ("
+        "    p int not null,"
+        "    q int not null,"
+        "    x int not null,"
+        "    y int not null,"
+        "    z int not null,"
+        "    face int not null,"
+        "    text text not null"
+        ");"
         "create unique index if not exists block_pqxyz_idx on block (p, q, x, y, z);"
-        "create unique index if not exists key_pq_idx on key (p, q);";
+        "create index if not exists block_xyz_idx on block (x, y, z);"
+        "create unique index if not exists key_pq_idx on key (p, q);"
+        "create unique index if not exists sign_xyzface_idx on sign (x, y, z, face);"
+        "create index if not exists sign_pq_idx on sign (p, q);";
     static const char *insert_block_query =
         "insert or replace into block (p, q, x, y, z, w) "
         "values (?, ?, ?, ?, ?, ?);";
@@ -66,6 +79,11 @@ int db_init(char *path) {
     static const char *set_key_query =
         "insert or replace into key (p, q, key) "
         "values (?, ?, ?);";
+    static const char *insert_sign_query =
+        "insert or replace into sign (p, q, x, y, z, face, text) "
+        "values (?, ?, ?, ?, ?, ?, ?);";
+    static const char *load_signs_query =
+        "select x, y, z, face, text from sign where p = ? and q = ?;";
     int rc;
     rc = sqlite3_open(path, &db);
     if (rc) return rc;
@@ -74,7 +92,12 @@ int db_init(char *path) {
     rc = sqlite3_prepare_v2(
         db, insert_block_query, -1, &insert_block_stmt, NULL);
     if (rc) return rc;
+    rc = sqlite3_prepare_v2(
+        db, insert_sign_query, -1, &insert_sign_stmt, NULL);
+    if (rc) return rc;
     rc = sqlite3_prepare_v2(db, load_map_query, -1, &load_map_stmt, NULL);
+    if (rc) return rc;
+    rc = sqlite3_prepare_v2(db, load_signs_query, -1, &load_signs_stmt, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(db, get_key_query, -1, &get_key_stmt, NULL);
     if (rc) return rc;
@@ -92,7 +115,9 @@ void db_close() {
     db_worker_stop();
     sqlite3_exec(db, "commit;", NULL, NULL, NULL);
     sqlite3_finalize(insert_block_stmt);
+    sqlite3_finalize(insert_sign_stmt);
     sqlite3_finalize(load_map_stmt);
+    sqlite3_finalize(load_signs_stmt);
     sqlite3_finalize(get_key_stmt);
     sqlite3_finalize(set_key_stmt);
     sqlite3_close(db);
@@ -172,6 +197,23 @@ void _db_insert_block(int p, int q, int x, int y, int z, int w) {
     sqlite3_step(insert_block_stmt);
 }
 
+void db_insert_sign(
+    int p, int q, int x, int y, int z, int face, const char *text)
+{
+    if (!db_enabled) {
+        return;
+    }
+    sqlite3_reset(insert_sign_stmt);
+    sqlite3_bind_int(insert_sign_stmt, 1, p);
+    sqlite3_bind_int(insert_sign_stmt, 2, q);
+    sqlite3_bind_int(insert_sign_stmt, 3, x);
+    sqlite3_bind_int(insert_sign_stmt, 4, y);
+    sqlite3_bind_int(insert_sign_stmt, 5, z);
+    sqlite3_bind_int(insert_sign_stmt, 6, face);
+    sqlite3_bind_text(insert_sign_stmt, 7, text, -1, NULL);
+    sqlite3_step(insert_sign_stmt);
+}
+
 void db_load_map(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
@@ -185,6 +227,24 @@ void db_load_map(Map *map, int p, int q) {
         int z = sqlite3_column_int(load_map_stmt, 2);
         int w = sqlite3_column_int(load_map_stmt, 3);
         map_set(map, x, y, z, w);
+    }
+}
+
+void db_load_signs(SignList *list, int p, int q) {
+    if (!db_enabled) {
+        return;
+    }
+    sqlite3_reset(load_signs_stmt);
+    sqlite3_bind_int(load_signs_stmt, 1, p);
+    sqlite3_bind_int(load_signs_stmt, 2, q);
+    while (sqlite3_step(load_signs_stmt) == SQLITE_ROW) {
+        int x = sqlite3_column_int(load_signs_stmt, 0);
+        int y = sqlite3_column_int(load_signs_stmt, 1);
+        int z = sqlite3_column_int(load_signs_stmt, 2);
+        int face = sqlite3_column_int(load_signs_stmt, 3);
+        const char *text = (const char *)sqlite3_column_text(
+            load_signs_stmt, 4);
+        sign_list_add(list, x, y, z, face, text);
     }
 }
 

@@ -1661,8 +1661,11 @@ int main(int argc, char **argv) {
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);
         }
-        render_sign(&text_attrib, player, 2348, 13, 4162, 3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        render_sign(&text_attrib, player, 2349, 13, 4162, 3, "abcdefghijklmnopqrstuvwxyz");
+        render_sign(&text_attrib, player, 2348, 13, 4162, 3, "Craft");
+        render_sign(&text_attrib, player, 2349, 13, 4162, 3, "   By   Michael Fogleman");
+        render_sign(&text_attrib, player, 2350, 13, 4162, 0, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
+        render_sign(&text_attrib, player, 2350, 13, 4162, 1, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
+        render_sign(&text_attrib, player, 2350, 13, 4162, 2, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
         render_sign(&text_attrib, player, 2350, 13, 4162, 3, "QQQQQQQQ1234567890!@#$%^&*()-=_+[]?/<>|\\QQQQQQQQZZZZZZZZ");
 
         // RENDER HUD //

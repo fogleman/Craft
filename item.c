@@ -134,7 +134,6 @@ int is_transparent(int w) {
         case EMPTY:
         case GLASS:
         case LEAVES:
-        case CLOUD:
         case TALL_GRASS:
         case YELLOW_FLOWER:
         case RED_FLOWER:

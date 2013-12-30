@@ -12,8 +12,8 @@ void make_cube_faces(
 {
     float *d = data;
     float s = 0.0625;
-    float a = 0;
-    float b = s;
+    float a = 0 + 1 / 1024.0;
+    float b = s - 1 / 1024.0;
     float du, dv;
     int w;
     if (left) {

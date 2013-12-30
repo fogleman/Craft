@@ -223,11 +223,9 @@ GLuint gen_sign_buffer(
 {
     int length = strlen(text);
     int face_dx[4] = {0, 0, -1, 1};
-    int face_dz[4] = {-1, 1, 0, 0};
+    int face_dz[4] = {1, -1, 0, 0};
     int dx = face_dx[face];
     int dz = face_dz[face];
-    x -= face_dz[face] * 0.55;
-    z += face_dx[face] * 0.55;
     x -= n * dx * justify * (length - 1) / 2;
     z -= n * dz * justify * (length - 1) / 2;
     GLfloat *data = malloc_faces(5, length);

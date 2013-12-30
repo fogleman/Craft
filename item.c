@@ -132,6 +132,7 @@ int is_transparent(int w) {
     w = ABS(w);
     switch (w) {
         case EMPTY:
+        case GLASS:
         case LEAVES:
         case CLOUD:
         case TALL_GRASS:

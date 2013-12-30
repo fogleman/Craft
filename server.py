@@ -267,8 +267,8 @@ class Model(object):
             return
         if len(text) > 48:
             return
+        p, q = chunked(x), chunked(z)
         if text:
-            p, q = chunked(x), chunked(z)
             query = (
                 'insert or replace into sign (p, q, x, y, z, face, text) '
                 'values (:p, :q, :x, :y, :z, :face, :text);'

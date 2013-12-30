@@ -934,6 +934,17 @@ void ensure_chunks(float x, float y, float z, int force) {
     chunk_count = count;
 }
 
+int get_block(int x, int y, int z) {
+    int p = chunked(x);
+    int q = chunked(z);
+    Chunk *chunk = find_chunk(p, q);
+    if (chunk) {
+        Map *map = &chunk->map;
+        return map_get(map, x, y, z);
+    }
+    return 0;
+}
+
 void _set_block(int p, int q, int x, int y, int z, int w) {
     // TODO: remove this check after server data is cleaned up
     int ok = 0;
@@ -984,15 +995,21 @@ void set_block(int x, int y, int z, int w) {
     client_block(x, y, z, w);
 }
 
-int get_block(int x, int y, int z) {
-    int p = chunked(x);
-    int q = chunked(z);
+void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->map;
-        return map_get(map, x, y, z);
+        SignList *signs = &chunk->signs;
+        sign_list_add(signs, x, y, z, face, text);
+        chunk->dirty = 1;
     }
-    return 0;
+    db_insert_sign(p, q, x, y, z, face, text);
+}
+
+void set_sign(int x, int y, int z, int face, const char *text) {
+    int p = chunked(x);
+    int q = chunked(z);
+    _set_sign(p, q, x, y, z, face, text);
+    // client_sign(x, y, z, face, text);
 }
 
 int render_chunks(Attrib *attrib, Player *player) {

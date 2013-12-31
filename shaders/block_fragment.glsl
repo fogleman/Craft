@@ -4,6 +4,7 @@ uniform sampler2D sampler;
 uniform sampler2D sky_sampler;
 uniform float timer;
 uniform float daylight;
+uniform int ortho;
 
 varying vec2 fragment_uv;
 varying float fragment_ao;
@@ -19,6 +20,9 @@ void main() {
         discard;
     }
     bool cloud = color == vec3(1.0, 1.0, 1.0);
+    if (cloud && bool(ortho)) {
+        discard;
+    }
     float df = cloud ? 1.0 - diffuse * 0.2 : diffuse;
     float ao = cloud ? 1.0 - (1.0 - fragment_ao) * 0.2 : fragment_ao;
     vec3 light_color = vec3(daylight * 0.5);

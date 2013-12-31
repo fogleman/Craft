@@ -314,6 +314,10 @@ void draw_signs(Attrib *attrib, Chunk *chunk) {
     draw_triangles_3d_text(attrib, chunk->sign_buffer, chunk->sign_faces * 6);
 }
 
+void draw_sign(Attrib *attrib, GLuint buffer, int length) {
+    draw_triangles_3d_text(attrib, buffer, length * 6);
+}
+
 void draw_cube(Attrib *attrib, GLuint buffer) {
     draw_item(attrib, buffer, 36);
 }
@@ -1117,6 +1121,31 @@ void render_signs(Attrib *attrib, Player *player) {
     }
 }
 
+void render_sign(Attrib *attrib, Player *player) {
+    if (!typing || typing_buffer[0] != CRAFT_KEY_SIGN) {
+        return;
+    }
+    int x, y, z, face;
+    if (!hit_test_face(player, &x, &y, &z, &face)) {
+        return;
+    }
+    State *s = &player->state;
+    float matrix[16];
+    set_matrix_3d(
+        matrix, width, height, s->x, s->y, s->z, s->rx, s->ry, fov, ortho);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 3);
+    glUniform1i(attrib->extra1, 1);
+    char *text = typing_buffer + 1;
+    int length = MIN(strlen(text), 48);
+    GLfloat *data = malloc_faces(5, length);
+    _gen_sign_buffer(data, x, y, z, face, text);
+    GLuint buffer = gen_faces(5, length, data);
+    draw_sign(attrib, buffer, length);
+    del_buffer(buffer);
+}
+
 void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -1243,7 +1272,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ENTER) {
         if (typing) {
             typing = 0;
-            if (typing_buffer[0] == '?') {
+            if (typing_buffer[0] == CRAFT_KEY_SIGN) {
                 Player *player = players;
                 int x, y, z, face;
                 if (hit_test_face(player, &x, &y, &z, &face)) {
@@ -1314,7 +1343,7 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
         if (u == CRAFT_KEY_SIGN) {
             typing = 1;
-            typing_buffer[0] = '?';
+            typing_buffer[0] = CRAFT_KEY_SIGN;
             typing_buffer[1] = '\0';
         }
     }
@@ -1791,6 +1820,7 @@ int main(int argc, char **argv) {
         glClear(GL_DEPTH_BUFFER_BIT);
         int face_count = render_chunks(&block_attrib, player);
         render_signs(&text_attrib, player);
+        render_sign(&text_attrib, player);
         render_players(&block_attrib, player);
         if (SHOW_WIREFRAME) {
             render_wireframe(&line_attrib, player);

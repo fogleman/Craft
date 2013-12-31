@@ -311,10 +311,7 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
 }
 
 void draw_signs(Attrib *attrib, Chunk *chunk) {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     draw_triangles_3d_text(attrib, chunk->sign_buffer, chunk->sign_faces * 6);
-    glDisable(GL_BLEND);
 }
 
 void draw_cube(Attrib *attrib, GLuint buffer) {
@@ -714,6 +711,14 @@ void _gen_sign_buffer(
 {
     static const int face_dx[4] = {0, 0, -1, 1};
     static const int face_dz[4] = {1, -1, 0, 0};
+    static const int advance[96] = {
+        2, 2, 4, 7, 6, 9, 7, 2, 3, 3, 4, 6, 3, 5, 2, 7,
+        6, 3, 6, 6, 6, 6, 6, 6, 6, 6, 2, 3, 5, 6, 5, 7,
+        8, 6, 6, 6, 6, 6, 6, 6, 6, 4, 6, 6, 5, 8, 8, 6,
+        6, 7, 6, 6, 6, 6, 8, 10, 8, 6, 6, 3, 6, 3, 6, 6,
+        4, 7, 6, 6, 6, 6, 5, 6, 6, 2, 5, 5, 2, 9, 6, 6,
+        6, 6, 6, 6, 5, 6, 6, 6, 6, 6, 6, 4, 2, 5, 7, 0
+    };
     int length = MIN(strlen(text), 48);
     int wrap = 8;
     int rows = length / wrap + ((length % wrap) ? 1 : 0);
@@ -1099,7 +1104,7 @@ void render_signs(Attrib *attrib, Player *player) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 3);
-    glUniform1i(attrib->extra1, 0);
+    glUniform1i(attrib->extra1, 1);
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
         if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
@@ -1203,7 +1208,7 @@ void render_text(
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1);
-    glUniform1i(attrib->extra1, 1);
+    glUniform1i(attrib->extra1, 0);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
@@ -1500,7 +1505,7 @@ int main(int argc, char **argv) {
     text_attrib.uv = glGetAttribLocation(program, "uv");
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
-    text_attrib.extra1 = glGetUniformLocation(program, "shaded");
+    text_attrib.extra1 = glGetUniformLocation(program, "is_sign");
 
     program = load_program(
         "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");

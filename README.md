@@ -66,7 +66,7 @@ database format as the client running standalone.
 
 #### Client
 
-    ./craft 199.115.118.225 16018
+    ./craft 184.173.122.170 30624
 
 #### Server
 

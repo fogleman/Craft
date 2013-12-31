@@ -1006,23 +1006,6 @@ void set_sign(int x, int y, int z, int face, const char *text) {
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w) {
-    // TODO: remove this check after server data is cleaned up
-    int ok = 0;
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dz = -1; dz <= 1; dz++) {
-            if (chunked(x + dx) == p && chunked(z + dz) == q &&
-                chunked(x) == p - dx && chunked(z) == q - dz)
-            {
-                ok = 1;
-            }
-        }
-    }
-    if (!ok) {
-        printf("Invalid _set_block call: (%d, %d) (%d, %d, %d) %d\n",
-            p, q, x, y, z, w);
-        return;
-    }
-    // END TODO
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;

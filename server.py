@@ -259,7 +259,8 @@ class Model(object):
                 'x = :x and y = :y and z = :z;'
             )
             self.execute(query, dict(x=x, y=y, z=z))
-    def on_sign(self, client, x, y, z, face, text):
+    def on_sign(self, client, x, y, z, face, *args):
+        text = ','.join(args)
         x, y, z, face = map(int, (x, y, z, face))
         if y <= 0 or y > 255:
             return

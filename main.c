@@ -1796,7 +1796,7 @@ int main(int argc, char **argv) {
             }
             snprintf(
                 format, sizeof(format),
-                "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%ds", MAX_SIGN_LENGTH - 1);
+                "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
             int face;
             char text[MAX_SIGN_LENGTH] = {0};
             if (sscanf(buffer, format,

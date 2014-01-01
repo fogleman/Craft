@@ -200,8 +200,7 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(9, 4);
-    float rotation = simplex3(x, y, z, 4, 0.5, 2) * 360;
-    make_plant(data, x, y, z, n, w, rotation);
+    make_plant(data, x, y, z, n, w, 45);
     return gen_faces(9, 4, data);
 }
 

@@ -299,7 +299,7 @@ class Model(object):
         x, y, z, face = map(int, (x, y, z, face))
         if y <= 0 or y > 255:
             return
-        if face < 0 or face > 3:
+        if face < 0 or face > 7:
             return
         if len(text) > 48:
             return

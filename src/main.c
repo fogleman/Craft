@@ -732,6 +732,9 @@ int _gen_sign_buffer(
     static const int line_dx[8] = {0, 0, 0, 0, 0, 1, 0, -1};
     static const int line_dy[8] = {-1, -1, -1, -1, 0, 0, 0, 0};
     static const int line_dz[8] = {0, 0, 0, 0, 1, 0, -1, 0};
+    if (face < 0 || face >= 8) {
+        return 0;
+    }
     int count = 0;
     float max_width = 64;
     float line_height = 1.25;

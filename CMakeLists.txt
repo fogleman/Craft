@@ -5,20 +5,24 @@ project(craft)
 FILE(GLOB SOURCE_FILES src/*.c)
 
 add_executable(
-    craft ${SOURCE_FILES}
-    glew/src/glew.c lodepng/lodepng.c noise/noise.c sqlite/sqlite3.c
-    tinycthread/tinycthread.c)
+    craft
+    ${SOURCE_FILES}
+    deps/glew/src/glew.c
+    deps/lodepng/lodepng.c
+    deps/noise/noise.c
+    deps/sqlite/sqlite3.c
+    deps/tinycthread/tinycthread.c)
 
 add_definitions(-std=c99 -O3)
 
-add_subdirectory(glfw)
+add_subdirectory(deps/glfw)
 include_directories(src)
-include_directories(glew/include)
-include_directories(glfw/include)
-include_directories(lodepng)
-include_directories(noise)
-include_directories(sqlite)
-include_directories(tinycthread)
+include_directories(deps/glew/include)
+include_directories(deps/glfw/include)
+include_directories(deps/lodepng)
+include_directories(deps/noise)
+include_directories(deps/sqlite)
+include_directories(deps/tinycthread)
 
 if(APPLE)
     target_link_libraries(craft glfw ${GLFW_LIBRARIES})

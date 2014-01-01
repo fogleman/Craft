@@ -1668,7 +1668,13 @@ int main(int argc, char **argv) {
             }
         }
         float speed = flying ? 20 : 5;
-        int step = 8;
+        /*
+         * The step count must ensure that no change in direction can exceed the 'pad' amount
+         * At minimum 8 steps are taken (ensures gravity-like falling)
+         * The MAX function chooses from all directions, so speed can be arbitrary
+         *   For example: vx*dt*speed*4+1 = deltaX * [1/(pad-.1)] + 1
+         */
+        int step = MAX(MAX(8,ABS(vy*speed+dy-dt*25)*dt*4.2+1), MAX(ABS(vx*dt*speed*4.2),ABS(vz*dt*speed*4.2))+1);
         float ut = dt / step;
         vx = vx * ut * speed;
         vy = vy * ut * speed;

@@ -142,8 +142,8 @@ void load_png_texture(const char *file_name) {
     free(data);
 }
 
-int wrap_width(const char *input) {
-    static const int char_width[128] = {
+int char_width(char input) {
+    static const int lookup[128] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         4, 2, 4, 7, 6, 9, 7, 2, 3, 3, 4, 6, 3, 5, 2, 7,
@@ -153,10 +153,14 @@ int wrap_width(const char *input) {
         4, 7, 6, 6, 6, 6, 5, 6, 6, 2, 5, 5, 2, 9, 6, 6,
         6, 6, 6, 6, 5, 6, 6, 6, 6, 6, 6, 4, 2, 5, 7, 0
     };
+    return lookup[input];
+}
+
+int string_width(const char *input) {
     int result = 0;
     int length = strlen(input);
     for (int i = 0; i < length; i++) {
-        result += char_width[input[i]];
+        result += char_width(input[i]);
     }
     return result;
 }
@@ -165,7 +169,7 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
     *output = '\0';
     char *text = malloc(sizeof(char) * (strlen(input) + 1));
     strcpy(text, input);
-    int space_width = wrap_width(" ");
+    int space_width = char_width(' ');
     int line_number = 0;
     char *key1, *key2;
     char *line = strtok_r(text, "\n", &key1);
@@ -173,7 +177,7 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
         int line_width = 0;
         char *token = strtok_r(line, " -", &key2);
         while (token) {
-            int token_width = wrap_width(token);
+            int token_width = string_width(token);
             if (line_width) {
                 if (line_width + token_width > max_width) {
                     line_width = 0;
@@ -193,6 +197,5 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
         line = strtok_r(NULL, "\n", &key1);
     }
     free(text);
-    printf("%s\n", output);
     return line_number;
 }

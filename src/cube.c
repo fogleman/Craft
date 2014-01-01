@@ -505,6 +505,21 @@ void make_character_3d(
         *(d++) = x - n; *(d++) = y + m; *(d++) = z;
         *(d++) = du + u1; *(d++) = dv + v2;
     }
+    if (face == 4) { // top 1
+        y += p;
+        *(d++) = x - n; *(d++) = y; *(d++) = z + m;
+        *(d++) = du + u1; *(d++) = dv + v1;
+        *(d++) = x + n; *(d++) = y; *(d++) = z + m;
+        *(d++) = du + u2; *(d++) = dv + v1;
+        *(d++) = x + n; *(d++) = y; *(d++) = z - m;
+        *(d++) = du + u2; *(d++) = dv + v2;
+        *(d++) = x - n; *(d++) = y; *(d++) = z + m;
+        *(d++) = du + u1; *(d++) = dv + v1;
+        *(d++) = x + n; *(d++) = y; *(d++) = z - m;
+        *(d++) = du + u2; *(d++) = dv + v2;
+        *(d++) = x - n; *(d++) = y; *(d++) = z - m;
+        *(d++) = du + u1; *(d++) = dv + v2;
+    }
 }
 
 int _make_sphere(

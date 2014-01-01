@@ -604,6 +604,14 @@ int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
         if (dx == 0 && dy == 0 && dz == 1) {
             *face = 3; return 1;
         }
+        if (dx == 0 && dy == 1 && dz == 0) {
+            int degrees = roundf(DEGREES(atan2f(s->x - hx, s->z - hz)));
+            if (degrees < 0) {
+                degrees += 360;
+            }
+            int top = ((degrees + 45) / 90) % 4;
+            *face = 4 + top; return 1;
+        }
     }
     return 0;
 }
@@ -719,8 +727,8 @@ void occlusion(char neighbors[27], float result[6][4]) {
 int _gen_sign_buffer(
     GLfloat *data, float x, float y, float z, int face, const char *text)
 {
-    static const int face_dx[4] = {0, 0, -1, 1};
-    static const int face_dz[4] = {1, -1, 0, 0};
+    static const int face_dx[8] = {0, 0, -1, 1, 1, 0, 0, 0};
+    static const int face_dz[8] = {1, -1, 0, 0, 0, 0, 0, 0};
     int count = 0;
     float max_width = 64;
     char lines[1024];

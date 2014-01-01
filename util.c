@@ -141,3 +141,58 @@ void load_png_texture(const char *file_name) {
         GL_UNSIGNED_BYTE, data);
     free(data);
 }
+
+int wrap_width(const char *input) {
+    static const int char_width[128] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        4, 2, 4, 7, 6, 9, 7, 2, 3, 3, 4, 6, 3, 5, 2, 7,
+        6, 3, 6, 6, 6, 6, 6, 6, 6, 6, 2, 3, 5, 6, 5, 7,
+        8, 6, 6, 6, 6, 6, 6, 6, 6, 4, 6, 6, 5, 8, 8, 6,
+        6, 7, 6, 6, 6, 6, 8,10, 8, 6, 6, 3, 6, 3, 6, 6,
+        4, 7, 6, 6, 6, 6, 5, 6, 6, 2, 5, 5, 2, 9, 6, 6,
+        6, 6, 6, 6, 5, 6, 6, 6, 6, 6, 6, 4, 2, 5, 7, 0
+    };
+    int result = 0;
+    int length = strlen(input);
+    for (int i = 0; i < length; i++) {
+        result += char_width[input[i]];
+    }
+    return result;
+}
+
+int wrap(const char *input, int max_width, char *output, int max_length) {
+    *output = '\0';
+    char *text = malloc(sizeof(char) * (strlen(input) + 1));
+    strcpy(text, input);
+    int space_width = wrap_width(" ");
+    int line_number = 0;
+    char *key1, *key2;
+    char *line = strtok_r(text, "\n", &key1);
+    while (line) {
+        int line_width = 0;
+        char *token = strtok_r(line, " -", &key2);
+        while (token) {
+            int token_width = wrap_width(token);
+            if (line_width) {
+                if (line_width + token_width > max_width) {
+                    line_width = 0;
+                    line_number++;
+                    strncat(output, "\n", max_length);
+                }
+                else {
+                    strncat(output, " ", max_length);
+                }
+            }
+            strncat(output, token, max_length);
+            line_width += token_width + space_width;
+            token = strtok_r(NULL, " -", &key2);
+        }
+        line_number++;
+        strncat(output, "\n", max_length);
+        line = strtok_r(NULL, "\n", &key1);
+    }
+    free(text);
+    printf("%s\n", output);
+    return line_number;
+}

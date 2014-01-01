@@ -4,7 +4,7 @@ Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C 
 
 http://www.michaelfogleman.com/craft/
 
-![](https://raw.github.com/fogleman/Craft/master/screenshot1.png)
+![](https://raw.github.com/fogleman/Craft/master/screenshots/screenshot1.png)
 
 ### Features
 
@@ -91,7 +91,7 @@ database format as the client running standalone.
 
 ### Screenshot
 
-![](https://raw.github.com/fogleman/Craft/master/screenshot2.png)
+![](https://raw.github.com/fogleman/Craft/master/screenshots/screenshot2.png)
 
 ### Implementation Details
 

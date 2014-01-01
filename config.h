@@ -33,11 +33,13 @@
 #define CRAFT_KEY_FLY GLFW_KEY_TAB
 #define CRAFT_KEY_OBSERVE 'O'
 #define CRAFT_KEY_OBSERVE_INSET 'P'
-#define CRAFT_KEY_BLOCK_TYPE 'E'
+#define CRAFT_KEY_ITEM_NEXT 'E'
+#define CRAFT_KEY_ITEM_PREV 'R'
 #define CRAFT_KEY_ZOOM GLFW_KEY_LEFT_SHIFT
 #define CRAFT_KEY_ORTHO 'F'
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
+#define CRAFT_KEY_SIGN '`'
 
 // keys for moving along axes
 #define CRAFT_KEY_XM 'Z'

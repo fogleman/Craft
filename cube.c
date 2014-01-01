@@ -441,7 +441,7 @@ void make_character_3d(
     float v1 = pv;
     float u2 = s - pu;
     float v2 = s * 2 - pv;
-    float p = 0.55;
+    float p = 0.5;
     int w = c - 32;
     float du = (w % 16) * s;
     float dv = 1 - (w / 16 + 1) * s * 2;

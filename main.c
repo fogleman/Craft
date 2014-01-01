@@ -735,10 +735,15 @@ void _gen_sign_buffer(
     while (line) {
         int length = strlen(line);
         int line_width = string_width(line);
+        line_width = MIN(line_width, max_width);
         float rx = x - dx * line_width / max_width / 2;
         float rz = z - dz * line_width / max_width / 2;
         for (int i = 0; i < length; i++) {
             int glyph_width = char_width(line[i]);
+            line_width -= glyph_width;
+            if (line_width < 0) {
+                break;
+            }
             rx += dx * glyph_width / max_width / 2;
             rz += dz * glyph_width / max_width / 2;
             make_character_3d(
@@ -749,6 +754,10 @@ void _gen_sign_buffer(
         }
         ry -= n * 1.25;
         line = strtok_r(NULL, "\n", &key);
+        rows--;
+        if (rows <= 0) {
+            break;
+        }
     }
 }
 

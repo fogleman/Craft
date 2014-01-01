@@ -175,7 +175,7 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
     char *line = strtok_r(text, "\n", &key1);
     while (line) {
         int line_width = 0;
-        char *token = strtok_r(line, " -", &key2);
+        char *token = strtok_r(line, " ", &key2);
         while (token) {
             int token_width = string_width(token);
             if (line_width) {
@@ -190,7 +190,7 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
             }
             strncat(output, token, max_length);
             line_width += token_width + space_width;
-            token = strtok_r(NULL, " -", &key2);
+            token = strtok_r(NULL, " ", &key2);
         }
         line_number++;
         strncat(output, "\n", max_length);

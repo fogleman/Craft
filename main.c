@@ -721,37 +721,67 @@ void _gen_sign_buffer(
 {
     static const int face_dx[4] = {0, 0, -1, 1};
     static const int face_dz[4] = {1, -1, 0, 0};
-    static const int advance[96] = {
-        2, 2, 4, 7, 6, 9, 7, 2, 3, 3, 4, 6, 3, 5, 2, 7,
+    static const int width_lookup[96] = {
+        4, 2, 4, 7, 6, 9, 7, 2, 3, 3, 4, 6, 3, 5, 2, 7,
         6, 3, 6, 6, 6, 6, 6, 6, 6, 6, 2, 3, 5, 6, 5, 7,
         8, 6, 6, 6, 6, 6, 6, 6, 6, 4, 6, 6, 5, 8, 8, 6,
-        6, 7, 6, 6, 6, 6, 8, 10, 8, 6, 6, 3, 6, 3, 6, 6,
+        6, 7, 6, 6, 6, 6, 8,10, 8, 6, 6, 3, 6, 3, 6, 6,
         4, 7, 6, 6, 6, 6, 5, 6, 6, 2, 5, 5, 2, 9, 6, 6,
         6, 6, 6, 6, 5, 6, 6, 6, 6, 6, 6, 4, 2, 5, 7, 0
     };
-    int length = MIN(strlen(text), 48);
-    int wrap = 8;
-    int rows = length / wrap + ((length % wrap) ? 1 : 0);
+    int length = strlen(text);
+    int widths[MAX_SIGN_LENGTH];
+    for (int i = 0; i < length; i++) {
+        widths[i] = width_lookup[text[i] - ' '];
+    }
+    int row_widths[MAX_SIGN_LENGTH];
+    int row_starts[MAX_SIGN_LENGTH];
+    int row_stops[MAX_SIGN_LENGTH];
+    float max_width = 64;
+    int rows = 0;
+    int width = 0;
+    row_starts[0] = 0;
+    int strip = 1;
+    for (int i = 0; i <= length; i++) {
+        if (i == length || width + widths[i] > max_width ||
+            text[i] == CRAFT_KEY_SIGN)
+        {
+            row_widths[rows] = width;
+            row_stops[rows] = i;
+            rows++;
+            row_starts[rows] = i;
+            width = 0;
+            strip = 1;
+            if (text[i] == CRAFT_KEY_SIGN) {
+                row_starts[rows]++;
+                continue;
+            }
+        }
+        if (strip && text[i] == ' ') {
+            row_starts[rows]++;
+        }
+        else {
+            width += widths[i];
+            strip = 0;
+        }
+    }
+    rows = MIN(rows, 5);
     int dx = face_dx[face];
     int dz = face_dz[face];
-    float n = 1.0 / (wrap + 1);
-    x -= n * dx * (MIN(length, wrap) - 1) / 2.0;
-    z -= n * dz * (MIN(length, wrap) - 1) / 2.0;
-    y += n * (rows - 1) * 0.75;
-    float sx = x;
-    float sz = z;
-    int index = 0;
+    float n = 1.0 / (max_width / 10);
+    float ry = y + n * (rows - 1) * 0.625;
     for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < wrap && index < length; j++) {
+        float rx = x - dx * row_widths[i] / max_width / 2;
+        float rz = z - dz * row_widths[i] / max_width / 2;
+        for (int j = row_starts[i]; j < row_stops[i]; j++) {
+            rx += dx * widths[j] / max_width / 2;
+            rz += dz * widths[j] / max_width / 2;
             make_character_3d(
-                data + index * 30, x, y, z, n / 2, n, face, text[index]);
-            index++;
-            x += n * dx;
-            z += n * dz;
+                data + j * 30, rx, ry, rz, n / 2, n, face, text[j]);
+            rx += dx * widths[j] / max_width / 2;
+            rz += dz * widths[j] / max_width / 2;
         }
-        x = sx;
-        z = sz;
-        y -= n * 1.5;
+        ry -= n * 1.25;
     }
 }
 
@@ -762,8 +792,7 @@ void gen_sign_buffer(Chunk *chunk) {
     int faces = 0;
     for (int i = 0; i < signs->size; i++) {
         Sign *e = signs->data + i;
-        int length = MIN(strlen(e->text), 48);
-        faces += length;
+        faces += strlen(e->text);
     }
 
     // second pass - generate geometry
@@ -771,9 +800,8 @@ void gen_sign_buffer(Chunk *chunk) {
     int offset = 0;
     for (int i = 0; i < signs->size; i++) {
         Sign *e = signs->data + i;
-        int length = MIN(strlen(e->text), 48);
         _gen_sign_buffer(data + offset, e->x, e->y, e->z, e->face, e->text);
-        offset += length * 30;
+        offset += strlen(e->text) * 30;
     }
 
     del_buffer(chunk->sign_buffer);
@@ -1143,8 +1171,10 @@ void render_sign(Attrib *attrib, Player *player) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 3);
     glUniform1i(attrib->extra1, 1);
-    char *text = typing_buffer + 1;
-    int length = MIN(strlen(text), 48);
+    char text[MAX_SIGN_LENGTH];
+    strncpy(text, typing_buffer + 1, MAX_SIGN_LENGTH);
+    text[MAX_SIGN_LENGTH - 1] = '\0';
+    int length = strlen(text);
     GLfloat *data = malloc_faces(5, length);
     _gen_sign_buffer(data, x, y, z, face, text);
     GLuint buffer = gen_faces(5, length, data);

@@ -60,6 +60,15 @@ void client_send(char *data) {
     }
 }
 
+void client_version(int version) {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[1024];
+    snprintf(buffer, 1024, "V,%d\n", version);
+    client_send(buffer);
+}
+
 void client_position(float x, float y, float z, float rx, float ry) {
     if (!client_enabled) {
         return;

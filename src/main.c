@@ -1479,6 +1479,7 @@ int main(int argc, char **argv) {
         client_enable();
         client_connect(hostname, port);
         client_start();
+        client_version(1);
     }
     else {
         db_enable();

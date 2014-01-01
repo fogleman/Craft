@@ -33,6 +33,7 @@ TALK = 'T'
 KEY = 'K'
 NICK = 'N'
 SIGN = 'S'
+VERSION = 'V'
 
 def log(*args):
     now = datetime.datetime.utcnow()
@@ -71,6 +72,7 @@ class Handler(SocketServer.BaseRequestHandler):
     def setup(self):
         self.position_limiter = RateLimiter(100, 5)
         self.limiter = RateLimiter(1000, 10)
+        self.version = None
         self.queue = Queue.Queue()
         self.running = True
         self.start()
@@ -147,6 +149,7 @@ class Model(object):
             POSITION: self.on_position,
             TALK: self.on_talk,
             SIGN: self.on_sign,
+            VERSION: self.on_version,
         }
         self.patterns = [
             (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
@@ -244,6 +247,15 @@ class Model(object):
         self.clients.remove(client)
         self.send_disconnect(client)
         self.send_talk('%s has disconnected from the server.' % client.nick)
+    def on_version(self, client, version):
+        if client.version is not None:
+            return
+        version = int(version)
+        if version != 1:
+            client.stop()
+            return
+        client.version = version
+        # TODO: client.start() here
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
         query = (

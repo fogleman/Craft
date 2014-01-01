@@ -727,8 +727,8 @@ void occlusion(char neighbors[27], float result[6][4]) {
 int _gen_sign_buffer(
     GLfloat *data, float x, float y, float z, int face, const char *text)
 {
-    static const int face_dx[8] = {0, 0, -1, 1, 1, 0, 0, 0};
-    static const int face_dz[8] = {1, -1, 0, 0, 0, 0, 0, 0};
+    static const int face_dx[8] = {0, 0, -1, 1, 1, 0, -1, 0};
+    static const int face_dz[8] = {1, -1, 0, 0, 0, -1, 0, 1};
     int count = 0;
     float max_width = 64;
     char lines[1024];

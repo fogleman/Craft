@@ -18,7 +18,6 @@ void sign_list_grow(SignList *list) {
     memcpy(new_list.data, list->data, list->size * sizeof(Sign));
     free(list->data);
     list->capacity = new_list.capacity;
-    list->size = new_list.size;
     list->data = new_list.data;
 }
 

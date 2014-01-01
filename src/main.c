@@ -102,6 +102,9 @@ int chunked(float x) {
 }
 
 float time_of_day() {
+    if (DAY_LENGTH <= 0) {
+        return 0.5;
+    }
     float t;
     t = glfwGetTime();
     t = t + DAY_LENGTH / 3.0;

@@ -435,71 +435,75 @@ void make_character_3d(
 {
     float *d = data;
     float s = 0.0625;
-    float a = s;
-    float b = s * 2;
-    float p = 0.55;
+    float pu = s / 5;
+    float pv = s / 2.5;
+    float u1 = pu;
+    float v1 = pv;
+    float u2 = s - pu;
+    float v2 = s * 2 - pv;
+    float p = 0.5;
     int w = c - 32;
-    float du = (w % 16) * a;
-    float dv = 1 - (w / 16) * b - b;
+    float du = (w % 16) * s;
+    float dv = 1 - (w / 16 + 1) * s * 2;
     if (face == 0) { // left
         x -= p;
         *(d++) = x; *(d++) = y - m; *(d++) = z - n;
-        *(d++) = du + 0; *(d++) = dv + 0;
+        *(d++) = du + u1; *(d++) = dv + v1;
         *(d++) = x; *(d++) = y + m; *(d++) = z + n;
-        *(d++) = du + a; *(d++) = dv + b;
+        *(d++) = du + u2; *(d++) = dv + v2;
         *(d++) = x; *(d++) = y + m; *(d++) = z - n;
-        *(d++) = du + 0; *(d++) = dv + b;
+        *(d++) = du + u1; *(d++) = dv + v2;
         *(d++) = x; *(d++) = y - m; *(d++) = z - n;
-        *(d++) = du + 0; *(d++) = dv + 0;
+        *(d++) = du + u1; *(d++) = dv + v1;
         *(d++) = x; *(d++) = y - m; *(d++) = z + n;
-        *(d++) = du + a; *(d++) = dv + 0;
+        *(d++) = du + u2; *(d++) = dv + v1;
         *(d++) = x; *(d++) = y + m; *(d++) = z + n;
-        *(d++) = du + a; *(d++) = dv + b;
+        *(d++) = du + u2; *(d++) = dv + v2;
     }
     if (face == 1) { // right
         x += p;
         *(d++) = x; *(d++) = y - m; *(d++) = z - n;
-        *(d++) = du + a; *(d++) = dv + 0;
+        *(d++) = du + u2; *(d++) = dv + v1;
         *(d++) = x; *(d++) = y + m; *(d++) = z + n;
-        *(d++) = du + 0; *(d++) = dv + b;
+        *(d++) = du + u1; *(d++) = dv + v2;
         *(d++) = x; *(d++) = y - m; *(d++) = z + n;
-        *(d++) = du + 0; *(d++) = dv + 0;
+        *(d++) = du + u1; *(d++) = dv + v1;
         *(d++) = x; *(d++) = y - m; *(d++) = z - n;
-        *(d++) = du + a; *(d++) = dv + 0;
+        *(d++) = du + u2; *(d++) = dv + v1;
         *(d++) = x; *(d++) = y + m; *(d++) = z - n;
-        *(d++) = du + a; *(d++) = dv + b;
+        *(d++) = du + u2; *(d++) = dv + v2;
         *(d++) = x; *(d++) = y + m; *(d++) = z + n;
-        *(d++) = du + 0; *(d++) = dv + b;
+        *(d++) = du + u1; *(d++) = dv + v2;
     }
     if (face == 2) { // front
         z -= p;
         *(d++) = x - n; *(d++) = y - m; *(d++) = z;
-        *(d++) = du + a; *(d++) = dv + 0;
+        *(d++) = du + u2; *(d++) = dv + v1;
         *(d++) = x + n; *(d++) = y + m; *(d++) = z;
-        *(d++) = du + 0; *(d++) = dv + b;
+        *(d++) = du + u1; *(d++) = dv + v2;
         *(d++) = x + n; *(d++) = y - m; *(d++) = z;
-        *(d++) = du + 0; *(d++) = dv + 0;
+        *(d++) = du + u1; *(d++) = dv + v1;
         *(d++) = x - n; *(d++) = y - m; *(d++) = z;
-        *(d++) = du + a; *(d++) = dv + 0;
+        *(d++) = du + u2; *(d++) = dv + v1;
         *(d++) = x - n; *(d++) = y + m; *(d++) = z;
-        *(d++) = du + a; *(d++) = dv + b;
+        *(d++) = du + u2; *(d++) = dv + v2;
         *(d++) = x + n; *(d++) = y + m; *(d++) = z;
-        *(d++) = du + 0; *(d++) = dv + b;
+        *(d++) = du + u1; *(d++) = dv + v2;
     }
     if (face == 3) { // back
         z += p;
         *(d++) = x - n; *(d++) = y - m; *(d++) = z;
-        *(d++) = du + 0; *(d++) = dv + 0;
+        *(d++) = du + u1; *(d++) = dv + v1;
         *(d++) = x + n; *(d++) = y - m; *(d++) = z;
-        *(d++) = du + a; *(d++) = dv + 0;
+        *(d++) = du + u2; *(d++) = dv + v1;
         *(d++) = x + n; *(d++) = y + m; *(d++) = z;
-        *(d++) = du + a; *(d++) = dv + b;
+        *(d++) = du + u2; *(d++) = dv + v2;
         *(d++) = x - n; *(d++) = y - m; *(d++) = z;
-        *(d++) = du + 0; *(d++) = dv + 0;
+        *(d++) = du + u1; *(d++) = dv + v1;
         *(d++) = x + n; *(d++) = y + m; *(d++) = z;
-        *(d++) = du + a; *(d++) = dv + b;
+        *(d++) = du + u2; *(d++) = dv + v2;
         *(d++) = x - n; *(d++) = y + m; *(d++) = z;
-        *(d++) = du + 0; *(d++) = dv + b;
+        *(d++) = du + u1; *(d++) = dv + v2;
     }
 }
 

@@ -14,7 +14,6 @@ void sign_list_free(SignList *list) {
 
 void sign_list_grow(SignList *list) {
     SignList new_list;
-    Sign sign;
     sign_list_alloc(&new_list, list->capacity * 2);
     memcpy(new_list.data, list->data, list->size * sizeof(Sign));
     free(list->data);

@@ -44,12 +44,33 @@ def log(*args):
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
 
+class RateLimiter(object):
+    def __init__(self, rate, per):
+        self.rate = float(rate)
+        self.per = float(per)
+        self.allowance = self.rate
+        self.last_check = time.time()
+    def tick(self):
+        now = time.time()
+        elapsed = now - self.last_check
+        self.last_check = now
+        self.allowance += elapsed * (self.rate / self.per)
+        if self.allowance > self.rate:
+            self.allowance = self.rate
+        if self.allowance < 1:
+            return True # too fast
+        else:
+            self.allowance -= 1
+            return False # okay
+
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
 class Handler(SocketServer.BaseRequestHandler):
     def setup(self):
+        self.position_limiter = RateLimiter(100, 5)
+        self.limiter = RateLimiter(1000, 10)
         self.queue = Queue.Queue()
         self.running = True
         self.start()
@@ -67,11 +88,25 @@ class Handler(SocketServer.BaseRequestHandler):
                     index = buf.index('\n')
                     line = ''.join(buf[:index])
                     buf = buf[index + 1:]
+                    if not line:
+                        continue
+                    if line[0] == POSITION:
+                        if self.position_limiter.tick():
+                            log('RATE', self.client_id)
+                            self.stop()
+                            return
+                    else:
+                        if self.limiter.tick():
+                            log('RATE', self.client_id)
+                            self.stop()
+                            return
                     model.enqueue(model.on_data, self, line)
         finally:
             model.enqueue(model.on_disconnect, self)
     def finish(self):
         self.running = False
+    def stop(self):
+        self.request.close()
     def start(self):
         thread = threading.Thread(target=self.run)
         thread.setDaemon(True)
@@ -259,7 +294,8 @@ class Model(object):
                 'x = :x and y = :y and z = :z;'
             )
             self.execute(query, dict(x=x, y=y, z=z))
-    def on_sign(self, client, x, y, z, face, text):
+    def on_sign(self, client, x, y, z, face, *args):
+        text = ','.join(args)
         x, y, z, face = map(int, (x, y, z, face))
         if y <= 0 or y > 255:
             return

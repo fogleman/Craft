@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zlib.h>
 #include "client.h"
 #include "tinycthread.h"
 
@@ -148,10 +149,21 @@ int client_recv(char *data, int length) {
 }
 
 int recv_worker(void *arg) {
-    while (1) {
-        char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE - 1, 0) <= 0) {
-            perror("recv");
+    int result;
+    unsigned int have;
+    unsigned char in[CHUNK_SIZE];
+    unsigned char out[CHUNK_SIZE];
+    z_stream stream;
+    stream.avail_in = 0;
+    stream.next_in = Z_NULL;
+    while (client_enabled) {
+        stream.zalloc = Z_NULL;
+        stream.zfree = Z_NULL;
+        stream.opaque = Z_NULL;
+        result = inflateInit(&stream);
+        if (result != Z_OK) {
+            printf("END: inflateInit\n");
+            perror("inflateInit");
             exit(1);
         }
         do {

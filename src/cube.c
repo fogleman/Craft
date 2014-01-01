@@ -535,7 +535,7 @@ void make_character_3d(
         *(d++) = x + m; *(d++) = y; *(d++) = z - n;
         *(d++) = du + u2; *(d++) = dv + v1;
     }
-    if (face == 6) {
+    if (face == 6) { // top 3
         y += p;
         *(d++) = x + n; *(d++) = y; *(d++) = z + m;
         *(d++) = du + u1; *(d++) = dv + v2;
@@ -550,7 +550,7 @@ void make_character_3d(
         *(d++) = x - n; *(d++) = y; *(d++) = z - m;
         *(d++) = du + u2; *(d++) = dv + v1;
     }
-    if (face == 7) {
+    if (face == 7) { // top 4
         y += p;
         *(d++) = x + m; *(d++) = y; *(d++) = z - n;
         *(d++) = du + u1; *(d++) = dv + v2;

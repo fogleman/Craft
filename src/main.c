@@ -883,7 +883,7 @@ void gen_chunk_buffer(Chunk *chunk) {
             continue;
         }
         if (is_plant(e->w)) {
-            float rotation = simplex3(e->x, e->y, e->z, 4, 0.5, 2) * 360;
+            float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
                 data + offset,
                 e->x, e->y, e->z, 0.5, e->w, rotation);

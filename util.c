@@ -142,6 +142,24 @@ void load_png_texture(const char *file_name) {
     free(data);
 }
 
+char *tokenize(char *str, const char *delim, char **key) {
+    char *result;
+    if (str == NULL) {
+        str = *key;
+    }
+    str += strspn(str, delim);
+    if (*str == '\0') {
+        return NULL;
+    }
+    result = str;
+    str += strcspn(str, delim);
+    if (*str) {
+        *str++ = '\0';
+    }
+    *key = str;
+    return result;
+}
+
 int char_width(char input) {
     static const int lookup[128] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -172,10 +190,10 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
     int space_width = char_width(' ');
     int line_number = 0;
     char *key1, *key2;
-    char *line = strtok_r(text, "\n", &key1);
+    char *line = tokenize(text, "\n", &key1);
     while (line) {
         int line_width = 0;
-        char *token = strtok_r(line, " ", &key2);
+        char *token = tokenize(line, " ", &key2);
         while (token) {
             int token_width = string_width(token);
             if (line_width) {
@@ -190,11 +208,11 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
             }
             strncat(output, token, max_length);
             line_width += token_width + space_width;
-            token = strtok_r(NULL, " ", &key2);
+            token = tokenize(NULL, " ", &key2);
         }
         line_number++;
         strncat(output, "\n", max_length);
-        line = strtok_r(NULL, "\n", &key1);
+        line = tokenize(NULL, "\n", &key1);
     }
     free(text);
     return line_number;

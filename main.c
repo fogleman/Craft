@@ -731,7 +731,7 @@ int _gen_sign_buffer(
     float n = 1.0 / (max_width / 10);
     float ry = y + n * (rows - 1) * 0.625;
     char *key;
-    char *line = strtok_r(lines, "\n", &key);
+    char *line = tokenize(lines, "\n", &key);
     while (line) {
         int length = strlen(line);
         int line_width = string_width(line);
@@ -755,7 +755,7 @@ int _gen_sign_buffer(
             rz += dz * glyph_width / max_width / 2;
         }
         ry -= n * 1.25;
-        line = strtok_r(NULL, "\n", &key);
+        line = tokenize(NULL, "\n", &key);
         rows--;
         if (rows <= 0) {
             break;

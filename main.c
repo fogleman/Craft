@@ -716,11 +716,12 @@ void occlusion(char neighbors[27], float result[6][4]) {
     }
 }
 
-void _gen_sign_buffer(
+int _gen_sign_buffer(
     GLfloat *data, float x, float y, float z, int face, const char *text)
 {
     static const int face_dx[4] = {0, 0, -1, 1};
     static const int face_dz[4] = {1, -1, 0, 0};
+    int result = 0;
     float max_width = 64;
     char lines[1024];
     int rows = wrap(text, max_width, lines, 1024);
@@ -748,6 +749,7 @@ void _gen_sign_buffer(
             rz += dz * glyph_width / max_width / 2;
             make_character_3d(
                 data + index * 30, rx, ry, rz, n / 2, n, face, line[i]);
+            result++;
             index++;
             rx += dx * glyph_width / max_width / 2;
             rz += dz * glyph_width / max_width / 2;
@@ -759,25 +761,26 @@ void _gen_sign_buffer(
             break;
         }
     }
+    return result;
 }
 
 void gen_sign_buffer(Chunk *chunk) {
     SignList *signs = &chunk->signs;
 
     // first pass - count characters
-    int faces = 0;
+    int max_faces = 0;
     for (int i = 0; i < signs->size; i++) {
         Sign *e = signs->data + i;
-        faces += strlen(e->text);
+        max_faces += strlen(e->text);
     }
 
     // second pass - generate geometry
-    GLfloat *data = malloc_faces(5, faces);
-    int offset = 0;
+    GLfloat *data = malloc_faces(5, max_faces);
+    int faces = 0;
     for (int i = 0; i < signs->size; i++) {
         Sign *e = signs->data + i;
-        _gen_sign_buffer(data + offset, e->x, e->y, e->z, e->face, e->text);
-        offset += strlen(e->text) * 30;
+        faces += _gen_sign_buffer(
+            data + faces * 30, e->x, e->y, e->z, e->face, e->text);
     }
 
     del_buffer(chunk->sign_buffer);
@@ -1150,10 +1153,8 @@ void render_sign(Attrib *attrib, Player *player) {
     char text[MAX_SIGN_LENGTH];
     strncpy(text, typing_buffer + 1, MAX_SIGN_LENGTH);
     text[MAX_SIGN_LENGTH - 1] = '\0';
-    int length = strlen(text);
-    // TODO: number of actual faces depends on wrapping result
-    GLfloat *data = malloc_faces(5, length);
-    _gen_sign_buffer(data, x, y, z, face, text);
+    GLfloat *data = malloc_faces(5, strlen(text));
+    int length = _gen_sign_buffer(data, x, y, z, face, text);
     GLuint buffer = gen_faces(5, length, data);
     draw_sign(attrib, buffer, length);
     del_buffer(buffer);

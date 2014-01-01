@@ -1284,16 +1284,25 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     }
     if (key == GLFW_KEY_ENTER) {
         if (typing) {
-            typing = 0;
-            if (typing_buffer[0] == CRAFT_KEY_SIGN) {
-                Player *player = players;
-                int x, y, z, face;
-                if (hit_test_face(player, &x, &y, &z, &face)) {
-                    set_sign(x, y, z, face, typing_buffer + 1);
+            if (mods & GLFW_MOD_SHIFT) {
+                int n = strlen(typing_buffer);
+                if (n < MAX_TEXT_LENGTH - 1) {
+                    typing_buffer[n] = '\n';
+                    typing_buffer[n + 1] = '\0';
                 }
             }
             else {
-                client_talk(typing_buffer);
+                typing = 0;
+                if (typing_buffer[0] == CRAFT_KEY_SIGN) {
+                    Player *player = players;
+                    int x, y, z, face;
+                    if (hit_test_face(player, &x, &y, &z, &face)) {
+                        set_sign(x, y, z, face, typing_buffer + 1);
+                    }
+                }
+                else {
+                    client_talk(typing_buffer);
+                }
             }
         }
         else {

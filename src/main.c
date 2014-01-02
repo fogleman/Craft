@@ -95,6 +95,7 @@ static int scale = 1;
 static int ortho = 0;
 static float fov = 65;
 static int typing = 0;
+static int in_sign = 0;
 static char typing_buffer[MAX_TEXT_LENGTH] = {0};
 
 int chunked(float x) {
@@ -1320,6 +1321,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             else {
                 typing = 0;
                 if (typing_buffer[0] == CRAFT_KEY_SIGN) {
+                    in_sign = 0;
                     Player *player = players;
                     int x, y, z, face;
                     if (hit_test_face(player, &x, &y, &z, &face)) {
@@ -1391,6 +1393,7 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
         if (u == CRAFT_KEY_SIGN) {
             typing = 1;
+            in_sign = 1;
             typing_buffer[0] = CRAFT_KEY_SIGN;
             typing_buffer[1] = '\0';
         }
@@ -1914,9 +1917,14 @@ int main(int argc, char **argv) {
             }
         }
         if (typing) {
-            snprintf(text_buffer, 1024, "> %s", typing_buffer);
-            render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
-            ty -= ts * 2;
+            if (in_sign) {
+                render_text(&text_attrib, LEFT, tx, ty, ts, "EDITING SIGN (press Enter to save sign text)");
+            }
+            else {
+                snprintf(text_buffer, 1024, "> %s", typing_buffer);
+                render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
+                ty -= ts * 2;
+            }
         }
         if (SHOW_PLAYER_NAMES) {
             if (player != me) {

@@ -1711,7 +1711,11 @@ int main(int argc, char **argv) {
             }
         }
         float speed = flying ? 20 : 5;
-        int step = 8;
+        int estimate = roundf(sqrtf(
+            powf(vx * speed, 2) +
+            powf(vy * speed + ABS(dy) * 2, 2) +
+            powf(vz * speed, 2)) * dt * 8);
+        int step = MAX(8, estimate);
         float ut = dt / step;
         vx = vx * ut * speed;
         vy = vy * ut * speed;

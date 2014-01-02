@@ -437,7 +437,7 @@ Player *player_crosshair(Player *player) {
         }
         float p = player_crosshair_distance(player, other);
         float d = player_player_distance(player, other);
-        if (d < 96 && p / d < threshold) {
+        if (d < PLAYER_NAME_DISTANCE && p / d < threshold) {
             if (best == 0 || d < best) {
                 best = d;
                 result = other;

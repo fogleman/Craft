@@ -16,7 +16,6 @@ add_executable(
 add_definitions(-std=c99 -O3)
 
 add_subdirectory(deps/glfw)
-include_directories(src)
 include_directories(deps/glew/include)
 include_directories(deps/glfw/include)
 include_directories(deps/lodepng)

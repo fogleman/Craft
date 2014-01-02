@@ -85,8 +85,11 @@ static Player players[MAX_PLAYERS];
 static int player_count = 0;
 static int exclusive = 1;
 static int left_click = 0;
+static int left_click_flag = 0;
 static int right_click = 0;
+static int right_click_flag = 0;
 static int middle_click = 0;
+static int middle_click_flag = 0;
 static int observe1 = 0;
 static int observe2 = 0;
 static int flying = 0;
@@ -1287,9 +1290,6 @@ void render_text(
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_RELEASE) {
-        return;
-    }
     if (key == GLFW_KEY_BACKSPACE) {
         if (typing) {
             int n = strlen(typing_buffer);
@@ -1297,9 +1297,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                 typing_buffer[n - 1] = '\0';
             }
         }
-    }
-    if (action != GLFW_PRESS) {
-        return;
     }
     if (key == GLFW_KEY_ESCAPE) {
         if (typing) {
@@ -1334,15 +1331,25 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             }
         }
         else {
-            if (mods & GLFW_MOD_SUPER) {
-                right_click = 1;
+            if (action == GLFW_PRESS) {
+                if (mods & GLFW_MOD_SUPER) {
+                    right_click_flag = right_click = 1;
+                }
+                else {
+                    left_click_flag = left_click = 1;
+                }
             }
-            else {
-                left_click = 1;
+            else if (action == GLFW_RELEASE) {
+                if (mods & GLFW_MOD_SUPER) {
+                    right_click = 0;
+                }
+                else {
+                    left_click = 0;
+                }
             }
         }
     }
-    if (!typing) {
+    if (!typing && action == GLFW_PRESS) {
         if (key == CRAFT_KEY_FLY) {
             flying = !flying;
         }
@@ -1416,16 +1423,23 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
 }
 
 void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
-    if (action != GLFW_PRESS) {
-        return;
-    }
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (exclusive) {
-            if (mods & GLFW_MOD_SUPER) {
-                right_click = 1;
+            if (action == GLFW_PRESS) {
+                if (mods & GLFW_MOD_SUPER) {
+                    right_click_flag = right_click = 1;
+                }
+                else {
+                    left_click_flag = left_click = 1;
+                }
             }
-            else {
-                left_click = 1;
+            else if (action == GLFW_RELEASE) {
+                if (mods & GLFW_MOD_SUPER) {
+                    right_click = 0;
+                }
+                else {
+                    left_click = 0;
+                }
             }
         }
         else {
@@ -1435,12 +1449,22 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (exclusive) {
-            right_click = 1;
+            if (action == GLFW_PRESS) {
+                right_click_flag = right_click = 1;
+            }
+            else if (action == GLFW_RELEASE) {
+                right_click = 0;
+            }
         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
         if (exclusive) {
-            middle_click = 1;
+            if (action == GLFW_PRESS) {
+                middle_click_flag = middle_click = 1;
+            }
+            else if (action == GLFW_RELEASE) {
+                middle_click = 0;
+            }
         }
     }
 }
@@ -1742,8 +1766,8 @@ int main(int argc, char **argv) {
         }
 
         // HANDLE CLICKS //
-        if (left_click) {
-            left_click = 0;
+        if (left_click_flag || left_click) {
+            left_click_flag = 0;
             int hx, hy, hz;
             int hw = hit_test(0, x, y, z, rx, ry, &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_destructable(hw)) {
@@ -1754,8 +1778,8 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if (right_click) {
-            right_click = 0;
+        if (right_click_flag || right_click) {
+            right_click_flag = 0;
             int hx, hy, hz;
             int hw = hit_test(1, x, y, z, rx, ry, &hx, &hy, &hz);
             if (hy > 0 && hy < 256 && is_obstacle(hw)) {
@@ -1764,8 +1788,8 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if (middle_click) {
-            middle_click = 0;
+        if (middle_click_flag || middle_click) {
+            middle_click_flag = 0;
             int hx, hy, hz;
             int hw = hit_test(0, x, y, z, rx, ry, &hx, &hy, &hz);
             for (int i = 0; i < item_count; i++) {

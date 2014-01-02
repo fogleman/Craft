@@ -1649,7 +1649,12 @@ int main(int argc, char **argv) {
             glfwGetCursorPos(window, &mx, &my);
             float m = 0.0025;
             rx += (mx - px) * m;
-            ry -= (my - py) * m;
+            if (INVERT_MOUSE) {
+                ry += (my - py) * m;
+            }
+            else {
+                ry -= (my - py) * m;
+            }
             if (rx < 0) {
                 rx += RADIANS(360);
             }

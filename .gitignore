@@ -8,4 +8,6 @@ log.txt
 *.o
 *.db
 *.exe
+.project
+.cproject
 

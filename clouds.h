@@ -15,6 +15,7 @@ typedef struct {
     
     int *heightmap;    //height map for boxes
     int hmWidth,hmDepth;
+    int render;
 } Cloud;
 
 typedef struct {
@@ -45,7 +46,7 @@ typedef struct {
 Weather *weather;
 
 void create_clouds();
-void update_clouds(float x, float z, float rx, float rz);
+void update_clouds(float x, float y, float z, float rx, float rz, float fov);
 void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, float z, float rx, float ry, float fov, int ortho);
 void cleanup_clouds();
 void remove_cloud(Cloud *c);

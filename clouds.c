@@ -94,13 +94,47 @@ void set_vertex(GLfloat *d,float x,float y,float z,float nx,float ny,float nz,fl
     d[(*index)++] = r; d[(*index)++] = g; d[(*index)++] = b;
 }
 
+void getPIP(float *point, float *point_on_plane, float *ray_origin, float *ray_vector){
+    float pop_minus_ro[] = {point_on_plane[0] - ray_origin[0],point_on_plane[1] - ray_origin[1],point_on_plane[2] - ray_origin[2]};
+    float t = (1 * pop_minus_ro[1])/(1 * ray_vector[1]);
+    
+    point[0] = ray_origin[0] + (t * ray_vector[0]);
+    point[1] = ray_origin[1] + (t * ray_vector[1]);
+    point[2] = ray_origin[2] + (t * ray_vector[2]);
+    
+}
 
-void update_clouds(float player_x, float player_z, float rx, float rz) {
+void update_clouds(float player_x, float player_y, float player_z, float rx, float rz, float fov) {
     
     int i;
+    rx -= M_PI/2;
+    
+    float rdx = player_x + (-40 * cos(rx));
+    float rdz = player_z + (-40 * sin(rx));
+    
+    float llx = rx - (fov*(M_PI/180))/1.6;
+    float lrx = rx + (fov*(M_PI/180))/1.6;
+    
+    float ldx = player_x + (200 * cos(llx));
+    float ldz = player_z + (200 * sin(llx));
+    
+    float rhdx = player_x + (200 * cos(lrx));
+    float rhdz = player_z + (200 * sin(lrx));
+    
+    float lvec[] = {ldx - player_x, ldz - player_z};
+    float rvec[] = {rhdx - player_x, rhdz - player_z};
+    
+    float lvec_length = sqrt( lvec[0] * lvec[0] + lvec[1] * lvec[1] );
+    float rvec_length = sqrt( rvec[0] * rvec[0] + rvec[1] * rvec[1] );
+    
+    float lrangle = acos((rvec[0]*lvec[0] + rvec[1]*lvec[1])/(lvec_length * rvec_length));
+    
+    int rendering = 0;
+    
     for(i=0; i<weather->cloud_count; i++){
         
         Cloud *c = (weather->clouds)[i];
+        c->render = 0;
         //delete clouds that have strayed too far from the player, or have degenerated.
 
         
@@ -124,9 +158,34 @@ void update_clouds(float player_x, float player_z, float rx, float rz) {
             c->x += ((weather->clouds)[i])->dx;
             c->y += ((weather->clouds)[i])->dy;
             c->z += ((weather->clouds)[i])->dz;
+            
+            
+            //check if the player is looking down, or if the player is above the clouds,
+            //and if the cloud is close enough to not be culled by the frag shader
+            if ((rz > -0.444 || player_y > CLOUD_Y_HEIGHT) && (pow(player_x - (((weather->clouds)[i])->x),2) + pow(player_z - (((weather->clouds)[i])->z),2)) < pow(250,2)) {
+               
+                float cvec[] = {c->x - rdx, c->z - rdz};
+                
+                float angle = acos((cvec[0]*lvec[0] + cvec[1]*lvec[1])/(sqrt(pow(cvec[0],2)+pow(cvec[1],2))*sqrt(pow(lvec[0],2)+pow(lvec[1],2))));
+                
+                cvec[0] = c->x + c->hmWidth - rdx;
+                cvec[1] = c->z + c->hmDepth - rdx;
+
+                float angletwo = acos((cvec[0]*lvec[0] + cvec[1]*lvec[1])/(sqrt(pow(cvec[0],2)+pow(cvec[1],2))*sqrt(pow(lvec[0],2)+pow(lvec[1],2))));
+                
+                
+                if (angle < lrangle || angletwo < lrangle) {
+                    c->render = 1;
+                    rendering++;
+                }
+                
+            }
+
   
         }
     }
+    
+    //printf("Going to render %d/%d\n",rendering,weather->cloud_count);
     
     //add new cloud if required.
     add_cloud(player_x, player_z,rx,rz);
@@ -141,7 +200,7 @@ void add_cloud(float player_x, float player_z, float rx, float rz){
         Cloud *c = (Cloud*)malloc(sizeof(Cloud));
         c->hmWidth = 32;
         c->hmDepth = 32;
-        
+        c->render = 0;
         c->heightmap = (int*)calloc(sizeof(int),c->hmWidth * c->hmDepth);
         
         //seed an initial value
@@ -208,6 +267,8 @@ void add_cloud(float player_x, float player_z, float rx, float rz){
 
 void render_cloud(Cloud *cloud, CloudAttrib *attrib){
    
+    
+    
     float matrix[16];
     
     float matrix_prev[16];
@@ -216,7 +277,7 @@ void render_cloud(Cloud *cloud, CloudAttrib *attrib){
     
     mat_identity(matrix);
     
-    mat_translate(matrix,cloud->x - (cloud->hmWidth/2), 80 + cloud->y, cloud->z - (cloud->hmDepth/2));
+    mat_translate(matrix,cloud->x - (cloud->hmWidth/2), CLOUD_Y_HEIGHT + cloud->y, cloud->z - (cloud->hmDepth/2));
     
     mat_scale(matrix,cloud->sx,cloud->sy,cloud->sz);
     
@@ -247,7 +308,9 @@ void render_cloud(Cloud *cloud, CloudAttrib *attrib){
 
 void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, float z, float rx, float ry, float fov, int ortho) {
     int i;
-
+    if(!(ry > -0.444 || y > CLOUD_Y_HEIGHT)){
+        return;
+    }
 
     float matrix[16];
     set_matrix_3d( matrix, width, height, x,y,z,rx,ry, fov, ortho);
@@ -272,7 +335,9 @@ void render_clouds(CloudAttrib *attrib,int width, int height, float x, float y, 
                           sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
   
     for(i=0; i<weather->cloud_count; i++){
-        render_cloud((weather->clouds)[i], attrib);
+        if ((weather->clouds)[i]->render) {
+            render_cloud((weather->clouds)[i], attrib);
+        }
     }
     
 

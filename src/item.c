@@ -171,6 +171,9 @@ int is_obstacle(int w) {
 }
 
 int is_transparent(int w) {
+    if (w == EMPTY) {
+        return 1;
+    }
     w = ABS(w);
     if (is_plant(w)) {
         return 1;

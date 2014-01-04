@@ -28,7 +28,7 @@ void map_free(Map *map) {
     free(map->data);
 }
 
-void map_set(Map *map, int x, int y, int z, int w) {
+int map_set(Map *map, int x, int y, int z, int w) {
     unsigned int index = hash(x, y, z) & map->mask;
     MapEntry *entry = map->data + index;
     int overwrite = 0;
@@ -41,7 +41,10 @@ void map_set(Map *map, int x, int y, int z, int w) {
         entry = map->data + index;
     }
     if (overwrite) {
-        entry->w = w;
+        if (entry->w != w) {
+            entry->w = w;
+            return 1;
+        }
     }
     else if (w) {
         entry->x = x;
@@ -52,7 +55,9 @@ void map_set(Map *map, int x, int y, int z, int w) {
         if (map->size * 2 > map->mask) {
             map_grow(map);
         }
+        return 1;
     }
+    return 0;
 }
 
 int map_get(Map *map, int x, int y, int z) {

@@ -1066,14 +1066,16 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
-        if (map_get(map, x, y, z) != w) { // TODO: make map_set return success
-            map_set(map, x, y, z, w);
+        if (map_set(map, x, y, z, w)) {
             if (dirty) {
                 chunk->dirty = 1;
             }
+            db_insert_block(p, q, x, y, z, w);
         }
     }
-    db_insert_block(p, q, x, y, z, w);
+    else {
+        db_insert_block(p, q, x, y, z, w);
+    }
     if (w == 0 && chunked(x) == p && chunked(z) == q) {
         unset_sign(x, y, z);
     }

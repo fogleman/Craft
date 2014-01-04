@@ -4,6 +4,7 @@ project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.c)
 
+
 add_executable(
     craft
     ${SOURCE_FILES}

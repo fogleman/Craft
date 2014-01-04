@@ -1492,6 +1492,8 @@ int main(int argc, char **argv) {
             if (db_init(path)) {
                 return -1;
             }
+            // TODO: support proper caching of signs (handle deletions)
+            db_delete_all_signs();
         }
         client_enable();
         client_connect(hostname, port);

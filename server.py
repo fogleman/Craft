@@ -22,7 +22,9 @@ COMMIT_INTERVAL = 5
 SPAWN_POINT = (0, 0, 0, 0, 0)
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    17, 18, 19, 20, 21, 22, 23])
+    17, 18, 19, 20, 21, 22, 23,
+    32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63])
 
 YOU = 'U'
 BLOCK = 'B'
@@ -33,6 +35,7 @@ TALK = 'T'
 KEY = 'K'
 NICK = 'N'
 SIGN = 'S'
+VERSION = 'V'
 
 def log(*args):
     now = datetime.datetime.utcnow()
@@ -71,6 +74,7 @@ class Handler(SocketServer.BaseRequestHandler):
     def setup(self):
         self.position_limiter = RateLimiter(100, 5)
         self.limiter = RateLimiter(1000, 10)
+        self.version = None
         self.queue = Queue.Queue()
         self.running = True
         self.start()
@@ -147,6 +151,7 @@ class Model(object):
             POSITION: self.on_position,
             TALK: self.on_talk,
             SIGN: self.on_sign,
+            VERSION: self.on_version,
         }
         self.patterns = [
             (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
@@ -244,6 +249,15 @@ class Model(object):
         self.clients.remove(client)
         self.send_disconnect(client)
         self.send_talk('%s has disconnected from the server.' % client.nick)
+    def on_version(self, client, version):
+        if client.version is not None:
+            return
+        version = int(version)
+        if version != 1:
+            client.stop()
+            return
+        client.version = version
+        # TODO: client.start() here
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
         query = (
@@ -299,7 +313,7 @@ class Model(object):
         x, y, z, face = map(int, (x, y, z, face))
         if y <= 0 or y > 255:
             return
-        if face < 0 or face > 3:
+        if face < 0 or face > 7:
             return
         if len(text) > 48:
             return

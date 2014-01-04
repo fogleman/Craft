@@ -18,6 +18,8 @@ PLANK = 8
 SNOW = 9
 GLASS = 10
 COBBLE = 11
+LIGHT = 12
+DARK = 13
 
 OFFSETS = [
     (-0.5, -0.5, -0.5),
@@ -67,24 +69,30 @@ def circle_z(x, y, z, r, fill=False):
     return sphere(x, y, z, r, fill, fz=True)
 
 def cylinder_x(x1, x2, y, z, r, fill=False):
+    x1, x2 = sorted((x1, x2))
     result = set()
     for x in range(x1, x2 + 1):
         result |= circle_x(x, y, z, r, fill)
     return result
 
 def cylinder_y(x, y1, y2, z, r, fill=False):
+    y1, y2 = sorted((y1, y2))
     result = set()
     for y in range(y1, y2 + 1):
         result |= circle_y(x, y, z, r, fill)
     return result
 
 def cylinder_z(x, y, z1, z2, r, fill=False):
+    z1, z2 = sorted((z1, z2))
     result = set()
     for z in range(z1, z2 + 1):
         result |= circle_z(x, y, z, r, fill)
     return result
 
 def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
+    x1, x2 = sorted((x1, x2))
+    y1, y2 = sorted((y1, y2))
+    z1, z2 = sorted((z1, z2))
     result = set()
     a = (x1 == x2) + (y1 == y2) + (z1 == z2)
     for x in range(x1, x2 + 1):
@@ -100,6 +108,8 @@ def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
     return result
 
 def pyramid(x1, x2, y, z1, z2, fill=False):
+    x1, x2 = sorted((x1, x2))
+    z1, z2 = sorted((z1, z2))
     result = set()
     while x2 >= x1 and z2 >= z2:
         result |= cuboid(x1, x2, y, y, z1, z2, fill)

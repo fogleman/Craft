@@ -110,6 +110,9 @@ int chunked(float x) {
 }
 
 float time_of_day() {
+    if (DAY_LENGTH <= 0) {
+        return 0.5;
+    }
     float t;
     t = glfwGetTime();
     t = t + DAY_LENGTH / 3.0;
@@ -159,7 +162,9 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         float m = cosf(ry);
         float y = sinf(ry);
         if (sx) {
-            y = 0;
+            if (!sz) {
+                y = 0;
+            }
             m = 1;
         }
         if (sz > 0) {
@@ -208,8 +213,7 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(9, 4);
-    float rotation = simplex3(x, y, z, 4, 0.5, 2) * 360;
-    make_plant(data, x, y, z, n, w, rotation);
+    make_plant(data, x, y, z, n, w, 45);
     return gen_faces(9, 4, data);
 }
 
@@ -320,14 +324,14 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
 
 void draw_signs(Attrib *attrib, Chunk *chunk) {
     glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-64, -64);
+    glPolygonOffset(-8, -1024);
     draw_triangles_3d_text(attrib, chunk->sign_buffer, chunk->sign_faces * 6);
     glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
 void draw_sign(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-64, -64);
+    glPolygonOffset(-8, -1024);
     draw_triangles_3d_text(attrib, buffer, length * 6);
     glDisable(GL_POLYGON_OFFSET_FILL);
 }
@@ -612,6 +616,14 @@ int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
         if (dx == 0 && dy == 0 && dz == 1) {
             *face = 3; return 1;
         }
+        if (dx == 0 && dy == 1 && dz == 0) {
+            int degrees = roundf(DEGREES(atan2f(s->x - hx, s->z - hz)));
+            if (degrees < 0) {
+                degrees += 360;
+            }
+            int top = ((degrees + 45) / 90) % 4;
+            *face = 4 + top; return 1;
+        }
     }
     return 0;
 }
@@ -727,42 +739,57 @@ void occlusion(char neighbors[27], float result[6][4]) {
 int _gen_sign_buffer(
     GLfloat *data, float x, float y, float z, int face, const char *text)
 {
-    static const int face_dx[4] = {0, 0, -1, 1};
-    static const int face_dz[4] = {1, -1, 0, 0};
+    static const int glyph_dx[8] = {0, 0, -1, 1, 1, 0, -1, 0};
+    static const int glyph_dz[8] = {1, -1, 0, 0, 0, -1, 0, 1};
+    static const int line_dx[8] = {0, 0, 0, 0, 0, 1, 0, -1};
+    static const int line_dy[8] = {-1, -1, -1, -1, 0, 0, 0, 0};
+    static const int line_dz[8] = {0, 0, 0, 0, 1, 0, -1, 0};
+    if (face < 0 || face >= 8) {
+        return 0;
+    }
     int count = 0;
     float max_width = 64;
+    float line_height = 1.25;
     char lines[1024];
     int rows = wrap(text, max_width, lines, 1024);
     rows = MIN(rows, 5);
-    int dx = face_dx[face];
-    int dz = face_dz[face];
+    int dx = glyph_dx[face];
+    int dz = glyph_dz[face];
+    int ldx = line_dx[face];
+    int ldy = line_dy[face];
+    int ldz = line_dz[face];
     float n = 1.0 / (max_width / 10);
-    float ry = y + n * (rows - 1) * 0.625;
+    float sx = x - n * (rows - 1) * (line_height / 2) * ldx;
+    float sy = y - n * (rows - 1) * (line_height / 2) * ldy;
+    float sz = z - n * (rows - 1) * (line_height / 2) * ldz;
     char *key;
     char *line = tokenize(lines, "\n", &key);
     while (line) {
         int length = strlen(line);
         int line_width = string_width(line);
         line_width = MIN(line_width, max_width);
-        float rx = x - dx * line_width / max_width / 2;
-        float rz = z - dz * line_width / max_width / 2;
+        float rx = sx - dx * line_width / max_width / 2;
+        float ry = sy;
+        float rz = sz - dz * line_width / max_width / 2;
         for (int i = 0; i < length; i++) {
-            int glyph_width = char_width(line[i]);
-            line_width -= glyph_width;
+            int width = char_width(line[i]);
+            line_width -= width;
             if (line_width < 0) {
                 break;
             }
-            rx += dx * glyph_width / max_width / 2;
-            rz += dz * glyph_width / max_width / 2;
+            rx += dx * width / max_width / 2;
+            rz += dz * width / max_width / 2;
             if (line[i] != ' ') {
                 make_character_3d(
                     data + count * 30, rx, ry, rz, n / 2, n, face, line[i]);
                 count++;
             }
-            rx += dx * glyph_width / max_width / 2;
-            rz += dz * glyph_width / max_width / 2;
+            rx += dx * width / max_width / 2;
+            rz += dz * width / max_width / 2;
         }
-        ry -= n * 1.25;
+        sx += n * line_height * ldx;
+        sy += n * line_height * ldy;
+        sz += n * line_height * ldz;
         line = tokenize(NULL, "\n", &key);
         rows--;
         if (rows <= 0) {
@@ -869,7 +896,7 @@ void gen_chunk_buffer(Chunk *chunk) {
             continue;
         }
         if (is_plant(e->w)) {
-            float rotation = simplex3(e->x, e->y, e->z, 4, 0.5, 2) * 360;
+            float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
                 data + offset,
                 e->x, e->y, e->z, 0.5, e->w, rotation);
@@ -1481,6 +1508,7 @@ int main(int argc, char **argv) {
         client_enable();
         client_connect(hostname, port);
         client_start();
+        client_version(1);
     }
     else {
         char path[1024];
@@ -1647,7 +1675,12 @@ int main(int argc, char **argv) {
             glfwGetCursorPos(window, &mx, &my);
             float m = 0.0025;
             rx += (mx - px) * m;
-            ry -= (my - py) * m;
+            if (INVERT_MOUSE) {
+                ry += (my - py) * m;
+            }
+            else {
+                ry -= (my - py) * m;
+            }
             if (rx < 0) {
                 rx += RADIANS(360);
             }
@@ -1711,7 +1744,11 @@ int main(int argc, char **argv) {
             }
         }
         float speed = flying ? 20 : 5;
-        int step = 8;
+        int estimate = roundf(sqrtf(
+            powf(vx * speed, 2) +
+            powf(vy * speed + ABS(dy) * 2, 2) +
+            powf(vz * speed, 2)) * dt * 8);
+        int step = MAX(8, estimate);
         float ut = dt / step;
         vx = vx * ut * speed;
         vy = vy * ut * speed;

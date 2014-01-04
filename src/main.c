@@ -316,14 +316,14 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
 
 void draw_signs(Attrib *attrib, Chunk *chunk) {
     glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-64, -64);
+    glPolygonOffset(-8, -1024);
     draw_triangles_3d_text(attrib, chunk->sign_buffer, chunk->sign_faces * 6);
     glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
 void draw_sign(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-64, -64);
+    glPolygonOffset(-8, -1024);
     draw_triangles_3d_text(attrib, buffer, length * 6);
     glDisable(GL_POLYGON_OFFSET_FILL);
 }

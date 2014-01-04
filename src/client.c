@@ -13,7 +13,7 @@
 #include "client.h"
 #include "tinycthread.h"
 
-#define QUEUE_SIZE 65536
+#define QUEUE_SIZE 1048576
 #define RECV_SIZE 4096
 
 static int client_enabled = 0;
@@ -130,22 +130,24 @@ void client_talk(char *text) {
     client_send(buffer);
 }
 
-int client_recv(char *data, int length) {
+char *client_recv() {
     if (!client_enabled) {
         return 0;
     }
-    int result = 0;
+    char *result = 0;
     mtx_lock(&mutex);
-    char *p = strstr(queue, "\n");
-    if (p) {
-        *p = '\0';
-        strncpy(data, queue, length);
-        data[length - 1] = '\0';
-        int line_length = p - queue;
-        int remaining_length = qsize - line_length;
-        memmove(queue, p + 1, remaining_length);
-        qsize -= line_length + 1;
-        result = 1;
+    char *p = queue + qsize - 1;
+    while (p >= queue && *p != '\n') {
+        p--;
+    }
+    if (p >= queue) {
+        int length = p - queue + 1;
+        result = malloc(sizeof(char) * (length + 1));
+        memcpy(result, queue, sizeof(char) * length);
+        result[length] = '\0';
+        int remaining = qsize - length;
+        memmove(queue, p + 1, remaining);
+        qsize -= length;
     }
     mtx_unlock(&mutex);
     return result;

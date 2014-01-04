@@ -14,12 +14,13 @@
 #include "tinycthread.h"
 
 #define QUEUE_SIZE 65536
-#define BUFFER_SIZE 4096
+#define RECV_SIZE 4096
 
 static int client_enabled = 0;
 static int running = 0;
 static int sd = 0;
-static char recv_buffer[QUEUE_SIZE] = {0};
+static char *queue = 0;
+static int qsize = 0;
 static thrd_t recv_thread;
 static mtx_t mutex;
 
@@ -135,12 +136,15 @@ int client_recv(char *data, int length) {
     }
     int result = 0;
     mtx_lock(&mutex);
-    char *p = strstr(recv_buffer, "\n");
+    char *p = strstr(queue, "\n");
     if (p) {
         *p = '\0';
-        strncpy(data, recv_buffer, length);
+        strncpy(data, queue, length);
         data[length - 1] = '\0';
-        memmove(recv_buffer, p + 1, strlen(p + 1) + 1);
+        int line_length = p - queue;
+        int remaining_length = qsize - line_length;
+        memmove(queue, p + 1, remaining_length);
+        qsize -= line_length + 1;
         result = 1;
     }
     mtx_unlock(&mutex);
@@ -148,9 +152,10 @@ int client_recv(char *data, int length) {
 }
 
 int recv_worker(void *arg) {
+    char *data = malloc(sizeof(char) * RECV_SIZE);
     while (1) {
-        char data[BUFFER_SIZE] = {0};
-        if (recv(sd, data, BUFFER_SIZE - 1, 0) <= 0) {
+        int length;
+        if ((length = recv(sd, data, RECV_SIZE - 1, 0)) <= 0) {
             if (running) {
                 perror("recv");
                 exit(1);
@@ -159,11 +164,13 @@ int recv_worker(void *arg) {
                 break;
             }
         }
+        data[length] = '\0';
         while (1) {
             int done = 0;
             mtx_lock(&mutex);
-            if (strlen(recv_buffer) + strlen(data) < QUEUE_SIZE) {
-                strcat(recv_buffer, data);
+            if (qsize + length < QUEUE_SIZE) {
+                memcpy(queue + qsize, data, sizeof(char) * (length + 1));
+                qsize += length;
                 done = 1;
             }
             mtx_unlock(&mutex);
@@ -173,6 +180,7 @@ int recv_worker(void *arg) {
             sleep(0);
         }
     }
+    free(data);
     return 0;
 }
 
@@ -205,6 +213,8 @@ void client_start() {
         return;
     }
     running = 1;
+    queue = (char *)calloc(QUEUE_SIZE, sizeof(char));
+    qsize = 0;
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
         perror("thrd_create");
@@ -223,4 +233,6 @@ void client_stop() {
     //     exit(1);
     // }
     // mtx_destroy(&mutex);
+    qsize = 0;
+    free(queue);
 }

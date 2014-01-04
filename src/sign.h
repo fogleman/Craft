@@ -22,7 +22,7 @@ void sign_list_free(SignList *list);
 void sign_list_grow(SignList *list);
 void sign_list_add(
     SignList *list, int x, int y, int z, int face, const char *text);
-void sign_list_remove(SignList *list, int x, int y, int z, int face);
-void sign_list_remove_all(SignList *list, int x, int y, int z);
+int sign_list_remove(SignList *list, int x, int y, int z, int face);
+int sign_list_remove_all(SignList *list, int x, int y, int z);
 
 #endif

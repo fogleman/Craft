@@ -1015,10 +1015,14 @@ void unset_sign(int x, int y, int z) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         SignList *signs = &chunk->signs;
-        sign_list_remove_all(signs, x, y, z);
-        chunk->dirty = 1;
+        if (sign_list_remove_all(signs, x, y, z)) {
+            chunk->dirty = 1;
+            db_delete_signs(x, y, z);
+        }
     }
-    db_delete_signs(x, y, z);
+    else {
+        db_delete_signs(x, y, z);
+    }
 }
 
 void unset_sign_face(int x, int y, int z, int face) {
@@ -1027,10 +1031,14 @@ void unset_sign_face(int x, int y, int z, int face) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         SignList *signs = &chunk->signs;
-        sign_list_remove(signs, x, y, z, face);
-        chunk->dirty = 1;
+        if (sign_list_remove(signs, x, y, z, face)) {
+            chunk->dirty = 1;
+            db_delete_sign(x, y, z, face);
+        }
     }
-    db_delete_sign(x, y, z, face);
+    else {
+        db_delete_sign(x, y, z, face);
+    }
 }
 
 void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {

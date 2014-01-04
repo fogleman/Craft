@@ -1790,8 +1790,8 @@ int main(int argc, char **argv) {
         }
 
         // HANDLE DATA FROM SERVER //
-        char *buffer;
-        while ((buffer = client_recv()) != 0) {
+        char *buffer = client_recv();
+        if (buffer) {
             char *key;
             char *line = tokenize(buffer, "\n", &key);
             while (line) {

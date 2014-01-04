@@ -166,19 +166,28 @@ void update_clouds(float player_x, float player_y, float player_z, float rx, flo
             //and if the cloud is close enough to not be culled by the frag shader
             if ((rz > -0.444 || player_y > CLOUD_Y_HEIGHT) && (pow(player_x - (((weather->clouds)[i])->x),2) + pow(player_z - (((weather->clouds)[i])->z),2)) < pow(250,2)) {
                
-                float cvec[] = {c->x - rdx, c->z - rdz};
+                if (rz > 1.1) {
+                        //just check around us
+                    if ((pow(player_x - (((weather->clouds)[i])->x),2) + pow(player_z - (((weather->clouds)[i])->z),2)) < pow(130,2)) {
+                        c->render = 1;
+                        rendering++;
+                    }
+                } else {
                 
-                float angle = acos((cvec[0]*lvec[0] + cvec[1]*lvec[1])/(sqrt(pow(cvec[0],2)+pow(cvec[1],2))*sqrt(pow(lvec[0],2)+pow(lvec[1],2))));
-                
-                cvec[0] = c->x + c->hmWidth - rdx;
-                cvec[1] = c->z + c->hmDepth - rdx;
+                    float cvec[] = {c->x - rdx, c->z - rdz};
+                    
+                    float angle = acos((cvec[0]*lvec[0] + cvec[1]*lvec[1])/(sqrt(pow(cvec[0],2)+pow(cvec[1],2))*sqrt(pow(lvec[0],2)+pow(lvec[1],2))));
+                    
+                    cvec[0] = c->x + c->hmWidth - rdx;
+                    cvec[1] = c->z + c->hmDepth - rdx;
 
-                float angletwo = acos((cvec[0]*lvec[0] + cvec[1]*lvec[1])/(sqrt(pow(cvec[0],2)+pow(cvec[1],2))*sqrt(pow(lvec[0],2)+pow(lvec[1],2))));
-                
-                
-                if (angle < lrangle || angletwo < lrangle) {
-                    c->render = 1;
-                    rendering++;
+                    float angletwo = acos((cvec[0]*lvec[0] + cvec[1]*lvec[1])/(sqrt(pow(cvec[0],2)+pow(cvec[1],2))*sqrt(pow(lvec[0],2)+pow(lvec[1],2))));
+                    
+                    
+                    if (angle < lrangle || angletwo < lrangle) {
+                        c->render = 1;
+                        rendering++;
+                    }
                 }
                 
             }

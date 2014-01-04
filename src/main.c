@@ -21,7 +21,6 @@
 #include "util.h"
 #include "world.h"
 #include "clouds.h"
-#include "mob/mob.h"
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
@@ -1113,7 +1112,6 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
-    glBindTexture(GL_TEXTURE_2D, 1);
     glUniform1i(attrib->sampler, 0);
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, light);
@@ -1824,19 +1822,6 @@ int main(int argc, char **argv) {
     cloud_attrib.cloudColour = glGetUniformLocation(program, "cloudColour");
     cloud_attrib.skysampler = glGetUniformLocation(program, "sky_sampler");
     
-    MobAttrib mob_attrib = {0};
-    program = load_program(
-                           "shaders/mob_vertex.glsl", "shaders/mob_fragment.glsl");
-    
-    mob_attrib.program = program;
-    mob_attrib.position = glGetAttribLocation(program, "position");
-    mob_attrib.normal = glGetAttribLocation(program, "normal");
-    mob_attrib.uv = glGetAttribLocation(program, "uv");
-    mob_attrib.colour = glGetAttribLocation(program, "colour");
-    mob_attrib.matrix = glGetUniformLocation(program, "matrix");
-    mob_attrib.sampler = glGetUniformLocation(program, "sampler");
-    mob_attrib.model = glGetUniformLocation(program, "model");
-    mob_attrib.texture = glGetUniformLocation(program, "texture");
     
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
@@ -1893,7 +1878,6 @@ int main(int argc, char **argv) {
     if (SHOW_CLOUDS) {
         create_clouds();
     }
-    init_mobs();
     
     if (!loaded) {
         s->y = highest_block(s->x, s->z) + 2;
@@ -2093,7 +2077,6 @@ int main(int argc, char **argv) {
     if (SHOW_CLOUDS) {
         cleanup_clouds();
     }
-    cleanup_mobs();
     
     glfwTerminate();
     client_stop();

@@ -1070,13 +1070,15 @@ void set_sign(int x, int y, int z, int face, const char *text) {
     client_sign(x, y, z, face, text);
 }
 
-void _set_block(int p, int q, int x, int y, int z, int w) {
+void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
-        if (map_get(map, x, y, z) != w) {
+        if (map_get(map, x, y, z) != w) { // TODO: make map_set return success
             map_set(map, x, y, z, w);
-            chunk->dirty = 1;
+            if (dirty) {
+                chunk->dirty = 1;
+            }
         }
     }
     db_insert_block(p, q, x, y, z, w);
@@ -1088,7 +1090,7 @@ void _set_block(int p, int q, int x, int y, int z, int w) {
 void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
-    _set_block(p, q, x, y, z, w);
+    _set_block(p, q, x, y, z, w, 1);
     for (int dx = -1; dx <= 1; dx++) {
         for (int dz = -1; dz <= 1; dz++) {
             if (dx == 0 && dz == 0) {
@@ -1100,7 +1102,7 @@ void set_block(int x, int y, int z, int w) {
             if (dz && chunked(z + dz) == q) {
                 continue;
             }
-            _set_block(p + dx, q + dz, x, y, z, -w);
+            _set_block(p + dx, q + dz, x, y, z, -w, 1);
         }
     }
     client_block(x, y, z, w);
@@ -1834,7 +1836,7 @@ int main(int argc, char **argv) {
                 if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
                     &bp, &bq, &bx, &by, &bz, &bw) == 6)
                 {
-                    _set_block(bp, bq, bx, by, bz, bw);
+                    _set_block(bp, bq, bx, by, bz, bw, 0);
                     if (player_intersects_block(2, x, y, z, bx, by, bz)) {
                         y = highest_block(x, z) + 2;
                     }
@@ -1862,6 +1864,10 @@ int main(int argc, char **argv) {
                 int kp, kq, kk;
                 if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
                     db_set_key(kp, kq, kk);
+                    Chunk *chunk = find_chunk(kp, kq);
+                    if (chunk) {
+                        chunk->dirty = 1;
+                    }
                 }
                 if (line[0] == 'T' && line[1] == ',') {
                     char *text = line + 2;

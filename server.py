@@ -289,8 +289,8 @@ class Model(object):
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'
         )
-        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
-        self.send_block(client, p, q, x, y, z, w)
+        cur = self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+        self.send_block(client, p, q, x, y, z, w, cur.lastrowid)
         for dx in range(-1, 2):
             for dz in range(-1, 2):
                 if dx == 0 and dz == 0:
@@ -300,8 +300,8 @@ class Model(object):
                 if dz and chunked(z + dz) == q:
                     continue
                 np, nq = p + dx, q + dz
-                self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
-                self.send_block(client, np, nq, x, y, z, -w)
+                cur = self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
+                self.send_block(client, np, nq, x, y, z, -w, cur.lastrowid)
         if w == 0:
             query = (
                 'delete from sign where '
@@ -408,11 +408,12 @@ class Model(object):
             if other == client:
                 continue
             other.send(DISCONNECT, client.client_id)
-    def send_block(self, client, p, q, x, y, z, w):
+    def send_block(self, client, p, q, x, y, z, w, key):
         for other in self.clients:
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
+            other.send(KEY, p, q, key)
     def send_sign(self, client, p, q, x, y, z, face, text):
         for other in self.clients:
             if other == client:

@@ -10,7 +10,7 @@ void client_connect(char *hostname, int port);
 void client_start();
 void client_stop();
 void client_send(char *data);
-int client_recv(char *data, int length);
+char *client_recv();
 void client_version(int version);
 void client_position(float x, float y, float z, float rx, float ry);
 void client_chunk(int p, int q, int key);

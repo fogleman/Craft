@@ -1816,79 +1816,83 @@ int main(int argc, char **argv) {
         }
 
         // HANDLE DATA FROM SERVER //
-        char buffer[MAX_RECV_LENGTH];
-        int count = 0;
-        while (count < 1024 && client_recv(buffer, MAX_RECV_LENGTH)) {
-            count++;
-            int pid;
-            float ux, uy, uz, urx, ury;
-            if (sscanf(buffer, "U,%d,%f,%f,%f,%f,%f",
-                &pid, &ux, &uy, &uz, &urx, &ury) == 6)
-            {
-                me->id = pid;
-                x = ux; y = uy; z = uz; rx = urx; ry = ury;
-                ensure_chunks(x, y, z, 1);
-            }
-            int bp, bq, bx, by, bz, bw;
-            if (sscanf(buffer, "B,%d,%d,%d,%d,%d,%d",
-                &bp, &bq, &bx, &by, &bz, &bw) == 6)
-            {
-                _set_block(bp, bq, bx, by, bz, bw);
-                if (player_intersects_block(2, x, y, z, bx, by, bz)) {
-                    y = highest_block(x, z) + 2;
+        char *buffer = client_recv();
+        if (buffer) {
+            char *key;
+            char *line = tokenize(buffer, "\n", &key);
+            while (line) {
+                int pid;
+                float ux, uy, uz, urx, ury;
+                if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
+                    &pid, &ux, &uy, &uz, &urx, &ury) == 6)
+                {
+                    me->id = pid;
+                    x = ux; y = uy; z = uz; rx = urx; ry = ury;
+                    ensure_chunks(x, y, z, 1);
                 }
-            }
-            float px, py, pz, prx, pry;
-            if (sscanf(buffer, "P,%d,%f,%f,%f,%f,%f",
-                &pid, &px, &py, &pz, &prx, &pry) == 6)
-            {
-                Player *player = find_player(pid);
-                if (!player && player_count < MAX_PLAYERS) {
-                    player = players + player_count;
-                    player_count++;
-                    player->id = pid;
-                    player->buffer = 0;
-                    snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
-                    update_player(player, px, py, pz, prx, pry, 1); // twice
+                int bp, bq, bx, by, bz, bw;
+                if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
+                    &bp, &bq, &bx, &by, &bz, &bw) == 6)
+                {
+                    _set_block(bp, bq, bx, by, bz, bw);
+                    if (player_intersects_block(2, x, y, z, bx, by, bz)) {
+                        y = highest_block(x, z) + 2;
+                    }
                 }
-                if (player) {
-                    update_player(player, px, py, pz, prx, pry, 1);
+                float px, py, pz, prx, pry;
+                if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
+                    &pid, &px, &py, &pz, &prx, &pry) == 6)
+                {
+                    Player *player = find_player(pid);
+                    if (!player && player_count < MAX_PLAYERS) {
+                        player = players + player_count;
+                        player_count++;
+                        player->id = pid;
+                        player->buffer = 0;
+                        snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
+                        update_player(player, px, py, pz, prx, pry, 1); // twice
+                    }
+                    if (player) {
+                        update_player(player, px, py, pz, prx, pry, 1);
+                    }
                 }
-            }
-            if (sscanf(buffer, "D,%d", &pid) == 1) {
-                delete_player(pid);
-            }
-            int kp, kq, key;
-            if (sscanf(buffer, "K,%d,%d,%d", &kp, &kq, &key) == 3) {
-                db_set_key(kp, kq, key);
-            }
-            if (buffer[0] == 'T' && buffer[1] == ',') {
-                char *text = buffer + 2;
-                printf("%s\n", text);
+                if (sscanf(line, "D,%d", &pid) == 1) {
+                    delete_player(pid);
+                }
+                int kp, kq, kk;
+                if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
+                    db_set_key(kp, kq, kk);
+                }
+                if (line[0] == 'T' && line[1] == ',') {
+                    char *text = line + 2;
+                    printf("%s\n", text);
+                    snprintf(
+                        messages[message_index], MAX_TEXT_LENGTH, "%s", text);
+                    message_index = (message_index + 1) % MAX_MESSAGES;
+                }
+                char format[64];
                 snprintf(
-                    messages[message_index], MAX_TEXT_LENGTH, "%s", text);
-                message_index = (message_index + 1) % MAX_MESSAGES;
-            }
-            char format[64];
-            snprintf(
-                format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
-            char name[MAX_NAME_LENGTH];
-            if (sscanf(buffer, format, &pid, name) == 2) {
-                Player *player = find_player(pid);
-                if (player) {
-                    strncpy(player->name, name, MAX_NAME_LENGTH);
+                    format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
+                char name[MAX_NAME_LENGTH];
+                if (sscanf(line, format, &pid, name) == 2) {
+                    Player *player = find_player(pid);
+                    if (player) {
+                        strncpy(player->name, name, MAX_NAME_LENGTH);
+                    }
                 }
+                snprintf(
+                    format, sizeof(format),
+                    "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
+                int face;
+                char text[MAX_SIGN_LENGTH] = {0};
+                if (sscanf(line, format,
+                    &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
+                {
+                    _set_sign(bp, bq, bx, by, bz, face, text);
+                }
+                line = tokenize(NULL, "\n", &key);
             }
-            snprintf(
-                format, sizeof(format),
-                "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
-            int face;
-            char text[MAX_SIGN_LENGTH] = {0};
-            if (sscanf(buffer, format,
-                &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
-            {
-                _set_sign(bp, bq, bx, by, bz, face, text);
-            }
+            free(buffer);
         }
 
         // SEND DATA TO SERVER //

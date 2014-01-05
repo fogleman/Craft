@@ -1,8 +1,11 @@
+#include <windef.h>
+
 #ifdef _WIN32
     #include <windows.h>
 #endif
 
 #include <GL/glew.h>
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>

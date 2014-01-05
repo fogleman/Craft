@@ -23,7 +23,6 @@
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
-#define MAX_RECV_LENGTH 1024
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
 
@@ -1165,7 +1164,7 @@ void render_signs(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 1);
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
-        if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+        if (chunk_distance(chunk, p, q) > RENDER_SIGN_RADIUS) {
             continue;
         }
         if (!chunk_visible(chunk, planes)) {

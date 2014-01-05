@@ -38,6 +38,8 @@ typedef struct {
     int faces;
     int sign_faces;
     int dirty;
+    int miny;
+    int maxy;
     GLuint buffer;
     GLuint sign_buffer;
 } Chunk;
@@ -471,14 +473,14 @@ int chunk_visible(Chunk *chunk, float planes[6][4]) {
     int z = chunk->q * CHUNK_SIZE - 1;
     int d = CHUNK_SIZE + 1;
     float points[8][3] = {
-        {x + 0, 0, z + 0},
-        {x + d, 0, z + 0},
-        {x + 0, 0, z + d},
-        {x + d, 0, z + d},
-        {x + 0, 256, z + 0},
-        {x + d, 256, z + 0},
-        {x + 0, 256, z + d},
-        {x + d, 256, z + d}
+        {x + 0, chunk->miny, z + 0},
+        {x + d, chunk->miny, z + 0},
+        {x + 0, chunk->miny, z + d},
+        {x + d, chunk->miny, z + d},
+        {x + 0, chunk->maxy, z + 0},
+        {x + d, chunk->maxy, z + 0},
+        {x + 0, chunk->maxy, z + d},
+        {x + d, chunk->maxy, z + d}
     };
     int p = ortho ? 4 : 6;
     for (int i = 0; i < p; i++) {
@@ -826,6 +828,8 @@ void gen_chunk_buffer(Chunk *chunk) {
     int oz = chunk->q * CHUNK_SIZE - 1;
 
     Map *map = &chunk->map;
+    chunk->miny = 256;
+    chunk->maxy = 0;
 
     // first pass - populate blocks array
     MAP_FOR_EACH(map, e) {
@@ -861,6 +865,10 @@ void gen_chunk_buffer(Chunk *chunk) {
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
+        }
+        if (total) {
+            chunk->miny = MIN(chunk->miny, y);
+            chunk->maxy = MAX(chunk->maxy, y);
         }
         faces += total;
     } END_MAP_FOR_EACH;

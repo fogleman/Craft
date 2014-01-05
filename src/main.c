@@ -31,7 +31,6 @@
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
-#define MAX_RECV_LENGTH 1024
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
 
@@ -47,6 +46,8 @@ typedef struct {
     int faces;
     int sign_faces;
     int dirty;
+    int miny;
+    int maxy;
     GLuint buffer;
     GLuint sign_buffer;
 } Chunk;
@@ -104,6 +105,8 @@ static int ortho = 0;
 static float fov = 65;
 static int typing = 0;
 static char typing_buffer[MAX_TEXT_LENGTH] = {0};
+static int message_index = 0;
+static char messages[MAX_MESSAGES][MAX_TEXT_LENGTH] = {0};
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
@@ -478,14 +481,14 @@ int chunk_visible(Chunk *chunk, float planes[6][4]) {
     int z = chunk->q * CHUNK_SIZE - 1;
     int d = CHUNK_SIZE + 1;
     float points[8][3] = {
-        {x + 0, 0, z + 0},
-        {x + d, 0, z + 0},
-        {x + 0, 0, z + d},
-        {x + d, 0, z + d},
-        {x + 0, 256, z + 0},
-        {x + d, 256, z + 0},
-        {x + 0, 256, z + d},
-        {x + d, 256, z + d}
+        {x + 0, chunk->miny, z + 0},
+        {x + d, chunk->miny, z + 0},
+        {x + 0, chunk->miny, z + d},
+        {x + d, chunk->miny, z + d},
+        {x + 0, chunk->maxy, z + 0},
+        {x + d, chunk->maxy, z + 0},
+        {x + 0, chunk->maxy, z + d},
+        {x + d, chunk->maxy, z + d}
     };
     int p = ortho ? 4 : 6;
     for (int i = 0; i < p; i++) {
@@ -833,6 +836,8 @@ void gen_chunk_buffer(Chunk *chunk) {
     int oz = chunk->q * CHUNK_SIZE - 1;
 
     Map *map = &chunk->map;
+    chunk->miny = 256;
+    chunk->maxy = 0;
 
     // first pass - populate blocks array
     MAP_FOR_EACH(map, e) {
@@ -895,6 +900,8 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (total == 0) {
             continue;
         }
+        chunk->miny = MIN(chunk->miny, e->y);
+        chunk->maxy = MAX(chunk->maxy, e->y);
         if (is_plant(e->w)) {
             float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
@@ -1074,14 +1081,16 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
-        if (map_get(map, x, y, z) != w) { // TODO: make map_set return success
-            map_set(map, x, y, z, w);
+        if (map_set(map, x, y, z, w)) {
             if (dirty) {
                 chunk->dirty = 1;
             }
+            db_insert_block(p, q, x, y, z, w);
         }
     }
-    db_insert_block(p, q, x, y, z, w);
+    else {
+        db_insert_block(p, q, x, y, z, w);
+    }
     if (w == 0 && chunked(x) == p && chunked(z) == q) {
         unset_sign(x, y, z);
     }
@@ -1169,7 +1178,7 @@ void render_signs(Attrib *attrib, Player *player) {
     glUniform1i(attrib->extra1, 1);
     for (int i = 0; i < chunk_count; i++) {
         Chunk *chunk = chunks + i;
-        if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+        if (chunk_distance(chunk, p, q) > RENDER_SIGN_RADIUS) {
             continue;
         }
         if (!chunk_visible(chunk, planes)) {
@@ -1478,7 +1487,237 @@ void create_window() {
         window_width, window_height, "Craft", monitor, NULL);
 }
 
+void handle_mouse_input() {
+    static double px = 0;
+    static double py = 0;
+    State *s = &players->state;
+    if (exclusive && (px || py)) {
+        double mx, my;
+        glfwGetCursorPos(window, &mx, &my);
+        float m = 0.0025;
+        s->rx += (mx - px) * m;
+        if (INVERT_MOUSE) {
+            s->ry += (my - py) * m;
+        }
+        else {
+            s->ry -= (my - py) * m;
+        }
+        if (s->rx < 0) {
+            s->rx += RADIANS(360);
+        }
+        if (s->rx >= RADIANS(360)){
+            s->rx -= RADIANS(360);
+        }
+        s->ry = MAX(s->ry, -RADIANS(90));
+        s->ry = MIN(s->ry, RADIANS(90));
+        px = mx;
+        py = my;
+    }
+    else {
+        glfwGetCursorPos(window, &px, &py);
+    }
+}
+
+void handle_movement(double dt) {
+    static float dy = 0;
+    State *s = &players->state;
+    int sz = 0;
+    int sx = 0;
+    if (!typing) {
+        float m = dt * 1.0;
+        ortho = glfwGetKey(window, CRAFT_KEY_ORTHO) ? 64 : 0;
+        fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
+        if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
+        if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
+        if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
+        if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
+        if (glfwGetKey(window, GLFW_KEY_LEFT)) s->rx -= m;
+        if (glfwGetKey(window, GLFW_KEY_RIGHT)) s->rx += m;
+        if (glfwGetKey(window, GLFW_KEY_UP)) s->ry += m;
+        if (glfwGetKey(window, GLFW_KEY_DOWN)) s->ry -= m;
+    }
+    float vx, vy, vz;
+    get_motion_vector(flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    if (!typing) {
+        if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
+            if (flying) {
+                vy = 1;
+            }
+            else if (dy == 0) {
+                dy = 8;
+            }
+        }
+        if (glfwGetKey(window, CRAFT_KEY_XM)) {
+            vx = -1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, CRAFT_KEY_XP)) {
+            vx = 1; vy = 0; vz = 0;
+        }
+        if (glfwGetKey(window, CRAFT_KEY_YM)) {
+            vx = 0; vy = -1; vz = 0;
+        }
+        if (glfwGetKey(window, CRAFT_KEY_YP)) {
+            vx = 0; vy = 1; vz = 0;
+        }
+        if (glfwGetKey(window, CRAFT_KEY_ZM)) {
+            vx = 0; vy = 0; vz = -1;
+        }
+        if (glfwGetKey(window, CRAFT_KEY_ZP)) {
+            vx = 0; vy = 0; vz = 1;
+        }
+    }
+    float speed = flying ? 20 : 5;
+    int estimate = roundf(sqrtf(
+        powf(vx * speed, 2) +
+        powf(vy * speed + ABS(dy) * 2, 2) +
+        powf(vz * speed, 2)) * dt * 8);
+    int step = MAX(8, estimate);
+    float ut = dt / step;
+    vx = vx * ut * speed;
+    vy = vy * ut * speed;
+    vz = vz * ut * speed;
+    for (int i = 0; i < step; i++) {
+        if (flying) {
+            dy = 0;
+        }
+        else {
+            dy -= ut * 25;
+            dy = MAX(dy, -250);
+        }
+        s->x += vx;
+        s->y += vy + dy * ut;
+        s->z += vz;
+        if (collide(2, &s->x, &s->y, &s->z)) {
+            dy = 0;
+        }
+    }
+    if (s->y < 0) {
+        s->y = highest_block(s->x, s->z) + 2;
+    }
+}
+
+void handle_clicks() {
+    State *s = &players->state;
+    if (left_click) {
+        left_click = 0;
+        int hx, hy, hz;
+        int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+        if (hy > 0 && hy < 256 && is_destructable(hw)) {
+            set_block(hx, hy, hz, 0);
+            int above = get_block(hx, hy + 1, hz);
+            if (is_plant(above)) {
+                set_block(hx, hy + 1, hz, 0);
+            }
+        }
+    }
+    if (right_click) {
+        right_click = 0;
+        int hx, hy, hz;
+        int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+        if (hy > 0 && hy < 256 && is_obstacle(hw)) {
+            if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
+                set_block(hx, hy, hz, items[item_index]);
+            }
+        }
+    }
+    if (middle_click) {
+        middle_click = 0;
+        int hx, hy, hz;
+        int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+        for (int i = 0; i < item_count; i++) {
+            if (items[i] == hw) {
+                item_index = i;
+                break;
+            }
+        }
+    }
+}
+
+void parse_buffer(char *buffer) {
+    Player *me = players;
+    State *s = &players->state;
+    char *key;
+    char *line = tokenize(buffer, "\n", &key);
+    while (line) {
+        int pid;
+        float ux, uy, uz, urx, ury;
+        if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
+            &pid, &ux, &uy, &uz, &urx, &ury) == 6)
+        {
+            me->id = pid;
+            s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
+            ensure_chunks(s->x, s->y, s->z, 1);
+        }
+        int bp, bq, bx, by, bz, bw;
+        if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
+            &bp, &bq, &bx, &by, &bz, &bw) == 6)
+        {
+            _set_block(bp, bq, bx, by, bz, bw, 0);
+            if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
+                s->y = highest_block(s->x, s->z) + 2;
+            }
+        }
+        float px, py, pz, prx, pry;
+        if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
+            &pid, &px, &py, &pz, &prx, &pry) == 6)
+        {
+            Player *player = find_player(pid);
+            if (!player && player_count < MAX_PLAYERS) {
+                player = players + player_count;
+                player_count++;
+                player->id = pid;
+                player->buffer = 0;
+                snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
+                update_player(player, px, py, pz, prx, pry, 1); // twice
+            }
+            if (player) {
+                update_player(player, px, py, pz, prx, pry, 1);
+            }
+        }
+        if (sscanf(line, "D,%d", &pid) == 1) {
+            delete_player(pid);
+        }
+        int kp, kq, kk;
+        if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
+            db_set_key(kp, kq, kk);
+            Chunk *chunk = find_chunk(kp, kq);
+            if (chunk) {
+                chunk->dirty = 1;
+            }
+        }
+        if (line[0] == 'T' && line[1] == ',') {
+            char *text = line + 2;
+            printf("%s\n", text);
+            snprintf(
+                messages[message_index], MAX_TEXT_LENGTH, "%s", text);
+            message_index = (message_index + 1) % MAX_MESSAGES;
+        }
+        char format[64];
+        snprintf(
+            format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
+        char name[MAX_NAME_LENGTH];
+        if (sscanf(line, format, &pid, name) == 2) {
+            Player *player = find_player(pid);
+            if (player) {
+                strncpy(player->name, name, MAX_NAME_LENGTH);
+            }
+        }
+        snprintf(
+            format, sizeof(format),
+            "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
+        int face;
+        char text[MAX_SIGN_LENGTH] = {0};
+        if (sscanf(line, format,
+            &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
+        {
+            _set_sign(bp, bq, bx, by, bz, face, text);
+        }
+        line = tokenize(NULL, "\n", &key);
+    }
+}
+
 int main(int argc, char **argv) {
+    // INITIALIZATION //
     #ifdef _WIN32
         WSADATA wsa_data;
         WSAStartup(MAKEWORD(2, 2), &wsa_data);
@@ -1496,6 +1735,8 @@ int main(int argc, char **argv) {
     #endif
     srand(time(NULL));
     rand();
+
+    // CHECK COMMAND LINE ARGUMENTS //
     if (argc >= 2 && strstr(argv[1], "-psn")) {
         argc--;
         argv++;
@@ -1514,6 +1755,8 @@ int main(int argc, char **argv) {
             if (db_init(path)) {
                 return -1;
             }
+            // TODO: support proper caching of signs (handle deletions)
+            db_delete_all_signs();
         }
         client_enable();
         client_connect(hostname, port);
@@ -1528,6 +1771,8 @@ int main(int argc, char **argv) {
             return -1;
         }
     }
+
+    // WINDOW INITIALIZATION //
     if (!glfwInit()) {
         return -1;
     }
@@ -1536,6 +1781,7 @@ int main(int argc, char **argv) {
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(VSYNC);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -1553,6 +1799,7 @@ int main(int argc, char **argv) {
     glLogicOp(GL_INVERT);
     glClearColor(0, 0, 0, 1);
 
+    // LOAD TEXTURES //
     GLuint texture;
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);
@@ -1587,6 +1834,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("textures/sign.png");
 
+    // LOAD SHADERS //
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
@@ -1633,285 +1881,74 @@ int main(int argc, char **argv) {
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
 
+    // LOCAL VARIABLES
     FPS fps = {0, 0, 0};
-    int message_index = 0;
-    char messages[MAX_MESSAGES][MAX_TEXT_LENGTH] = {0};
     double last_commit = glfwGetTime();
     double last_update = glfwGetTime();
     GLuint sky_buffer = gen_sky_buffer();
 
     Player *me = players;
+    State *s = &players->state;
     me->id = 0;
     me->name[0] = '\0';
     me->buffer = 0;
     player_count = 1;
 
-    float x = (rand_double() - 0.5) * 10000;
-    float z = (rand_double() - 0.5) * 10000;
-    float y = 0;
-    float rx = 0;
-    float ry = 0;
-    float dy = 0;
-
-    double px = 0;
-    double py = 0;
-
-    int loaded = db_load_state(&x, &y, &z, &rx, &ry);
-    ensure_chunks(x, y, z, 1);
+    // LOAD STATE FROM DATABASE //
+    int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
+    ensure_chunks(s->x, s->y, s->z, 1);
     if (!loaded) {
-        y = highest_block(x, z) + 2;
+        s->y = highest_block(s->x, s->z) + 2;
     }
 
-    scale = get_scale_factor();
-    glfwGetCursorPos(window, &px, &py);
+    // BEGIN MAIN LOOP //
     double previous = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
+        // WINDOW SIZE AND SCALE //
+        scale = get_scale_factor();
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
+        // FRAME RATE //
         update_fps(&fps);
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
 
+        // HANDLE MOUSE INPUT //
+        handle_mouse_input();
+
+        // HANDLE MOVEMENT //
+        handle_movement(dt);
+
+        // HANDLE CLICKS //
+        handle_clicks();
+
+        // HANDLE DATA FROM SERVER //
+        char *buffer = client_recv();
+        if (buffer) {
+            parse_buffer(buffer);
+            free(buffer);
+        }
+
+        // FLUSH DATABASE //
         if (now - last_commit > COMMIT_INTERVAL) {
             last_commit = now;
             db_commit();
         }
 
-        // HANDLE MOUSE INPUT //
-        if (exclusive && (px || py)) {
-            double mx, my;
-            glfwGetCursorPos(window, &mx, &my);
-            float m = 0.0025;
-            rx += (mx - px) * m;
-            if (INVERT_MOUSE) {
-                ry += (my - py) * m;
-            }
-            else {
-                ry -= (my - py) * m;
-            }
-            if (rx < 0) {
-                rx += RADIANS(360);
-            }
-            if (rx >= RADIANS(360)){
-                rx -= RADIANS(360);
-            }
-            ry = MAX(ry, -RADIANS(90));
-            ry = MIN(ry, RADIANS(90));
-            px = mx;
-            py = my;
-        }
-        else {
-            glfwGetCursorPos(window, &px, &py);
-        }
-
-        // HANDLE MOVEMENT //
-        int sz = 0;
-        int sx = 0;
-        if (!typing) {
-            float m = dt * 1.0;
-            ortho = glfwGetKey(window, CRAFT_KEY_ORTHO) ? 64 : 0;
-            fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
-            if (glfwGetKey(window, CRAFT_KEY_QUIT)) break;
-            if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
-            if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
-            if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
-            if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
-            if (glfwGetKey(window, GLFW_KEY_LEFT)) rx -= m;
-            if (glfwGetKey(window, GLFW_KEY_RIGHT)) rx += m;
-            if (glfwGetKey(window, GLFW_KEY_UP)) ry += m;
-            if (glfwGetKey(window, GLFW_KEY_DOWN)) ry -= m;
-        }
-        float vx, vy, vz;
-        get_motion_vector(flying, sz, sx, rx, ry, &vx, &vy, &vz);
-        if (!typing) {
-            if (glfwGetKey(window, CRAFT_KEY_JUMP)) {
-                if (flying) {
-                    vy = 1;
-                }
-                else if (dy == 0) {
-                    dy = 8;
-                }
-            }
-            if (glfwGetKey(window, CRAFT_KEY_XM)) {
-                vx = -1; vy = 0; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_XP)) {
-                vx = 1; vy = 0; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_YM)) {
-                vx = 0; vy = -1; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_YP)) {
-                vx = 0; vy = 1; vz = 0;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_ZM)) {
-                vx = 0; vy = 0; vz = -1;
-            }
-            if (glfwGetKey(window, CRAFT_KEY_ZP)) {
-                vx = 0; vy = 0; vz = 1;
-            }
-        }
-        float speed = flying ? 20 : 5;
-        int estimate = roundf(sqrtf(
-            powf(vx * speed, 2) +
-            powf(vy * speed + ABS(dy) * 2, 2) +
-            powf(vz * speed, 2)) * dt * 8);
-        int step = MAX(8, estimate);
-        float ut = dt / step;
-        vx = vx * ut * speed;
-        vy = vy * ut * speed;
-        vz = vz * ut * speed;
-        for (int i = 0; i < step; i++) {
-            if (flying) {
-                dy = 0;
-            }
-            else {
-                dy -= ut * 25;
-                dy = MAX(dy, -250);
-            }
-            x += vx;
-            y += vy + dy * ut;
-            z += vz;
-            if (collide(2, &x, &y, &z)) {
-                dy = 0;
-            }
-        }
-        if (y < 0) {
-            y = highest_block(x, z) + 2;
-        }
-
-        // HANDLE CLICKS //
-        if (left_click) {
-            left_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(0, x, y, z, rx, ry, &hx, &hy, &hz);
-            if (hy > 0 && hy < 256 && is_destructable(hw)) {
-                set_block(hx, hy, hz, 0);
-                int above = get_block(hx, hy + 1, hz);
-                if (is_plant(above)) {
-                    set_block(hx, hy + 1, hz, 0);
-                }
-            }
-        }
-        if (right_click) {
-            right_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(1, x, y, z, rx, ry, &hx, &hy, &hz);
-            if (hy > 0 && hy < 256 && is_obstacle(hw)) {
-                if (!player_intersects_block(2, x, y, z, hx, hy, hz)) {
-                    set_block(hx, hy, hz, items[item_index]);
-                }
-            }
-        }
-        if (middle_click) {
-            middle_click = 0;
-            int hx, hy, hz;
-            int hw = hit_test(0, x, y, z, rx, ry, &hx, &hy, &hz);
-            for (int i = 0; i < item_count; i++) {
-                if (items[i] == hw) {
-                    item_index = i;
-                    break;
-                }
-            }
-        }
-
-        // HANDLE DATA FROM SERVER //
-        char *buffer = client_recv();
-        if (buffer) {
-            char *key;
-            char *line = tokenize(buffer, "\n", &key);
-            while (line) {
-                int pid;
-                float ux, uy, uz, urx, ury;
-                if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
-                    &pid, &ux, &uy, &uz, &urx, &ury) == 6)
-                {
-                    me->id = pid;
-                    x = ux; y = uy; z = uz; rx = urx; ry = ury;
-                    ensure_chunks(x, y, z, 1);
-                }
-                int bp, bq, bx, by, bz, bw;
-                if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
-                    &bp, &bq, &bx, &by, &bz, &bw) == 6)
-                {
-                    _set_block(bp, bq, bx, by, bz, bw, 0);
-                    if (player_intersects_block(2, x, y, z, bx, by, bz)) {
-                        y = highest_block(x, z) + 2;
-                    }
-                }
-                float px, py, pz, prx, pry;
-                if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
-                    &pid, &px, &py, &pz, &prx, &pry) == 6)
-                {
-                    Player *player = find_player(pid);
-                    if (!player && player_count < MAX_PLAYERS) {
-                        player = players + player_count;
-                        player_count++;
-                        player->id = pid;
-                        player->buffer = 0;
-                        snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
-                        update_player(player, px, py, pz, prx, pry, 1); // twice
-                    }
-                    if (player) {
-                        update_player(player, px, py, pz, prx, pry, 1);
-                    }
-                }
-                if (sscanf(line, "D,%d", &pid) == 1) {
-                    delete_player(pid);
-                }
-                int kp, kq, kk;
-                if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
-                    db_set_key(kp, kq, kk);
-                    Chunk *chunk = find_chunk(kp, kq);
-                    if (chunk) {
-                        chunk->dirty = 1;
-                    }
-                }
-                if (line[0] == 'T' && line[1] == ',') {
-                    char *text = line + 2;
-                    printf("%s\n", text);
-                    snprintf(
-                        messages[message_index], MAX_TEXT_LENGTH, "%s", text);
-                    message_index = (message_index + 1) % MAX_MESSAGES;
-                }
-                char format[64];
-                snprintf(
-                    format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
-                char name[MAX_NAME_LENGTH];
-                if (sscanf(line, format, &pid, name) == 2) {
-                    Player *player = find_player(pid);
-                    if (player) {
-                        strncpy(player->name, name, MAX_NAME_LENGTH);
-                    }
-                }
-                snprintf(
-                    format, sizeof(format),
-                    "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
-                int face;
-                char text[MAX_SIGN_LENGTH] = {0};
-                if (sscanf(line, format,
-                    &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
-                {
-                    _set_sign(bp, bq, bx, by, bz, face, text);
-                }
-                line = tokenize(NULL, "\n", &key);
-            }
-            free(buffer);
-        }
-
-        // SEND DATA TO SERVER //
+        // SEND POSITION TO SERVER //
         if (now - last_update > 0.1) {
             last_update = now;
-            client_position(x, y, z, rx, ry);
+            client_position(s->x, s->y, s->z, s->rx, s->ry);
         }
 
         // PREPARE TO RENDER //
         observe1 = observe1 % player_count;
         observe2 = observe2 % player_count;
         delete_chunks();
-        update_player(me, x, y, z, rx, ry, 0);
+        del_buffer(me->buffer);
+        me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
         for (int i = 1; i < player_count; i++) {
             interpolate_player(players + i);
         }
@@ -1952,7 +1989,7 @@ int main(int argc, char **argv) {
             snprintf(
                 text_buffer, 1024,
                 "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-                chunked(x), chunked(z), x, y, z,
+                chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                 player_count, chunk_count,
                 face_count * 2, hour, am_pm, fps.fps);
             render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
@@ -2020,11 +2057,16 @@ int main(int argc, char **argv) {
             }
         }
 
-        // swap buffers
+        // SWAP AND POLL //
         glfwSwapBuffers(window);
         glfwPollEvents();
+        if (!typing && glfwGetKey(window, CRAFT_KEY_QUIT)) {
+            break;
+        }
     }
-    db_save_state(x, y, z, rx, ry);
+
+    // SHUTDOWN //
+    db_save_state(s->x, s->y, s->z, s->rx, s->ry);
     db_close();
     glfwTerminate();
     client_stop();

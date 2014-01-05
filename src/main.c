@@ -866,10 +866,6 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
         }
-        if (total) {
-            chunk->miny = MIN(chunk->miny, y);
-            chunk->maxy = MAX(chunk->maxy, y);
-        }
         faces += total;
     } END_MAP_FOR_EACH;
 
@@ -896,6 +892,8 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (total == 0) {
             continue;
         }
+        chunk->miny = MIN(chunk->miny, e->y);
+        chunk->maxy = MAX(chunk->maxy, e->y);
         if (is_plant(e->w)) {
             float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(

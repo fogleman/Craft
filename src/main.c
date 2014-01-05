@@ -681,7 +681,7 @@ int player_intersects_block(
 }
 
 void occlusion(char neighbors[27], float result[6][4]) {
-    static int lookup[6][4][3] =
+    static const int lookup[6][4][3] =
     {
         {
             {0, 1, 3},
@@ -720,13 +720,14 @@ void occlusion(char neighbors[27], float result[6][4]) {
             {26, 17, 23}
         }
     };
+    static const float curve[4] = {0.0, 0.6, 0.8, 1.0};
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 4; j++) {
             int corner = neighbors[lookup[i][j][0]];
             int side1 = neighbors[lookup[i][j][1]];
             int side2 = neighbors[lookup[i][j][2]];
             int value = side1 && side2 ? 3 : corner + side1 + side2;
-            result[i][j] = value / 3.0;
+            result[i][j] = curve[value];
         }
     }
 }

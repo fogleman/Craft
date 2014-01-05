@@ -19,6 +19,8 @@
 static int client_enabled = 0;
 static int running = 0;
 static int sd = 0;
+static int bytes_sent = 0;
+static int bytes_received = 0;
 static char *queue = 0;
 static int qsize = 0;
 static thrd_t recv_thread;
@@ -48,6 +50,7 @@ int client_sendall(int sd, char *data, int length) {
         }
         count += n;
         length -= n;
+        bytes_sent += n;
     }
     return 0;
 }
@@ -148,6 +151,7 @@ char *client_recv() {
         int remaining = qsize - length;
         memmove(queue, p + 1, remaining);
         qsize -= length;
+        bytes_received += length;
     }
     mtx_unlock(&mutex);
     return result;
@@ -237,4 +241,6 @@ void client_stop() {
     // mtx_destroy(&mutex);
     qsize = 0;
     free(queue);
+    // printf("Bytes Sent: %d, Bytes Received: %d\n",
+    //     bytes_sent, bytes_received);
 }

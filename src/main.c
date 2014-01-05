@@ -2029,7 +2029,7 @@ int main(int argc, char **argv) {
         // SWAP AND POLL //
         glfwSwapBuffers(window);
         glfwPollEvents();
-        if (glfwGetKey(window, CRAFT_KEY_QUIT)) {
+        if (!typing && glfwGetKey(window, CRAFT_KEY_QUIT)) {
             break;
         }
     }

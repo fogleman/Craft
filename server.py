@@ -10,32 +10,34 @@ import threading
 import time
 import traceback
 
-HOST = '0.0.0.0'
-PORT = 4080
+DEFAULT_HOST = '0.0.0.0'
+DEFAULT_PORT = 4080
+
 DB_PATH = 'craft.db'
 LOG_PATH = 'log.txt'
 
 CHUNK_SIZE = 32
-BUFFER_SIZE = 1024
+BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
 SPAWN_POINT = (0, 0, 0, 0, 0)
+RATE_LIMIT = False
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
     17, 18, 19, 20, 21, 22, 23,
     32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
     48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63])
 
-YOU = 'U'
 BLOCK = 'B'
 CHUNK = 'C'
-POSITION = 'P'
 DISCONNECT = 'D'
-TALK = 'T'
 KEY = 'K'
 NICK = 'N'
+POSITION = 'P'
 SIGN = 'S'
+TALK = 'T'
 VERSION = 'V'
+YOU = 'U'
 
 def log(*args):
     now = datetime.datetime.utcnow()
@@ -54,6 +56,8 @@ class RateLimiter(object):
         self.allowance = self.rate
         self.last_check = time.time()
     def tick(self):
+        if not RATE_LIMIT:
+            return False
         now = time.time()
         elapsed = now - self.last_check
         self.last_check = now
@@ -87,7 +91,7 @@ class Handler(SocketServer.BaseRequestHandler):
                 data = self.request.recv(BUFFER_SIZE)
                 if not data:
                     break
-                buf.extend(data.replace('\r', ''))
+                buf.extend(data.replace('\r\n', '\n'))
                 while '\n' in buf:
                     index = buf.index('\n')
                     line = ''.join(buf[:index])
@@ -425,7 +429,7 @@ class Model(object):
             client.send(TALK, text)
 
 def main():
-    host, port = HOST, PORT
+    host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]
     if len(sys.argv) > 2:

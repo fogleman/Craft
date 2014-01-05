@@ -1304,7 +1304,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             if (mods & GLFW_MOD_SHIFT) {
                 int n = strlen(typing_buffer);
                 if (n < MAX_TEXT_LENGTH - 1) {
-                    typing_buffer[n] = '\n';
+                    typing_buffer[n] = '\r';
                     typing_buffer[n + 1] = '\0';
                 }
             }

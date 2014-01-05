@@ -20,15 +20,21 @@
 #include "sign.h"
 #include "util.h"
 #include "world.h"
+#include "clouds.h"
 
 #define MAX_CHUNKS 1024
 #define MAX_PLAYERS 128
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
-
+#define CREATE_CHUNK_RADIUS 6
+#define RENDER_CHUNK_RADIUS 6
+#define DELETE_CHUNK_RADIUS 12
+#define RECV_BUFFER_SIZE 1024
+#define TEXT_BUFFER_SIZE 256
 #define LEFT 0
 #define CENTER 1
 #define RIGHT 2
+
 
 typedef struct {
     Map map;
@@ -76,6 +82,7 @@ typedef struct {
     GLuint extra3;
     GLuint extra4;
 } Attrib;
+
 
 static GLFWwindow *window;
 static int width = 0;
@@ -1783,6 +1790,7 @@ int main(int argc, char **argv) {
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
+    CloudAttrib cloud_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -1799,7 +1807,22 @@ int main(int argc, char **argv) {
     block_attrib.extra4 = glGetUniformLocation(program, "ortho");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
-
+    
+    program = load_program(
+                           "shaders/cloud_vertex.glsl", "shaders/cloud_fragment.glsl");
+    cloud_attrib.program = program;
+    cloud_attrib.position = glGetAttribLocation(program, "position");
+    cloud_attrib.normal = glGetAttribLocation(program, "normal");
+    cloud_attrib.colour = glGetAttribLocation(program, "colour");
+    cloud_attrib.matrix = glGetUniformLocation(program, "matrix");
+    cloud_attrib.model = glGetUniformLocation(program, "model");
+    cloud_attrib.sampler = glGetUniformLocation(program, "sampler");
+    cloud_attrib.camera = glGetUniformLocation(program, "camera");
+    cloud_attrib.timer = glGetUniformLocation(program, "timer");
+    cloud_attrib.cloudColour = glGetUniformLocation(program, "cloudColour");
+    cloud_attrib.skysampler = glGetUniformLocation(program, "sky_sampler");
+    
+    
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
     line_attrib.program = program;
@@ -1838,9 +1861,24 @@ int main(int argc, char **argv) {
     me->buffer = 0;
     player_count = 1;
 
+
     // LOAD STATE FROM DATABASE //
     int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
     ensure_chunks(s->x, s->y, s->z, 1);
+    float x = (rand_double() - 0.5) * 10000;
+    float z = (rand_double() - 0.5) * 10000;
+    float y = 0;
+    float rx = 0;
+    float ry = 0;
+    float dy = 0;
+
+    double px = 0;
+    double py = 0;
+    
+    if (SHOW_CLOUDS) {
+        create_clouds();
+    }
+    
     if (!loaded) {
         s->y = highest_block(s->x, s->z) + 2;
     }
@@ -1855,6 +1893,8 @@ int main(int argc, char **argv) {
 
         // FRAME RATE //
         update_fps(&fps);
+        
+        
         double now = glfwGetTime();
         double dt = MIN(now - previous, 0.2);
         previous = now;
@@ -1896,13 +1936,26 @@ int main(int argc, char **argv) {
         for (int i = 1; i < player_count; i++) {
             interpolate_player(players + i);
         }
+
         Player *player = players + observe1;
+        State *s = &(player->state);
+        
+        
+        if (SHOW_CLOUDS) {
+            //update clouds
+            update_clouds(s->x,s->y,s->z,s->rx,s->ry,fov);
+        }
+
+        delete_chunks();
+
 
         // RENDER 3-D SCENE //
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_DEPTH_BUFFER_BIT);
+ 
         render_sky(&sky_attrib, player, sky_buffer);
         glClear(GL_DEPTH_BUFFER_BIT);
+
         int face_count = render_chunks(&block_attrib, player);
         render_signs(&text_attrib, player);
         render_sign(&text_attrib, player);
@@ -1911,6 +1964,14 @@ int main(int argc, char **argv) {
             render_wireframe(&line_attrib, player);
         }
 
+        
+        if (SHOW_CLOUDS) {
+            cloud_attrib.time = time_of_day();
+            render_clouds(&cloud_attrib, width,height,s->x,s->y,s->z,s->rx,s->ry,fov,ortho);
+        }
+        
+
+        
         // RENDER HUD //
         glClear(GL_DEPTH_BUFFER_BIT);
         if (SHOW_CROSSHAIRS) {
@@ -2012,6 +2073,11 @@ int main(int argc, char **argv) {
     // SHUTDOWN //
     db_save_state(s->x, s->y, s->z, s->rx, s->ry);
     db_close();
+    
+    if (SHOW_CLOUDS) {
+        cleanup_clouds();
+    }
+    
     glfwTerminate();
     client_stop();
     return 0;

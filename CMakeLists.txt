@@ -4,6 +4,7 @@ project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.c)
 
+
 add_executable(
     craft
     ${SOURCE_FILES}
@@ -12,6 +13,7 @@ add_executable(
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
     deps/tinycthread/tinycthread.c)
+
 
 add_definitions(-std=c99 -O3)
 

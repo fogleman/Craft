@@ -5,7 +5,7 @@
 #define FULLSCREEN 0
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
-#define VSYNC 1
+#define VSYNC 0
 #define SCROLL_THRESHOLD 0.1
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
@@ -57,5 +57,8 @@
 #define DELETE_CHUNK_RADIUS 12
 #define CHUNK_SIZE 32
 #define COMMIT_INTERVAL 5
+
+#define CLOUD_Y_HEIGHT 80
+#define MAXIMUM_CLOUDS 100
 
 #endif

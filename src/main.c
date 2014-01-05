@@ -188,7 +188,7 @@ GLuint gen_crosshair_buffer() {
 }
 
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
-    float data[144];
+    float data[72];
     make_cube_wireframe(data, x, y, z, n);
     return gen_buffer(sizeof(data), data);
 }
@@ -1219,7 +1219,7 @@ void render_wireframe(Attrib *attrib, Player *player) {
         glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
         GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
-        draw_lines(attrib, wireframe_buffer, 3, 48);
+        draw_lines(attrib, wireframe_buffer, 3, 24);
         del_buffer(wireframe_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
     }

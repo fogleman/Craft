@@ -11,6 +11,7 @@
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
 #define DAY_LENGTH 300
+#define INVERT_MOUSE 0
 
 // rendering options
 #define SHOW_PLANTS 1
@@ -52,6 +53,7 @@
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6
+#define RENDER_SIGN_RADIUS 3
 #define DELETE_CHUNK_RADIUS 12
 #define CHUNK_SIZE 32
 #define COMMIT_INTERVAL 5

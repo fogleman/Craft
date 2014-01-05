@@ -251,6 +251,13 @@ void db_delete_signs(int x, int y, int z) {
     sqlite3_step(delete_signs_stmt);
 }
 
+void db_delete_all_signs() {
+    if (!db_enabled) {
+        return;
+    }
+    sqlite3_exec(db, "delete from sign;", NULL, NULL, NULL);
+}
+
 void db_load_map(Map *map, int p, int q) {
     if (!db_enabled) {
         return;

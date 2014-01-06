@@ -111,6 +111,9 @@ static unsigned char PERM[] = {
 
 void seed(unsigned int x) {
     srand(x);
+    for (int i = 0; i < 256; i++) {
+        PERM[i] = i;
+    }
     for (int i = 255; i > 0; i--) {
         int j;
         int n = i + 1;

@@ -350,6 +350,15 @@ class Model(object):
                     break
             else:
                 client.send(TALK, 'Unrecognized command: "%s"' % text)
+        elif text.startswith('@'):
+            nick = text[1:].split(' ', 1)[0]
+            for other in self.clients:
+                if other.nick == nick:
+                    client.send(TALK, '%s> %s' % (client.nick, text))
+                    other.send(TALK, '%s> %s' % (client.nick, text))
+                    break
+            else:
+                client.send(TALK, 'Unrecognized nick: "%s"' % nick)
         else:
             self.send_talk('%s> %s' % (client.nick, text))
     def on_nick(self, client, nick=None):
@@ -366,7 +375,7 @@ class Model(object):
     def on_goto(self, client, nick=None):
         if nick is None:
             clients = [x for x in self.clients if x != client]
-            other = random.choice(self.clients) if clients else None
+            other = random.choice(clients) if clients else None
         else:
             nicks = dict((client.nick, client) for client in self.clients)
             other = nicks.get(nick)

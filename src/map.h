@@ -5,7 +5,7 @@
 
 #define MAP_FOR_EACH(map, entry) \
     for (unsigned int i = 0; i <= map->mask; i++) { \
-        Entry *entry = map->data + i; \
+        MapEntry *entry = map->data + i; \
         if (EMPTY_ENTRY(entry)) { \
             continue; \
         }
@@ -17,18 +17,18 @@ typedef struct {
     int y;
     int z;
     int w;
-} Entry;
+} MapEntry;
 
 typedef struct {
     unsigned int mask;
     unsigned int size;
-    Entry *data;
+    MapEntry *data;
 } Map;
 
 void map_alloc(Map *map);
 void map_free(Map *map);
 void map_grow(Map *map);
-void map_set(Map *map, int x, int y, int z, int w);
+int map_set(Map *map, int x, int y, int z, int w);
 int map_get(Map *map, int x, int y, int z);
 
 #endif

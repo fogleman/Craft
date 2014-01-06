@@ -18,6 +18,8 @@ PLANK = 8
 SNOW = 9
 GLASS = 10
 COBBLE = 11
+LIGHT = 12
+DARK = 13
 
 OFFSETS = [
     (-0.5, -0.5, -0.5),
@@ -67,24 +69,30 @@ def circle_z(x, y, z, r, fill=False):
     return sphere(x, y, z, r, fill, fz=True)
 
 def cylinder_x(x1, x2, y, z, r, fill=False):
+    x1, x2 = sorted((x1, x2))
     result = set()
     for x in range(x1, x2 + 1):
         result |= circle_x(x, y, z, r, fill)
     return result
 
 def cylinder_y(x, y1, y2, z, r, fill=False):
+    y1, y2 = sorted((y1, y2))
     result = set()
     for y in range(y1, y2 + 1):
         result |= circle_y(x, y, z, r, fill)
     return result
 
 def cylinder_z(x, y, z1, z2, r, fill=False):
+    z1, z2 = sorted((z1, z2))
     result = set()
     for z in range(z1, z2 + 1):
         result |= circle_z(x, y, z, r, fill)
     return result
 
 def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
+    x1, x2 = sorted((x1, x2))
+    y1, y2 = sorted((y1, y2))
+    z1, z2 = sorted((z1, z2))
     result = set()
     a = (x1 == x2) + (y1 == y2) + (z1 == z2)
     for x in range(x1, x2 + 1):
@@ -100,6 +108,8 @@ def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
     return result
 
 def pyramid(x1, x2, y, z1, z2, fill=False):
+    x1, x2 = sorted((x1, x2))
+    z1, z2 = sorted((z1, z2))
     result = set()
     while x2 >= x1 and z2 >= z2:
         result |= cuboid(x1, x2, y, y, z1, z2, fill)
@@ -162,11 +172,11 @@ def main():
     #     set_blocks(cuboid(-1, 1, 1, 32, z, z), CEMENT)
     #     set_blocks(cuboid(-1, 1, 1, 32, -z, -z), CEMENT)
     # for x in range(0, 1024, 8):
-    #     set_block(x, 32, 0 CEMENT)
-    #     set_block(-x, 32, , CEMENT)
+    #     set_block(x, 32, 0, CEMENT)
+    #     set_block(-x, 32, 0, CEMENT)
     # for z in range(0, 1024, 8):
-    #     set_block(0, 32, z CEMENT)
-    #     set_block(0, 32, -, CEMENT)
+    #     set_block(0, 32, z, CEMENT)
+    #     set_block(0, 32, -z, CEMENT)
     # set_blocks(pyramid(32, 32+64-1, 12, 32, 32+64-1), COBBLE)
     # outer = circle_y(0, 11, 0, 176 + 3, True)
     # inner = circle_y(0, 11, 0, 176 - 3, True)

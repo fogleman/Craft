@@ -1,4 +1,5 @@
 #include <math.h>
+#include "config.h"
 #include "matrix.h"
 #include "util.h"
 
@@ -114,6 +115,36 @@ void mat_apply(float *data, float *matrix, int count, int offset, int stride) {
     }
 }
 
+void frustum_planes(float planes[6][4], float *matrix) {
+    float znear = 0.125;
+    float zfar = RENDER_CHUNK_RADIUS * 32 + 64;
+    float *m = matrix;
+    planes[0][0] = m[3] + m[0];
+    planes[0][1] = m[7] + m[4];
+    planes[0][2] = m[11] + m[8];
+    planes[0][3] = m[15] + m[12];
+    planes[1][0] = m[3] - m[0];
+    planes[1][1] = m[7] - m[4];
+    planes[1][2] = m[11] - m[8];
+    planes[1][3] = m[15] - m[12];
+    planes[2][0] = m[3] + m[1];
+    planes[2][1] = m[7] + m[5];
+    planes[2][2] = m[11] + m[9];
+    planes[2][3] = m[15] + m[13];
+    planes[3][0] = m[3] - m[1];
+    planes[3][1] = m[7] - m[5];
+    planes[3][2] = m[11] - m[9];
+    planes[3][3] = m[15] - m[13];
+    planes[4][0] = znear * m[3] + m[2];
+    planes[4][1] = znear * m[7] + m[6];
+    planes[4][2] = znear * m[11] + m[10];
+    planes[4][3] = znear * m[15] + m[14];
+    planes[5][0] = zfar * m[3] - m[2];
+    planes[5][1] = zfar * m[7] - m[6];
+    planes[5][2] = zfar * m[11] - m[10];
+    planes[5][3] = zfar * m[15] - m[14];
+}
+
 void mat_frustum(
     float *matrix, float left, float right, float bottom,
     float top, float znear, float zfar)
@@ -192,11 +223,13 @@ void set_matrix_3d(
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
     if (ortho) {
-        int size = 32;
+        int size = ortho;
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
-        mat_perspective(b, fov, aspect, 0.125, 256);
+        float znear = 0.125;
+        float zfar = RENDER_CHUNK_RADIUS * 32 + 64;
+        mat_perspective(b, fov, aspect, znear, zfar);
     }
     mat_multiply(a, b, a);
     mat_identity(matrix);

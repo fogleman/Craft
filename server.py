@@ -10,29 +10,65 @@ import threading
 import time
 import traceback
 
-HOST = '0.0.0.0'
-PORT = 4080
-CHUNK_SIZE = 32
-BUFFER_SIZE = 1024
-SPAWN_POINT = (0, 0, 0, 0, 0)
+DEFAULT_HOST = '0.0.0.0'
+DEFAULT_PORT = 4080
+
 DB_PATH = 'craft.db'
+LOG_PATH = 'log.txt'
+
+CHUNK_SIZE = 32
+BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
-YOU = 'U'
+SPAWN_POINT = (0, 0, 0, 0, 0)
+RATE_LIMIT = False
+ALLOWED_ITEMS = set([
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    17, 18, 19, 20, 21, 22, 23,
+    32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63])
+
 BLOCK = 'B'
 CHUNK = 'C'
-POSITION = 'P'
 DISCONNECT = 'D'
-TALK = 'T'
 KEY = 'K'
 NICK = 'N'
+POSITION = 'P'
+SIGN = 'S'
+TALK = 'T'
+VERSION = 'V'
+YOU = 'U'
 
 def log(*args):
     now = datetime.datetime.utcnow()
-    print now, ' '.join(map(str, args))
+    line = ' '.join(map(str, (now,) + args))
+    print line
+    with open(LOG_PATH, 'a') as fp:
+        fp.write('%s\n' % line)
 
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
+
+class RateLimiter(object):
+    def __init__(self, rate, per):
+        self.rate = float(rate)
+        self.per = float(per)
+        self.allowance = self.rate
+        self.last_check = time.time()
+    def tick(self):
+        if not RATE_LIMIT:
+            return False
+        now = time.time()
+        elapsed = now - self.last_check
+        self.last_check = now
+        self.allowance += elapsed * (self.rate / self.per)
+        if self.allowance > self.rate:
+            self.allowance = self.rate
+        if self.allowance < 1:
+            return True # too fast
+        else:
+            self.allowance -= 1
+            return False # okay
 
 class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
@@ -40,6 +76,9 @@ class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 class Handler(SocketServer.BaseRequestHandler):
     def setup(self):
+        self.position_limiter = RateLimiter(100, 5)
+        self.limiter = RateLimiter(1000, 10)
+        self.version = None
         self.queue = Queue.Queue()
         self.running = True
         self.start()
@@ -52,16 +91,30 @@ class Handler(SocketServer.BaseRequestHandler):
                 data = self.request.recv(BUFFER_SIZE)
                 if not data:
                     break
-                buf.extend(data.replace('\r', ''))
+                buf.extend(data.replace('\r\n', '\n'))
                 while '\n' in buf:
                     index = buf.index('\n')
                     line = ''.join(buf[:index])
                     buf = buf[index + 1:]
+                    if not line:
+                        continue
+                    if line[0] == POSITION:
+                        if self.position_limiter.tick():
+                            log('RATE', self.client_id)
+                            self.stop()
+                            return
+                    else:
+                        if self.limiter.tick():
+                            log('RATE', self.client_id)
+                            self.stop()
+                            return
                     model.enqueue(model.on_data, self, line)
         finally:
             model.enqueue(model.on_disconnect, self)
     def finish(self):
         self.running = False
+    def stop(self):
+        self.request.close()
     def start(self):
         thread = threading.Thread(target=self.run)
         thread.setDaemon(True)
@@ -101,6 +154,8 @@ class Model(object):
             BLOCK: self.on_block,
             POSITION: self.on_position,
             TALK: self.on_talk,
+            SIGN: self.on_sign,
+            VERSION: self.on_version,
         }
         self.patterns = [
             (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
@@ -151,6 +206,18 @@ class Model(object):
             'create index if not exists block_xyz_idx on block (x, y, z);',
             'create unique index if not exists block_pqxyz_idx on '
             '    block (p, q, x, y, z);',
+            'create table if not exists sign ('
+            '    p int not null,'
+            '    q int not null,'
+            '    x int not null,'
+            '    y int not null,'
+            '    z int not null,'
+            '    face int not null,'
+            '    text text not null'
+            ');',
+            'create index if not exists sign_pq_idx on sign (p, q);',
+            'create unique index if not exists sign_xyzface_idx on '
+            '    sign (x, y, z, face);',
         ]
         for query in queries:
             self.execute(query)
@@ -186,6 +253,15 @@ class Model(object):
         self.clients.remove(client)
         self.send_disconnect(client)
         self.send_talk('%s has disconnected from the server.' % client.nick)
+    def on_version(self, client, version):
+        if client.version is not None:
+            return
+        version = int(version)
+        if version != 1:
+            client.stop()
+            return
+        client.version = version
+        # TODO: client.start() here
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
         query = (
@@ -199,29 +275,67 @@ class Model(object):
             max_rowid = max(max_rowid, rowid)
         if max_rowid:
             client.send(KEY, p, q, max_rowid)
+        query = (
+            'select x, y, z, face, text from sign where '
+            'p = :p and q = :q;'
+        )
+        rows = self.execute(query, dict(p=p, q=q))
+        for x, y, z, face, text in rows:
+            client.send(SIGN, p, q, x, y, z, face, text)
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
-        if y <= 0 or y > 255 or w < 0 or w > 15:
+        if y <= 0 or y > 255:
+            return
+        if w not in ALLOWED_ITEMS:
             return
         p, q = chunked(x), chunked(z)
         query = (
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'
         )
-        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
-        self.send_block(client, p, q, x, y, z, w)
-        if chunked(x - 1) != p:
-            self.execute(query, dict(p=p - 1, q=q, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p - 1, q, x, y, z, -w)
-        if chunked(x + 1) != p:
-            self.execute(query, dict(p=p + 1, q=q, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p + 1, q, x, y, z, -w)
-        if chunked(z - 1) != q:
-            self.execute(query, dict(p=p, q=q - 1, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p, q - 1, x, y, z, -w)
-        if chunked(z + 1) != q:
-            self.execute(query, dict(p=p, q=q + 1, x=x, y=y, z=z, w=-w))
-            self.send_block(client, p, q + 1, x, y, z, -w)
+        cur = self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+        self.send_block(client, p, q, x, y, z, w, cur.lastrowid)
+        for dx in range(-1, 2):
+            for dz in range(-1, 2):
+                if dx == 0 and dz == 0:
+                    continue
+                if dx and chunked(x + dx) == p:
+                    continue
+                if dz and chunked(z + dz) == q:
+                    continue
+                np, nq = p + dx, q + dz
+                cur = self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
+                self.send_block(client, np, nq, x, y, z, -w, cur.lastrowid)
+        if w == 0:
+            query = (
+                'delete from sign where '
+                'x = :x and y = :y and z = :z;'
+            )
+            self.execute(query, dict(x=x, y=y, z=z))
+    def on_sign(self, client, x, y, z, face, *args):
+        text = ','.join(args)
+        x, y, z, face = map(int, (x, y, z, face))
+        if y <= 0 or y > 255:
+            return
+        if face < 0 or face > 7:
+            return
+        if len(text) > 48:
+            return
+        p, q = chunked(x), chunked(z)
+        if text:
+            query = (
+                'insert or replace into sign (p, q, x, y, z, face, text) '
+                'values (:p, :q, :x, :y, :z, :face, :text);'
+            )
+            self.execute(query,
+                dict(p=p, q=q, x=x, y=y, z=z, face=face, text=text))
+        else:
+            query = (
+                'delete from sign where '
+                'x = :x and y = :y and z = :z and face = :face;'
+            )
+            self.execute(query, dict(x=x, y=y, z=z, face=face))
+        self.send_sign(client, p, q, x, y, z, face, text)
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
@@ -236,6 +350,15 @@ class Model(object):
                     break
             else:
                 client.send(TALK, 'Unrecognized command: "%s"' % text)
+        elif text.startswith('@'):
+            nick = text[1:].split(' ', 1)[0]
+            for other in self.clients:
+                if other.nick == nick:
+                    client.send(TALK, '%s> %s' % (client.nick, text))
+                    other.send(TALK, '%s> %s' % (client.nick, text))
+                    break
+            else:
+                client.send(TALK, 'Unrecognized nick: "%s"' % nick)
         else:
             self.send_talk('%s> %s' % (client.nick, text))
     def on_nick(self, client, nick=None):
@@ -252,7 +375,7 @@ class Model(object):
     def on_goto(self, client, nick=None):
         if nick is None:
             clients = [x for x in self.clients if x != client]
-            other = random.choice(self.clients) if clients else None
+            other = random.choice(clients) if clients else None
         else:
             nicks = dict((client.nick, client) for client in self.clients)
             other = nicks.get(nick)
@@ -298,17 +421,24 @@ class Model(object):
             if other == client:
                 continue
             other.send(DISCONNECT, client.client_id)
-    def send_block(self, client, p, q, x, y, z, w):
+    def send_block(self, client, p, q, x, y, z, w, key):
         for other in self.clients:
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
+            other.send(KEY, p, q, key)
+    def send_sign(self, client, p, q, x, y, z, face, text):
+        for other in self.clients:
+            if other == client:
+                continue
+            other.send(SIGN, p, q, x, y, z, face, text)
     def send_talk(self, text):
+        log(text)
         for client in self.clients:
             client.send(TALK, text)
 
 def main():
-    host, port = HOST, PORT
+    host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]
     if len(sys.argv) > 2:

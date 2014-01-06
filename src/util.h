@@ -3,6 +3,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include "config.h"
 
 #define PI 3.14159265359
 #define DEGREES(radians) ((radians) * 180 / PI)
@@ -10,6 +11,12 @@
 #define ABS(x) ((x) < 0 ? (-(x)) : (x))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+#if DEBUG
+    #define LOG(...) printf(__VA_ARGS__)
+#else
+    #define LOG(...)
+#endif
 
 typedef struct {
     unsigned int fps;

@@ -1505,8 +1505,8 @@ void handle_movement(double dt) {
         float m = dt * 1.0;
         ortho = glfwGetKey(window, CRAFT_KEY_ORTHO) ? 64 : 0;
         fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
-        if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
         if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
+        if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
         if (glfwGetKey(window, CRAFT_KEY_FORWARD)) {
         	if(glfwGetKey(window, CRAFT_KEY_RUN)) isRunning = 1;
             sz--;

@@ -1500,13 +1500,17 @@ void handle_movement(double dt) {
     State *s = &players->state;
     int sz = 0;
     int sx = 0;
+    int isRunning = 0;
     if (!typing) {
         float m = dt * 1.0;
         ortho = glfwGetKey(window, CRAFT_KEY_ORTHO) ? 64 : 0;
         fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
         if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
         if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
-        if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;
+        if (glfwGetKey(window, CRAFT_KEY_FORWARD)) {
+        	if(glfwGetKey(window, CRAFT_KEY_RUN)) isRunning = 1;
+            sz--;
+        }
         if (glfwGetKey(window, CRAFT_KEY_RIGHT)) sx++;
         if (glfwGetKey(window, GLFW_KEY_LEFT)) s->rx -= m;
         if (glfwGetKey(window, GLFW_KEY_RIGHT)) s->rx += m;
@@ -1544,6 +1548,7 @@ void handle_movement(double dt) {
         }
     }
     float speed = flying ? 20 : 5;
+    if(isRunning) speed*=2;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

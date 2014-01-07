@@ -42,6 +42,7 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+#define CRAFT_KEY_RUN GLFW_KEY_LEFT_CONTROL
 
 // keys for moving along axes
 #define CRAFT_KEY_XM 'Z'

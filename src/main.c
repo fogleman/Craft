@@ -4,6 +4,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <curl/curl.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1695,10 +1696,11 @@ void parse_buffer(char *buffer) {
 
 int main(int argc, char **argv) {
     // INITIALIZATION //
-    #ifdef _WIN32
-        WSADATA wsa_data;
-        WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    #endif
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    // #ifdef _WIN32
+    //     WSADATA wsa_data;
+    //     WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    // #endif
     srand(time(NULL));
     rand();
 
@@ -2029,5 +2031,6 @@ int main(int argc, char **argv) {
     db_close();
     glfwTerminate();
     client_stop();
+    curl_global_cleanup();
     return 0;
 }

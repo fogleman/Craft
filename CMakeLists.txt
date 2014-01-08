@@ -23,7 +23,7 @@ include_directories(deps/noise)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 
-find_package(curl REQUIRED)
+find_package(CURL REQUIRED)
 
 target_link_libraries(craft glfw ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 

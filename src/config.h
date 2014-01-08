@@ -43,14 +43,6 @@
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
 
-// keys for moving along axes
-#define CRAFT_KEY_XM 'Z'
-#define CRAFT_KEY_XP 'X'
-#define CRAFT_KEY_YM 'C'
-#define CRAFT_KEY_YP 'V'
-#define CRAFT_KEY_ZM 'B'
-#define CRAFT_KEY_ZP 'N'
-
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 6
 #define RENDER_CHUNK_RADIUS 6

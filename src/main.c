@@ -1373,6 +1373,17 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_OBSERVE_INSET) {
             observe2 = (observe2 + 1) % player_count;
         }
+        int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
+        if (control && key == 'V') {
+            const char *buffer = glfwGetClipboardString(window);
+            char username[128] = {0};
+            char token[128] = {0};
+            if (sscanf(buffer,
+                "/identity %128s %128s", username, token) == 2)
+            {
+                db_auth_set(username, token);
+            }
+        }
     }
 }
 
@@ -1525,24 +1536,6 @@ void handle_movement(double dt) {
             else if (dy == 0) {
                 dy = 8;
             }
-        }
-        if (glfwGetKey(window, CRAFT_KEY_XM)) {
-            vx = -1; vy = 0; vz = 0;
-        }
-        if (glfwGetKey(window, CRAFT_KEY_XP)) {
-            vx = 1; vy = 0; vz = 0;
-        }
-        if (glfwGetKey(window, CRAFT_KEY_YM)) {
-            vx = 0; vy = -1; vz = 0;
-        }
-        if (glfwGetKey(window, CRAFT_KEY_YP)) {
-            vx = 0; vy = 1; vz = 0;
-        }
-        if (glfwGetKey(window, CRAFT_KEY_ZM)) {
-            vx = 0; vy = 0; vz = -1;
-        }
-        if (glfwGetKey(window, CRAFT_KEY_ZP)) {
-            vx = 0; vy = 0; vz = 1;
         }
     }
     float speed = flying ? 20 : 5;

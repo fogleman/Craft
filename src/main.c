@@ -1724,6 +1724,7 @@ int main(int argc, char **argv) {
         client_connect(hostname, port);
         client_start();
         client_version(1);
+        // TODO: move this into a function
         char username[128] = {0};
         char identity_token[128] = {0};
         char access_token[128] = {0};
@@ -1733,15 +1734,16 @@ int main(int argc, char **argv) {
                 access_token, 128, username, identity_token))
             {
                 printf("Successfully authenticated with the login server\n");
-                printf("Sending access token to the game server\n");
                 client_login(username, access_token);
             }
             else {
                 printf("Failed to authenticate with the login server\n");
+                client_login("", "");
             }
         }
         else {
             printf("Logging in anonymously (no identity tokens found)\n");
+            client_login("", "");
         }
     }
     else {

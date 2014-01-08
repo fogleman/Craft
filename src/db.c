@@ -1,3 +1,4 @@
+#include <string.h>
 #include "db.h"
 #include "ring.h"
 #include "sqlite3.h"
@@ -37,6 +38,14 @@ int db_init(char *path) {
         return 0;
     }
     static const char *create_query =
+        "attach database 'auth.db' as auth;"
+        "create table if not exists auth.identity_token ("
+        "   username text not null,"
+        "   token text not null,"
+        "   timestamp int not null"
+        ");"
+        "create unique index if not exists auth.identity_token_username_idx"
+        "   on identity_token (username);"
         "create table if not exists state ("
         "   x float not null,"
         "   y float not null,"
@@ -149,6 +158,72 @@ void db_commit() {
 
 void _db_commit() {
     sqlite3_exec(db, "commit; begin;", NULL, NULL, NULL);
+}
+
+void db_auth_set(char *username, char *identity_token) {
+    if (!db_enabled) {
+        return;
+    }
+    static const char *query =
+        "insert or replace into auth.identity_token "
+        "(username, token, timestamp) values (?, ?, ?);";
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, username, -1, NULL);
+    sqlite3_bind_text(stmt, 2, identity_token, -1, NULL);
+    sqlite3_bind_int(stmt, 3, time(NULL));
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+}
+
+int db_auth_get(
+    char *username,
+    char *identity_token, int identity_token_length)
+{
+    if (!db_enabled) {
+        return 0;
+    }
+    static const char *query =
+        "select identity_token from auth.identity_token "
+        "where username = ?;";
+    int result = 0;
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, username, -1, NULL);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char *a = (const char *)sqlite3_column_text(stmt, 0);
+        strncpy(identity_token, a, identity_token_length);
+        identity_token[identity_token_length] = '\0';
+        result = 1;
+    }
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+int db_auth_get_first(
+    char *username, int username_length,
+    char *identity_token, int identity_token_length)
+{
+    if (!db_enabled) {
+        return 0;
+    }
+    static const char *query =
+        "select username, identity_token from auth.identity_token "
+        "order by timestamp desc;";
+    int result = 0;
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char *a = (const char *)sqlite3_column_text(stmt, 0);
+        const char *b = (const char *)sqlite3_column_text(stmt, 1);
+        strncpy(username, a, username_length);
+        username[username_length] = '\0';
+        strncpy(identity_token, b, identity_token_length);
+        identity_token[identity_token_length] = '\0';
+        result = 1;
+    }
+    sqlite3_finalize(stmt);
+    return result;
 }
 
 void db_save_state(float x, float y, float z, float rx, float ry) {

@@ -28,6 +28,7 @@ ALLOWED_ITEMS = set([
     32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
     48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63])
 
+AUTHENTICATE = 'A'
 BLOCK = 'B'
 CHUNK = 'C'
 DISCONNECT = 'D'
@@ -150,6 +151,7 @@ class Model(object):
         self.clients = []
         self.queue = Queue.Queue()
         self.commands = {
+            AUTHENTICATE: self.on_authenticate,
             CHUNK: self.on_chunk,
             BLOCK: self.on_block,
             POSITION: self.on_position,
@@ -262,6 +264,8 @@ class Model(object):
             return
         client.version = version
         # TODO: client.start() here
+    def on_authenticate(self, client, username, access_token):
+        pass
     def on_chunk(self, client, p, q, key=0):
         p, q, key = map(int, (p, q, key))
         query = (

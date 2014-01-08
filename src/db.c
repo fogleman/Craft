@@ -184,7 +184,7 @@ int db_auth_get(
         return 0;
     }
     static const char *query =
-        "select identity_token from auth.identity_token "
+        "select token from auth.identity_token "
         "where username = ?;";
     int result = 0;
     sqlite3_stmt *stmt;
@@ -192,8 +192,8 @@ int db_auth_get(
     sqlite3_bind_text(stmt, 1, username, -1, NULL);
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         const char *a = (const char *)sqlite3_column_text(stmt, 0);
-        strncpy(identity_token, a, identity_token_length);
-        identity_token[identity_token_length] = '\0';
+        strncpy(identity_token, a, identity_token_length - 1);
+        identity_token[identity_token_length - 1] = '\0';
         result = 1;
     }
     sqlite3_finalize(stmt);
@@ -208,7 +208,7 @@ int db_auth_get_first(
         return 0;
     }
     static const char *query =
-        "select username, identity_token from auth.identity_token "
+        "select username, token from auth.identity_token "
         "order by timestamp desc;";
     int result = 0;
     sqlite3_stmt *stmt;
@@ -216,10 +216,10 @@ int db_auth_get_first(
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         const char *a = (const char *)sqlite3_column_text(stmt, 0);
         const char *b = (const char *)sqlite3_column_text(stmt, 1);
-        strncpy(username, a, username_length);
-        username[username_length] = '\0';
-        strncpy(identity_token, b, identity_token_length);
-        identity_token[identity_token_length] = '\0';
+        strncpy(username, a, username_length - 1);
+        username[username_length - 1] = '\0';
+        strncpy(identity_token, b, identity_token_length - 1);
+        identity_token[identity_token_length - 1] = '\0';
         result = 1;
     }
     sqlite3_finalize(stmt);

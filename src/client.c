@@ -74,6 +74,15 @@ void client_version(int version) {
     client_send(buffer);
 }
 
+void client_login(const char *username, const char *identity_token) {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[1024];
+    snprintf(buffer, 1024, "A,%s,%s\n", username, identity_token);
+    client_send(buffer);
+}
+
 void client_position(float x, float y, float z, float rx, float ry) {
     if (!client_enabled) {
         return;
@@ -121,7 +130,7 @@ void client_sign(int x, int y, int z, int face, const char *text) {
     client_send(buffer);
 }
 
-void client_talk(char *text) {
+void client_talk(const char *text) {
     if (!client_enabled) {
         return;
     }

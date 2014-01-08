@@ -1292,6 +1292,13 @@ void render_text(
     del_buffer(buffer);
 }
 
+void add_message(const char *text) {
+    printf("%s\n", text);
+    snprintf(
+        messages[message_index], MAX_TEXT_LENGTH, "%s", text);
+    message_index = (message_index + 1) % MAX_MESSAGES;
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         return;
@@ -1382,6 +1389,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                 "/identity %128s %128s", username, token) == 2)
             {
                 db_auth_set(username, token);
+                add_message("Successfully imported identity token!");
             }
         }
     }
@@ -1659,10 +1667,7 @@ void parse_buffer(char *buffer) {
         }
         if (line[0] == 'T' && line[1] == ',') {
             char *text = line + 2;
-            printf("%s\n", text);
-            snprintf(
-                messages[message_index], MAX_TEXT_LENGTH, "%s", text);
-            message_index = (message_index + 1) % MAX_MESSAGES;
+            add_message(text);
         }
         char format[64];
         snprintf(
@@ -1719,6 +1724,25 @@ int main(int argc, char **argv) {
         client_connect(hostname, port);
         client_start();
         client_version(1);
+        char username[128] = {0};
+        char identity_token[128] = {0};
+        char access_token[128] = {0};
+        if (db_auth_get_first(username, 128, identity_token, 128)) {
+            printf("Contacting login server for username: %s\n", username);
+            if (get_access_token(
+                access_token, 128, username, identity_token))
+            {
+                printf("Successfully authenticated with the login server\n");
+                printf("Sending access token to the game server\n");
+                client_login(username, access_token);
+            }
+            else {
+                printf("Failed to authenticate with the login server\n");
+            }
+        }
+        else {
+            printf("Logging in anonymously (no identity tokens found)\n");
+        }
     }
     else {
         db_enable();

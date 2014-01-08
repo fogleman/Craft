@@ -42,7 +42,7 @@ int db_init(char *path) {
         "create table if not exists auth.identity_token ("
         "   username text not null,"
         "   token text not null,"
-        "   timestamp int not null"
+        "   selected int not null"
         ");"
         "create unique index if not exists auth.identity_token_username_idx"
         "   on identity_token (username);"
@@ -166,14 +166,38 @@ void db_auth_set(char *username, char *identity_token) {
     }
     static const char *query =
         "insert or replace into auth.identity_token "
-        "(username, token, timestamp) values (?, ?, ?);";
+        "(username, token, selected) values (?, ?, ?);";
     sqlite3_stmt *stmt;
     sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
     sqlite3_bind_text(stmt, 1, username, -1, NULL);
     sqlite3_bind_text(stmt, 2, identity_token, -1, NULL);
-    sqlite3_bind_int(stmt, 3, time(NULL));
+    sqlite3_bind_int(stmt, 3, 1);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
+    db_auth_select(username);
+}
+
+int db_auth_select(char *username) {
+    if (!db_enabled) {
+        return 0;
+    }
+    db_auth_select_none();
+    static const char *query =
+        "update auth.identity_token set selected = 1 where username = ?;";
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, username, -1, NULL);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    return sqlite3_changes(db);
+}
+
+void db_auth_select_none() {
+    if (!db_enabled) {
+        return;
+    }
+    sqlite3_exec(db, "update auth.identity_token set selected = 0;",
+        NULL, NULL, NULL);
 }
 
 int db_auth_get(
@@ -200,7 +224,7 @@ int db_auth_get(
     return result;
 }
 
-int db_auth_get_first(
+int db_auth_get_selected(
     char *username, int username_length,
     char *identity_token, int identity_token_length)
 {
@@ -209,7 +233,7 @@ int db_auth_get_first(
     }
     static const char *query =
         "select username, token from auth.identity_token "
-        "order by timestamp desc;";
+        "where selected = 1;";
     int result = 0;
     sqlite3_stmt *stmt;
     sqlite3_prepare_v2(db, query, -1, &stmt, NULL);

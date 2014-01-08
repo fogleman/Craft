@@ -11,10 +11,12 @@ int db_init(char *path);
 void db_close();
 void db_commit();
 void db_auth_set(char *username, char *identity_token);
+int db_auth_select(char *username);
+void db_auth_select_none();
 int db_auth_get(
     char *username,
     char *identity_token, int identity_token_length);
-int db_auth_get_first(
+int db_auth_get_selected(
     char *username, int username_length,
     char *identity_token, int identity_token_length);
 void db_save_state(float x, float y, float z, float rx, float ry);

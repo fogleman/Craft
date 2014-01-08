@@ -1299,6 +1299,29 @@ void add_message(const char *text) {
     message_index = (message_index + 1) % MAX_MESSAGES;
 }
 
+void login() {
+    char username[128] = {0};
+    char identity_token[128] = {0};
+    char access_token[128] = {0};
+    if (db_auth_get_selected(username, 128, identity_token, 128)) {
+        printf("Contacting login server for username: %s\n", username);
+        if (get_access_token(
+            access_token, 128, username, identity_token))
+        {
+            printf("Successfully authenticated with the login server\n");
+            client_login(username, access_token);
+        }
+        else {
+            printf("Failed to authenticate with the login server\n");
+            client_login("", "");
+        }
+    }
+    else {
+        printf("Logging in anonymously (no identity tokens found)\n");
+        client_login("", "");
+    }
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         return;
@@ -1339,6 +1362,26 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                     int x, y, z, face;
                     if (hit_test_face(player, &x, &y, &z, &face)) {
                         set_sign(x, y, z, face, typing_buffer + 1);
+                    }
+                }
+                else if (typing_buffer[0] == '/') {
+                    char username[128] = {0};
+                    if (strstr(typing_buffer, "/logout") == typing_buffer) {
+                        db_auth_select_none();
+                        login();
+                    }
+                    else if (sscanf(typing_buffer,
+                        "/login %128s", username) == 1)
+                    {
+                        if (db_auth_select(username)) {
+                            login();
+                        }
+                        else {
+                            add_message("Unknown username.");
+                        }
+                    }
+                    else {
+                        client_talk(typing_buffer);
                     }
                 }
                 else {
@@ -1724,27 +1767,7 @@ int main(int argc, char **argv) {
         client_connect(hostname, port);
         client_start();
         client_version(1);
-        // TODO: move this into a function
-        char username[128] = {0};
-        char identity_token[128] = {0};
-        char access_token[128] = {0};
-        if (db_auth_get_first(username, 128, identity_token, 128)) {
-            printf("Contacting login server for username: %s\n", username);
-            if (get_access_token(
-                access_token, 128, username, identity_token))
-            {
-                printf("Successfully authenticated with the login server\n");
-                client_login(username, access_token);
-            }
-            else {
-                printf("Failed to authenticate with the login server\n");
-                client_login("", "");
-            }
-        }
-        else {
-            printf("Logging in anonymously (no identity tokens found)\n");
-            client_login("", "");
-        }
+        login();
     }
     else {
         db_enable();

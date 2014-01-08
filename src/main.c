@@ -1317,7 +1317,7 @@ void login() {
         }
     }
     else {
-        printf("Logging in anonymously (no identity tokens found)\n");
+        printf("Logging in anonymously\n");
         client_login("", "");
     }
 }

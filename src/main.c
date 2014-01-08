@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "auth.h"
 #include "client.h"
 #include "config.h"
 #include "cube.h"

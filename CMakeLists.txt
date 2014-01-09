@@ -24,6 +24,7 @@ include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 
 find_package(CURL REQUIRED)
+include_directories(${CURL_INCLUDE_DIR})
 
 target_link_libraries(craft glfw ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 

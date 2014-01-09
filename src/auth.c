@@ -13,7 +13,7 @@ size_t write_function(char *data, size_t size, size_t count, void *arg) {
     char *src = malloc(length + 1);
     memcpy(src, data, length);
     src[length] = '\0';
-    strlcat(dst, src, MAX_RESPONSE_LENGTH);
+    strncat(dst, src, MAX_RESPONSE_LENGTH - strlen(dst) - 1);
     free(src);
     return length;
 }

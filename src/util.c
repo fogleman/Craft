@@ -200,18 +200,18 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
                 if (line_width + token_width > max_width) {
                     line_width = 0;
                     line_number++;
-                    strncat(output, "\n", max_length);
+                    strncat(output, "\n", max_length - strlen(output) - 1);
                 }
                 else {
-                    strncat(output, " ", max_length);
+                    strncat(output, " ", max_length - strlen(output) - 1);
                 }
             }
-            strncat(output, token, max_length);
+            strncat(output, token, max_length - strlen(output) - 1);
             line_width += token_width + space_width;
             token = tokenize(NULL, " ", &key2);
         }
         line_number++;
-        strncat(output, "\n", max_length);
+        strncat(output, "\n", max_length - strlen(output) - 1);
         line = tokenize(NULL, "\r\n", &key1);
     }
     free(text);

@@ -61,12 +61,16 @@ terminal.
 
 ### Multiplayer
 
+Register for an account!
+
+https://craft.michaelfogleman.com/
+
 You can run your own server or connect to mine. The server uses the same SQLite
 database format as the client running standalone.
 
 #### Client
 
-    ./craft 184.173.122.170 30624
+    ./craft michaelfogleman.com
 
 #### Server
 

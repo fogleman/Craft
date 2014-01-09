@@ -1,4 +1,5 @@
 #ifdef _WIN32
+    #include <winsock2.h>
     #include <windows.h>
     #define close closesocket
     #define sleep Sleep
@@ -19,6 +20,8 @@
 static int client_enabled = 0;
 static int running = 0;
 static int sd = 0;
+static int bytes_sent = 0;
+static int bytes_received = 0;
 static char *queue = 0;
 static int qsize = 0;
 static thrd_t recv_thread;
@@ -48,6 +51,7 @@ int client_sendall(int sd, char *data, int length) {
         }
         count += n;
         length -= n;
+        bytes_sent += n;
     }
     return 0;
 }
@@ -68,6 +72,15 @@ void client_version(int version) {
     }
     char buffer[1024];
     snprintf(buffer, 1024, "V,%d\n", version);
+    client_send(buffer);
+}
+
+void client_login(const char *username, const char *identity_token) {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[1024];
+    snprintf(buffer, 1024, "A,%s,%s\n", username, identity_token);
     client_send(buffer);
 }
 
@@ -118,7 +131,7 @@ void client_sign(int x, int y, int z, int face, const char *text) {
     client_send(buffer);
 }
 
-void client_talk(char *text) {
+void client_talk(const char *text) {
     if (!client_enabled) {
         return;
     }
@@ -148,6 +161,7 @@ char *client_recv() {
         int remaining = qsize - length;
         memmove(queue, p + 1, remaining);
         qsize -= length;
+        bytes_received += length;
     }
     mtx_unlock(&mutex);
     return result;
@@ -237,4 +251,6 @@ void client_stop() {
     // mtx_destroy(&mutex);
     qsize = 0;
     free(queue);
+    // printf("Bytes Sent: %d, Bytes Received: %d\n",
+    //     bytes_sent, bytes_received);
 }

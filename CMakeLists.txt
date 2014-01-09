@@ -23,10 +23,20 @@ include_directories(deps/noise)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 
+find_package(CURL REQUIRED)
+include_directories(${CURL_INCLUDE_DIR})
+
 if(APPLE)
-    target_link_libraries(craft glfw ${GLFW_LIBRARIES})
-elseif(UNIX)
-    target_link_libraries(craft glfw dl ${GLFW_LIBRARIES})
-else()
-    target_link_libraries(craft glfw ws2_32.lib ${GLFW_LIBRARIES})
+    target_link_libraries(craft glfw
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+endif()
+
+if(UNIX)
+    target_link_libraries(craft dl glfw
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+endif()
+
+if(MINGW)
+    target_link_libraries(craft ws2_32.lib glfw
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()

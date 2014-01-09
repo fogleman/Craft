@@ -2,6 +2,7 @@
 #define _config_h_
 
 // app parameters
+#define DEBUG 0
 #define FULLSCREEN 0
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -41,14 +42,6 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
-
-// keys for moving along axes
-#define CRAFT_KEY_XM 'Z'
-#define CRAFT_KEY_XP 'X'
-#define CRAFT_KEY_YM 'C'
-#define CRAFT_KEY_YP 'V'
-#define CRAFT_KEY_ZM 'B'
-#define CRAFT_KEY_ZP 'N'
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 6

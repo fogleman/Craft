@@ -84,7 +84,7 @@ endif()
 # Set compiler specific flags
 #--------------------------------------------------------------------
 if (UNIX)
-    add_definitions(-Wall)
+    add_definitions(-Wall -D_GNU_SOURCE)
 
     if (BUILD_SHARED_LIBS)
         add_definitions(-fvisibility=hidden)

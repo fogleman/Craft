@@ -1,3 +1,5 @@
+#include <libgen.h>
+#include <stdio.h>
 #include <string.h>
 #include "db.h"
 #include "ring.h"
@@ -38,7 +40,6 @@ int db_init(char *path) {
         return 0;
     }
     static const char *create_query =
-        "attach database 'auth.db' as auth;"
         "create table if not exists auth.identity_token ("
         "   username text not null,"
         "   token text not null,"
@@ -102,6 +103,10 @@ int db_init(char *path) {
     int rc;
     rc = sqlite3_open(path, &db);
     if (rc) return rc;
+    char attach[1024];
+    snprintf(attach, 1024,
+        "attach database '%s/auth.db' as auth;", dirname(path));
+    sqlite3_exec(db, attach, NULL, NULL, NULL);
     rc = sqlite3_exec(db, create_query, NULL, NULL, NULL);
     if (rc) return rc;
     rc = sqlite3_prepare_v2(

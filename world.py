@@ -3,7 +3,7 @@
 
 from ctypes import CDLL, CFUNCTYPE, c_int, c_void_p
 
-dll = CDLL('world')
+dll = CDLL('./world')
 
 WORLD_FUNC = CFUNCTYPE(None, c_int, c_int, c_int, c_int, c_void_p)
 

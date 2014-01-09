@@ -30,6 +30,9 @@ int get_access_token(
         long http_code = 0;
         snprintf(post, MAX_POST_LENGTH, "username=%s&identity_token=%s",
             username, identity_token);
+        #ifdef _WIN32
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        #endif
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_function);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
         curl_easy_setopt(curl, CURLOPT_URL, url);

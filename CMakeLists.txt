@@ -26,15 +26,17 @@ include_directories(deps/tinycthread)
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
-target_link_libraries(craft glfw ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
-
 if(APPLE)
+    target_link_libraries(craft glfw
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
 if(UNIX)
-    target_link_libraries(craft dl)
+    target_link_libraries(craft dl glfw
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
 if(WINDOWS)
-    target_link_libraries(craft ws2_32.lib)
+    target_link_libraries(craft ws2_32.lib glfw
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()

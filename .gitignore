@@ -4,9 +4,11 @@ CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
 craft
+world
 env
 log.txt
 *.o
 *.db
 *.exe
+*.dll
 

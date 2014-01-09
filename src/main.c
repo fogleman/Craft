@@ -903,6 +903,11 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
+void map_set_func(int x, int y, int z, int w, void *arg) {
+    Map *map = (Map *)arg;
+    map_set(map, x, y, z, w);
+}
+
 void create_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
@@ -915,7 +920,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     SignList *signs = &chunk->signs;
     map_alloc(map);
     sign_list_alloc(signs, 16);
-    create_world(map, p, q);
+    create_world(p, q, map_set_func, map);
     db_load_map(map, p, q);
     db_load_signs(signs, p, q);
     gen_chunk_buffer(chunk);

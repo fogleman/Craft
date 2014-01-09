@@ -1324,7 +1324,7 @@ void login() {
     }
 }
 
-void parse_command(const char *buffer) {
+void parse_command(const char *buffer, int forward) {
     char username[128] = {0};
     char token[128] = {0};
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
@@ -1343,7 +1343,7 @@ void parse_command(const char *buffer) {
             add_message("Unknown username.");
         }
     }
-    else {
+    else if (forward) {
         client_talk(buffer);
     }
 }
@@ -1391,7 +1391,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                     }
                 }
                 else if (typing_buffer[0] == '/') {
-                    parse_command(typing_buffer);
+                    parse_command(typing_buffer, 1);
                 }
                 else {
                     client_talk(typing_buffer);
@@ -1416,7 +1416,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                 MAX_TEXT_LENGTH - strlen(typing_buffer) - 1);
         }
         else {
-            parse_command(buffer);
+            parse_command(buffer, 0);
         }
     }
     if (!typing) {

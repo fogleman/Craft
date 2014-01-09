@@ -106,6 +106,7 @@ static int item_index = 0;
 static int scale = 1;
 static int ortho = 0;
 static float fov = 65;
+static int suppress_char = 0;
 static int typing = 0;
 static char typing_buffer[MAX_TEXT_LENGTH] = {0};
 static int message_index = 0;
@@ -1331,6 +1332,30 @@ void login() {
     }
 }
 
+void parse_command(const char *buffer, int forward) {
+    char username[128] = {0};
+    char token[128] = {0};
+    if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
+        db_auth_set(username, token);
+        add_message("Successfully imported identity token!");
+    }
+    else if (strstr(buffer, "/logout") == buffer) {
+        db_auth_select_none();
+        login();
+    }
+    else if (sscanf(buffer, "/login %128s", username) == 1) {
+        if (db_auth_select(username)) {
+            login();
+        }
+        else {
+            add_message("Unknown username.");
+        }
+    }
+    else if (forward) {
+        client_talk(buffer);
+    }
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_RELEASE) {
         return;
@@ -1374,24 +1399,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                     }
                 }
                 else if (typing_buffer[0] == '/') {
-                    char username[128] = {0};
-                    if (strstr(typing_buffer, "/logout") == typing_buffer) {
-                        db_auth_select_none();
-                        login();
-                    }
-                    else if (sscanf(typing_buffer,
-                        "/login %128s", username) == 1)
-                    {
-                        if (db_auth_select(username)) {
-                            login();
-                        }
-                        else {
-                            add_message("Unknown username.");
-                        }
-                    }
-                    else {
-                        client_talk(typing_buffer);
-                    }
+                    parse_command(typing_buffer, 1);
                 }
                 else {
                     client_talk(typing_buffer);
@@ -1405,6 +1413,18 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             else {
                 left_click = 1;
             }
+        }
+    }
+    int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
+    if (control && key == 'V') {
+        const char *buffer = glfwGetClipboardString(window);
+        if (typing) {
+            suppress_char = 1;
+            strncat(typing_buffer, buffer,
+                MAX_TEXT_LENGTH - strlen(typing_buffer) - 1);
+        }
+        else {
+            parse_command(buffer, 0);
         }
     }
     if (!typing) {
@@ -1432,22 +1452,14 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_OBSERVE_INSET) {
             observe2 = (observe2 + 1) % player_count;
         }
-        int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
-        if (control && key == 'V') {
-            const char *buffer = glfwGetClipboardString(window);
-            char username[128] = {0};
-            char token[128] = {0};
-            if (sscanf(buffer,
-                "/identity %128s %128s", username, token) == 2)
-            {
-                db_auth_set(username, token);
-                add_message("Successfully imported identity token!");
-            }
-        }
     }
 }
 
 void on_char(GLFWwindow *window, unsigned int u) {
+    if (suppress_char) {
+        suppress_char = 0;
+        return;
+    }
     if (typing) {
         if (u >= 32 && u < 128) {
             char c = (char)u;

@@ -36,7 +36,7 @@ if(UNIX)
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
-if(WINDOWS)
+if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()

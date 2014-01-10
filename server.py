@@ -42,6 +42,11 @@ TALK = 'T'
 VERSION = 'V'
 YOU = 'U'
 
+try:
+    from config import *
+except ImportError:
+    pass
+
 def log(*args):
     now = datetime.datetime.utcnow()
     line = ' '.join(map(str, (now,) + args))

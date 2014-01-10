@@ -11,4 +11,5 @@ log.txt
 *.db
 *.exe
 *.dll
+*.pyc
 

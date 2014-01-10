@@ -1720,7 +1720,9 @@ void parse_buffer(char *buffer) {
         }
         int kp, kq, kk;
         if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
-            db_set_key(kp, kq, kk);
+            if (kk > 0) {
+                db_set_key(kp, kq, kk);
+            }
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
                 chunk->dirty = 1;

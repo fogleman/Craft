@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import traceback
+import world
 
 DEFAULT_HOST = '0.0.0.0'
 DEFAULT_PORT = 4080
@@ -226,6 +227,20 @@ class Model(object):
         ]
         for query in queries:
             self.execute(query)
+    def get_default_block(self, x, y, z):
+        p, q = chunked(x), chunked(z)
+        chunk = world.create_world(p, q)
+        return chunk.get((x, y, z), 0)
+    def get_block(self, x, y, z):
+        query = (
+            'select w from block where '
+            'p = :p and q = :q and x = :x and y = :y and z = :z;'
+        )
+        p, q = chunked(x), chunked(z)
+        rows = list(self.execute(query, dict(p=p, q=q, x=x, y=y, z=z)))
+        if rows:
+            return rows[0][0]
+        return self.get_default_block(x, y, z)
     def next_client_id(self):
         result = 1
         client_ids = set(x.client_id for x in self.clients)
@@ -307,15 +322,20 @@ class Model(object):
         for x, y, z, face, text in rows:
             client.send(SIGN, p, q, x, y, z, face, text)
     def on_block(self, client, x, y, z, w):
-        if client.user_id is None:
-            client.send(TALK, 'Only logged in users are allowed to build.')
-            return
         x, y, z, w = map(int, (x, y, z, w))
-        if y <= 0 or y > 255:
-            return
-        if w not in ALLOWED_ITEMS:
-            return
         p, q = chunked(x), chunked(z)
+        message = None
+        if client.user_id is None:
+            message = 'Only logged in users are allowed to build.'
+        elif y <= 0 or y > 255:
+            message = 'Invalid block coordinates.'
+        elif w not in ALLOWED_ITEMS:
+            message = 'That item is not allowed.'
+        if message is not None:
+            client.send(BLOCK, p, q, x, y, z, self.get_block(x, y, z))
+            client.send(KEY, p, q, 0)
+            client.send(TALK, message)
+            return
         query = (
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'

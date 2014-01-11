@@ -175,7 +175,7 @@ class Model(object):
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
             (re.compile(r'^/pq\s+(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_pq),
-            (re.compile(r'^/help$'), self.on_help),
+            (re.compile(r'^/help(?:\s+(\S+))?$'), self.on_help),
             (re.compile(r'^/list$'), self.on_list),
         ]
     def start(self):
@@ -262,7 +262,7 @@ class Model(object):
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Welcome to Craft!')
-        client.send(TALK, 'Type "/help" for chat commands.')
+        client.send(TALK, 'Type "/help" for a list of commands.')
         self.send_position(client)
         self.send_positions(client)
         self.send_nick(client)
@@ -445,11 +445,32 @@ class Model(object):
         client.position = (p * CHUNK_SIZE, 0, q * CHUNK_SIZE, 0, 0)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
-    def on_help(self, client):
-        client.send(TALK, 'Type "t" to chat with other players.')
-        client.send(TALK, 'Type "/" to start typing a command.')
-        client.send(TALK,
-            'Commands: /goto [NAME], /help, /list, /spawn')
+    def on_help(self, client, topic=None):
+        if topic is None:
+            client.send(TALK, 'Type "t" to chat with other players.')
+            client.send(TALK, 'Type "/" to start typing a command.')
+            client.send(TALK,
+                'Commands: /goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /spawn')
+            return
+        topic = topic.lower().strip()
+        if topic == 'goto':
+            client.send(TALK, 'Help: /goto [NAME]')
+            client.send(TALK, 'Teleports to another user.')
+            client.send(TALK, 'If NAME is unspecified, a random user is chosen.')
+        elif topic == 'list':
+            client.send(TALK, 'Help: /list')
+            client.send(TALK, 'Displays a list of connected users.')
+        elif topic == 'login':
+            client.send(TALK, 'Help: /login NAME')
+            client.send(TALK, 'Switch to another registered username.')
+            client.send(TALK, 'The login server will be re-contacted. The username is case-sensitive.')
+        elif topic == 'logout':
+            client.send(TALK, 'Help: /logout')
+            client.send(TALK, 'Unauthenticate and become a guest user.')
+            client.send(TALK, 'Automatic logins will not occur again until the /login command is re-issued.')
+        elif topic == 'spawn':
+            client.send(TALK, 'Help: /spawn')
+            client.send(TALK, 'Teleport back to the spawn point.')
     def on_list(self, client):
         client.send(TALK,
             'Players: %s' % ', '.join(x.nick for x in self.clients))

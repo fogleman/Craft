@@ -344,6 +344,8 @@ class Model(object):
             message = 'That item is not allowed.'
         elif w and previous:
             message = 'Cannot create blocks in a non-empty space.'
+        elif not w and not previous:
+            message = 'That space is already empty.'
         elif previous in INDESTRUCTIBLE_ITEMS:
             message = 'Cannot destroy that type of block.'
         if message is not None:

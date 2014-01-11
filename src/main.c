@@ -1335,6 +1335,7 @@ void parse_command(const char *buffer, int forward) {
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
+        login();
     }
     else if (strstr(buffer, "/logout") == buffer) {
         db_auth_select_none();

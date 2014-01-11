@@ -312,6 +312,7 @@ class Model(object):
     def on_chunk(self, client, p, q, key=0):
         packets = []
         p, q, key = map(int, (p, q, key))
+        chunk = self.world.get_chunk(p, q)
         query = (
             'select rowid, x, y, z, w from block where '
             'p = :p and q = :q and rowid > :key;'
@@ -319,6 +320,8 @@ class Model(object):
         rows = self.execute(query, dict(p=p, q=q, key=key))
         max_rowid = 0
         for rowid, x, y, z, w in rows:
+            if key == 0 and chunk.get((x, y, z), 0) == w:
+                continue
             packets.append(packet(BLOCK, p, q, x, y, z, w))
             max_rowid = max(max_rowid, rowid)
         if max_rowid:

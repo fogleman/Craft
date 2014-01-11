@@ -58,6 +58,9 @@ def log(*args):
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
 
+def packet(*args):
+    return '%s\n' % ','.join(map(str, args))
+
 class RateLimiter(object):
     def __init__(self, rate, per):
         self.rate = float(rate)
@@ -153,9 +156,7 @@ class Handler(SocketServer.BaseRequestHandler):
         if data:
             self.queue.put(data)
     def send(self, *args):
-        data = '%s\n' % ','.join(map(str, args))
-        #log('SEND', self.client_id, data[:-1])
-        self.send_raw(data)
+        self.send_raw(packet(*args))
 
 class Model(object):
     def __init__(self, seed):
@@ -309,6 +310,7 @@ class Model(object):
         # TODO: has left message if was already authenticated
         self.send_talk('%s has joined the game.' % client.nick)
     def on_chunk(self, client, p, q, key=0):
+        packets = []
         p, q, key = map(int, (p, q, key))
         query = (
             'select rowid, x, y, z, w from block where '
@@ -317,17 +319,18 @@ class Model(object):
         rows = self.execute(query, dict(p=p, q=q, key=key))
         max_rowid = 0
         for rowid, x, y, z, w in rows:
-            client.send(BLOCK, p, q, x, y, z, w)
+            packets.append(packet(BLOCK, p, q, x, y, z, w))
             max_rowid = max(max_rowid, rowid)
         if max_rowid:
-            client.send(KEY, p, q, max_rowid)
+            packets.append(packet(KEY, p, q, max_rowid))
         query = (
             'select x, y, z, face, text from sign where '
             'p = :p and q = :q;'
         )
         rows = self.execute(query, dict(p=p, q=q))
         for x, y, z, face, text in rows:
-            client.send(SIGN, p, q, x, y, z, face, text)
+            packets.append(packet(SIGN, p, q, x, y, z, face, text))
+        client.send(''.join(packets))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)

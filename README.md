@@ -147,10 +147,17 @@ Collision testing simply adjusts the player’s position to remain a certain dis
 
 A textured sky dome is used for the sky. The X-coordinate of the texture represents time of day. The Y-values map from the bottom of the sky sphere to the top of the sky sphere. The player is always in the center of the sphere. The fragment shaders for the blocks also sample the sky texture to determine the appropriate fog color to blend with based on the block’s position relative to the backing sky.
 
+#### Ambient Occlusion
+
+Ambient occlusion is implemented as described on this page:
+
+http://0fps.wordpress.com/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
+
 #### Dependencies
 
 * GLEW is used for managing OpenGL extensions across platforms.
 * GLFW is used for cross-platform window management.
+* CURL is used for HTTPS / SSL POST for the authentication process.
 * lodepng is used for loading PNG textures.
 * sqlite3 is used for saving the blocks added / removed by the user.
 * tinycthread is used for cross-platform threading.

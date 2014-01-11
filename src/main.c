@@ -903,6 +903,11 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
+void map_set_func(int x, int y, int z, int w, void *arg) {
+    Map *map = (Map *)arg;
+    map_set(map, x, y, z, w);
+}
+
 void create_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
@@ -915,7 +920,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     SignList *signs = &chunk->signs;
     map_alloc(map);
     sign_list_alloc(signs, 16);
-    create_world(map, p, q);
+    create_world(p, q, map_set_func, map);
     db_load_map(map, p, q);
     db_load_signs(signs, p, q);
     gen_chunk_buffer(chunk);
@@ -1330,6 +1335,7 @@ void parse_command(const char *buffer, int forward) {
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
+        login();
     }
     else if (strstr(buffer, "/logout") == buffer) {
         db_auth_select_none();
@@ -1715,7 +1721,9 @@ void parse_buffer(char *buffer) {
         }
         int kp, kq, kk;
         if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
-            db_set_key(kp, kq, kk);
+            if (kk > 0) {
+                db_set_key(kp, kq, kk);
+            }
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
                 chunk->dirty = 1;
@@ -1752,10 +1760,6 @@ void parse_buffer(char *buffer) {
 int main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    // #ifdef _WIN32
-    //     WSADATA wsa_data;
-    //     WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    // #endif
     srand(time(NULL));
     rand();
 

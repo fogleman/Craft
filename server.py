@@ -423,13 +423,6 @@ class Model(object):
                 client.send(TALK, 'Unrecognized nick: "%s"' % nick)
         else:
             self.send_talk('%s> %s' % (client.nick, text))
-    def on_nick(self, client, nick=None):
-        if nick is None:
-            client.send(TALK, 'Your nickname is %s' % client.nick)
-        else:
-            self.send_talk('%s is now known as %s' % (client.nick, nick))
-            client.nick = nick
-            self.send_nick(client)
     def on_spawn(self, client):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)

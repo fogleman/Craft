@@ -1760,10 +1760,6 @@ void parse_buffer(char *buffer) {
 int main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    // #ifdef _WIN32
-    //     WSADATA wsa_data;
-    //     WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    // #endif
     srand(time(NULL));
     rand();
 

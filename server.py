@@ -24,6 +24,7 @@ COMMIT_INTERVAL = 5
 
 SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
+INDESTRUCTIBLE_ITEMS = set([16])
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
     17, 18, 19, 20, 21, 22, 23,
@@ -330,6 +331,7 @@ class Model(object):
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
+        previous = self.get_block(x, y, z)
         message = None
         if client.user_id is None:
             message = 'Only logged in users are allowed to build.'
@@ -337,8 +339,12 @@ class Model(object):
             message = 'Invalid block coordinates.'
         elif w not in ALLOWED_ITEMS:
             message = 'That item is not allowed.'
+        elif w and previous:
+            message = 'Cannot create blocks in a non-empty space.'
+        elif previous in INDESTRUCTIBLE_ITEMS:
+            message = 'Cannot destroy that type of block.'
         if message is not None:
-            client.send(BLOCK, p, q, x, y, z, self.get_block(x, y, z))
+            client.send(BLOCK, p, q, x, y, z, previous)
             client.send(KEY, p, q, 0)
             client.send(TALK, message)
             return

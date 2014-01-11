@@ -1,4 +1,5 @@
 from math import floor
+from world import World
 import Queue
 import SocketServer
 import datetime
@@ -10,7 +11,6 @@ import sys
 import threading
 import time
 import traceback
-import world
 
 DEFAULT_HOST = '0.0.0.0'
 DEFAULT_PORT = 4080
@@ -157,7 +157,8 @@ class Handler(SocketServer.BaseRequestHandler):
         self.send_raw(data)
 
 class Model(object):
-    def __init__(self):
+    def __init__(self, seed):
+        self.world = World(seed)
         self.clients = []
         self.queue = Queue.Queue()
         self.commands = {
@@ -234,7 +235,7 @@ class Model(object):
             self.execute(query)
     def get_default_block(self, x, y, z):
         p, q = chunked(x), chunked(z)
-        chunk = world.create_world(p, q)
+        chunk = self.world.get_chunk(p, q)
         return chunk.get((x, y, z), 0)
     def get_block(self, x, y, z):
         query = (
@@ -499,7 +500,7 @@ def main():
     if len(sys.argv) > 2:
         port = int(sys.argv[2])
     log('SERV', host, port)
-    model = Model()
+    model = Model(None)
     model.start()
     server = Server((host, port), Handler)
     server.model = model

@@ -453,10 +453,9 @@ class Model(object):
         self.send_position(client)
     def on_help(self, client, topic=None):
         if topic is None:
-            client.send(TALK, 'Type "t" to chat with other players.')
-            client.send(TALK, 'Type "/" to start typing a command.')
-            client.send(TALK,
-                'Commands: /goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /pq P Q, /spawn')
+            client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
+            client.send(TALK, '/goto [NAME], /help [TOPIC], /list')
+            client.send(TALK, '/login NAME, /logout, /pq P Q, /spawn')
             return
         topic = topic.lower().strip()
         if topic == 'goto':

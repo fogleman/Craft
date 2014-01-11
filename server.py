@@ -456,16 +456,16 @@ class Model(object):
             client.send(TALK, 'Type "t" to chat with other players.')
             client.send(TALK, 'Type "/" to start typing a command.')
             client.send(TALK,
-                'Commands: /goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /spawn')
+                'Commands: /goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /pq P Q, /spawn')
             return
         topic = topic.lower().strip()
         if topic == 'goto':
             client.send(TALK, 'Help: /goto [NAME]')
-            client.send(TALK, 'Teleports to another user.')
+            client.send(TALK, 'Teleport to another user.')
             client.send(TALK, 'If NAME is unspecified, a random user is chosen.')
         elif topic == 'list':
             client.send(TALK, 'Help: /list')
-            client.send(TALK, 'Displays a list of connected users.')
+            client.send(TALK, 'Display a list of connected users.')
         elif topic == 'login':
             client.send(TALK, 'Help: /login NAME')
             client.send(TALK, 'Switch to another registered username.')
@@ -474,6 +474,9 @@ class Model(object):
             client.send(TALK, 'Help: /logout')
             client.send(TALK, 'Unauthenticate and become a guest user.')
             client.send(TALK, 'Automatic logins will not occur again until the /login command is re-issued.')
+        elif topic == 'pq':
+            client.send(TALK, 'Help: /pq P Q')
+            client.send(TALK, 'Teleport to the specified chunk.')
         elif topic == 'spawn':
             client.send(TALK, 'Help: /spawn')
             client.send(TALK, 'Teleport back to the spawn point.')

@@ -330,7 +330,7 @@ class Model(object):
         rows = self.execute(query, dict(p=p, q=q))
         for x, y, z, face, text in rows:
             packets.append(packet(SIGN, p, q, x, y, z, face, text))
-        client.send(''.join(packets))
+        client.send_raw(''.join(packets))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
@@ -357,8 +357,8 @@ class Model(object):
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'
         )
-        cur = self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
-        self.send_block(client, p, q, x, y, z, w, cur.lastrowid)
+        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+        self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):
             for dz in range(-1, 2):
                 if dx == 0 and dz == 0:
@@ -368,8 +368,8 @@ class Model(object):
                 if dz and chunked(z + dz) == q:
                     continue
                 np, nq = p + dx, q + dz
-                cur = self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
-                self.send_block(client, np, nq, x, y, z, -w, cur.lastrowid)
+                self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
+                self.send_block(client, np, nq, x, y, z, -w)
         if w == 0:
             query = (
                 'delete from sign where '
@@ -504,12 +504,12 @@ class Model(object):
             if other == client:
                 continue
             other.send(DISCONNECT, client.client_id)
-    def send_block(self, client, p, q, x, y, z, w, key):
+    def send_block(self, client, p, q, x, y, z, w):
         for other in self.clients:
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
-            other.send(KEY, p, q, key)
+            other.send(KEY, p, q, 0)
     def send_sign(self, client, p, q, x, y, z, face, text):
         for other in self.clients:
             if other == client:

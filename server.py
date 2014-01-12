@@ -551,9 +551,9 @@ def cleanup():
         query = 'select x, y, z, w from block where p = :p and q = :q;'
         rows = conn.execute(query, {'p': p, 'q': q})
         for x, y, z, w in rows:
-            total += 1
             if chunked(x) != p or chunked(z) != q:
                 continue
+            total += 1
             if (x, y, z) == last:
                 continue
             if w == chunk.get((x, y, z), 0):

@@ -535,7 +535,39 @@ class Model(object):
         for client in self.clients:
             client.send(TALK, text)
 
+def cleanup():
+    world = World(None)
+    conn = sqlite3.connect(DB_PATH)
+    query = 'select x, y, z from block order by rowid desc limit 1;'
+    last = list(conn.execute(query))[0]
+    query = 'select distinct p, q from block;'
+    chunks = list(conn.execute(query))
+    count = 0
+    total = 0
+    delete_query = 'delete from block where x = %d and y = %d and z = %d;'
+    print 'begin;'
+    for p, q in chunks:
+        chunk = world.get_chunk(p, q)
+        query = 'select x, y, z, w from block where p = :p and q = :q;'
+        rows = conn.execute(query, {'p': p, 'q': q})
+        for x, y, z, w in rows:
+            total += 1
+            if chunked(x) != p or chunked(z) != q:
+                continue
+            if (x, y, z) == last:
+                continue
+            if w == chunk.get((x, y, z), 0):
+                count += 1
+                print delete_query % (x, y, z)
+    conn.close()
+    print 'commit;'
+    print 'vacuum;'
+    print sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
+
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':
+        cleanup()
+        return
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]

@@ -92,10 +92,6 @@ typedef struct {
     char messages[MAX_MESSAGES][MAX_TEXT_LENGTH];
     int width;
     int height;
-    int exclusive;
-    int left_click;
-    int right_click;
-    int middle_click;
     int observe1;
     int observe2;
     int flying;
@@ -1365,7 +1361,46 @@ void parse_command(const char *buffer, int forward) {
     }
 }
 
+void on_left_click() {
+    State *s = &g->players->state;
+    int hx, hy, hz;
+    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+    if (hy > 0 && hy < 256 && is_destructable(hw)) {
+        set_block(hx, hy, hz, 0);
+        int above = get_block(hx, hy + 1, hz);
+        if (is_plant(above)) {
+            set_block(hx, hy + 1, hz, 0);
+        }
+    }
+}
+
+void on_right_click() {
+    State *s = &g->players->state;
+    int hx, hy, hz;
+    int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+    if (hy > 0 && hy < 256 && is_obstacle(hw)) {
+        if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
+            set_block(hx, hy, hz, items[g->item_index]);
+        }
+    }
+}
+
+void on_middle_click() {
+    State *s = &g->players->state;
+    int hx, hy, hz;
+    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+    for (int i = 0; i < item_count; i++) {
+        if (items[i] == hw) {
+            g->item_index = i;
+            break;
+        }
+    }
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
+    int exclusive =
+        glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
     if (action == GLFW_RELEASE) {
         return;
     }
@@ -1384,8 +1419,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (g->typing) {
             g->typing = 0;
         }
-        else if (g->exclusive) {
-            g->exclusive = 0;
+        else if (exclusive) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
@@ -1416,15 +1450,14 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             }
         }
         else {
-            if (mods & GLFW_MOD_SUPER) {
-                g->right_click = 1;
+            if (control) {
+                on_right_click();
             }
             else {
-                g->left_click = 1;
+                on_left_click();
             }
         }
     }
-    int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
     if (control && key == 'V') {
         const char *buffer = glfwGetClipboardString(window);
         if (g->typing) {
@@ -1514,31 +1547,33 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
 }
 
 void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
+    int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
+    int exclusive =
+        glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
     if (action != GLFW_PRESS) {
         return;
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        if (g->exclusive) {
-            if (mods & GLFW_MOD_SUPER) {
-                g->right_click = 1;
+        if (exclusive) {
+            if (control) {
+                on_right_click();
             }
             else {
-                g->left_click = 1;
+                on_left_click();
             }
         }
         else {
-            g->exclusive = 1;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-        if (g->exclusive) {
-            g->right_click = 1;
+        if (exclusive) {
+            on_right_click();
         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-        if (g->exclusive) {
-            g->middle_click = 1;
+        if (exclusive) {
+            on_middle_click();
         }
     }
 }
@@ -1559,10 +1594,12 @@ void create_window() {
 }
 
 void handle_mouse_input() {
+    int exclusive =
+        glfwGetInputMode(g->window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
     static double px = 0;
     static double py = 0;
     State *s = &g->players->state;
-    if (g->exclusive && (px || py)) {
+    if (exclusive && (px || py)) {
         double mx, my;
         glfwGetCursorPos(g->window, &mx, &my);
         float m = 0.0025;
@@ -1646,43 +1683,6 @@ void handle_movement(double dt) {
     }
     if (s->y < 0) {
         s->y = highest_block(s->x, s->z) + 2;
-    }
-}
-
-void handle_clicks() {
-    State *s = &g->players->state;
-    if (g->left_click) {
-        g->left_click = 0;
-        int hx, hy, hz;
-        int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-        if (hy > 0 && hy < 256 && is_destructable(hw)) {
-            set_block(hx, hy, hz, 0);
-            int above = get_block(hx, hy + 1, hz);
-            if (is_plant(above)) {
-                set_block(hx, hy + 1, hz, 0);
-            }
-        }
-    }
-    if (g->right_click) {
-        g->right_click = 0;
-        int hx, hy, hz;
-        int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-        if (hy > 0 && hy < 256 && is_obstacle(hw)) {
-            if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-                set_block(hx, hy, hz, items[g->item_index]);
-            }
-        }
-    }
-    if (g->middle_click) {
-        g->middle_click = 0;
-        int hx, hy, hz;
-        int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-        for (int i = 0; i < item_count; i++) {
-            if (items[i] == hw) {
-                g->item_index = i;
-                break;
-            }
-        }
     }
 }
 
@@ -1821,7 +1821,6 @@ int main(int argc, char **argv) {
     glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
     glfwSetScrollCallback(g->window, on_scroll);
-    g->exclusive = 1;
 
     if (glewInit() != GLEW_OK) {
         return -1;
@@ -1953,9 +1952,6 @@ int main(int argc, char **argv) {
 
         // HANDLE MOVEMENT //
         handle_movement(dt);
-
-        // HANDLE CLICKS //
-        handle_clicks();
 
         // HANDLE DATA FROM SERVER //
         char *buffer = client_recv();

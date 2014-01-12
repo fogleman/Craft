@@ -1184,7 +1184,7 @@ void render_water(Attrib *attrib, Player *player) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     GLuint buffer = gen_water_buffer(
-        s->x, 14 + sinf(glfwGetTime() * 2) * 0.05, s->z,
+        s->x, 11 + sinf(glfwGetTime() * 2) * 0.05, s->z,
         RENDER_CHUNK_RADIUS * CHUNK_SIZE);
     draw_water(attrib, buffer);
     del_buffer(buffer);

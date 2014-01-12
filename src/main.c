@@ -2116,6 +2116,9 @@ int main(int argc, char **argv) {
     // SHUTDOWN //
     db_save_state(s->x, s->y, s->z, s->rx, s->ry);
     db_close();
+    del_buffer(sky_buffer);
+    delete_all_chunks();
+    delete_all_players();
     glfwTerminate();
     client_stop();
     curl_global_cleanup();

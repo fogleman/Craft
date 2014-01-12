@@ -4,7 +4,7 @@ Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C 
 
 http://www.michaelfogleman.com/craft/
 
-![](https://raw.github.com/fogleman/Craft/master/screenshot1.png)
+![](http://www.michaelfogleman.com/static/img/craft1.png)
 
 ### Features
 
@@ -42,8 +42,12 @@ the installation:
 #### Windows
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
-and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`. Use the
-following commands in place of the ones described in the next section.
+and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
+
+Download and install [cURL](http://curl.haxx.se/download.html) so that
+CURL/lib and CURL/include are in your Program Files directory.
+
+Use the following commands in place of the ones described in the next section.
 
     cmake -G "MinGW Makefiles"
     mingw32-make
@@ -61,12 +65,16 @@ terminal.
 
 ### Multiplayer
 
+Register for an account!
+
+https://craft.michaelfogleman.com/
+
 You can run your own server or connect to mine. The server uses the same SQLite
 database format as the client running standalone.
 
 #### Client
 
-    ./craft 184.173.122.170 30624
+    ./craft michaelfogleman.com
 
 #### Server
 
@@ -91,7 +99,7 @@ database format as the client running standalone.
 
 ### Screenshot
 
-![](https://raw.github.com/fogleman/Craft/master/screenshot2.png)
+![](http://www.michaelfogleman.com/static/img/craft3.png)
 
 ### Implementation Details
 
@@ -143,10 +151,17 @@ Collision testing simply adjusts the player’s position to remain a certain dis
 
 A textured sky dome is used for the sky. The X-coordinate of the texture represents time of day. The Y-values map from the bottom of the sky sphere to the top of the sky sphere. The player is always in the center of the sphere. The fragment shaders for the blocks also sample the sky texture to determine the appropriate fog color to blend with based on the block’s position relative to the backing sky.
 
+#### Ambient Occlusion
+
+Ambient occlusion is implemented as described on this page:
+
+http://0fps.wordpress.com/2013/07/03/ambient-occlusion-for-minecraft-like-worlds/
+
 #### Dependencies
 
 * GLEW is used for managing OpenGL extensions across platforms.
 * GLFW is used for cross-platform window management.
+* CURL is used for HTTPS / SSL POST for the authentication process.
 * lodepng is used for loading PNG textures.
 * sqlite3 is used for saving the blocks added / removed by the user.
 * tinycthread is used for cross-platform threading.

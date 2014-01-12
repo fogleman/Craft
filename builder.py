@@ -1,10 +1,14 @@
 # This file allows you to programmatically create blocks in Craft.
 # Please use this wisely. Test on your own server first. Do not abuse it.
 
+import requests
 import socket
 
 HOST = '127.0.0.1'
 PORT = 4080
+
+USERNAME = ''
+IDENTITY_TOKEN = ''
 
 EMPTY = 0
 GRASS = 1
@@ -18,6 +22,18 @@ PLANK = 8
 SNOW = 9
 GLASS = 10
 COBBLE = 11
+LIGHT_STONE = 12
+DARK_STONE = 13
+CHEST = 14
+LEAVES = 15
+CLOUD = 16
+TALL_GRASS = 17
+YELLOW_FLOWER = 18
+RED_FLOWER = 19
+PURPLE_FLOWER = 20
+SUN_FLOWER = 21
+WHITE_FLOWER = 22
+BLUE_FLOWER = 23
 
 OFFSETS = [
     (-0.5, -0.5, -0.5),
@@ -67,24 +83,30 @@ def circle_z(x, y, z, r, fill=False):
     return sphere(x, y, z, r, fill, fz=True)
 
 def cylinder_x(x1, x2, y, z, r, fill=False):
+    x1, x2 = sorted((x1, x2))
     result = set()
     for x in range(x1, x2 + 1):
         result |= circle_x(x, y, z, r, fill)
     return result
 
 def cylinder_y(x, y1, y2, z, r, fill=False):
+    y1, y2 = sorted((y1, y2))
     result = set()
     for y in range(y1, y2 + 1):
         result |= circle_y(x, y, z, r, fill)
     return result
 
 def cylinder_z(x, y, z1, z2, r, fill=False):
+    z1, z2 = sorted((z1, z2))
     result = set()
     for z in range(z1, z2 + 1):
         result |= circle_z(x, y, z, r, fill)
     return result
 
 def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
+    x1, x2 = sorted((x1, x2))
+    y1, y2 = sorted((y1, y2))
+    z1, z2 = sorted((z1, z2))
     result = set()
     a = (x1 == x2) + (y1 == y2) + (z1 == z2)
     for x in range(x1, x2 + 1):
@@ -100,6 +122,8 @@ def cuboid(x1, x2, y1, y2, z1, z2, fill=True):
     return result
 
 def pyramid(x1, x2, y, z1, z2, fill=False):
+    x1, x2 = sorted((x1, x2))
+    z1, z2 = sorted((z1, z2))
     result = set()
     while x2 >= x1 and z2 >= z2:
         result |= cuboid(x1, x2, y, y, z1, z2, fill)
@@ -107,9 +131,22 @@ def pyramid(x1, x2, y, z1, z2, fill=False):
     return result
 
 class Client(object):
-    def __init__(self, host=HOST, port=PORT):
+    def __init__(self, host, port, username, identity_token):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect((host, port))
+        self.authenticate(username, identity_token)
+    def authenticate(self, username, identity_token):
+        url = 'https://craft.michaelfogleman.com/api/1/identity'
+        payload = {
+            'username': username,
+            'identity_token': identity_token,
+        }
+        response = requests.post(url, data=payload)
+        if response.status_code == 200 and response.text.isalnum():
+            access_token = response.text
+            self.conn.sendall('A,%s,%s\n' % (username, access_token))
+        else:
+            raise Exception('Failed to authenticate.')
     def set_block(self, x, y, z, w):
         self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
     def set_blocks(self, blocks, w):
@@ -132,7 +169,7 @@ class Client(object):
             x, y, z = x + dx2, y + dy2, z + dz2
 
 def main():
-    client = Client()
+    client = Client(HOST, PORT, USERNAME, IDENTITY_TOKEN)
     set_block = client.set_block
     set_blocks = client.set_blocks
     # set_blocks(circle_y(0, 32, 0, 16, True), STONE)

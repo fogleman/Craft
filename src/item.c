@@ -25,12 +25,38 @@ const int items[] = {
     SUN_FLOWER,
     WHITE_FLOWER,
     BLUE_FLOWER,
-    // RED_WOOL,
-    // GREEN_WOOL,
-    // BLUE_WOOL,
-    // ORANGE_WOOL,
-    // PURPLE_WOOL,
-    // BEIGE_WOOL
+    COLOR_00,
+    COLOR_01,
+    COLOR_02,
+    COLOR_03,
+    COLOR_04,
+    COLOR_05,
+    COLOR_06,
+    COLOR_07,
+    COLOR_08,
+    COLOR_09,
+    COLOR_10,
+    COLOR_11,
+    COLOR_12,
+    COLOR_13,
+    COLOR_14,
+    COLOR_15,
+    COLOR_16,
+    COLOR_17,
+    COLOR_18,
+    COLOR_19,
+    COLOR_20,
+    COLOR_21,
+    COLOR_22,
+    COLOR_23,
+    COLOR_24,
+    COLOR_25,
+    COLOR_26,
+    COLOR_27,
+    COLOR_28,
+    COLOR_29,
+    COLOR_30,
+    COLOR_31
 };
 
 const int item_count = sizeof(items) / sizeof(int);
@@ -61,14 +87,46 @@ const int blocks[256][6] = {
     {0, 0, 0, 0, 0, 0}, // 21
     {0, 0, 0, 0, 0, 0}, // 22
     {0, 0, 0, 0, 0, 0}, // 23
-    {17, 17, 17, 17, 17, 17}, // 24 - red wool
-    {18, 18, 18, 18, 18, 18}, // 25 - green wool
-    {19, 19, 19, 19, 19, 19}, // 26 - blue wool
-    {33, 33, 33, 33, 33, 33}, // 27 - orange wool
-    {34, 34, 34, 34, 34, 34}, // 28 - purple wool
-    {35, 35, 35, 35, 35, 35}, // 29 - beige wool
+    {0, 0, 0, 0, 0, 0}, // 24
+    {0, 0, 0, 0, 0, 0}, // 25
+    {0, 0, 0, 0, 0, 0}, // 26
+    {0, 0, 0, 0, 0, 0}, // 27
+    {0, 0, 0, 0, 0, 0}, // 28
+    {0, 0, 0, 0, 0, 0}, // 29
     {0, 0, 0, 0, 0, 0}, // 30
     {0, 0, 0, 0, 0, 0}, // 31
+    {176, 176, 176, 176, 176, 176}, // 32
+    {177, 177, 177, 177, 177, 177}, // 33
+    {178, 178, 178, 178, 178, 178}, // 34
+    {179, 179, 179, 179, 179, 179}, // 35
+    {180, 180, 180, 180, 180, 180}, // 36
+    {181, 181, 181, 181, 181, 181}, // 37
+    {182, 182, 182, 182, 182, 182}, // 38
+    {183, 183, 183, 183, 183, 183}, // 39
+    {184, 184, 184, 184, 184, 184}, // 40
+    {185, 185, 185, 185, 185, 185}, // 41
+    {186, 186, 186, 186, 186, 186}, // 42
+    {187, 187, 187, 187, 187, 187}, // 43
+    {188, 188, 188, 188, 188, 188}, // 44
+    {189, 189, 189, 189, 189, 189}, // 45
+    {190, 190, 190, 190, 190, 190}, // 46
+    {191, 191, 191, 191, 191, 191}, // 47
+    {192, 192, 192, 192, 192, 192}, // 48
+    {193, 193, 193, 193, 193, 193}, // 49
+    {194, 194, 194, 194, 194, 194}, // 50
+    {195, 195, 195, 195, 195, 195}, // 51
+    {196, 196, 196, 196, 196, 196}, // 52
+    {197, 197, 197, 197, 197, 197}, // 53
+    {198, 198, 198, 198, 198, 198}, // 54
+    {199, 199, 199, 199, 199, 199}, // 55
+    {200, 200, 200, 200, 200, 200}, // 56
+    {201, 201, 201, 201, 201, 201}, // 57
+    {202, 202, 202, 202, 202, 202}, // 58
+    {203, 203, 203, 203, 203, 203}, // 59
+    {204, 204, 204, 204, 204, 204}, // 60
+    {205, 205, 205, 205, 205, 205}, // 61
+    {206, 206, 206, 206, 206, 206}, // 62
+    {207, 207, 207, 207, 207, 207}, // 63
 };
 
 const int plants[256] = {
@@ -100,47 +158,30 @@ int is_plant(int w) {
 
 int is_obstacle(int w) {
     w = ABS(w);
+    if (is_plant(w)) {
+        return 0;
+    }
     switch (w) {
-        case GRASS:
-        case SAND:
-        case STONE:
-        case BRICK:
-        case WOOD:
-        case CEMENT:
-        case DIRT:
-        case PLANK:
-        case SNOW:
-        case GLASS:
-        case COBBLE:
-        case LIGHT_STONE:
-        case DARK_STONE:
-        case CHEST:
-        case LEAVES:
-        case RED_WOOL:
-        case GREEN_WOOL:
-        case BLUE_WOOL:
-        case ORANGE_WOOL:
-        case PURPLE_WOOL:
-        case BEIGE_WOOL:
-            return 1;
-        default:
+        case EMPTY:
+        case CLOUD:
             return 0;
+        default:
+            return 1;
     }
 }
 
 int is_transparent(int w) {
+    if (w == EMPTY) {
+        return 1;
+    }
     w = ABS(w);
+    if (is_plant(w)) {
+        return 1;
+    }
     switch (w) {
         case EMPTY:
         case GLASS:
         case LEAVES:
-        case TALL_GRASS:
-        case YELLOW_FLOWER:
-        case RED_FLOWER:
-        case PURPLE_FLOWER:
-        case SUN_FLOWER:
-        case WHITE_FLOWER:
-        case BLUE_FLOWER:
             return 1;
         default:
             return 0;
@@ -149,36 +190,10 @@ int is_transparent(int w) {
 
 int is_destructable(int w) {
     switch (w) {
-        case GRASS:
-        case SAND:
-        case STONE:
-        case BRICK:
-        case WOOD:
-        case CEMENT:
-        case DIRT:
-        case PLANK:
-        case SNOW:
-        case GLASS:
-        case COBBLE:
-        case LIGHT_STONE:
-        case DARK_STONE:
-        case CHEST:
-        case LEAVES:
-        case TALL_GRASS:
-        case YELLOW_FLOWER:
-        case RED_FLOWER:
-        case PURPLE_FLOWER:
-        case SUN_FLOWER:
-        case WHITE_FLOWER:
-        case BLUE_FLOWER:
-        case RED_WOOL:
-        case GREEN_WOOL:
-        case BLUE_WOOL:
-        case ORANGE_WOOL:
-        case PURPLE_WOOL:
-        case BEIGE_WOOL:
-            return 1;
-        default:
+        case EMPTY:
+        case CLOUD:
             return 0;
+        default:
+            return 1;
     }
 }

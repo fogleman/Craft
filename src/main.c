@@ -412,6 +412,14 @@ void delete_player(int id) {
     g->player_count = count;
 }
 
+void delete_all_players() {
+    for (int i = 0; i < g->player_count; i++) {
+        Player *player = g->players + i;
+        del_buffer(player->buffer);
+    }
+    g->player_count = 0;
+}
+
 float player_player_distance(Player *p1, Player *p2) {
     State *s1 = &p1->state;
     State *s2 = &p2->state;
@@ -957,6 +965,17 @@ void delete_chunks() {
         }
     }
     g->chunk_count = count;
+}
+
+void delete_all_chunks() {
+    for (int i = 0; i < g->chunk_count; i++) {
+        Chunk *chunk = g->chunks + i;
+        map_free(&chunk->map);
+        sign_list_free(&chunk->signs);
+        del_buffer(chunk->buffer);
+        del_buffer(chunk->sign_buffer);
+    }
+    g->chunk_count = 0;
 }
 
 void ensure_chunks(Player *player, int force) {

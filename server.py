@@ -556,7 +556,8 @@ def cleanup():
             total += 1
             if (x, y, z) == last:
                 continue
-            if w == chunk.get((x, y, z), 0):
+            original = chunk.get((x, y, z), 0)
+            if w == original or original in INDESTRUCTIBLE_ITEMS:
                 count += 1
                 print delete_query % (x, y, z)
     conn.close()

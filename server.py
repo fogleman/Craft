@@ -561,7 +561,7 @@ def cleanup():
                 print delete_query % (x, y, z)
     conn.close()
     print 'commit;'
-    print sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
+    print >> sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
 
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':

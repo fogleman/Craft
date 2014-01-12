@@ -28,10 +28,15 @@
 #define MAX_PLAYERS 128
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
+#define MAX_PATH_LENGTH 256
+#define MAX_ADDR_LENGTH 256
 
-#define LEFT 0
-#define CENTER 1
-#define RIGHT 2
+#define ALIGN_LEFT 0
+#define ALIGN_CENTER 1
+#define ALIGN_RIGHT 2
+
+#define MODE_OFFLINE 0
+#define MODE_ONLINE 1
 
 typedef struct {
     Map map;
@@ -100,6 +105,11 @@ typedef struct {
     int ortho;
     float fov;
     int suppress_char;
+    int mode;
+    int mode_changed;
+    char db_path[MAX_PATH_LENGTH];
+    char server_addr[MAX_ADDR_LENGTH];
+    int server_port;
 } Model;
 
 static Model model;
@@ -1358,6 +1368,9 @@ void login() {
 void parse_command(const char *buffer, int forward) {
     char username[128] = {0};
     char token[128] = {0};
+    char server_addr[MAX_ADDR_LENGTH];
+    int server_port = DEFAULT_PORT;
+    char filename[MAX_PATH_LENGTH];
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
@@ -1374,6 +1387,26 @@ void parse_command(const char *buffer, int forward) {
         else {
             add_message("Unknown username.");
         }
+    }
+    else if (sscanf(buffer,
+        "/online %128s %d", server_addr, &server_port) >= 1)
+    {
+        g->mode_changed = 1;
+        g->mode = MODE_ONLINE;
+        strncpy(g->server_addr, server_addr, MAX_ADDR_LENGTH);
+        g->server_port = server_port;
+        snprintf(g->db_path, MAX_PATH_LENGTH,
+            "cache.%s.%d.db", g->server_addr, g->server_port);
+    }
+    else if (sscanf(buffer, "/offline %128s", filename) == 1) {
+        g->mode_changed = 1;
+        g->mode = MODE_OFFLINE;
+        snprintf(g->db_path, MAX_PATH_LENGTH, "%s.db", filename);
+    }
+    else if (strstr(buffer, "/offline") == buffer) {
+        g->mode_changed = 1;
+        g->mode = MODE_OFFLINE;
+        snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
     }
     else if (forward) {
         client_talk(buffer);
@@ -1787,41 +1820,22 @@ void parse_buffer(char *buffer) {
     }
 }
 
+void reset_model() {
+    memset(g->chunks, 0, sizeof(Chunk) * MAX_CHUNKS);
+    g->chunk_count = 0;
+    memset(g->players, 0, sizeof(Player) * MAX_PLAYERS);
+    g->player_count = 0;
+    g->observe1 = 0;
+    g->observe2 = 0;
+    g->flying = 0;
+    g->item_index = 0;
+}
+
 int main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));
     rand();
-
-    // CHECK COMMAND LINE ARGUMENTS //
-    if (argc == 2 || argc == 3) {
-        char *hostname = argv[1];
-        int port = DEFAULT_PORT;
-        if (argc == 3) {
-            port = atoi(argv[2]);
-        }
-        if (USE_CACHE) {
-            char path[1024];
-            snprintf(path, 1024, "cache.%s.%d.db", hostname, port);
-            db_enable();
-            if (db_init(path)) {
-                return -1;
-            }
-            // TODO: support proper caching of signs (handle deletions)
-            db_delete_all_signs();
-        }
-        client_enable();
-        client_connect(hostname, port);
-        client_start();
-        client_version(1);
-        login();
-    }
-    else {
-        db_enable();
-        if (db_init(DB_PATH)) {
-            return -1;
-        }
-    }
 
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
@@ -1932,195 +1946,247 @@ int main(int argc, char **argv) {
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
 
-    // LOCAL VARIABLES
-    FPS fps = {0, 0, 0};
-    double last_commit = glfwGetTime();
-    double last_update = glfwGetTime();
-    GLuint sky_buffer = gen_sky_buffer();
-
-    Player *me = g->players;
-    State *s = &g->players->state;
-    me->id = 0;
-    me->name[0] = '\0';
-    me->buffer = 0;
-    g->player_count = 1;
-
-    // LOAD STATE FROM DATABASE //
-    int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
-    ensure_chunks(me, 1);
-    if (!loaded) {
-        s->y = highest_block(s->x, s->z) + 2;
+    // CHECK COMMAND LINE ARGUMENTS //
+    if (argc == 2 || argc == 3) {
+        g->mode = MODE_ONLINE;
+        strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+        g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
+        snprintf(g->db_path, MAX_PATH_LENGTH,
+            "cache.%s.%d.db", g->server_addr, g->server_port);
+    }
+    else {
+        g->mode = MODE_OFFLINE;
+        snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
     }
 
-    // BEGIN MAIN LOOP //
-    double previous = glfwGetTime();
-    while (!glfwWindowShouldClose(g->window)) {
-        // WINDOW SIZE AND SCALE //
-        g->scale = get_scale_factor();
-        glfwGetFramebufferSize(g->window, &g->width, &g->height);
-        glViewport(0, 0, g->width, g->height);
-
-        // FRAME RATE //
-        update_fps(&fps);
-        double now = glfwGetTime();
-        double dt = MIN(now - previous, 0.2);
-        previous = now;
-
-        // HANDLE MOUSE INPUT //
-        handle_mouse_input();
-
-        // HANDLE MOVEMENT //
-        handle_movement(dt);
-
-        // HANDLE DATA FROM SERVER //
-        char *buffer = client_recv();
-        if (buffer) {
-            parse_buffer(buffer);
-            free(buffer);
-        }
-
-        // FLUSH DATABASE //
-        if (now - last_commit > COMMIT_INTERVAL) {
-            last_commit = now;
-            db_commit();
-        }
-
-        // SEND POSITION TO SERVER //
-        if (now - last_update > 0.1) {
-            last_update = now;
-            client_position(s->x, s->y, s->z, s->rx, s->ry);
-        }
-
-        // PREPARE TO RENDER //
-        g->observe1 = g->observe1 % g->player_count;
-        g->observe2 = g->observe2 % g->player_count;
-        delete_chunks();
-        del_buffer(me->buffer);
-        me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
-        for (int i = 1; i < g->player_count; i++) {
-            interpolate_player(g->players + i);
-        }
-        Player *player = g->players + g->observe1;
-
-        // RENDER 3-D SCENE //
-        glClear(GL_COLOR_BUFFER_BIT);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        render_sky(&sky_attrib, player, sky_buffer);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        int face_count = render_chunks(&block_attrib, player);
-        render_signs(&text_attrib, player);
-        render_sign(&text_attrib, player);
-        render_players(&block_attrib, player);
-        if (SHOW_WIREFRAME) {
-            render_wireframe(&line_attrib, player);
-        }
-
-        // RENDER HUD //
-        glClear(GL_DEPTH_BUFFER_BIT);
-        if (SHOW_CROSSHAIRS) {
-            render_crosshairs(&line_attrib);
-        }
-        if (SHOW_ITEM) {
-            render_item(&block_attrib);
-        }
-
-        // RENDER TEXT //
-        char text_buffer[1024];
-        float ts = 12 * g->scale;
-        float tx = ts / 2;
-        float ty = g->height - ts;
-        if (SHOW_INFO_TEXT) {
-            int hour = time_of_day() * 24;
-            char am_pm = hour < 12 ? 'a' : 'p';
-            hour = hour % 12;
-            hour = hour ? hour : 12;
-            snprintf(
-                text_buffer, 1024,
-                "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-                chunked(s->x), chunked(s->z), s->x, s->y, s->z,
-                g->player_count, g->chunk_count,
-                face_count * 2, hour, am_pm, fps.fps);
-            render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
-            ty -= ts * 2;
-        }
-        if (SHOW_CHAT_TEXT) {
-            for (int i = 0; i < MAX_MESSAGES; i++) {
-                int index = (g->message_index + i) % MAX_MESSAGES;
-                if (strlen(g->messages[index])) {
-                    render_text(&text_attrib, LEFT, tx, ty, ts,
-                        g->messages[index]);
-                    ty -= ts * 2;
-                }
+    // OUTER LOOP //
+    int running = 1;
+    while (running) {
+        // DATABASE INITIALIZATION //
+        if (g->mode == MODE_OFFLINE || USE_CACHE) {
+            db_enable();
+            if (db_init(g->db_path)) {
+                return -1;
             }
-        }
-        if (g->typing) {
-            snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
-            render_text(&text_attrib, LEFT, tx, ty, ts, text_buffer);
-            ty -= ts * 2;
-        }
-        if (SHOW_PLAYER_NAMES) {
-            if (player != me) {
-                render_text(&text_attrib, CENTER, g->width / 2, ts, ts,
-                    player->name);
-            }
-            Player *other = player_crosshair(player);
-            if (other) {
-                render_text(&text_attrib, CENTER,
-                    g->width / 2, g->height / 2 - ts - 24, ts, other->name);
+            if (g->mode == MODE_ONLINE) {
+                // TODO: support proper caching of signs (handle deletions)
+                db_delete_all_signs();
             }
         }
 
-        // RENDER PICTURE IN PICTURE //
-        if (g->observe2) {
-            player = g->players + g->observe2;
+        // CLIENT INITIALIZATION //
+        if (g->mode == MODE_ONLINE) {
+            client_enable();
+            client_connect(g->server_addr, g->server_port);
+            client_start();
+            client_version(1);
+            login();
+        }
 
-            int pw = 256 * g->scale;
-            int ph = 256 * g->scale;
-            int offset = 32 * g->scale;
-            int pad = 3 * g->scale;
-            int sw = pw + pad * 2;
-            int sh = ph + pad * 2;
+        // LOCAL VARIABLES //
+        reset_model();
+        FPS fps = {0, 0, 0};
+        double last_commit = glfwGetTime();
+        double last_update = glfwGetTime();
+        GLuint sky_buffer = gen_sky_buffer();
 
-            glEnable(GL_SCISSOR_TEST);
-            glScissor(g->width - sw - offset + pad, offset - pad, sw, sh);
+        Player *me = g->players;
+        State *s = &g->players->state;
+        me->id = 0;
+        me->name[0] = '\0';
+        me->buffer = 0;
+        g->player_count = 1;
+
+        // LOAD STATE FROM DATABASE //
+        int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
+        ensure_chunks(me, 1);
+        if (!loaded) {
+            s->y = highest_block(s->x, s->z) + 2;
+        }
+
+        // BEGIN MAIN LOOP //
+        double previous = glfwGetTime();
+        while (1) {
+            // WINDOW SIZE AND SCALE //
+            g->scale = get_scale_factor();
+            glfwGetFramebufferSize(g->window, &g->width, &g->height);
+            glViewport(0, 0, g->width, g->height);
+
+            // FRAME RATE //
+            update_fps(&fps);
+            double now = glfwGetTime();
+            double dt = MIN(now - previous, 0.2);
+            previous = now;
+
+            // HANDLE MOUSE INPUT //
+            handle_mouse_input();
+
+            // HANDLE MOVEMENT //
+            handle_movement(dt);
+
+            // HANDLE DATA FROM SERVER //
+            char *buffer = client_recv();
+            if (buffer) {
+                parse_buffer(buffer);
+                free(buffer);
+            }
+
+            // FLUSH DATABASE //
+            if (now - last_commit > COMMIT_INTERVAL) {
+                last_commit = now;
+                db_commit();
+            }
+
+            // SEND POSITION TO SERVER //
+            if (now - last_update > 0.1) {
+                last_update = now;
+                client_position(s->x, s->y, s->z, s->rx, s->ry);
+            }
+
+            // PREPARE TO RENDER //
+            g->observe1 = g->observe1 % g->player_count;
+            g->observe2 = g->observe2 % g->player_count;
+            delete_chunks();
+            del_buffer(me->buffer);
+            me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
+            for (int i = 1; i < g->player_count; i++) {
+                interpolate_player(g->players + i);
+            }
+            Player *player = g->players + g->observe1;
+
+            // RENDER 3-D SCENE //
             glClear(GL_COLOR_BUFFER_BIT);
-            glDisable(GL_SCISSOR_TEST);
             glClear(GL_DEPTH_BUFFER_BIT);
-            glViewport(g->width - pw - offset, offset, pw, ph);
-
-            g->width = pw;
-            g->height = ph;
-            g->ortho = 0;
-            g->fov = 65;
-
             render_sky(&sky_attrib, player, sky_buffer);
             glClear(GL_DEPTH_BUFFER_BIT);
-            render_chunks(&block_attrib, player);
+            int face_count = render_chunks(&block_attrib, player);
             render_signs(&text_attrib, player);
+            render_sign(&text_attrib, player);
             render_players(&block_attrib, player);
+            if (SHOW_WIREFRAME) {
+                render_wireframe(&line_attrib, player);
+            }
+
+            // RENDER HUD //
             glClear(GL_DEPTH_BUFFER_BIT);
+            if (SHOW_CROSSHAIRS) {
+                render_crosshairs(&line_attrib);
+            }
+            if (SHOW_ITEM) {
+                render_item(&block_attrib);
+            }
+
+            // RENDER TEXT //
+            char text_buffer[1024];
+            float ts = 12 * g->scale;
+            float tx = ts / 2;
+            float ty = g->height - ts;
+            if (SHOW_INFO_TEXT) {
+                int hour = time_of_day() * 24;
+                char am_pm = hour < 12 ? 'a' : 'p';
+                hour = hour % 12;
+                hour = hour ? hour : 12;
+                snprintf(
+                    text_buffer, 1024,
+                    "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
+                    chunked(s->x), chunked(s->z), s->x, s->y, s->z,
+                    g->player_count, g->chunk_count,
+                    face_count * 2, hour, am_pm, fps.fps);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                ty -= ts * 2;
+            }
+            if (SHOW_CHAT_TEXT) {
+                for (int i = 0; i < MAX_MESSAGES; i++) {
+                    int index = (g->message_index + i) % MAX_MESSAGES;
+                    if (strlen(g->messages[index])) {
+                        render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts,
+                            g->messages[index]);
+                        ty -= ts * 2;
+                    }
+                }
+            }
+            if (g->typing) {
+                snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                ty -= ts * 2;
+            }
             if (SHOW_PLAYER_NAMES) {
-                render_text(&text_attrib, CENTER, pw / 2, ts, ts,
-                    player->name);
+                if (player != me) {
+                    render_text(&text_attrib, ALIGN_CENTER,
+                        g->width / 2, ts, ts, player->name);
+                }
+                Player *other = player_crosshair(player);
+                if (other) {
+                    render_text(&text_attrib, ALIGN_CENTER,
+                        g->width / 2, g->height / 2 - ts - 24, ts,
+                        other->name);
+                }
+            }
+
+            // RENDER PICTURE IN PICTURE //
+            if (g->observe2) {
+                player = g->players + g->observe2;
+
+                int pw = 256 * g->scale;
+                int ph = 256 * g->scale;
+                int offset = 32 * g->scale;
+                int pad = 3 * g->scale;
+                int sw = pw + pad * 2;
+                int sh = ph + pad * 2;
+
+                glEnable(GL_SCISSOR_TEST);
+                glScissor(g->width - sw - offset + pad, offset - pad, sw, sh);
+                glClear(GL_COLOR_BUFFER_BIT);
+                glDisable(GL_SCISSOR_TEST);
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glViewport(g->width - pw - offset, offset, pw, ph);
+
+                g->width = pw;
+                g->height = ph;
+                g->ortho = 0;
+                g->fov = 65;
+
+                render_sky(&sky_attrib, player, sky_buffer);
+                glClear(GL_DEPTH_BUFFER_BIT);
+                render_chunks(&block_attrib, player);
+                render_signs(&text_attrib, player);
+                render_players(&block_attrib, player);
+                glClear(GL_DEPTH_BUFFER_BIT);
+                if (SHOW_PLAYER_NAMES) {
+                    render_text(&text_attrib, ALIGN_CENTER,
+                        pw / 2, ts, ts, player->name);
+                }
+            }
+
+            // SWAP AND POLL //
+            glfwSwapBuffers(g->window);
+            glfwPollEvents();
+            if (!g->typing && glfwGetKey(g->window, CRAFT_KEY_QUIT)) {
+                running = 0;
+                break;
+            }
+            if (glfwWindowShouldClose(g->window)) {
+                running = 0;
+                break;
+            }
+            if (g->mode_changed) {
+                g->mode_changed = 0;
+                break;
             }
         }
 
-        // SWAP AND POLL //
-        glfwSwapBuffers(g->window);
-        glfwPollEvents();
-        if (!g->typing && glfwGetKey(g->window, CRAFT_KEY_QUIT)) {
-            break;
-        }
+        // SHUTDOWN //
+        db_save_state(s->x, s->y, s->z, s->rx, s->ry);
+        db_close();
+        db_disable();
+        client_stop();
+        client_disable();
+        del_buffer(sky_buffer);
+        delete_all_chunks();
+        delete_all_players();
     }
 
-    // SHUTDOWN //
-    db_save_state(s->x, s->y, s->z, s->rx, s->ry);
-    db_close();
-    del_buffer(sky_buffer);
-    delete_all_chunks();
-    delete_all_players();
     glfwTerminate();
-    client_stop();
     curl_global_cleanup();
     return 0;
 }

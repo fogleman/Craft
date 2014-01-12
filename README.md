@@ -78,6 +78,10 @@ database format as the client running standalone.
 
 #### Server
 
+The server is written in Python but requires a compiled DLL so it can perform the
+terrain generation just like the client.
+
+    gcc -std=c99 -O3 -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
     python server.py [HOST [PORT]]
 
 ### Controls

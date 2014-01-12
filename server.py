@@ -547,7 +547,7 @@ def cleanup():
     delete_query = 'delete from block where x = %d and y = %d and z = %d;'
     print 'begin;'
     for p, q in chunks:
-        chunk = world.get_chunk(p, q)
+        chunk = world.create_chunk(p, q)
         query = 'select x, y, z, w from block where p = :p and q = :q;'
         rows = conn.execute(query, {'p': p, 'q': q})
         for x, y, z, w in rows:

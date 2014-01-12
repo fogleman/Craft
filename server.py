@@ -232,6 +232,14 @@ class Model(object):
             'create index if not exists sign_pq_idx on sign (p, q);',
             'create unique index if not exists sign_xyzface_idx on '
             '    sign (x, y, z, face);',
+            'create table if not exists block_history ('
+            '   timestamp real not null,'
+            '   user_id int not null,'
+            '   x int not null,'
+            '   y int not null,'
+            '   z int not null,'
+            '   w int not null'
+            ');',
         ]
         for query in queries:
             self.execute(query)
@@ -353,6 +361,13 @@ class Model(object):
             client.send(KEY, p, q, 0)
             client.send(TALK, message)
             return
+        query = (
+            'insert or replace into '
+            'block_history (timestamp, user_id, x, y, z, w) '
+            'values (:timestamp, :user_id, :x, :y, :z, :w);'
+        )
+        self.execute(query, dict(timestamp=time.time(),
+            user_id=client.user_id, x=x, y=y, z=z, w=w))
         query = (
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'

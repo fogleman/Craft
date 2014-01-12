@@ -56,7 +56,8 @@ const int items[] = {
     COLOR_28,
     COLOR_29,
     COLOR_30,
-    COLOR_31
+    COLOR_31,
+    WATER
 };
 
 const int item_count = sizeof(items) / sizeof(int);
@@ -127,6 +128,7 @@ const int blocks[256][6] = {
     {205, 205, 205, 205, 205, 205}, // 61
     {206, 206, 206, 206, 206, 206}, // 62
     {207, 207, 207, 207, 207, 207}, // 63
+    {255, 255, 255, 255, 255, 255}, // 64
 };
 
 const int plants[256] = {
@@ -182,10 +184,15 @@ int is_transparent(int w) {
         case EMPTY:
         case GLASS:
         case LEAVES:
+        case WATER:
             return 1;
         default:
             return 0;
     }
+}
+
+int is_alpha(int w) {
+    return w == WATER;
 }
 
 int is_destructable(int w) {

@@ -39,11 +39,13 @@ typedef struct {
     int p;
     int q;
     int faces;
+    int alpha_faces;
     int sign_faces;
     int dirty;
     int miny;
     int maxy;
     GLuint buffer;
+    GLuint alpha_buffer;
     GLuint sign_buffer;
 } Chunk;
 
@@ -823,6 +825,7 @@ void gen_chunk_buffer(Chunk *chunk) {
 
     // second pass - count exposed faces
     int faces = 0;
+    int alpha_faces = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
             continue;
@@ -840,12 +843,19 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (is_plant(e->w)) {
             total = total ? 4 : 0;
         }
-        faces += total;
+        if (is_alpha(e->w)) {
+            alpha_faces += total;
+        }
+        else {
+            faces += total;
+        }
     } END_MAP_FOR_EACH;
 
     // third pass - generate geometry
     GLfloat *data = malloc_faces(9, faces);
+    GLfloat *alpha_data = malloc_faces(9, alpha_faces);
     int offset = 0;
+    int alpha_offset = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
             continue;
@@ -873,6 +883,7 @@ void gen_chunk_buffer(Chunk *chunk) {
             make_plant(
                 data + offset,
                 e->x, e->y, e->z, 0.5, e->w, rotation);
+            offset += total * 54;
         }
         else {
             int index = 0;
@@ -886,17 +897,29 @@ void gen_chunk_buffer(Chunk *chunk) {
             }
             float ao[6][4];
             occlusion(neighbors, ao);
-            make_cube(
-                data + offset, ao,
-                f1, f2, f3, f4, f5, f6,
-                e->x, e->y, e->z, 0.5, e->w);
+            if (is_alpha(e->w)) {
+                make_cube(
+                    alpha_data + alpha_offset, ao,
+                    f1, f2, f3, f4, f5, f6,
+                    e->x, e->y, e->z, 0.5, e->w);
+                alpha_offset += total * 54;
+            }
+            else {
+                make_cube(
+                    data + offset, ao,
+                    f1, f2, f3, f4, f5, f6,
+                    e->x, e->y, e->z, 0.5, e->w);
+                offset += total * 54;
+            }
         }
-        offset += total * 54;
     } END_MAP_FOR_EACH;
 
     del_buffer(chunk->buffer);
+    del_buffer(chunk->alpha_buffer);
     chunk->buffer = gen_faces(9, faces, data);
+    chunk->alpha_buffer = gen_faces(9, alpha_faces, alpha_data);
     chunk->faces = faces;
+    chunk->alpha_faces = alpha_faces;
 
     gen_sign_buffer(chunk);
 
@@ -912,9 +935,11 @@ void create_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
+    chunk->alpha_faces = 0;
     chunk->sign_faces = 0;
     chunk->dirty = 1;
     chunk->buffer = 0;
+    chunk->alpha_buffer = 0;
     chunk->sign_buffer = 0;
     Map *map = &chunk->map;
     SignList *signs = &chunk->signs;
@@ -950,6 +975,7 @@ void delete_chunks() {
             map_free(&chunk->map);
             sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
+            del_buffer(chunk->alpha_buffer);
             del_buffer(chunk->sign_buffer);
             Chunk *other = chunks + (--count);
             memcpy(chunk, other, sizeof(Chunk));

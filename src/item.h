@@ -57,6 +57,7 @@
 #define COLOR_29 61
 #define COLOR_30 62
 #define COLOR_31 63
+#define WATER 64
 
 extern const int items[];
 extern const int item_count;
@@ -66,6 +67,7 @@ extern const int plants[256];
 int is_plant(int w);
 int is_obstacle(int w);
 int is_transparent(int w);
+int is_alpha(int w);
 int is_destructable(int w);
 
 #endif

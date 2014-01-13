@@ -69,17 +69,21 @@ Register for an account!
 
 https://craft.michaelfogleman.com/
 
-You can run your own server or connect to mine. The server uses the same SQLite
-database format as the client running standalone.
-
 #### Client
+
+You can connect to a server with command line arguments...
 
     ./craft michaelfogleman.com
 
+Or, with the "/online" command in the game itself.
+
+    /online michaelfogleman.com
+
 #### Server
 
-The server is written in Python but requires a compiled DLL so it can perform the
-terrain generation just like the client.
+You can run your own server or connect to mine. The server is written in Python
+but requires a compiled DLL so it can perform the terrain generation just like
+the client.
 
     gcc -std=c99 -O3 -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
     python server.py [HOST [PORT]]

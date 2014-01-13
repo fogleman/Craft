@@ -1829,6 +1829,10 @@ void reset_model() {
     g->observe2 = 0;
     g->flying = 0;
     g->item_index = 0;
+    memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
+    g->typing = 0;
+    memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);
+    g->message_index = 0;
 }
 
 int main(int argc, char **argv) {

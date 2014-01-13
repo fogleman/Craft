@@ -3,6 +3,7 @@ Makefile
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
+config.py
 craft
 world
 env

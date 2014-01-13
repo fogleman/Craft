@@ -42,8 +42,12 @@ the installation:
 #### Windows
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
-and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`. Use the
-following commands in place of the ones described in the next section.
+and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
+
+Download and install [cURL](http://curl.haxx.se/download.html) so that
+CURL/lib and CURL/include are in your Program Files directory.
+
+Use the following commands in place of the ones described in the next section.
 
     cmake -G "MinGW Makefiles"
     mingw32-make
@@ -65,15 +69,23 @@ Register for an account!
 
 https://craft.michaelfogleman.com/
 
-You can run your own server or connect to mine. The server uses the same SQLite
-database format as the client running standalone.
-
 #### Client
+
+You can connect to a server with command line arguments...
 
     ./craft michaelfogleman.com
 
+Or, with the "/online" command in the game itself.
+
+    /online michaelfogleman.com
+
 #### Server
 
+You can run your own server or connect to mine. The server is written in Python
+but requires a compiled DLL so it can perform the terrain generation just like
+the client.
+
+    gcc -std=c99 -O3 -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
     python server.py [HOST [PORT]]
 
 ### Controls
@@ -92,6 +104,44 @@ database format as the client running standalone.
 - P to observe players in the picture-in-picture view.
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.
+
+### Chat Commands
+
+    /goto [NAME]
+
+Teleport to another user.
+If NAME is unspecified, a random user is chosen.
+
+    /list
+
+Display a list of connected users.
+
+    /login NAME
+
+Switch to another registered username.
+The login server will be re-contacted. The username is case-sensitive.
+
+    /logout
+
+Unauthenticate and become a guest user.
+Automatic logins will not occur again until the /login command is re-issued.
+
+    /offline [FILE]
+
+Switch to offline mode.
+FILE specifies the save file to use and defaults to "craft".
+
+    /online HOST [PORT]
+
+Connect to the specified server.
+
+    /pq P Q
+
+Teleport to the specified chunk.
+
+    /spawn
+
+Teleport back to the spawn point.
 
 ### Screenshot
 

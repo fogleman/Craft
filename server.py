@@ -232,6 +232,14 @@ class Model(object):
             'create index if not exists sign_pq_idx on sign (p, q);',
             'create unique index if not exists sign_xyzface_idx on '
             '    sign (x, y, z, face);',
+            'create table if not exists block_history ('
+            '   timestamp real not null,'
+            '   user_id int not null,'
+            '   x int not null,'
+            '   y int not null,'
+            '   z int not null,'
+            '   w int not null'
+            ');',
         ]
         for query in queries:
             self.execute(query)
@@ -330,7 +338,7 @@ class Model(object):
         rows = self.execute(query, dict(p=p, q=q))
         for x, y, z, face, text in rows:
             packets.append(packet(SIGN, p, q, x, y, z, face, text))
-        client.send(''.join(packets))
+        client.send_raw(''.join(packets))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
@@ -354,11 +362,18 @@ class Model(object):
             client.send(TALK, message)
             return
         query = (
+            'insert or replace into '
+            'block_history (timestamp, user_id, x, y, z, w) '
+            'values (:timestamp, :user_id, :x, :y, :z, :w);'
+        )
+        self.execute(query, dict(timestamp=time.time(),
+            user_id=client.user_id, x=x, y=y, z=z, w=w))
+        query = (
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'
         )
-        cur = self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
-        self.send_block(client, p, q, x, y, z, w, cur.lastrowid)
+        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+        self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):
             for dz in range(-1, 2):
                 if dx == 0 and dz == 0:
@@ -368,8 +383,8 @@ class Model(object):
                 if dz and chunked(z + dz) == q:
                     continue
                 np, nq = p + dx, q + dz
-                cur = self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
-                self.send_block(client, np, nq, x, y, z, -w, cur.lastrowid)
+                self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
+                self.send_block(client, np, nq, x, y, z, -w)
         if w == 0:
             query = (
                 'delete from sign where '
@@ -453,8 +468,8 @@ class Model(object):
     def on_help(self, client, topic=None):
         if topic is None:
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
-            client.send(TALK, '/goto [NAME], /help [TOPIC], /list')
-            client.send(TALK, '/login NAME, /logout, /pq P Q, /spawn')
+            client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout')
+            client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn')
             return
         topic = topic.lower().strip()
         if topic == 'goto':
@@ -472,6 +487,13 @@ class Model(object):
             client.send(TALK, 'Help: /logout')
             client.send(TALK, 'Unauthenticate and become a guest user.')
             client.send(TALK, 'Automatic logins will not occur again until the /login command is re-issued.')
+        elif topic == 'offline':
+            client.send(TALK, 'Help: /offline [FILE]')
+            client.send(TALK, 'Switch to offline mode.')
+            client.send(TALK, 'FILE specifies the save file to use and defaults to "craft".')
+        elif topic == 'online':
+            client.send(TALK, 'Help: /online HOST [PORT]')
+            client.send(TALK, 'Connect to the specified server.')
         elif topic == 'pq':
             client.send(TALK, 'Help: /pq P Q')
             client.send(TALK, 'Teleport to the specified chunk.')
@@ -504,12 +526,12 @@ class Model(object):
             if other == client:
                 continue
             other.send(DISCONNECT, client.client_id)
-    def send_block(self, client, p, q, x, y, z, w, key):
+    def send_block(self, client, p, q, x, y, z, w):
         for other in self.clients:
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
-            other.send(KEY, p, q, key)
+            other.send(KEY, p, q, 0)
     def send_sign(self, client, p, q, x, y, z, face, text):
         for other in self.clients:
             if other == client:
@@ -520,7 +542,39 @@ class Model(object):
         for client in self.clients:
             client.send(TALK, text)
 
+def cleanup():
+    world = World(None)
+    conn = sqlite3.connect(DB_PATH)
+    query = 'select x, y, z from block order by rowid desc limit 1;'
+    last = list(conn.execute(query))[0]
+    query = 'select distinct p, q from block;'
+    chunks = list(conn.execute(query))
+    count = 0
+    total = 0
+    delete_query = 'delete from block where x = %d and y = %d and z = %d;'
+    print 'begin;'
+    for p, q in chunks:
+        chunk = world.create_chunk(p, q)
+        query = 'select x, y, z, w from block where p = :p and q = :q;'
+        rows = conn.execute(query, {'p': p, 'q': q})
+        for x, y, z, w in rows:
+            if chunked(x) != p or chunked(z) != q:
+                continue
+            total += 1
+            if (x, y, z) == last:
+                continue
+            original = chunk.get((x, y, z), 0)
+            if w == original or original in INDESTRUCTIBLE_ITEMS:
+                count += 1
+                print delete_query % (x, y, z)
+    conn.close()
+    print 'commit;'
+    print >> sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
+
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':
+        cleanup()
+        return
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]

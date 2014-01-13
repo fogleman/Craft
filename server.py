@@ -468,8 +468,8 @@ class Model(object):
     def on_help(self, client, topic=None):
         if topic is None:
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
-            client.send(TALK, '/goto [NAME], /help [TOPIC], /list')
-            client.send(TALK, '/login NAME, /logout, /pq P Q, /spawn')
+            client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout')
+            client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn')
             return
         topic = topic.lower().strip()
         if topic == 'goto':
@@ -487,6 +487,13 @@ class Model(object):
             client.send(TALK, 'Help: /logout')
             client.send(TALK, 'Unauthenticate and become a guest user.')
             client.send(TALK, 'Automatic logins will not occur again until the /login command is re-issued.')
+        elif topic == 'offline':
+            client.send(TALK, 'Help: /offline [FILE]')
+            client.send(TALK, 'Switch to offline mode.')
+            client.send(TALK, 'FILE specifies the save file to use and defaults to "craft".')
+        elif topic == 'online':
+            client.send(TALK, 'Help: /online HOST [PORT]')
+            client.send(TALK, 'Connect to the specified server.')
         elif topic == 'pq':
             client.send(TALK, 'Help: /pq P Q')
             client.send(TALK, 'Teleport to the specified chunk.')

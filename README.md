@@ -105,6 +105,44 @@ the client.
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.
 
+### Chat Commands
+
+    /goto [NAME]
+
+Teleport to another user.
+If NAME is unspecified, a random user is chosen.
+
+    /list
+
+Display a list of connected users.
+
+    /login NAME
+
+Switch to another registered username.
+The login server will be re-contacted. The username is case-sensitive.
+
+    /logout
+
+Unauthenticate and become a guest user.
+Automatic logins will not occur again until the /login command is re-issued.
+
+    /offline [FILE]
+
+Switch to offline mode.
+FILE specifies the save file to use and defaults to "craft".
+
+    /online HOST [PORT]
+
+Connect to the specified server.
+
+    /pq P Q
+
+Teleport to the specified chunk.
+
+    /spawn
+
+Teleport back to the spawn point.
+
 ### Screenshot
 
 ![](http://www.michaelfogleman.com/static/img/craft3.png)

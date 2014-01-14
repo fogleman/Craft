@@ -19,7 +19,7 @@
 #include "util.h"
 #include "world.h"
 
-#define MAX_CHUNKS 1024
+#define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
@@ -84,6 +84,10 @@ typedef struct {
     GLFWwindow *window;
     Chunk chunks[MAX_CHUNKS];
     int chunk_count;
+    int create_radius;
+    int render_radius;
+    int delete_radius;
+    int sign_radius;
     Player players[MAX_PLAYERS];
     int player_count;
     int typing;
@@ -955,7 +959,7 @@ void delete_chunks() {
             State *s = states[j];
             int p = chunked(s->x);
             int q = chunked(s->z);
-            if (chunk_distance(chunk, p, q) < DELETE_CHUNK_RADIUS) {
+            if (chunk_distance(chunk, p, q) < g->delete_radius) {
                 delete = 0;
                 break;
             }
@@ -988,14 +992,14 @@ void ensure_chunks(Player *player, int force) {
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho);
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     float planes[6][4];
-    frustum_planes(planes, matrix);
+    frustum_planes(planes, g->render_radius, matrix);
     int count = g->chunk_count;
     int p = chunked(s->x);
     int q = chunked(s->z);
     int generated = 0;
-    int rings = force ? 1 : CREATE_CHUNK_RADIUS;
+    int rings = force ? 1 : g->create_radius;
     for (int visible = 1; visible >= 0; visible--) {
         for (int ring = 0; ring <= rings; ring++) {
             for (int dp = -ring; dp <= ring; dp++) {
@@ -1146,21 +1150,21 @@ int render_chunks(Attrib *attrib, Player *player) {
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho);
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     float planes[6][4];
-    frustum_planes(planes, matrix);
+    frustum_planes(planes, g->render_radius, matrix);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
     glUniform1i(attrib->sampler, 0);
     glUniform1i(attrib->extra1, 2);
     glUniform1f(attrib->extra2, light);
-    glUniform1f(attrib->extra3, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
+    glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk_distance(chunk, p, q) > RENDER_CHUNK_RADIUS) {
+        if (chunk_distance(chunk, p, q) > g->render_radius) {
             continue;
         }
         if (!chunk_visible(
@@ -1181,16 +1185,16 @@ void render_signs(Attrib *attrib, Player *player) {
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho);
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     float planes[6][4];
-    frustum_planes(planes, matrix);
+    frustum_planes(planes, g->render_radius, matrix);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 3);
     glUniform1i(attrib->extra1, 1);
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk_distance(chunk, p, q) > RENDER_SIGN_RADIUS) {
+        if (chunk_distance(chunk, p, q) > g->sign_radius) {
             continue;
         }
         if (!chunk_visible(
@@ -1214,7 +1218,7 @@ void render_sign(Attrib *attrib, Player *player) {
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho);
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->sign_radius);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 3);
@@ -1234,7 +1238,7 @@ void render_players(Attrib *attrib, Player *player) {
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho);
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform3f(attrib->camera, s->x, s->y, s->z);
@@ -1252,7 +1256,8 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
-        matrix, g->width, g->height, 0, 0, 0, s->rx, s->ry, g->fov, 0);
+        matrix, g->width, g->height,
+        0, 0, 0, s->rx, s->ry, g->fov, 0, g->render_radius);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
@@ -1265,7 +1270,7 @@ void render_wireframe(Attrib *attrib, Player *player) {
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho);
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {
@@ -1366,6 +1371,7 @@ void parse_command(const char *buffer, int forward) {
     char server_addr[MAX_ADDR_LENGTH];
     int server_port = DEFAULT_PORT;
     char filename[MAX_PATH_LENGTH];
+    int radius;
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
@@ -1402,6 +1408,16 @@ void parse_command(const char *buffer, int forward) {
         g->mode_changed = 1;
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
+    }
+    else if (sscanf(buffer, "/view %d", &radius) == 1) {
+        if (radius >= 1 && radius <= 24) {
+            g->create_radius = radius;
+            g->render_radius = radius;
+            g->delete_radius = radius + 4;
+        }
+        else {
+            add_message("Viewing distance must be between 1 and 24.");
+        }
     }
     else if (forward) {
         client_talk(buffer);
@@ -1957,6 +1973,11 @@ int main(int argc, char **argv) {
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
     }
+
+    g->create_radius = CREATE_CHUNK_RADIUS;
+    g->render_radius = RENDER_CHUNK_RADIUS;
+    g->delete_radius = DELETE_CHUNK_RADIUS;
+    g->sign_radius = RENDER_SIGN_RADIUS;
 
     // OUTER LOOP //
     int running = 1;

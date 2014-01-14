@@ -467,7 +467,7 @@ class Model(object):
         if topic is None:
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
             client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout')
-            client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn')
+            client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn, /view N')
             return
         topic = topic.lower().strip()
         if topic == 'goto':
@@ -498,6 +498,9 @@ class Model(object):
         elif topic == 'spawn':
             client.send(TALK, 'Help: /spawn')
             client.send(TALK, 'Teleport back to the spawn point.')
+        elif topic == 'view':
+            client.send(TALK, 'Help: /view N')
+            client.send(TALK, 'Set viewing distance, 1 - 24.')
     def on_list(self, client):
         client.send(TALK,
             'Players: %s' % ', '.join(x.nick for x in self.clients))

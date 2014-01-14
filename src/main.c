@@ -1,14 +1,8 @@
-#ifdef _WIN32
-    #include <winsock2.h>
-    #include <windows.h>
-#else
-    #include <libgen.h>
-    #include <unistd.h>
-#endif
-
 #ifdef __APPLE__
     #include <CoreServices/CoreServices.h>
     #include <sys/stat.h>
+    #include <libgen.h>
+    #include <unistd.h>
 #endif
 
 #include <GL/glew.h>

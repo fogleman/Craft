@@ -217,7 +217,6 @@ class Model(object):
             '    z int not null,'
             '    w int not null'
             ');',
-            'create index if not exists block_xyz_idx on block (x, y, z);',
             'create unique index if not exists block_pqxyz_idx on '
             '    block (p, q, x, y, z);',
             'create table if not exists sign ('
@@ -362,8 +361,7 @@ class Model(object):
             client.send(TALK, message)
             return
         query = (
-            'insert or replace into '
-            'block_history (timestamp, user_id, x, y, z, w) '
+            'insert into block_history (timestamp, user_id, x, y, z, w) '
             'values (:timestamp, :user_id, :x, :y, :z, :w);'
         )
         self.execute(query, dict(timestamp=time.time(),

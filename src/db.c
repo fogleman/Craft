@@ -76,7 +76,6 @@ int db_init(char *path) {
         "    text text not null"
         ");"
         "create unique index if not exists block_pqxyz_idx on block (p, q, x, y, z);"
-        "create index if not exists block_xyz_idx on block (x, y, z);"
         "create unique index if not exists key_pq_idx on key (p, q);"
         "create unique index if not exists sign_xyzface_idx on sign (x, y, z, face);"
         "create index if not exists sign_pq_idx on sign (p, q);";

@@ -215,6 +215,8 @@ void set_matrix_3d(
     float a[16];
     float b[16];
     float aspect = (float)width / height;
+    float znear = 0.125;
+    float zfar = RENDER_CHUNK_RADIUS * 32 + 64;
     mat_identity(a);
     mat_translate(b, -x, -y, -z);
     mat_multiply(a, b, a);
@@ -224,11 +226,9 @@ void set_matrix_3d(
     mat_multiply(a, b, a);
     if (ortho) {
         int size = ortho;
-        mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
+        mat_ortho(b, -size * aspect, size * aspect, -size, size, -zfar, zfar);
     }
     else {
-        float znear = 0.125;
-        float zfar = RENDER_CHUNK_RADIUS * 32 + 64;
         mat_perspective(b, fov, aspect, znear, zfar);
     }
     mat_multiply(a, b, a);

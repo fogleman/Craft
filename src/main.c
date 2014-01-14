@@ -1,8 +1,3 @@
-#ifdef _WIN32
-    #include <winsock2.h>
-    #include <windows.h>
-#endif
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <curl/curl.h>

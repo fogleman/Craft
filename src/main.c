@@ -126,7 +126,7 @@ static char *info_text[] = {
     "      dfmogk, kaezarrex, nlogax, rasmusrn                       ",
     "                                                                ",
     "  And to these third-party libraries:                           ",
-    "      CURL, GLEW, GLFW, lodepng, noise, sqlite3, tinycthread    ",
+    "      cURL, GLEW, GLFW, LodePNG, noise, SQLite, TinyCThread     ",
     "                                                                ",
     "  /offline [FILE]      Switch to offline mode.                  ",
     "  /online HOST [PORT]  Connect to the specified server.         ",

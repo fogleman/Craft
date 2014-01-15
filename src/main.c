@@ -114,7 +114,7 @@ typedef struct {
 static Model model;
 static Model *g = &model;
 
-static char *info_text[] = {
+static char *credits[] = {
     "                                                                ",
     "  Craft: a cross-platform, multi-player voxel sandbox           ",
     "                                                                ",
@@ -2184,12 +2184,12 @@ int main(int argc, char **argv) {
                 g->window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
             {
                 glClear(GL_DEPTH_BUFFER_BIT);
-                int rows = sizeof(info_text) / sizeof(char *);
+                int rows = sizeof(credits) / sizeof(char *);
                 ts = 14 * g->scale;
                 ty = g->height / 2 + ts * rows - ts;
                 for (int i = 0; i < rows; i++) {
                     render_text_alpha(&text_attrib, ALIGN_CENTER, 0.85,
-                        g->width / 2, ty, ts, info_text[i]);
+                        g->width / 2, ty, ts, credits[i]);
                     ty -= ts * 2;
                 }
             }

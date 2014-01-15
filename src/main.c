@@ -114,6 +114,33 @@ typedef struct {
 static Model model;
 static Model *g = &model;
 
+static char *info_text[] = {
+    "                                                                ",
+    "  Craft: a cross-platform, multi-player voxel sandbox           ",
+    "                                                                ",
+    "  Development    Michael Fogleman  (fogleman)                   ",
+    "  Artwork        Brian Mathews     (moonsspoon)                 ",
+    "                                                                ",
+    "  Special thanks to these contributors:                         ",
+    "      emilis, dymk, Aaron1011, r-lyeh, ezfe                     ",
+    "      dfmogk, kaezarrex, nlogax, rasmusrn                       ",
+    "                                                                ",
+    "  And to these third-party libraries:                           ",
+    "      CURL, GLEW, GLFW, lodepng, noise, sqlite3, tinycthread    ",
+    "                                                                ",
+    "  /offline [FILE]      Switch to offline mode.                  ",
+    "  /online HOST [PORT]  Connect to the specified server.         ",
+    "  /view N              Set viewing distance, 1 - 24.            ",
+    "                                                                ",
+    "  /goto [NAME]         Go to specified or random user.          ",
+    "  /list                Display a list of connected users.       ",
+    "  /login NAME          Login as specified user.                 ",
+    "  /logout              Logout and become a guest user.          ",
+    "  /pq P Q              Go to the specified chunk.               ",
+    "  /spawn               Go back to the spawn point.              ",
+    "                                                                ",
+};
+
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }
@@ -1319,8 +1346,9 @@ void render_item(Attrib *attrib) {
     }
 }
 
-void render_text(
-    Attrib *attrib, int justify, float x, float y, float n, char *text)
+void render_text_alpha(
+    Attrib *attrib, int justify, float alpha,
+    float x, float y, float n, char *text)
 {
     float matrix[16];
     set_matrix_2d(matrix, g->width, g->height);
@@ -1328,11 +1356,19 @@ void render_text(
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1);
     glUniform1i(attrib->extra1, 0);
+    glUniform1f(attrib->extra2, alpha);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     GLuint buffer = gen_text_buffer(x, y, n, text);
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
+}
+
+void render_text(
+    Attrib *attrib, int justify,
+    float x, float y, float n, char *text)
+{
+    render_text_alpha(attrib, justify, 0.4, x, y, n, text);
 }
 
 void add_message(const char *text) {
@@ -1950,6 +1986,7 @@ int main(int argc, char **argv) {
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
     text_attrib.extra1 = glGetUniformLocation(program, "is_sign");
+    text_attrib.extra2 = glGetUniformLocation(program, "alpha");
 
     program = load_program(
         "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
@@ -2140,6 +2177,20 @@ int main(int argc, char **argv) {
                     render_text(&text_attrib, ALIGN_CENTER,
                         g->width / 2, g->height / 2 - ts - 24, ts,
                         other->name);
+                }
+            }
+
+            if (glfwGetInputMode(
+                g->window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+            {
+                glClear(GL_DEPTH_BUFFER_BIT);
+                int rows = sizeof(info_text) / sizeof(char *);
+                ts = 14 * g->scale;
+                ty = g->height / 2 + ts * rows - ts;
+                for (int i = 0; i < rows; i++) {
+                    render_text_alpha(&text_attrib, ALIGN_CENTER, 0.85,
+                        g->width / 2, ty, ts, info_text[i]);
+                    ty -= ts * 2;
                 }
             }
 

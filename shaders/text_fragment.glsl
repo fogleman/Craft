@@ -2,6 +2,7 @@
 
 uniform sampler2D sampler;
 uniform bool is_sign;
+uniform float alpha;
 
 varying vec2 fragment_uv;
 
@@ -13,7 +14,7 @@ void main() {
         }
     }
     else {
-        color.a = max(color.a, 0.4);
+        color.a = max(color.a, alpha);
     }
     gl_FragColor = color;
 }

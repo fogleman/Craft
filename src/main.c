@@ -1518,6 +1518,27 @@ void cylinder(Block *b1, Block *b2, int radius, int fill) {
     }
 }
 
+void tree(Block *block) {
+    int bx = block->x;
+    int by = block->y;
+    int bz = block->z;
+    int cy = by + 4;
+    for (int y = by + 3; y < by + 8; y++) {
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dz = -3; dz <= 3; dz++) {
+                int dy = y - cy;
+                int d = (dx * dx) + (dy * dy) + (dz * dz);
+                if (d < 11) {
+                    set_block(bx + dx, y, bz + dz, 15);
+                }
+            }
+        }
+    }
+    for (int y = by; y < by + 7; y++) {
+        set_block(bx, y, bz, 5);
+    }
+}
+
 void parse_command(const char *buffer, int forward) {
     char username[128] = {0};
     char token[128] = {0};
@@ -1571,6 +1592,9 @@ void parse_command(const char *buffer, int forward) {
         else {
             add_message("Viewing distance must be between 1 and 24.");
         }
+    }
+    else if (strstr(buffer, "/tree") == buffer) {
+        tree(&g->block0);
     }
     else if (strstr(buffer, "/fcube") == buffer) {
         cube(&g->block0, &g->block1, 1);

@@ -994,7 +994,30 @@ void delete_all_chunks() {
     g->chunk_count = 0;
 }
 
-void ensure_chunks(Player *player, int force) {
+void force_chunks(Player *player) {
+    State *s = &player->state;
+    int p = chunked(s->x);
+    int q = chunked(s->z);
+    int r = 1;
+    for (int dp = -r; dp <= r; dp++) {
+        for (int dq = -r; dq <= r; dq++) {
+            int a = p + dp;
+            int b = q + dq;
+            Chunk *chunk = find_chunk(a, b);
+            if (chunk) {
+                if (chunk->dirty) {
+                    gen_chunk_buffer(chunk);
+                }
+            }
+            else {
+                create_chunk(g->chunks + g->chunk_count, a, b);
+                g->chunk_count++;
+            }
+        }
+    }
+}
+
+void ensure_chunks(Player *player) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
@@ -1002,45 +1025,44 @@ void ensure_chunks(Player *player, int force) {
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     float planes[6][4];
     frustum_planes(planes, g->render_radius, matrix);
-    int count = g->chunk_count;
     int p = chunked(s->x);
     int q = chunked(s->z);
-    int generated = 0;
-    int rings = force ? 1 : g->create_radius;
-    for (int visible = 1; visible >= 0; visible--) {
-        for (int ring = 0; ring <= rings; ring++) {
-            for (int dp = -ring; dp <= ring; dp++) {
-                for (int dq = -ring; dq <= ring; dq++) {
-                    if (ring != MAX(ABS(dp), ABS(dq))) {
-                        continue;
-                    }
-                    if (!force && generated && ring > 1) {
-                        continue;
-                    }
-                    int a = p + dp;
-                    int b = q + dq;
-                    if (chunk_visible(planes, a, b, 0, 256) != visible) {
-                        continue;
-                    }
-                    Chunk *chunk = find_chunk(a, b);
-                    if (chunk) {
-                        if (chunk->dirty) {
-                            gen_chunk_buffer(chunk);
-                            generated++;
-                        }
-                    }
-                    else {
-                        if (count < MAX_CHUNKS) {
-                            create_chunk(g->chunks + count, a, b);
-                            generated++;
-                            count++;
-                        }
-                    }
-                }
+    int r = g->create_radius;
+    int start = 0x0fffffff;
+    int best_score = start;
+    int best_a = 0;
+    int best_b = 0;
+    for (int dp = -r; dp <= r; dp++) {
+        for (int dq = -r; dq <= r; dq++) {
+            int a = p + dp;
+            int b = q + dq;
+            Chunk *chunk = find_chunk(a, b);
+            if (chunk && !chunk->dirty) {
+                continue;
+            }
+            int distance = MAX(ABS(dp), ABS(dq));
+            int invisible = !chunk_visible(planes, a, b, 0, 256);
+            int score = (invisible << 16) | distance;
+            if (score < best_score) {
+                best_score = score;
+                best_a = a;
+                best_b = b;
             }
         }
     }
-    g->chunk_count = count;
+    if (best_score == start) {
+        return;
+    }
+    int a = best_a;
+    int b = best_b;
+    Chunk *chunk = find_chunk(a, b);
+    if (chunk) {
+        gen_chunk_buffer(chunk);
+    }
+    else {
+        create_chunk(g->chunks + g->chunk_count, a, b);
+        g->chunk_count++;
+    }
 }
 
 void unset_sign(int x, int y, int z) {
@@ -1150,7 +1172,7 @@ int get_block(int x, int y, int z) {
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;
-    ensure_chunks(player, 0);
+    ensure_chunks(player);
     int p = chunked(s->x);
     int q = chunked(s->z);
     float light = get_daylight();
@@ -1769,7 +1791,7 @@ void parse_buffer(char *buffer) {
         {
             me->id = pid;
             s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
-            ensure_chunks(me, 1);
+            force_chunks(me);
         }
         int bp, bq, bx, by, bz, bw;
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
@@ -2041,7 +2063,7 @@ int main(int argc, char **argv) {
 
         // LOAD STATE FROM DATABASE //
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
-        ensure_chunks(me, 1);
+        force_chunks(me);
         if (!loaded) {
             s->y = highest_block(s->x, s->z) + 2;
         }

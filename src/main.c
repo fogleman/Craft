@@ -1225,7 +1225,7 @@ void render_sign(Attrib *attrib, Player *player) {
     float matrix[16];
     set_matrix_3d(
         matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->sign_radius);
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 3);

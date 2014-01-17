@@ -1011,7 +1011,7 @@ void force_chunks(Player *player) {
                     gen_chunk_buffer(chunk);
                 }
             }
-            else {
+            else if (g->chunk_count < MAX_CHUNKS) {
                 create_chunk(g->chunks + g->chunk_count, a, b);
                 g->chunk_count++;
             }
@@ -1020,6 +1020,7 @@ void force_chunks(Player *player) {
 }
 
 void ensure_chunks(Player *player) {
+    force_chunks(player);
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
@@ -1061,7 +1062,7 @@ void ensure_chunks(Player *player) {
     if (chunk) {
         gen_chunk_buffer(chunk);
     }
-    else {
+    else if (g->chunk_count < MAX_CHUNKS) {
         create_chunk(g->chunks + g->chunk_count, a, b);
         g->chunk_count++;
     }

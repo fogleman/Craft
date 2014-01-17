@@ -118,6 +118,8 @@ typedef struct {
     int server_port;
     Block block0;
     Block block1;
+    Block copy0;
+    Block copy1;
 } Model;
 
 static Model model;
@@ -1417,6 +1419,33 @@ void login() {
     }
 }
 
+void copy() {
+    memcpy(&g->copy0, &g->block0, sizeof(Block));
+    memcpy(&g->copy1, &g->block1, sizeof(Block));
+}
+
+void paste() {
+    Block *c1 = &g->copy1;
+    Block *c2 = &g->copy0;
+    Block *p1 = &g->block1;
+    Block *p2 = &g->block0;
+    int scx = SIGN(c2->x - c1->x);
+    int scz = SIGN(c2->z - c1->z);
+    int spx = SIGN(p2->x - p1->x);
+    int spz = SIGN(p2->z - p1->z);
+    int oy = p1->y - c1->y;
+    int dx = ABS(c2->x - c1->x);
+    int dz = ABS(c2->z - c1->z);
+    for (int y = 0; y < 256; y++) {
+        for (int x = 0; x <= dx; x++) {
+            for (int z = 0; z <= dz; z++) {
+                int w = get_block(c1->x + x * scx, y, c1->z + z * scz);
+                builder_block(p1->x + x * spx, y + oy, p1->z + z * spz, w);
+            }
+        }
+    }
+}
+
 void cube(Block *b1, Block *b2, int fill) {
     if (b1->w != b2->w) {
         return;
@@ -1607,6 +1636,12 @@ void parse_command(const char *buffer, int forward) {
         else {
             add_message("Viewing distance must be between 1 and 24.");
         }
+    }
+    else if (strcmp(buffer, "/copy") == 0) {
+        copy();
+    }
+    else if (strcmp(buffer, "/paste") == 0) {
+        paste();
     }
     else if (strcmp(buffer, "/tree") == 0) {
         tree(&g->block0);

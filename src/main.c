@@ -1140,11 +1140,6 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
 }
 
 void set_block(int x, int y, int z, int w) {
-    memcpy(&g->block1, &g->block0, sizeof(Block));
-    g->block0.x = x;
-    g->block0.y = y;
-    g->block0.z = z;
-    g->block0.w = w;
     int p = chunked(x);
     int q = chunked(z);
     _set_block(p, q, x, y, z, w, 1);
@@ -1165,6 +1160,14 @@ void set_block(int x, int y, int z, int w) {
     client_block(x, y, z, w);
 }
 
+void record_block(int x, int y, int z, int w) {
+    memcpy(&g->block1, &g->block0, sizeof(Block));
+    g->block0.x = x;
+    g->block0.y = y;
+    g->block0.z = z;
+    g->block0.w = w;
+}
+
 int get_block(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1174,6 +1177,18 @@ int get_block(int x, int y, int z) {
         return map_get(map, x, y, z);
     }
     return 0;
+}
+
+void builder_block(int x, int y, int z, int w) {
+    if (y <= 0 || y >= 256) {
+        return;
+    }
+    if (is_destructable(get_block(x, y, z))) {
+        set_block(x, y, z, 0);
+    }
+    if (w) {
+        set_block(x, y, z, w);
+    }
 }
 
 int render_chunks(Attrib *attrib, Player *player) {
@@ -1425,7 +1440,7 @@ void cube(Block *b1, Block *b2, int fill) {
                         continue;
                     }
                 }
-                set_block(x, y, z, w);
+                builder_block(x, y, z, w);
             }
         }
     }
@@ -1473,7 +1488,7 @@ void sphere(Block *center, int radius, int fill, int fx, int fy, int fz) {
                     }
                 }
                 if (inside && outside) {
-                    set_block(x, y, z, w);
+                    builder_block(x, y, z, w);
                 }
             }
         }
@@ -1522,20 +1537,19 @@ void tree(Block *block) {
     int bx = block->x;
     int by = block->y;
     int bz = block->z;
-    int cy = by + 4;
     for (int y = by + 3; y < by + 8; y++) {
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -3; dz <= 3; dz++) {
-                int dy = y - cy;
+                int dy = y - (by + 4);
                 int d = (dx * dx) + (dy * dy) + (dz * dz);
                 if (d < 11) {
-                    set_block(bx + dx, y, bz + dz, 15);
+                    builder_block(bx + dx, y, bz + dz, 15);
                 }
             }
         }
     }
     for (int y = by; y < by + 7; y++) {
-        set_block(bx, y, bz, 5);
+        builder_block(bx, y, bz, 5);
     }
 }
 
@@ -1551,7 +1565,7 @@ void parse_command(const char *buffer, int forward) {
         add_message("Successfully imported identity token!");
         login();
     }
-    else if (strstr(buffer, "/logout") == buffer) {
+    else if (strcmp(buffer, "/logout") == 0) {
         db_auth_select_none();
         login();
     }
@@ -1578,7 +1592,7 @@ void parse_command(const char *buffer, int forward) {
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s.db", filename);
     }
-    else if (strstr(buffer, "/offline") == buffer) {
+    else if (strcmp(buffer, "/offline") == 0) {
         g->mode_changed = 1;
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
@@ -1593,13 +1607,13 @@ void parse_command(const char *buffer, int forward) {
             add_message("Viewing distance must be between 1 and 24.");
         }
     }
-    else if (strstr(buffer, "/tree") == buffer) {
+    else if (strcmp(buffer, "/tree") == 0) {
         tree(&g->block0);
     }
-    else if (strstr(buffer, "/fcube") == buffer) {
+    else if (strcmp(buffer, "/fcube") == 0) {
         cube(&g->block0, &g->block1, 1);
     }
-    else if (strstr(buffer, "/cube") == buffer) {
+    else if (strcmp(buffer, "/cube") == 0) {
         cube(&g->block0, &g->block1, 0);
     }
     else if (sscanf(buffer, "/fsphere %d", &radius) == 1) {
@@ -1643,8 +1657,8 @@ void on_left_click() {
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
         set_block(hx, hy, hz, 0);
-        int above = get_block(hx, hy + 1, hz);
-        if (is_plant(above)) {
+        record_block(hx, hy, hz, 0);
+        if (is_plant(get_block(hx, hy + 1, hz))) {
             set_block(hx, hy + 1, hz, 0);
         }
     }
@@ -1657,6 +1671,7 @@ void on_right_click() {
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
             set_block(hx, hy, hz, items[g->item_index]);
+            record_block(hx, hy, hz, items[g->item_index]);
         }
     }
 }

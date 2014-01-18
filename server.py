@@ -38,6 +38,7 @@ DISCONNECT = 'D'
 KEY = 'K'
 NICK = 'N'
 POSITION = 'P'
+REDRAW = 'R'
 SIGN = 'S'
 TALK = 'T'
 VERSION = 'V'
@@ -325,18 +326,25 @@ class Model(object):
         )
         rows = self.execute(query, dict(p=p, q=q, key=key))
         max_rowid = 0
+        blocks = 0
         for rowid, x, y, z, w in rows:
+            blocks += 1
             packets.append(packet(BLOCK, p, q, x, y, z, w))
             max_rowid = max(max_rowid, rowid)
-        if max_rowid:
-            packets.append(packet(KEY, p, q, max_rowid))
         query = (
             'select x, y, z, face, text from sign where '
             'p = :p and q = :q;'
         )
         rows = self.execute(query, dict(p=p, q=q))
+        signs = 0
         for x, y, z, face, text in rows:
+            signs += 1
             packets.append(packet(SIGN, p, q, x, y, z, face, text))
+        if blocks:
+            packets.append(packet(KEY, p, q, max_rowid))
+        if blocks or signs:
+            packets.append(packet(REDRAW, p, q))
+        packets.append(packet(CHUNK, p, q))
         client.send_raw(''.join(packets))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
@@ -357,7 +365,7 @@ class Model(object):
             message = 'Cannot destroy that type of block.'
         if message is not None:
             client.send(BLOCK, p, q, x, y, z, previous)
-            client.send(KEY, p, q, 0)
+            client.send(REDRAW, p, q)
             client.send(TALK, message)
             return
         query = (
@@ -467,7 +475,7 @@ class Model(object):
         if topic is None:
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
             client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout')
-            client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn')
+            client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn, /view N')
             return
         topic = topic.lower().strip()
         if topic == 'goto':
@@ -498,6 +506,9 @@ class Model(object):
         elif topic == 'spawn':
             client.send(TALK, 'Help: /spawn')
             client.send(TALK, 'Teleport back to the spawn point.')
+        elif topic == 'view':
+            client.send(TALK, 'Help: /view N')
+            client.send(TALK, 'Set viewing distance, 1 - 24.')
     def on_list(self, client):
         client.send(TALK,
             'Players: %s' % ', '.join(x.nick for x in self.clients))
@@ -529,7 +540,7 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
-            other.send(KEY, p, q, 0)
+            other.send(REDRAW, p, q)
     def send_sign(self, client, p, q, x, y, z, face, text):
         for other in self.clients:
             if other == client:

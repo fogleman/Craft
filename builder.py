@@ -3,12 +3,10 @@
 
 import requests
 import socket
+import sqlite3
 
 HOST = '127.0.0.1'
 PORT = 4080
-
-USERNAME = ''
-IDENTITY_TOKEN = ''
 
 EMPTY = 0
 GRASS = 1
@@ -130,12 +128,23 @@ def pyramid(x1, x2, y, z1, z2, fill=False):
         y, x1, x2, z1, z2 = y + 1, x1 + 1, x2 - 1, z1 + 1, z2 - 1
     return result
 
+def get_identity():
+    query = (
+        'select username, token from identity_token where selected = 1;'
+    )
+    conn = sqlite3.connect('auth.db')
+    rows = conn.execute(query)
+    for row in rows:
+        return row
+    raise Exception('No identities found.')
+
 class Client(object):
-    def __init__(self, host, port, username, identity_token):
+    def __init__(self, host, port):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect((host, port))
-        self.authenticate(username, identity_token)
-    def authenticate(self, username, identity_token):
+        self.authenticate()
+    def authenticate(self):
+        username, identity_token = get_identity()
         url = 'https://craft.michaelfogleman.com/api/1/identity'
         payload = {
             'username': username,
@@ -169,7 +178,7 @@ class Client(object):
             x, y, z = x + dx2, y + dy2, z + dz2
 
 def main():
-    client = Client(HOST, PORT, USERNAME, IDENTITY_TOKEN)
+    client = Client(HOST, PORT)
     set_block = client.set_block
     set_blocks = client.set_blocks
     # set_blocks(circle_y(0, 32, 0, 16, True), STONE)

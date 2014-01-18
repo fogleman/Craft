@@ -55,6 +55,13 @@ typedef struct {
 } Chunk;
 
 typedef struct {
+    int x;
+    int y;
+    int z;
+    int w;
+} Block;
+
+typedef struct {
     float x;
     float y;
     float z;
@@ -116,6 +123,10 @@ typedef struct {
     char db_path[MAX_PATH_LENGTH];
     char server_addr[MAX_ADDR_LENGTH];
     int server_port;
+    Block block0;
+    Block block1;
+    Block copy0;
+    Block copy1;
 } Model;
 
 static Model model;
@@ -1009,7 +1020,7 @@ void force_chunks(Player *player) {
                     gen_chunk_buffer(chunk);
                 }
             }
-            else {
+            else if (g->chunk_count < MAX_CHUNKS) {
                 create_chunk(g->chunks + g->chunk_count, a, b);
                 g->chunk_count++;
             }
@@ -1018,6 +1029,7 @@ void force_chunks(Player *player) {
 }
 
 void ensure_chunks(Player *player) {
+    force_chunks(player);
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
@@ -1059,7 +1071,7 @@ void ensure_chunks(Player *player) {
     if (chunk) {
         gen_chunk_buffer(chunk);
     }
-    else {
+    else if (g->chunk_count < MAX_CHUNKS) {
         create_chunk(g->chunks + g->chunk_count, a, b);
         g->chunk_count++;
     }
@@ -1097,7 +1109,9 @@ void unset_sign_face(int x, int y, int z, int face) {
     }
 }
 
-void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
+void _set_sign(
+    int p, int q, int x, int y, int z, int face, const char *text, int dirty)
+{
     if (strlen(text) == 0) {
         unset_sign_face(x, y, z, face);
         return;
@@ -1106,7 +1120,9 @@ void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
     if (chunk) {
         SignList *signs = &chunk->signs;
         sign_list_add(signs, x, y, z, face, text);
-        chunk->dirty = 1;
+        if (dirty) {
+            chunk->dirty = 1;
+        }
     }
     db_insert_sign(p, q, x, y, z, face, text);
 }
@@ -1114,7 +1130,7 @@ void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
 void set_sign(int x, int y, int z, int face, const char *text) {
     int p = chunked(x);
     int q = chunked(z);
-    _set_sign(p, q, x, y, z, face, text);
+    _set_sign(p, q, x, y, z, face, text, 1);
     client_sign(x, y, z, face, text);
 }
 
@@ -1158,6 +1174,14 @@ void set_block(int x, int y, int z, int w) {
     client_block(x, y, z, w);
 }
 
+void record_block(int x, int y, int z, int w) {
+    memcpy(&g->block1, &g->block0, sizeof(Block));
+    g->block0.x = x;
+    g->block0.y = y;
+    g->block0.z = z;
+    g->block0.w = w;
+}
+
 int get_block(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1167,6 +1191,18 @@ int get_block(int x, int y, int z) {
         return map_get(map, x, y, z);
     }
     return 0;
+}
+
+void builder_block(int x, int y, int z, int w) {
+    if (y <= 0 || y >= 256) {
+        return;
+    }
+    if (is_destructable(get_block(x, y, z))) {
+        set_block(x, y, z, 0);
+    }
+    if (w) {
+        set_block(x, y, z, w);
+    }
 }
 
 int render_chunks(Attrib *attrib, Player *player) {
@@ -1394,6 +1430,170 @@ void login() {
     }
 }
 
+void copy() {
+    memcpy(&g->copy0, &g->block0, sizeof(Block));
+    memcpy(&g->copy1, &g->block1, sizeof(Block));
+}
+
+void paste() {
+    Block *c1 = &g->copy1;
+    Block *c2 = &g->copy0;
+    Block *p1 = &g->block1;
+    Block *p2 = &g->block0;
+    int scx = SIGN(c2->x - c1->x);
+    int scz = SIGN(c2->z - c1->z);
+    int spx = SIGN(p2->x - p1->x);
+    int spz = SIGN(p2->z - p1->z);
+    int oy = p1->y - c1->y;
+    int dx = ABS(c2->x - c1->x);
+    int dz = ABS(c2->z - c1->z);
+    for (int y = 0; y < 256; y++) {
+        for (int x = 0; x <= dx; x++) {
+            for (int z = 0; z <= dz; z++) {
+                int w = get_block(c1->x + x * scx, y, c1->z + z * scz);
+                builder_block(p1->x + x * spx, y + oy, p1->z + z * spz, w);
+            }
+        }
+    }
+}
+
+void cube(Block *b1, Block *b2, int fill) {
+    if (b1->w != b2->w) {
+        return;
+    }
+    int w = b1->w;
+    int x1 = MIN(b1->x, b2->x);
+    int y1 = MIN(b1->y, b2->y);
+    int z1 = MIN(b1->z, b2->z);
+    int x2 = MAX(b1->x, b2->x);
+    int y2 = MAX(b1->y, b2->y);
+    int z2 = MAX(b1->z, b2->z);
+    int a = (x1 == x2) + (y1 == y2) + (z1 == z2);
+    for (int x = x1; x <= x2; x++) {
+        for (int y = y1; y <= y2; y++) {
+            for (int z = z1; z <= z2; z++) {
+                if (!fill) {
+                    int n = 0;
+                    n += x == x1 || x == x2;
+                    n += y == y1 || y == y2;
+                    n += z == z1 || z == z2;
+                    if (n <= a) {
+                        continue;
+                    }
+                }
+                builder_block(x, y, z, w);
+            }
+        }
+    }
+}
+
+void sphere(Block *center, int radius, int fill, int fx, int fy, int fz) {
+    static float offsets[8][3] = {
+        {-0.5, -0.5, -0.5},
+        {-0.5, -0.5, 0.5},
+        {-0.5, 0.5, -0.5},
+        {-0.5, 0.5, 0.5},
+        {0.5, -0.5, -0.5},
+        {0.5, -0.5, 0.5},
+        {0.5, 0.5, -0.5},
+        {0.5, 0.5, 0.5}
+    };
+    int cx = center->x;
+    int cy = center->y;
+    int cz = center->z;
+    int w = center->w;
+    for (int x = cx - radius; x <= cx + radius; x++) {
+        if (fx && x != cx) {
+            continue;
+        }
+        for (int y = cy - radius; y <= cy + radius; y++) {
+            if (fy && y != cy) {
+                continue;
+            }
+            for (int z = cz - radius; z <= cz + radius; z++) {
+                if (fz && z != cz) {
+                    continue;
+                }
+                int inside = 0;
+                int outside = fill;
+                for (int i = 0; i < 8; i++) {
+                    float dx = x + offsets[i][0] - cx;
+                    float dy = y + offsets[i][1] - cy;
+                    float dz = z + offsets[i][2] - cz;
+                    float d = sqrtf(dx * dx + dy * dy + dz * dz);
+                    if (d < radius) {
+                        inside = 1;
+                    }
+                    else {
+                        outside = 1;
+                    }
+                }
+                if (inside && outside) {
+                    builder_block(x, y, z, w);
+                }
+            }
+        }
+    }
+}
+
+void cylinder(Block *b1, Block *b2, int radius, int fill) {
+    if (b1->w != b2->w) {
+        return;
+    }
+    int w = b1->w;
+    int x1 = MIN(b1->x, b2->x);
+    int y1 = MIN(b1->y, b2->y);
+    int z1 = MIN(b1->z, b2->z);
+    int x2 = MAX(b1->x, b2->x);
+    int y2 = MAX(b1->y, b2->y);
+    int z2 = MAX(b1->z, b2->z);
+    int fx = x1 != x2;
+    int fy = y1 != y2;
+    int fz = z1 != z2;
+    if (fx + fy + fz != 1) {
+        return;
+    }
+    Block block = {x1, y1, z1, w};
+    if (fx) {
+        for (int x = x1; x <= x2; x++) {
+            block.x = x;
+            sphere(&block, radius, fill, 1, 0, 0);
+        }
+    }
+    if (fy) {
+        for (int y = y1; y <= y2; y++) {
+            block.y = y;
+            sphere(&block, radius, fill, 0, 1, 0);
+        }
+    }
+    if (fz) {
+        for (int z = z1; z <= z2; z++) {
+            block.z = z;
+            sphere(&block, radius, fill, 0, 0, 1);
+        }
+    }
+}
+
+void tree(Block *block) {
+    int bx = block->x;
+    int by = block->y;
+    int bz = block->z;
+    for (int y = by + 3; y < by + 8; y++) {
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dz = -3; dz <= 3; dz++) {
+                int dy = y - (by + 4);
+                int d = (dx * dx) + (dy * dy) + (dz * dz);
+                if (d < 11) {
+                    builder_block(bx + dx, y, bz + dz, 15);
+                }
+            }
+        }
+    }
+    for (int y = by; y < by + 7; y++) {
+        builder_block(bx, y, bz, 5);
+    }
+}
+
 void parse_command(const char *buffer, int forward) {
     char username[128] = {0};
     char token[128] = {0};
@@ -1406,7 +1606,7 @@ void parse_command(const char *buffer, int forward) {
         add_message("Successfully imported identity token!");
         login();
     }
-    else if (strstr(buffer, "/logout") == buffer) {
+    else if (strcmp(buffer, "/logout") == 0) {
         db_auth_select_none();
         login();
     }
@@ -1433,7 +1633,7 @@ void parse_command(const char *buffer, int forward) {
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s.db", filename);
     }
-    else if (strstr(buffer, "/offline") == buffer) {
+    else if (strcmp(buffer, "/offline") == 0) {
         g->mode_changed = 1;
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
@@ -1448,6 +1648,51 @@ void parse_command(const char *buffer, int forward) {
             add_message("Viewing distance must be between 1 and 24.");
         }
     }
+    else if (strcmp(buffer, "/copy") == 0) {
+        copy();
+    }
+    else if (strcmp(buffer, "/paste") == 0) {
+        paste();
+    }
+    else if (strcmp(buffer, "/tree") == 0) {
+        tree(&g->block0);
+    }
+    else if (strcmp(buffer, "/fcube") == 0) {
+        cube(&g->block0, &g->block1, 1);
+    }
+    else if (strcmp(buffer, "/cube") == 0) {
+        cube(&g->block0, &g->block1, 0);
+    }
+    else if (sscanf(buffer, "/fsphere %d", &radius) == 1) {
+        sphere(&g->block0, radius, 1, 0, 0, 0);
+    }
+    else if (sscanf(buffer, "/sphere %d", &radius) == 1) {
+        sphere(&g->block0, radius, 0, 0, 0, 0);
+    }
+    else if (sscanf(buffer, "/fcirclex %d", &radius) == 1) {
+        sphere(&g->block0, radius, 1, 1, 0, 0);
+    }
+    else if (sscanf(buffer, "/circlex %d", &radius) == 1) {
+        sphere(&g->block0, radius, 0, 1, 0, 0);
+    }
+    else if (sscanf(buffer, "/fcircley %d", &radius) == 1) {
+        sphere(&g->block0, radius, 1, 0, 1, 0);
+    }
+    else if (sscanf(buffer, "/circley %d", &radius) == 1) {
+        sphere(&g->block0, radius, 0, 0, 1, 0);
+    }
+    else if (sscanf(buffer, "/fcirclez %d", &radius) == 1) {
+        sphere(&g->block0, radius, 1, 0, 0, 1);
+    }
+    else if (sscanf(buffer, "/circlez %d", &radius) == 1) {
+        sphere(&g->block0, radius, 0, 0, 0, 1);
+    }
+    else if (sscanf(buffer, "/fcylinder %d", &radius) == 1) {
+        cylinder(&g->block0, &g->block1, radius, 1);
+    }
+    else if (sscanf(buffer, "/cylinder %d", &radius) == 1) {
+        cylinder(&g->block0, &g->block1, radius, 0);
+    }
     else if (forward) {
         client_talk(buffer);
     }
@@ -1459,8 +1704,8 @@ void on_left_click() {
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
         set_block(hx, hy, hz, 0);
-        int above = get_block(hx, hy + 1, hz);
-        if (is_plant(above)) {
+        record_block(hx, hy, hz, 0);
+        if (is_plant(get_block(hx, hy + 1, hz))) {
             set_block(hx, hy + 1, hz, 0);
         }
     }
@@ -1473,6 +1718,7 @@ void on_right_click() {
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
             set_block(hx, hy, hz, items[g->item_index]);
+            record_block(hx, hy, hz, items[g->item_index]);
         }
     }
 }
@@ -1824,9 +2070,9 @@ void parse_buffer(char *buffer) {
         }
         int kp, kq, kk;
         if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
-            if (kk > 0) {
-                db_set_key(kp, kq, kk);
-            }
+            db_set_key(kp, kq, kk);
+        }
+        if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
                 chunk->dirty = 1;
@@ -1854,7 +2100,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, format,
             &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
         {
-            _set_sign(bp, bq, bx, by, bz, face, text);
+            _set_sign(bp, bq, bx, by, bz, face, text, 0);
         }
         line = tokenize(NULL, "\n", &key);
     }

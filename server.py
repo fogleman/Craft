@@ -38,6 +38,7 @@ DISCONNECT = 'D'
 KEY = 'K'
 NICK = 'N'
 POSITION = 'P'
+REDRAW = 'R'
 SIGN = 'S'
 TALK = 'T'
 VERSION = 'V'
@@ -325,18 +326,25 @@ class Model(object):
         )
         rows = self.execute(query, dict(p=p, q=q, key=key))
         max_rowid = 0
+        blocks = 0
         for rowid, x, y, z, w in rows:
+            blocks += 1
             packets.append(packet(BLOCK, p, q, x, y, z, w))
             max_rowid = max(max_rowid, rowid)
-        if max_rowid:
-            packets.append(packet(KEY, p, q, max_rowid))
         query = (
             'select x, y, z, face, text from sign where '
             'p = :p and q = :q;'
         )
         rows = self.execute(query, dict(p=p, q=q))
+        signs = 0
         for x, y, z, face, text in rows:
+            signs += 1
             packets.append(packet(SIGN, p, q, x, y, z, face, text))
+        if blocks:
+            packets.append(packet(KEY, p, q, max_rowid))
+        if blocks or signs:
+            packets.append(packet(REDRAW, p, q))
+        packets.append(packet(CHUNK, p, q))
         client.send_raw(''.join(packets))
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
@@ -357,7 +365,7 @@ class Model(object):
             message = 'Cannot destroy that type of block.'
         if message is not None:
             client.send(BLOCK, p, q, x, y, z, previous)
-            client.send(KEY, p, q, 0)
+            client.send(REDRAW, p, q)
             client.send(TALK, message)
             return
         query = (
@@ -532,7 +540,7 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
-            other.send(KEY, p, q, 0)
+            other.send(REDRAW, p, q)
     def send_sign(self, client, p, q, x, y, z, face, text):
         for other in self.clients:
             if other == client:

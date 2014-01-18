@@ -1102,7 +1102,9 @@ void unset_sign_face(int x, int y, int z, int face) {
     }
 }
 
-void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
+void _set_sign(
+    int p, int q, int x, int y, int z, int face, const char *text, int dirty)
+{
     if (strlen(text) == 0) {
         unset_sign_face(x, y, z, face);
         return;
@@ -1111,7 +1113,9 @@ void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
     if (chunk) {
         SignList *signs = &chunk->signs;
         sign_list_add(signs, x, y, z, face, text);
-        chunk->dirty = 1;
+        if (dirty) {
+            chunk->dirty = 1;
+        }
     }
     db_insert_sign(p, q, x, y, z, face, text);
 }
@@ -1119,7 +1123,7 @@ void _set_sign(int p, int q, int x, int y, int z, int face, const char *text) {
 void set_sign(int x, int y, int z, int face, const char *text) {
     int p = chunked(x);
     int q = chunked(z);
-    _set_sign(p, q, x, y, z, face, text);
+    _set_sign(p, q, x, y, z, face, text, 1);
     client_sign(x, y, z, face, text);
 }
 
@@ -2059,9 +2063,9 @@ void parse_buffer(char *buffer) {
         }
         int kp, kq, kk;
         if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
-            if (kk > 0) {
-                db_set_key(kp, kq, kk);
-            }
+            db_set_key(kp, kq, kk);
+        }
+        if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
                 chunk->dirty = 1;
@@ -2089,7 +2093,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, format,
             &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
         {
-            _set_sign(bp, bq, bx, by, bz, face, text);
+            _set_sign(bp, bq, bx, by, bz, face, text, 0);
         }
         line = tokenize(NULL, "\n", &key);
     }

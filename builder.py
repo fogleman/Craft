@@ -4,9 +4,10 @@
 import requests
 import socket
 import sqlite3
+import sys
 
-HOST = '127.0.0.1'
-PORT = 4080
+DEFAULT_HOST = '127.0.0.1'
+DEFAULT_PORT = 4080
 
 EMPTY = 0
 GRASS = 1
@@ -178,7 +179,10 @@ class Client(object):
             x, y, z = x + dx2, y + dy2, z + dz2
 
 def main():
-    client = Client(HOST, PORT)
+    default_args = [DEFAULT_HOST, DEFAULT_PORT]
+    args = sys.argv[1:] + [None] * len(default_args)
+    host, port = [a or b for a, b in zip(args, default_args)]
+    client = Client(host, int(port))
     set_block = client.set_block
     set_blocks = client.set_blocks
     # set_blocks(circle_y(0, 32, 0, 16, True), STONE)

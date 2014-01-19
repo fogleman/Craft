@@ -178,11 +178,15 @@ class Client(object):
                 x, y, z = x + dx1, y + dy1, z + dz1
             x, y, z = x + dx2, y + dy2, z + dz2
 
-def main():
+def get_client():
     default_args = [DEFAULT_HOST, DEFAULT_PORT]
     args = sys.argv[1:] + [None] * len(default_args)
     host, port = [a or b for a, b in zip(args, default_args)]
     client = Client(host, int(port))
+    return client
+
+def main():
+    client = get_client()
     set_block = client.set_block
     set_blocks = client.set_blocks
     # set_blocks(circle_y(0, 32, 0, 16, True), STONE)

@@ -24,6 +24,7 @@ COMMIT_INTERVAL = 5
 
 SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
+RECORD_HISTORY = False
 INDESTRUCTIBLE_ITEMS = set([16])
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -372,8 +373,9 @@ class Model(object):
             'insert into block_history (timestamp, user_id, x, y, z, w) '
             'values (:timestamp, :user_id, :x, :y, :z, :w);'
         )
-        self.execute(query, dict(timestamp=time.time(),
-            user_id=client.user_id, x=x, y=y, z=z, w=w))
+        if RECORD_HISTORY:
+            self.execute(query, dict(timestamp=time.time(),
+                user_id=client.user_id, x=x, y=y, z=z, w=w))
         query = (
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'

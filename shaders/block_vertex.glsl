@@ -21,7 +21,7 @@ const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
 void main() {
     gl_Position = matrix * position;
     fragment_uv = uv.xy;
-    fragment_ao = 0.4 + (1.0 - uv.z) * 0.6;
+    fragment_ao = 0.3 + (1.0 - uv.z) * 0.7;
     diffuse = max(0.0, dot(normal, light_direction));
     if (bool(ortho)) {
         fog_factor = 0.0;

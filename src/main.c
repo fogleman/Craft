@@ -800,8 +800,8 @@ void gen_sign_buffer(Chunk *chunk) {
     chunk->sign_faces = faces;
 }
 
-void occlusion(char neighbors[27], float result[6][4]) {
-    static const int lookup[6][4][3] = {
+void occlusion(char neighbors[27], float shades[27], float result[6][4]) {
+    static const int lookup3[6][4][3] = {
         {{0, 1, 3}, {2, 1, 5}, {6, 3, 7}, {8, 5, 7}},
         {{18, 19, 21}, {20, 19, 23}, {24, 21, 25}, {26, 23, 25}},
         {{6, 7, 15}, {8, 7, 17}, {24, 15, 25}, {26, 17, 25}},
@@ -809,23 +809,40 @@ void occlusion(char neighbors[27], float result[6][4]) {
         {{0, 3, 9}, {6, 3, 15}, {18, 9, 21}, {24, 15, 21}},
         {{2, 5, 11}, {8, 5, 17}, {20, 11, 23}, {26, 17, 23}}
     };
-    static const float curve[4] = {0.0, 0.5, 0.75, 1.0};
+   static const int lookup4[6][4][4] = {
+        {{0, 1, 3, 4}, {1, 2, 4, 5}, {3, 4, 6, 7}, {4, 5, 7, 8}},
+        {{18, 19, 21, 22}, {19, 20, 22, 23}, {21, 22, 24, 25}, {22, 23, 25, 26}},
+        {{6, 7, 15, 16}, {7, 8, 16, 17}, {15, 16, 24, 25}, {16, 17, 25, 26}},
+        {{0, 1, 9, 10}, {1, 2, 10, 11}, {9, 10, 18, 19}, {10, 11, 19, 20}},
+        {{0, 3, 9, 12}, {3, 6, 12, 15}, {9, 12, 18, 21}, {12, 15, 21, 24}},
+        {{2, 5, 11, 14}, {5, 8, 14, 17}, {11, 14, 20, 23}, {14, 17, 23, 26}}
+    };
+    static const float curve[4] = {0.0, 0.25, 0.5, 0.75};
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 4; j++) {
-            int corner = neighbors[lookup[i][j][0]];
-            int side1 = neighbors[lookup[i][j][1]];
-            int side2 = neighbors[lookup[i][j][2]];
+            int corner = neighbors[lookup3[i][j][0]];
+            int side1 = neighbors[lookup3[i][j][1]];
+            int side2 = neighbors[lookup3[i][j][2]];
             int value = side1 && side2 ? 3 : corner + side1 + side2;
-            result[i][j] = curve[value];
+            float shade = 0;
+            for (int k = 0; k < 4; k++) {
+                shade += shades[lookup4[i][j][k]];
+            }
+            float total = curve[value] + shade / 4.0;
+            result[i][j] = MIN(total, 1.0);
         }
     }
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
     static char blocks[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2];
+    static char highest[CHUNK_SIZE + 2][CHUNK_SIZE + 2];
     static char neighbors[27];
+    static float shades[27];
     memset(blocks, 0, sizeof(blocks));
+    memset(highest, 0, sizeof(highest));
     memset(neighbors, 0, sizeof(neighbors));
+    memset(shades, 0, sizeof(shades));
     int ox = chunk->p * CHUNK_SIZE - 1;
     int oy = -1;
     int oz = chunk->q * CHUNK_SIZE - 1;
@@ -853,12 +870,15 @@ void gen_chunk_buffer(Chunk *chunk) {
     // second pass - count exposed faces
     int faces = 0;
     MAP_FOR_EACH(map, e) {
-        if (e->w <= 0) {
-            continue;
-        }
         int x = e->x - ox;
         int y = e->y - oy;
         int z = e->z - oz;
+        if (!is_transparent(e->w)) {
+            highest[x][z] = MAX(highest[x][z], y);
+        }
+        if (e->w <= 0) {
+            continue;
+        }
         int f1 = is_transparent(blocks[x - 1][y][z]);
         int f2 = is_transparent(blocks[x + 1][y][z]);
         int f3 = is_transparent(blocks[x][y + 1][z]);
@@ -866,9 +886,14 @@ void gen_chunk_buffer(Chunk *chunk) {
         int f5 = is_transparent(blocks[x][y][z - 1]);
         int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
-        if (is_plant(e->w)) {
-            total = total ? 4 : 0;
+        if (total == 0) {
+            continue;
         }
+        if (is_plant(e->w)) {
+            total = 4;
+        }
+        chunk->miny = MIN(chunk->miny, e->y);
+        chunk->maxy = MAX(chunk->maxy, e->y);
         faces += total;
     } END_MAP_FOR_EACH;
 
@@ -889,14 +914,12 @@ void gen_chunk_buffer(Chunk *chunk) {
         int f5 = is_transparent(blocks[x][y][z - 1]);
         int f6 = is_transparent(blocks[x][y][z + 1]);
         int total = f1 + f2 + f3 + f4 + f5 + f6;
-        if (is_plant(e->w)) {
-            total = total ? 4 : 0;
-        }
         if (total == 0) {
             continue;
         }
-        chunk->miny = MIN(chunk->miny, e->y);
-        chunk->maxy = MAX(chunk->maxy, e->y);
+        if (is_plant(e->w)) {
+            total = 4;
+        }
         if (is_plant(e->w)) {
             float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
@@ -909,12 +932,24 @@ void gen_chunk_buffer(Chunk *chunk) {
                 for (int dy = -1; dy <= 1; dy++) {
                     for (int dz = -1; dz <= 1; dz++) {
                         int w = blocks[x + dx][y + dy][z + dz];
-                        neighbors[index++] = !is_transparent(w);
+                        neighbors[index] = !is_transparent(w);
+                        shades[index] = 0;
+                        if (y + dy < highest[x + dx][z + dz]) {
+                            for (int oy = 0; oy < 8; oy++) {
+                                if (!is_transparent(
+                                    blocks[x + dx][y + dy + oy][z + dz]))
+                                {
+                                    shades[index] = 1.0 - oy * 0.125;
+                                    break;
+                                }
+                            }
+                        }
+                        index++;
                     }
                 }
             }
             float ao[6][4];
-            occlusion(neighbors, ao);
+            occlusion(neighbors, shades, ao);
             make_cube(
                 data + offset, ao,
                 f1, f2, f3, f4, f5, f6,

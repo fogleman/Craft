@@ -7,10 +7,11 @@ uniform int ortho;
 
 attribute vec4 position;
 attribute vec3 normal;
-attribute vec3 uv;
+attribute vec4 uv;
 
 varying vec2 fragment_uv;
 varying float fragment_ao;
+varying float fragment_light;
 varying float fog_factor;
 varying float fog_height;
 varying float diffuse;
@@ -22,6 +23,7 @@ void main() {
     gl_Position = matrix * position;
     fragment_uv = uv.xy;
     fragment_ao = 0.3 + (1.0 - uv.z) * 0.7;
+    fragment_light = uv.w;
     diffuse = max(0.0, dot(normal, light_direction));
     if (bool(ortho)) {
         fog_factor = 0.0;

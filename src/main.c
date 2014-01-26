@@ -226,22 +226,23 @@ GLuint gen_sky_buffer() {
 }
 
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_faces(9, 6);
+    GLfloat *data = malloc_faces(10, 6);
     float ao[6][4] = {0};
-    make_cube(data, ao, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
-    return gen_faces(9, 6, data);
+    float light[6][4] = {0};
+    make_cube(data, ao, light, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
+    return gen_faces(10, 6, data);
 }
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_faces(9, 4);
+    GLfloat *data = malloc_faces(10, 4);
     make_plant(data, x, y, z, n, w, 45);
-    return gen_faces(9, 4, data);
+    return gen_faces(10, 4, data);
 }
 
 GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
-    GLfloat *data = malloc_faces(9, 6);
+    GLfloat *data = malloc_faces(10, 6);
     make_player(data, x, y, z, rx, ry);
-    return gen_faces(9, 6, data);
+    return gen_faces(10, 6, data);
 }
 
 GLuint gen_text_buffer(float x, float y, float n, char *text) {
@@ -260,11 +261,11 @@ void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glEnableVertexAttribArray(attrib->normal);
     glEnableVertexAttribArray(attrib->uv);
     glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 9, 0);
+        sizeof(GLfloat) * 10, 0);
     glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 9, (GLvoid *)(sizeof(GLfloat) * 6));
+        sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 3));
+    glVertexAttribPointer(attrib->uv, 4, GL_FLOAT, GL_FALSE,
+        sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glDisableVertexAttribArray(attrib->normal);
@@ -802,7 +803,8 @@ void gen_sign_buffer(Chunk *chunk) {
 }
 
 void occlusion(
-    char neighbors[27], char lights[27], float shades[27], float result[6][4])
+    char neighbors[27], char lights[27], float shades[27],
+    float ao[6][4], float light[6][4])
 {
     static const int lookup3[6][4][3] = {
         {{0, 1, 3}, {2, 1, 5}, {6, 3, 7}, {8, 5, 7}},
@@ -827,23 +829,23 @@ void occlusion(
             int side1 = neighbors[lookup3[i][j][1]];
             int side2 = neighbors[lookup3[i][j][2]];
             int value = side1 && side2 ? 3 : corner + side1 + side2;
-            float shade = 0;
-            float light = 0;
+            float shade_sum = 0;
+            float light_sum = 0;
             for (int k = 0; k < 4; k++) {
-                shade += shades[lookup4[i][j][k]];
-                light += lights[lookup4[i][j][k]];
+                shade_sum += shades[lookup4[i][j][k]];
+                light_sum += lights[lookup4[i][j][k]];
             }
-            shade = shade / 4.0;
-            light = light / 15.0 / 4.0;
-            float total = curve[value] + shade - light;
-            result[i][j] = MIN(total, 1.0);
+            float total = curve[value] + shade_sum / 4.0;
+            ao[i][j] = MIN(total, 1.0);
+            light[i][j] = light_sum / 15.0 / 4.0;
         }
     }
 }
 
 void light_fill(
+    char blocks[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2],
     char light[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2],
-    int x, int y, int z, int value)
+    int x, int y, int z, int value, int force)
 {
     if (x < 0 || y < 0 || z < 0) {
         return;
@@ -854,14 +856,17 @@ void light_fill(
     if (light[x][y][z] >= value) {
         return;
     }
+    if (!force && !is_transparent(blocks[x][y][z])) {
+        return;
+    }
     light[x][y][z] = value;
     value--;
-    light_fill(light, x - 1, y, z, value);
-    light_fill(light, x + 1, y, z, value);
-    light_fill(light, x, y - 1, z, value);
-    light_fill(light, x, y + 1, z, value);
-    light_fill(light, x, y, z - 1, value);
-    light_fill(light, x, y, z + 1, value);
+    light_fill(blocks, light, x - 1, y, z, value, 0);
+    light_fill(blocks, light, x + 1, y, z, value, 0);
+    light_fill(blocks, light, x, y - 1, z, value, 0);
+    light_fill(blocks, light, x, y + 1, z, value, 0);
+    light_fill(blocks, light, x, y, z - 1, value, 0);
+    light_fill(blocks, light, x, y, z + 1, value, 0);
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
@@ -886,14 +891,6 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->miny = 256;
     chunk->maxy = 0;
 
-    // flood fill light intensities
-    MAP_FOR_EACH(light_map, e) {
-        int x = e->x - ox;
-        int y = e->y - oy;
-        int z = e->z - oz;
-        light_fill(light, x, y, z, e->w);
-    } END_MAP_FOR_EACH;
-
     // first pass - populate blocks array
     MAP_FOR_EACH(map, e) {
         int x = e->x - ox;
@@ -908,6 +905,14 @@ void gen_chunk_buffer(Chunk *chunk) {
         }
         // END TODO
         blocks[x][y][z] = e->w;
+    } END_MAP_FOR_EACH;
+
+    // flood fill light intensities
+    MAP_FOR_EACH(light_map, e) {
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
+        light_fill(blocks, light, x, y, z, e->w, 1);
     } END_MAP_FOR_EACH;
 
     // second pass - count exposed faces
@@ -941,7 +946,7 @@ void gen_chunk_buffer(Chunk *chunk) {
     } END_MAP_FOR_EACH;
 
     // third pass - generate geometry
-    GLfloat *data = malloc_faces(9, faces);
+    GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
@@ -993,17 +998,18 @@ void gen_chunk_buffer(Chunk *chunk) {
                 }
             }
             float ao[6][4];
-            occlusion(neighbors, lights, shades, ao);
+            float light[6][4];
+            occlusion(neighbors, lights, shades, ao, light);
             make_cube(
-                data + offset, ao,
+                data + offset, ao, light,
                 f1, f2, f3, f4, f5, f6,
                 e->x, e->y, e->z, 0.5, e->w);
         }
-        offset += total * 54;
+        offset += total * 60;
     } END_MAP_FOR_EACH;
 
     del_buffer(chunk->buffer);
-    chunk->buffer = gen_faces(9, faces, data);
+    chunk->buffer = gen_faces(10, faces, data);
     chunk->faces = faces;
 
     gen_sign_buffer(chunk);

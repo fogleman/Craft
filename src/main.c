@@ -802,6 +802,17 @@ void gen_sign_buffer(Chunk *chunk) {
     chunk->sign_faces = faces;
 }
 
+void dirty_chunk(Chunk *chunk) {
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+            if (other) {
+                other->dirty = 1;
+            }
+        }
+    }
+}
+
 void occlusion(
     char neighbors[27], char lights[27], float shades[27],
     float ao[6][4], float light[6][4])
@@ -843,14 +854,14 @@ void occlusion(
 }
 
 void light_fill(
-    char blocks[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2],
-    char light[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2],
+    char blocks[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3],
+    char light[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3],
     int x, int y, int z, int value, int force)
 {
     if (x < 0 || y < 0 || z < 0) {
         return;
     }
-    if (x >= CHUNK_SIZE + 2 || y >= 258 || z >= CHUNK_SIZE + 2) {
+    if (x >= CHUNK_SIZE * 3 || y >= 258 || z >= CHUNK_SIZE * 3) {
         return;
     }
     if (light[x][y][z] >= value) {
@@ -870,9 +881,9 @@ void light_fill(
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
-    static char blocks[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2];
-    static char light[CHUNK_SIZE + 2][258][CHUNK_SIZE + 2];
-    static char highest[CHUNK_SIZE + 2][CHUNK_SIZE + 2];
+    static char blocks[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3];
+    static char light[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3];
+    static char highest[CHUNK_SIZE * 3][CHUNK_SIZE * 3];
     static char neighbors[27];
     static char lights[27];
     static float shades[27];
@@ -882,44 +893,61 @@ void gen_chunk_buffer(Chunk *chunk) {
     memset(neighbors, 0, sizeof(neighbors));
     memset(lights, 0, sizeof(lights));
     memset(shades, 0, sizeof(shades));
-    int ox = chunk->p * CHUNK_SIZE - 1;
+    int ox = chunk->p * CHUNK_SIZE - CHUNK_SIZE;
     int oy = -1;
-    int oz = chunk->q * CHUNK_SIZE - 1;
-
-    Map *map = &chunk->map;
-    chunk->miny = 256;
-    chunk->maxy = 0;
+    int oz = chunk->q * CHUNK_SIZE - CHUNK_SIZE;
 
     // first pass - populate blocks array
-    MAP_FOR_EACH(map, e) {
-        int x = e->x - ox;
-        int y = e->y - oy;
-        int z = e->z - oz;
-        int w = e->w;
-        // TODO: this should be unnecessary
-        if (x < 0 || y < 0 || z < 0) {
-            continue;
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+            if (!other) {
+                continue;
+            }
+            Map *map = &other->map;
+            MAP_FOR_EACH(map, e) {
+                int x = e->x - ox;
+                int y = e->y - oy;
+                int z = e->z - oz;
+                int w = e->w;
+                // TODO: this should be unnecessary
+                if (x < 0 || y < 0 || z < 0) {
+                    continue;
+                }
+                if (x >= CHUNK_SIZE * 3 || y >= 258 || z >= CHUNK_SIZE * 3) {
+                    continue;
+                }
+                // END TODO
+                blocks[x][y][z] = w;
+                if (!is_transparent(w)) {
+                    highest[x][z] = MAX(highest[x][z], y);
+                }
+            } END_MAP_FOR_EACH;
         }
-        if (x >= CHUNK_SIZE + 2 || y >= 258 || z >= CHUNK_SIZE + 2) {
-            continue;
-        }
-        // END TODO
-        blocks[x][y][z] = w;
-        if (!is_transparent(w)) {
-            highest[x][z] = MAX(highest[x][z], y);
-        }
-    } END_MAP_FOR_EACH;
+    }
 
     // flood fill light intensities
-    Map *light_map = &chunk->lights;
-    MAP_FOR_EACH(light_map, e) {
-        int x = e->x - ox;
-        int y = e->y - oy;
-        int z = e->z - oz;
-        light_fill(blocks, light, x, y, z, e->w, 1);
-    } END_MAP_FOR_EACH;
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+            if (!other) {
+                continue;
+            }
+            Map *map = &other->lights;
+            MAP_FOR_EACH(map, e) {
+                int x = e->x - ox;
+                int y = e->y - oy;
+                int z = e->z - oz;
+                light_fill(blocks, light, x, y, z, e->w, 1);
+            } END_MAP_FOR_EACH;
+        }
+    }
+
+    Map *map = &chunk->map;
 
     // second pass - count exposed faces
+    chunk->miny = 256;
+    chunk->maxy = 0;
     int faces = 0;
     MAP_FOR_EACH(map, e) {
         if (e->w <= 0) {
@@ -1028,7 +1056,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     chunk->q = q;
     chunk->faces = 0;
     chunk->sign_faces = 0;
-    chunk->dirty = 1;
+    dirty_chunk(chunk);
     chunk->buffer = 0;
     chunk->sign_buffer = 0;
     Map *map = &chunk->map;
@@ -1224,7 +1252,7 @@ void set_light(int x, int y, int z, int value) {
     if (chunk) {
         Map *lights = &chunk->lights;
         if (map_set(lights, x, y, z, value)) {
-            chunk->dirty = 1;
+            dirty_chunk(chunk);
             // db_insert_block(p, q, x, y, z, w);
         }
     }
@@ -1239,7 +1267,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
         Map *map = &chunk->map;
         if (map_set(map, x, y, z, w)) {
             if (dirty) {
-                chunk->dirty = 1;
+                dirty_chunk(chunk);
             }
             db_insert_block(p, q, x, y, z, w);
         }
@@ -2175,7 +2203,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
-                chunk->dirty = 1;
+                dirty_chunk(chunk);
             }
         }
         if (line[0] == 'T' && line[1] == ',') {

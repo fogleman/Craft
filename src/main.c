@@ -887,7 +887,6 @@ void gen_chunk_buffer(Chunk *chunk) {
     int oz = chunk->q * CHUNK_SIZE - 1;
 
     Map *map = &chunk->map;
-    Map *light_map = &chunk->lights;
     chunk->miny = 256;
     chunk->maxy = 0;
 
@@ -908,6 +907,7 @@ void gen_chunk_buffer(Chunk *chunk) {
     } END_MAP_FOR_EACH;
 
     // flood fill light intensities
+    Map *light_map = &chunk->lights;
     MAP_FOR_EACH(light_map, e) {
         int x = e->x - ox;
         int y = e->y - oy;

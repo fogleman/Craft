@@ -837,7 +837,7 @@ void occlusion(
             }
             float total = curve[value] + shade_sum / 4.0;
             ao[i][j] = MIN(total, 1.0);
-            light[i][j] = light_sum / 15.0 / 4.0;
+            light[i][j] = light_sum / 15.0 / 2.0;
         }
     }
 }
@@ -895,6 +895,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         int x = e->x - ox;
         int y = e->y - oy;
         int z = e->z - oz;
+        int w = e->w;
         // TODO: this should be unnecessary
         if (x < 0 || y < 0 || z < 0) {
             continue;
@@ -903,7 +904,10 @@ void gen_chunk_buffer(Chunk *chunk) {
             continue;
         }
         // END TODO
-        blocks[x][y][z] = e->w;
+        blocks[x][y][z] = w;
+        if (!is_transparent(w)) {
+            highest[x][z] = MAX(highest[x][z], y);
+        }
     } END_MAP_FOR_EACH;
 
     // flood fill light intensities
@@ -918,15 +922,12 @@ void gen_chunk_buffer(Chunk *chunk) {
     // second pass - count exposed faces
     int faces = 0;
     MAP_FOR_EACH(map, e) {
-        int x = e->x - ox;
-        int y = e->y - oy;
-        int z = e->z - oz;
-        if (!is_transparent(e->w)) {
-            highest[x][z] = MAX(highest[x][z], y);
-        }
         if (e->w <= 0) {
             continue;
         }
+        int x = e->x - ox;
+        int y = e->y - oy;
+        int z = e->z - oz;
         int f1 = is_transparent(blocks[x - 1][y][z]);
         int f2 = is_transparent(blocks[x + 1][y][z]);
         int f3 = is_transparent(blocks[x][y + 1][z]);

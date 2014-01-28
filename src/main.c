@@ -804,12 +804,26 @@ void gen_sign_buffer(Chunk *chunk) {
 }
 
 void dirty_chunk(Chunk *chunk) {
-    // TODO: only dirty surrounding chunks if there are lights
+    chunk->dirty = 1;
+    int has_light = 0;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
             if (other) {
-                other->dirty = 1;
+                Map *map = &other->lights;
+                if (map->size) {
+                    has_light = 1;
+                }
+            }
+        }
+    }
+    if (has_light) {
+        for (int dp = -1; dp <= 1; dp++) {
+            for (int dq = -1; dq <= 1; dq++) {
+                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+                if (other) {
+                    other->dirty = 1;
+                }
             }
         }
     }

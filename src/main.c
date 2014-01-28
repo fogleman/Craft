@@ -1085,7 +1085,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     Map *map = &chunk->map;
     Map *lights = &chunk->lights;
     SignList *signs = &chunk->signs;
-    map_alloc(map, 0xfff);
+    map_alloc(map, 0x7fff);
     map_alloc(lights, 0xf);
     sign_list_alloc(signs, 16);
     create_world(p, q, map_set_func, map);
@@ -1268,20 +1268,22 @@ void set_sign(int x, int y, int z, int face, const char *text) {
     client_sign(x, y, z, face, text);
 }
 
-void set_light(int x, int y, int z, int value) {
+void toggle_light(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *lights = &chunk->lights;
-        if (map_set(lights, x, y, z, value)) {
-            dirty_chunk(chunk);
-            // db_insert_block(p, q, x, y, z, w);
+        Map *map = &chunk->lights;
+        int value = 15;
+        if (map_get(map, x, y, z) == value) {
+            map_set(map, x, y, z, 0);
         }
+        else {
+            map_set(map, x, y, z, value);
+        }
+        dirty_chunk(chunk);
     }
-    else {
-        // db_insert_block(p, q, x, y, z, w);
-    }
+    // db_insert_light(p, q, x, y, z, w);
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
@@ -1848,17 +1850,25 @@ void parse_command(const char *buffer, int forward) {
     }
 }
 
+void on_light() {
+    State *s = &g->players->state;
+    int hx, hy, hz;
+    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+    if (hy > 0 && hy < 256 && is_destructable(hw)) {
+        toggle_light(hx, hy, hz);
+    }
+}
+
 void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
-        // set_block(hx, hy, hz, 0);
-        set_light(hx, hy, hz, 15);
-        // record_block(hx, hy, hz, 0);
-        // if (is_plant(get_block(hx, hy + 1, hz))) {
-        //     set_block(hx, hy + 1, hz, 0);
-        // }
+        set_block(hx, hy, hz, 0);
+        record_block(hx, hy, hz, 0);
+        if (is_plant(get_block(hx, hy + 1, hz))) {
+            set_block(hx, hy + 1, hz, 0);
+        }
     }
 }
 
@@ -2057,7 +2067,12 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (exclusive) {
-            on_right_click();
+            if (control) {
+                on_light();
+            }
+            else {
+                on_right_click();
+            }
         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {

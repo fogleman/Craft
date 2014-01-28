@@ -18,8 +18,8 @@ int hash(int x, int y, int z) {
     return x ^ y ^ z;
 }
 
-void map_alloc(Map *map) {
-    map->mask = 0xfff;
+void map_alloc(Map *map, int mask) {
+    map->mask = mask;
     map->size = 0;
     map->data = (MapEntry *)calloc(map->mask + 1, sizeof(MapEntry));
 }

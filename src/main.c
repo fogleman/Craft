@@ -1085,8 +1085,8 @@ void create_chunk(Chunk *chunk, int p, int q) {
     Map *map = &chunk->map;
     Map *lights = &chunk->lights;
     SignList *signs = &chunk->signs;
-    map_alloc(map);
-    map_alloc(lights);
+    map_alloc(map, 0xfff);
+    map_alloc(lights, 0xf);
     sign_list_alloc(signs, 16);
     create_world(p, q, map_set_func, map);
     db_load_map(map, p, q);

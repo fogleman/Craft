@@ -5,7 +5,7 @@
 #include "util.h"
 
 void make_cube_faces(
-    float *data, float ao[6][4],
+    float *data, float ao[6][4], float light[6][4],
     int left, int right, int top, int bottom, int front, int back,
     int wleft, int wright, int wtop, int wbottom, int wfront, int wback,
     float x, float y, float z, float n)
@@ -74,12 +74,13 @@ void make_cube_faces(
             *(d++) = du + (uvs[i][j][0] ? b : a);
             *(d++) = dv + (uvs[i][j][1] ? b : a);
             *(d++) = ao[i][j];
+            *(d++) = light[i][j];
         }
     }
 }
 
 void make_cube(
-    float *data, float ao[6][4],
+    float *data, float ao[6][4], float light[6][4],
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
@@ -90,7 +91,7 @@ void make_cube(
     int wfront = blocks[w][4];
     int wback = blocks[w][5];
     make_cube_faces(
-        data, ao,
+        data, ao, light,
         left, right, top, bottom, front, back,
         wleft, wright, wtop, wbottom, wfront, wback,
         x, y, z, n);
@@ -142,6 +143,7 @@ void make_plant(
             *(d++) = du + (uvs[i][j][0] ? b : a);
             *(d++) = dv + (uvs[i][j][1] ? b : a);
             *(d++) = 0;
+            *(d++) = 0;
         }
     }
     float ma[16];
@@ -149,10 +151,10 @@ void make_plant(
     mat_identity(ma);
     mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 3, 9);
+    mat_apply(data, ma, 24, 3, 10);
     mat_translate(mb, px, py, pz);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 0, 9);
+    mat_apply(data, ma, 24, 0, 10);
 }
 
 void make_player(
@@ -160,8 +162,9 @@ void make_player(
     float x, float y, float z, float rx, float ry)
 {
     float ao[6][4] = {0};
+    float light[6][4] = {0};
     make_cube_faces(
-        data, ao,
+        data, ao, light,
         1, 1, 1, 1, 1, 1,
         226, 224, 241, 209, 225, 227,
         0, 0, 0, 0.4);
@@ -172,10 +175,10 @@ void make_player(
     mat_multiply(ma, mb, ma);
     mat_rotate(mb, cosf(rx), 0, sinf(rx), -ry);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, 3, 9);
+    mat_apply(data, ma, 36, 3, 10);
     mat_translate(mb, x, y, z);
     mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 36, 0, 9);
+    mat_apply(data, ma, 36, 0, 10);
 }
 
 void make_cube_wireframe(float *data, float x, float y, float z, float n) {

@@ -122,6 +122,15 @@ void client_block(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+void client_light(int x, int y, int z, int w) {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[1024];
+    snprintf(buffer, 1024, "L,%d,%d,%d,%d\n", x, y, z, w);
+    client_send(buffer);
+}
+
 void client_sign(int x, int y, int z, int face, const char *text) {
     if (!client_enabled) {
         return;

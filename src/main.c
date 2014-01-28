@@ -812,6 +812,9 @@ void gen_sign_buffer(Chunk *chunk) {
 }
 
 int has_lights(Chunk *chunk) {
+    if (!SHOW_LIGHTS) {
+        return 0;
+    }
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             Chunk *other = chunk;
@@ -972,19 +975,21 @@ void gen_chunk_buffer(Chunk *chunk) {
     }
 
     // flood fill light intensities
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
-            if (!other) {
-                continue;
+    if (SHOW_LIGHTS) {
+        for (int dp = -1; dp <= 1; dp++) {
+            for (int dq = -1; dq <= 1; dq++) {
+                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+                if (!other) {
+                    continue;
+                }
+                Map *map = &other->lights;
+                MAP_FOR_EACH(map, e) {
+                    int x = e->x - ox;
+                    int y = e->y - oy;
+                    int z = e->z - oz;
+                    light_fill(opaque, light, x, y, z, e->w, 1);
+                } END_MAP_FOR_EACH;
             }
-            Map *map = &other->lights;
-            MAP_FOR_EACH(map, e) {
-                int x = e->x - ox;
-                int y = e->y - oy;
-                int z = e->z - oz;
-                light_fill(opaque, light, x, y, z, e->w, 1);
-            } END_MAP_FOR_EACH;
         }
     }
 

@@ -15,6 +15,7 @@
 #define INVERT_MOUSE 0
 
 // rendering options
+#define SHOW_LIGHTS 1
 #define SHOW_PLANTS 1
 #define SHOW_CLOUDS 1
 #define SHOW_TREES 1

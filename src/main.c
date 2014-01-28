@@ -228,14 +228,23 @@ GLuint gen_sky_buffer() {
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 6);
     float ao[6][4] = {0};
-    float light[6][4] = {0};
+    float light[6][4] = {
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5}
+    };
     make_cube(data, ao, light, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
     return gen_faces(10, 6, data);
 }
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 4);
-    make_plant(data, x, y, z, n, w, 45);
+    float ao = 0;
+    float light = 1;
+    make_plant(data, ao, light, x, y, z, n, w, 45);
     return gen_faces(10, 4, data);
 }
 
@@ -1030,39 +1039,46 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (total == 0) {
             continue;
         }
+        int index = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    neighbors[index] = opaque[x + dx][y + dy][z + dz];
+                    lights[index] = light[x + dx][y + dy][z + dz];
+                    shades[index] = 0;
+                    if (y + dy < highest[x + dx][z + dz]) {
+                        for (int oy = 0; oy < 8; oy++) {
+                            if (opaque[x + dx][y + dy + oy][z + dz]) {
+                                shades[index] = 1.0 - oy * 0.125;
+                                break;
+                            }
+                        }
+                    }
+                    index++;
+                }
+            }
+        }
+        float ao[6][4];
+        float light[6][4];
+        occlusion(neighbors, lights, shades, ao, light);
         if (is_plant(e->w)) {
             total = 4;
-        }
-        if (is_plant(e->w)) {
+            float mean_ao = 0;
+            float mean_light = 0;
+            for (int a = 0; a < 6; a++) {
+                for (int b = 0; b < 4; b++) {
+                    mean_ao += ao[a][b];
+                    mean_light += light[a][b];
+                }
+            }
+            mean_ao /= 24;
+            mean_light /= 24;
             float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
-                data + offset,
+                data + offset, mean_ao, mean_light,
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
-            int index = 0;
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        neighbors[index] = opaque[x + dx][y + dy][z + dz];
-                        lights[index] = light[x + dx][y + dy][z + dz];
-                        shades[index] = 0;
-                        if (y + dy < highest[x + dx][z + dz]) {
-                            for (int oy = 0; oy < 8; oy++) {
-                                if (opaque[x + dx][y + dy + oy][z + dz])
-                                {
-                                    shades[index] = 1.0 - oy * 0.125;
-                                    break;
-                                }
-                            }
-                        }
-                        index++;
-                    }
-                }
-            }
-            float ao[6][4];
-            float light[6][4];
-            occlusion(neighbors, lights, shades, ao, light);
             make_cube(
                 data + offset, ao, light,
                 f1, f2, f3, f4, f5, f6,
@@ -1286,16 +1302,10 @@ void toggle_light(int x, int y, int z) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->lights;
-        if (map_get(map, x, y, z)) {
-            map_set(map, x, y, z, 0);
-            db_insert_light(p, q, x, y, z, 0);
-            client_light(x, y, z, 0);
-        }
-        else {
-            map_set(map, x, y, z, 15);
-            db_insert_light(p, q, x, y, z, 15);
-            client_light(x, y, z, 15);
-        }
+        int w = map_get(map, x, y, z) ? 0 : 15;
+        map_set(map, x, y, z, w);
+        db_insert_light(p, q, x, y, z, w);
+        client_light(x, y, z, w);
         dirty_chunk(chunk);
     }
 }

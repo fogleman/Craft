@@ -1,3 +1,6 @@
+import time
+start_time = time.time()
+
 from math import floor
 from world import World
 import Queue
@@ -22,6 +25,7 @@ CHUNK_SIZE = 32
 BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
+DAY_LENGTH = 300
 SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
 RECORD_HISTORY = False
@@ -45,6 +49,7 @@ SIGN = 'S'
 TALK = 'T'
 VERSION = 'V'
 YOU = 'U'
+TIME = 'E'
 
 try:
     from config import *
@@ -285,6 +290,7 @@ class Model(object):
         client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
+        client.send(TIME, time.time() - start_time, DAY_LENGTH)
         self.send_position(client)
         self.send_positions(client)
         self.send_nick(client)

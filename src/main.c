@@ -131,7 +131,6 @@ int chunked(float x) {
 }
 
 float time_of_day() {
-    return 0;
     if (DAY_LENGTH <= 0) {
         return 0.5;
     }
@@ -904,7 +903,6 @@ void light_fill(
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
-    // printf("gen_chunk_buffer(%d, %d)\n", chunk->p, chunk->q);
     static char opaque[XZ_SIZE][Y_SIZE][XZ_SIZE];
     static char light[XZ_SIZE][Y_SIZE][XZ_SIZE];
     static char highest[XZ_SIZE][XZ_SIZE];
@@ -1077,14 +1075,13 @@ void map_set_func(int x, int y, int z, int w, void *arg) {
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {
-    // printf("create_chunk(%d, %d)\n", p, q);
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
     chunk->sign_faces = 0;
-    dirty_chunk(chunk);
     chunk->buffer = 0;
     chunk->sign_buffer = 0;
+    dirty_chunk(chunk);
     Map *map = &chunk->map;
     Map *lights = &chunk->lights;
     SignList *signs = &chunk->signs;
@@ -1094,7 +1091,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     create_world(p, q, map_set_func, map);
     db_load_map(map, p, q);
     db_load_signs(signs, p, q);
-    // gen_chunk_buffer(chunk);
+    gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
 }

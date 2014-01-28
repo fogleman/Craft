@@ -24,6 +24,7 @@ COMMIT_INTERVAL = 5
 
 SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
+RECORD_HISTORY = False
 INDESTRUCTIBLE_ITEMS = set([16])
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -36,6 +37,7 @@ BLOCK = 'B'
 CHUNK = 'C'
 DISCONNECT = 'D'
 KEY = 'K'
+LIGHT = 'L'
 NICK = 'N'
 POSITION = 'P'
 REDRAW = 'R'
@@ -168,6 +170,7 @@ class Model(object):
             AUTHENTICATE: self.on_authenticate,
             CHUNK: self.on_chunk,
             BLOCK: self.on_block,
+            LIGHT: self.on_light,
             POSITION: self.on_position,
             TALK: self.on_talk,
             SIGN: self.on_sign,
@@ -220,6 +223,16 @@ class Model(object):
             ');',
             'create unique index if not exists block_pqxyz_idx on '
             '    block (p, q, x, y, z);',
+            'create table if not exists light ('
+            '    p int not null,'
+            '    q int not null,'
+            '    x int not null,'
+            '    y int not null,'
+            '    z int not null,'
+            '    w int not null'
+            ');',
+            'create unique index if not exists light_pqxyz_idx on '
+            '    light (p, q, x, y, z);',
             'create table if not exists sign ('
             '    p int not null,'
             '    q int not null,'
@@ -332,6 +345,15 @@ class Model(object):
             packets.append(packet(BLOCK, p, q, x, y, z, w))
             max_rowid = max(max_rowid, rowid)
         query = (
+            'select x, y, z, w from light where '
+            'p = :p and q = :q;'
+        )
+        rows = self.execute(query, dict(p=p, q=q))
+        lights = 0
+        for x, y, z, w in rows:
+            lights += 1
+            packets.append(packet(LIGHT, p, q, x, y, z, w))
+        query = (
             'select x, y, z, face, text from sign where '
             'p = :p and q = :q;'
         )
@@ -342,7 +364,7 @@ class Model(object):
             packets.append(packet(SIGN, p, q, x, y, z, face, text))
         if blocks:
             packets.append(packet(KEY, p, q, max_rowid))
-        if blocks or signs:
+        if blocks or lights or signs:
             packets.append(packet(REDRAW, p, q))
         packets.append(packet(CHUNK, p, q))
         client.send_raw(''.join(packets))
@@ -372,8 +394,9 @@ class Model(object):
             'insert into block_history (timestamp, user_id, x, y, z, w) '
             'values (:timestamp, :user_id, :x, :y, :z, :w);'
         )
-        self.execute(query, dict(timestamp=time.time(),
-            user_id=client.user_id, x=x, y=y, z=z, w=w))
+        if RECORD_HISTORY:
+            self.execute(query, dict(timestamp=time.time(),
+                user_id=client.user_id, x=x, y=y, z=z, w=w))
         query = (
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'
@@ -397,6 +420,33 @@ class Model(object):
                 'x = :x and y = :y and z = :z;'
             )
             self.execute(query, dict(x=x, y=y, z=z))
+            query = (
+                'update light set w = 0 where '
+                'x = :x and y = :y and z = :z;'
+            )
+            self.execute(query, dict(x=x, y=y, z=z))
+    def on_light(self, client, x, y, z, w):
+        x, y, z, w = map(int, (x, y, z, w))
+        p, q = chunked(x), chunked(z)
+        block = self.get_block(x, y, z)
+        message = None
+        if client.user_id is None:
+            message = 'Only logged in users are allowed to build.'
+        elif block == 0:
+            message = 'Lights must be placed on a block.'
+        elif w < 0 or w > 15:
+            message = 'Invalid light value.'
+        if message is not None:
+            # TODO: client.send(LIGHT, p, q, x, y, z, previous)
+            client.send(REDRAW, p, q)
+            client.send(TALK, message)
+            return
+        query = (
+            'insert or replace into light (p, q, x, y, z, w) '
+            'values (:p, :q, :x, :y, :z, :w);'
+        )
+        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+        self.send_light(client, p, q, x, y, z, w)
     def on_sign(self, client, x, y, z, face, *args):
         if client.user_id is None:
             client.send(TALK, 'Only logged in users are allowed to build.')
@@ -540,6 +590,12 @@ class Model(object):
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
+            other.send(REDRAW, p, q)
+    def send_light(self, client, p, q, x, y, z, w):
+        for other in self.clients:
+            if other == client:
+                continue
+            other.send(LIGHT, p, q, x, y, z, w)
             other.send(REDRAW, p, q)
     def send_sign(self, client, p, q, x, y, z, face, text):
         for other in self.clients:

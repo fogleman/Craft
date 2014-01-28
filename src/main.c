@@ -802,21 +802,28 @@ void gen_sign_buffer(Chunk *chunk) {
     chunk->sign_faces = faces;
 }
 
-void dirty_chunk(Chunk *chunk) {
-    chunk->dirty = 1;
-    int has_light = 0;
+int has_lights(Chunk *chunk) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
-            if (other) {
-                Map *map = &other->lights;
-                if (map->size) {
-                    has_light = 1;
-                }
+            Chunk *other = chunk;
+            if (dp || dq) {
+                other = find_chunk(chunk->p + dp, chunk->q + dq);
+            }
+            if (!other) {
+                continue;
+            }
+            Map *map = &other->lights;
+            if (map->size) {
+                return 1;
             }
         }
     }
-    if (has_light) {
+    return 0;
+}
+
+void dirty_chunk(Chunk *chunk) {
+    chunk->dirty = 1;
+    if (has_lights(chunk)) {
         for (int dp = -1; dp <= 1; dp++) {
             for (int dq = -1; dq <= 1; dq++) {
                 Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
@@ -919,11 +926,15 @@ void gen_chunk_buffer(Chunk *chunk) {
     int oy = -1;
     int oz = chunk->q * CHUNK_SIZE - CHUNK_SIZE - 1;
 
-    // first pass - populate opaque array
+    // populate opaque array
+    int has_light = has_lights(chunk);
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             Chunk *other = chunk;
             if (dp || dq) {
+                if (!has_light) {
+                    continue;
+                }
                 other = find_chunk(chunk->p + dp, chunk->q + dq);
             }
             if (!other) {
@@ -970,7 +981,7 @@ void gen_chunk_buffer(Chunk *chunk) {
 
     Map *map = &chunk->map;
 
-    // second pass - count exposed faces
+    // count exposed faces
     chunk->miny = 256;
     chunk->maxy = 0;
     int faces = 0;
@@ -999,7 +1010,7 @@ void gen_chunk_buffer(Chunk *chunk) {
         faces += total;
     } END_MAP_FOR_EACH;
 
-    // third pass - generate geometry
+    // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
     MAP_FOR_EACH(map, e) {

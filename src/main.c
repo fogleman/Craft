@@ -1089,7 +1089,8 @@ void create_chunk(Chunk *chunk, int p, int q) {
     map_alloc(lights, 0xf);
     sign_list_alloc(signs, 16);
     create_world(p, q, map_set_func, map);
-    db_load_map(map, p, q);
+    db_load_blocks(map, p, q);
+    db_load_lights(lights, p, q);
     db_load_signs(signs, p, q);
     gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
@@ -1274,16 +1275,16 @@ void toggle_light(int x, int y, int z) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->lights;
-        int value = 15;
-        if (map_get(map, x, y, z) == value) {
+        if (map_get(map, x, y, z)) {
             map_set(map, x, y, z, 0);
+            db_insert_light(p, q, x, y, z, 0);
         }
         else {
-            map_set(map, x, y, z, value);
+            map_set(map, x, y, z, 15);
+            db_insert_light(p, q, x, y, z, 15);
         }
         dirty_chunk(chunk);
     }
-    // db_insert_light(p, q, x, y, z, w);
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {

@@ -117,6 +117,7 @@ typedef struct {
     char db_path[MAX_PATH_LENGTH];
     char server_addr[MAX_ADDR_LENGTH];
     int server_port;
+    int day_length;
     Block block0;
     Block block1;
     Block copy0;
@@ -126,26 +127,17 @@ typedef struct {
 static Model model;
 static Model *g = &model;
 
-static int server_day_length = -1;
-
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }
 
-int day_length() {
-    if (server_day_length != -1)
-        return server_day_length;
-    return DAY_LENGTH;
-}
-
 float time_of_day() {
-    if (day_length() <= 0) {
+    if (g->day_length <= 0) {
         return 0.5;
     }
     float t;
     t = glfwGetTime();
-    t = t + day_length() / 3.0;
-    t = t / day_length();
+    t = t / g->day_length;
     t = t - (int)t;
     return t;
 }
@@ -2297,9 +2289,11 @@ void parse_buffer(char *buffer) {
                 dirty_chunk(chunk);
             }
         }
-        double time;
-        if (sscanf(line, "E,%lg,%d", &time, &server_day_length) == 2) {
-            glfwSetTime(time);
+        double elapsed;
+        int day_length;
+        if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
+            glfwSetTime(elapsed);
+            g->day_length = day_length;
         }
         if (line[0] == 'T' && line[1] == ',') {
             char *text = line + 2;
@@ -2342,6 +2336,8 @@ void reset_model() {
     g->typing = 0;
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);
     g->message_index = 0;
+    g->day_length = DAY_LENGTH;
+    glfwSetTime(g->day_length / 3.0);
 }
 
 int main(int argc, char **argv) {

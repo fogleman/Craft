@@ -1,6 +1,3 @@
-import time
-start_time = time.time()
-
 from math import floor
 from world import World
 import Queue
@@ -47,9 +44,9 @@ POSITION = 'P'
 REDRAW = 'R'
 SIGN = 'S'
 TALK = 'T'
+TIME = 'E'
 VERSION = 'V'
 YOU = 'U'
-TIME = 'E'
 
 try:
     from config import *
@@ -288,9 +285,9 @@ class Model(object):
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
+        client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
-        client.send(TIME, time.time() - start_time, DAY_LENGTH)
         self.send_position(client)
         self.send_positions(client)
         self.send_nick(client)

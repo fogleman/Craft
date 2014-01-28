@@ -1289,13 +1289,25 @@ void toggle_light(int x, int y, int z) {
         if (map_get(map, x, y, z)) {
             map_set(map, x, y, z, 0);
             db_insert_light(p, q, x, y, z, 0);
+            client_light(x, y, z, 0);
         }
         else {
             map_set(map, x, y, z, 15);
             db_insert_light(p, q, x, y, z, 15);
+            client_light(x, y, z, 15);
         }
         dirty_chunk(chunk);
     }
+}
+
+void set_light(int p, int q, int x, int y, int z, int w) {
+    Chunk *chunk = find_chunk(p, q);
+    if (chunk) {
+        Map *map = &chunk->lights;
+        map_set(map, x, y, z, w);
+        dirty_chunk(chunk);
+    }
+    db_insert_light(p, q, x, y, z, w);
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
@@ -1314,6 +1326,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     }
     if (w == 0 && chunked(x) == p && chunked(z) == q) {
         unset_sign(x, y, z);
+        set_light(p, q, x, y, z, 0);
     }
 }
 
@@ -2225,6 +2238,11 @@ void parse_buffer(char *buffer) {
             if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
+        }
+        if (sscanf(line, "L,%d,%d,%d,%d,%d,%d",
+            &bp, &bq, &bx, &by, &bz, &bw) == 6)
+        {
+            set_light(bp, bq, bx, by, bz, bw);
         }
         float px, py, pz, prx, pry;
         if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",

@@ -131,6 +131,7 @@ int chunked(float x) {
 }
 
 float time_of_day() {
+    return 0;
     if (DAY_LENGTH <= 0) {
         return 0.5;
     }
@@ -803,6 +804,7 @@ void gen_sign_buffer(Chunk *chunk) {
 }
 
 void dirty_chunk(Chunk *chunk) {
+    // TODO: only dirty surrounding chunks if there are lights
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
@@ -842,65 +844,76 @@ void occlusion(
             int value = side1 && side2 ? 3 : corner + side1 + side2;
             float shade_sum = 0;
             float light_sum = 0;
+            int is_light = lights[13] == 15;
             for (int k = 0; k < 4; k++) {
                 shade_sum += shades[lookup4[i][j][k]];
                 light_sum += lights[lookup4[i][j][k]];
             }
+            if (is_light) {
+                light_sum = 15 * 4 * 10;
+            }
             float total = curve[value] + shade_sum / 4.0;
             ao[i][j] = MIN(total, 1.0);
-            light[i][j] = light_sum / 15.0 / 2.0;
+            light[i][j] = light_sum / 15.0 / 4.0;
         }
     }
 }
 
+#define XZ_SIZE (CHUNK_SIZE * 3 + 2)
+#define Y_SIZE 258
+
 void light_fill(
-    char blocks[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3],
-    char light[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3],
+    char opaque[XZ_SIZE][Y_SIZE][XZ_SIZE],
+    char light[XZ_SIZE][Y_SIZE][XZ_SIZE],
     int x, int y, int z, int value, int force)
 {
     if (x < 0 || y < 0 || z < 0) {
         return;
     }
-    if (x >= CHUNK_SIZE * 3 || y >= 258 || z >= CHUNK_SIZE * 3) {
+    if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
         return;
     }
     if (light[x][y][z] >= value) {
         return;
     }
-    if (!force && !is_transparent(blocks[x][y][z])) {
+    if (!force && opaque[x][y][z]) {
         return;
     }
     light[x][y][z] = value;
     value--;
-    light_fill(blocks, light, x - 1, y, z, value, 0);
-    light_fill(blocks, light, x + 1, y, z, value, 0);
-    light_fill(blocks, light, x, y - 1, z, value, 0);
-    light_fill(blocks, light, x, y + 1, z, value, 0);
-    light_fill(blocks, light, x, y, z - 1, value, 0);
-    light_fill(blocks, light, x, y, z + 1, value, 0);
+    light_fill(opaque, light, x - 1, y, z, value, 0);
+    light_fill(opaque, light, x + 1, y, z, value, 0);
+    light_fill(opaque, light, x, y - 1, z, value, 0);
+    light_fill(opaque, light, x, y + 1, z, value, 0);
+    light_fill(opaque, light, x, y, z - 1, value, 0);
+    light_fill(opaque, light, x, y, z + 1, value, 0);
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
-    static char blocks[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3];
-    static char light[CHUNK_SIZE * 3][258][CHUNK_SIZE * 3];
-    static char highest[CHUNK_SIZE * 3][CHUNK_SIZE * 3];
+    // printf("gen_chunk_buffer(%d, %d)\n", chunk->p, chunk->q);
+    static char opaque[XZ_SIZE][Y_SIZE][XZ_SIZE];
+    static char light[XZ_SIZE][Y_SIZE][XZ_SIZE];
+    static char highest[XZ_SIZE][XZ_SIZE];
     static char neighbors[27];
     static char lights[27];
     static float shades[27];
-    memset(blocks, 0, sizeof(blocks));
+    memset(opaque, 0, sizeof(opaque));
     memset(light, 0, sizeof(light));
     memset(highest, 0, sizeof(highest));
     memset(neighbors, 0, sizeof(neighbors));
     memset(lights, 0, sizeof(lights));
     memset(shades, 0, sizeof(shades));
-    int ox = chunk->p * CHUNK_SIZE - CHUNK_SIZE;
+    int ox = chunk->p * CHUNK_SIZE - CHUNK_SIZE - 1;
     int oy = -1;
-    int oz = chunk->q * CHUNK_SIZE - CHUNK_SIZE;
+    int oz = chunk->q * CHUNK_SIZE - CHUNK_SIZE - 1;
 
-    // first pass - populate blocks array
+    // first pass - populate opaque array
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+            Chunk *other = chunk;
+            if (dp || dq) {
+                other = find_chunk(chunk->p + dp, chunk->q + dq);
+            }
             if (!other) {
                 continue;
             }
@@ -914,12 +927,12 @@ void gen_chunk_buffer(Chunk *chunk) {
                 if (x < 0 || y < 0 || z < 0) {
                     continue;
                 }
-                if (x >= CHUNK_SIZE * 3 || y >= 258 || z >= CHUNK_SIZE * 3) {
+                if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
                     continue;
                 }
                 // END TODO
-                blocks[x][y][z] = w;
-                if (!is_transparent(w)) {
+                opaque[x][y][z] = !is_transparent(w);
+                if (opaque[x][y][z]) {
                     highest[x][z] = MAX(highest[x][z], y);
                 }
             } END_MAP_FOR_EACH;
@@ -938,7 +951,7 @@ void gen_chunk_buffer(Chunk *chunk) {
                 int x = e->x - ox;
                 int y = e->y - oy;
                 int z = e->z - oz;
-                light_fill(blocks, light, x, y, z, e->w, 1);
+                light_fill(opaque, light, x, y, z, e->w, 1);
             } END_MAP_FOR_EACH;
         }
     }
@@ -956,12 +969,12 @@ void gen_chunk_buffer(Chunk *chunk) {
         int x = e->x - ox;
         int y = e->y - oy;
         int z = e->z - oz;
-        int f1 = is_transparent(blocks[x - 1][y][z]);
-        int f2 = is_transparent(blocks[x + 1][y][z]);
-        int f3 = is_transparent(blocks[x][y + 1][z]);
-        int f4 = is_transparent(blocks[x][y - 1][z]) && (e->y > 0);
-        int f5 = is_transparent(blocks[x][y][z - 1]);
-        int f6 = is_transparent(blocks[x][y][z + 1]);
+        int f1 = !opaque[x - 1][y][z];
+        int f2 = !opaque[x + 1][y][z];
+        int f3 = !opaque[x][y + 1][z];
+        int f4 = !opaque[x][y - 1][z] && (e->y > 0);
+        int f5 = !opaque[x][y][z - 1];
+        int f6 = !opaque[x][y][z + 1];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             continue;
@@ -984,12 +997,12 @@ void gen_chunk_buffer(Chunk *chunk) {
         int x = e->x - ox;
         int y = e->y - oy;
         int z = e->z - oz;
-        int f1 = is_transparent(blocks[x - 1][y][z]);
-        int f2 = is_transparent(blocks[x + 1][y][z]);
-        int f3 = is_transparent(blocks[x][y + 1][z]);
-        int f4 = is_transparent(blocks[x][y - 1][z]) && (e->y > 0);
-        int f5 = is_transparent(blocks[x][y][z - 1]);
-        int f6 = is_transparent(blocks[x][y][z + 1]);
+        int f1 = !opaque[x - 1][y][z];
+        int f2 = !opaque[x + 1][y][z];
+        int f3 = !opaque[x][y + 1][z];
+        int f4 = !opaque[x][y - 1][z] && (e->y > 0);
+        int f5 = !opaque[x][y][z - 1];
+        int f6 = !opaque[x][y][z + 1];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             continue;
@@ -1008,14 +1021,12 @@ void gen_chunk_buffer(Chunk *chunk) {
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     for (int dz = -1; dz <= 1; dz++) {
-                        int w = blocks[x + dx][y + dy][z + dz];
-                        neighbors[index] = !is_transparent(w);
+                        neighbors[index] = opaque[x + dx][y + dy][z + dz];
                         lights[index] = light[x + dx][y + dy][z + dz];
                         shades[index] = 0;
                         if (y + dy < highest[x + dx][z + dz]) {
                             for (int oy = 0; oy < 8; oy++) {
-                                if (!is_transparent(
-                                    blocks[x + dx][y + dy + oy][z + dz]))
+                                if (opaque[x + dx][y + dy + oy][z + dz])
                                 {
                                     shades[index] = 1.0 - oy * 0.125;
                                     break;
@@ -1052,6 +1063,7 @@ void map_set_func(int x, int y, int z, int w, void *arg) {
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {
+    // printf("create_chunk(%d, %d)\n", p, q);
     chunk->p = p;
     chunk->q = q;
     chunk->faces = 0;
@@ -1068,7 +1080,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     create_world(p, q, map_set_func, map);
     db_load_map(map, p, q);
     db_load_signs(signs, p, q);
-    gen_chunk_buffer(chunk);
+    // gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
 }

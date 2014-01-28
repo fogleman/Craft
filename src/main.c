@@ -126,18 +126,26 @@ typedef struct {
 static Model model;
 static Model *g = &model;
 
+static int server_day_length = -1;
+
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }
 
+int day_length() {
+    if (server_day_length != -1)
+        return server_day_length;
+    return DAY_LENGTH;
+}
+
 float time_of_day() {
-    if (DAY_LENGTH <= 0) {
+    if (day_length() <= 0) {
         return 0.5;
     }
     float t;
     t = glfwGetTime();
-    t = t + DAY_LENGTH / 3.0;
-    t = t / DAY_LENGTH;
+    t = t + day_length() / 3.0;
+    t = t / day_length();
     t = t - (int)t;
     return t;
 }
@@ -2288,6 +2296,10 @@ void parse_buffer(char *buffer) {
             if (chunk) {
                 dirty_chunk(chunk);
             }
+        }
+        double time;
+        if (sscanf(line, "E,%lg,%d", &time, &server_day_length) == 2) {
+            glfwSetTime(time);
         }
         if (line[0] == 'T' && line[1] == ',') {
             char *text = line + 2;

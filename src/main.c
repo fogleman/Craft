@@ -2292,7 +2292,7 @@ void parse_buffer(char *buffer) {
         double elapsed;
         int day_length;
         if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
-            glfwSetTime(elapsed);
+            glfwSetTime((int)elapsed % day_length);
             g->day_length = day_length;
         }
         if (line[0] == 'T' && line[1] == ',') {

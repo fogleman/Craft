@@ -125,6 +125,7 @@ typedef struct {
     char server_addr[MAX_ADDR_LENGTH];
     int server_port;
     int day_length;
+    int time_changed;
     Block block0;
     Block block1;
     Block copy0;
@@ -899,33 +900,37 @@ void occlusion(
 }
 
 #define XZ_SIZE (CHUNK_SIZE * 3 + 2)
+#define XZ_LO (CHUNK_SIZE)
+#define XZ_HI (CHUNK_SIZE * 2 + 1)
 #define Y_SIZE 258
 
 void light_fill(
     char opaque[XZ_SIZE][Y_SIZE][XZ_SIZE],
     char light[XZ_SIZE][Y_SIZE][XZ_SIZE],
-    int x, int y, int z, int value, int force)
+    int x, int y, int z, int w, int force)
 {
-    if (x < 0 || y < 0 || z < 0) {
+    if (x + w < XZ_LO || z + w < XZ_LO) {
         return;
     }
-    if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
+    if (x - w > XZ_HI || z - w > XZ_HI) {
         return;
     }
-    if (light[x][y][z] >= value) {
+    if (y < 0 || y >= Y_SIZE) {
+        return;
+    }
+    if (light[x][y][z] >= w) {
         return;
     }
     if (!force && opaque[x][y][z]) {
         return;
     }
-    light[x][y][z] = value;
-    value--;
-    light_fill(opaque, light, x - 1, y, z, value, 0);
-    light_fill(opaque, light, x + 1, y, z, value, 0);
-    light_fill(opaque, light, x, y - 1, z, value, 0);
-    light_fill(opaque, light, x, y + 1, z, value, 0);
-    light_fill(opaque, light, x, y, z - 1, value, 0);
-    light_fill(opaque, light, x, y, z + 1, value, 0);
+    light[x][y][z] = w--;
+    light_fill(opaque, light, x - 1, y, z, w, 0);
+    light_fill(opaque, light, x + 1, y, z, w, 0);
+    light_fill(opaque, light, x, y - 1, z, w, 0);
+    light_fill(opaque, light, x, y + 1, z, w, 0);
+    light_fill(opaque, light, x, y, z - 1, w, 0);
+    light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
@@ -982,10 +987,13 @@ void gen_chunk_buffer(Chunk *chunk) {
     }
 
     // flood fill light intensities
-    if (SHOW_LIGHTS) {
+    if (has_light) {
         for (int dp = -1; dp <= 1; dp++) {
             for (int dq = -1; dq <= 1; dq++) {
-                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+                Chunk *other = chunk;
+                if (dp || dq) {
+                    other = find_chunk(chunk->p + dp, chunk->q + dq);
+                }
                 if (!other) {
                     continue;
                 }
@@ -1058,7 +1066,7 @@ void gen_chunk_buffer(Chunk *chunk) {
                     neighbors[index] = opaque[x + dx][y + dy][z + dz];
                     lights[index] = light[x + dx][y + dy][z + dz];
                     shades[index] = 0;
-                    if (y + dy < highest[x + dx][z + dz]) {
+                    if (y + dy <= highest[x + dx][z + dz]) {
                         for (int oy = 0; oy < 8; oy++) {
                             if (opaque[x + dx][y + dy + oy][z + dz]) {
                                 shades[index] = 1.0 - oy * 0.125;
@@ -1075,19 +1083,17 @@ void gen_chunk_buffer(Chunk *chunk) {
         occlusion(neighbors, lights, shades, ao, light);
         if (is_plant(e->w)) {
             total = 4;
-            float mean_ao = 0;
-            float mean_light = 0;
+            float min_ao = 1;
+            float max_light = 0;
             for (int a = 0; a < 6; a++) {
                 for (int b = 0; b < 4; b++) {
-                    mean_ao += ao[a][b];
-                    mean_light += light[a][b];
+                    min_ao = MIN(min_ao, ao[a][b]);
+                    max_light = MAX(max_light, light[a][b]);
                 }
             }
-            mean_ao /= 24;
-            mean_light /= 24;
             float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
-                data + offset, mean_ao, mean_light,
+                data + offset, min_ao, max_light,
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
@@ -1228,7 +1234,8 @@ void ensure_chunks(Player *player) {
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
-            int score = (invisible << 16) | distance;
+            int priority = chunk ? chunk->dirty : 0;
+            int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
                 best_score = score;
                 best_a = a;
@@ -1326,10 +1333,14 @@ void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->lights;
-        map_set(map, x, y, z, w);
-        dirty_chunk(chunk);
+        if (map_set(map, x, y, z, w)) {
+            dirty_chunk(chunk);
+            db_insert_light(p, q, x, y, z, w);
+        }
     }
-    db_insert_light(p, q, x, y, z, w);
+    else {
+        db_insert_light(p, q, x, y, z, w);
+    }
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
@@ -2251,6 +2262,9 @@ void parse_buffer(char *buffer) {
             me->id = pid;
             s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
             force_chunks(me);
+            if (uy == 0) {
+                s->y = highest_block(s->x, s->z) + 2;
+            }
         }
         int bp, bq, bx, by, bz, bw;
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
@@ -2299,8 +2313,9 @@ void parse_buffer(char *buffer) {
         double elapsed;
         int day_length;
         if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
-            glfwSetTime((int)elapsed % day_length);
+            glfwSetTime(fmod(elapsed, day_length));
             g->day_length = day_length;
+            g->time_changed = 1;
         }
         if (line[0] == 'T' && line[1] == ',') {
             char *text = line + 2;
@@ -2345,6 +2360,7 @@ void reset_model() {
     g->message_index = 0;
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
+    g->time_changed = 1;
 }
 
 int main(int argc, char **argv) {
@@ -2549,6 +2565,12 @@ int main(int argc, char **argv) {
             glViewport(0, 0, g->width, g->height);
 
             // FRAME RATE //
+            if (g->time_changed) {
+                g->time_changed = 0;
+                last_commit = glfwGetTime();
+                last_update = glfwGetTime();
+                memset(&fps, 0, sizeof(fps));
+            }
             update_fps(&fps);
             double now = glfwGetTime();
             double dt = now - previous;
@@ -2699,10 +2721,6 @@ int main(int argc, char **argv) {
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);
             glfwPollEvents();
-            if (!g->typing && glfwGetKey(g->window, CRAFT_KEY_QUIT)) {
-                running = 0;
-                break;
-            }
             if (glfwWindowShouldClose(g->window)) {
                 running = 0;
                 break;

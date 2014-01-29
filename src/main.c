@@ -1051,7 +1051,7 @@ void gen_chunk_buffer(Chunk *chunk) {
                     neighbors[index] = opaque[x + dx][y + dy][z + dz];
                     lights[index] = light[x + dx][y + dy][z + dz];
                     shades[index] = 0;
-                    if (y + dy < highest[x + dx][z + dz]) {
+                    if (y + dy <= highest[x + dx][z + dz]) {
                         for (int oy = 0; oy < 8; oy++) {
                             if (opaque[x + dx][y + dy + oy][z + dz]) {
                                 shades[index] = 1.0 - oy * 0.125;

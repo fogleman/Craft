@@ -2529,7 +2529,9 @@ int main(int argc, char **argv) {
             // FRAME RATE //
             update_fps(&fps);
             double now = glfwGetTime();
-            double dt = MIN(now - previous, 0.2);
+            double dt = now - previous;
+            dt = MIN(dt, 0.2);
+            dt = MAX(dt, 0.0);
             previous = now;
 
             // HANDLE MOUSE INPUT //

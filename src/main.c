@@ -979,7 +979,10 @@ void gen_chunk_buffer(Chunk *chunk) {
     if (has_light) {
         for (int dp = -1; dp <= 1; dp++) {
             for (int dq = -1; dq <= 1; dq++) {
-                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+                Chunk *other = chunk;
+                if (dp || dq) {
+                    other = find_chunk(chunk->p + dp, chunk->q + dq);
+                }
                 if (!other) {
                     continue;
                 }

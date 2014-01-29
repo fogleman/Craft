@@ -149,7 +149,7 @@ float get_daylight() {
         return 1 / (1 + powf(2, -t));
     }
     else {
-        float t = (timer - 0.90) * 100;
+        float t = (timer - 0.85) * 100;
         return 1 - 1 / (1 + powf(2, -t));
     }
 }

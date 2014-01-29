@@ -2245,6 +2245,9 @@ void parse_buffer(char *buffer) {
             me->id = pid;
             s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
             force_chunks(me);
+            if (uy == 0) {
+                s->y = highest_block(s->x, s->z) + 2;
+            }
         }
         int bp, bq, bx, by, bz, bw;
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",

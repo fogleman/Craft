@@ -118,6 +118,7 @@ typedef struct {
     char server_addr[MAX_ADDR_LENGTH];
     int server_port;
     int day_length;
+    int time_changed;
     Block block0;
     Block block1;
     Block copy0;
@@ -1320,10 +1321,14 @@ void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->lights;
-        map_set(map, x, y, z, w);
-        dirty_chunk(chunk);
+        if (map_set(map, x, y, z, w)) {
+            dirty_chunk(chunk);
+            db_insert_light(p, q, x, y, z, w);
+        }
     }
-    db_insert_light(p, q, x, y, z, w);
+    else {
+        db_insert_light(p, q, x, y, z, w);
+    }
 }
 
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
@@ -2298,6 +2303,7 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
             glfwSetTime(fmod(elapsed, day_length));
             g->day_length = day_length;
+            g->time_changed = 1;
         }
         if (line[0] == 'T' && line[1] == ',') {
             char *text = line + 2;
@@ -2342,6 +2348,7 @@ void reset_model() {
     g->message_index = 0;
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
+    g->time_changed = 1;
 }
 
 int main(int argc, char **argv) {
@@ -2531,6 +2538,12 @@ int main(int argc, char **argv) {
             glViewport(0, 0, g->width, g->height);
 
             // FRAME RATE //
+            if (g->time_changed) {
+                g->time_changed = 0;
+                last_commit = glfwGetTime();
+                last_update = glfwGetTime();
+                memset(&fps, 0, sizeof(fps));
+            }
             update_fps(&fps);
             double now = glfwGetTime();
             double dt = now - previous;

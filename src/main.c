@@ -893,33 +893,37 @@ void occlusion(
 }
 
 #define XZ_SIZE (CHUNK_SIZE * 3 + 2)
+#define XZ_LO (CHUNK_SIZE)
+#define XZ_HI (CHUNK_SIZE * 2 + 1)
 #define Y_SIZE 258
 
 void light_fill(
     char opaque[XZ_SIZE][Y_SIZE][XZ_SIZE],
     char light[XZ_SIZE][Y_SIZE][XZ_SIZE],
-    int x, int y, int z, int value, int force)
+    int x, int y, int z, int w, int force)
 {
-    if (x < 0 || y < 0 || z < 0) {
+    if (x + w < XZ_LO || z + w < XZ_LO) {
         return;
     }
-    if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
+    if (x - w > XZ_HI || z - w > XZ_HI) {
         return;
     }
-    if (light[x][y][z] >= value) {
+    if (y < 0 || y >= Y_SIZE) {
+        return;
+    }
+    if (light[x][y][z] >= w) {
         return;
     }
     if (!force && opaque[x][y][z]) {
         return;
     }
-    light[x][y][z] = value;
-    value--;
-    light_fill(opaque, light, x - 1, y, z, value, 0);
-    light_fill(opaque, light, x + 1, y, z, value, 0);
-    light_fill(opaque, light, x, y - 1, z, value, 0);
-    light_fill(opaque, light, x, y + 1, z, value, 0);
-    light_fill(opaque, light, x, y, z - 1, value, 0);
-    light_fill(opaque, light, x, y, z + 1, value, 0);
+    light[x][y][z] = w--;
+    light_fill(opaque, light, x - 1, y, z, w, 0);
+    light_fill(opaque, light, x + 1, y, z, w, 0);
+    light_fill(opaque, light, x, y - 1, z, w, 0);
+    light_fill(opaque, light, x, y + 1, z, w, 0);
+    light_fill(opaque, light, x, y, z - 1, w, 0);
+    light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
 void gen_chunk_buffer(Chunk *chunk) {

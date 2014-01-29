@@ -162,7 +162,14 @@ void make_player(
     float x, float y, float z, float rx, float ry)
 {
     float ao[6][4] = {0};
-    float light[6][4] = {0};
+    float light[6][4] = {
+        {0.8, 0.8, 0.8, 0.8},
+        {0.8, 0.8, 0.8, 0.8},
+        {0.8, 0.8, 0.8, 0.8},
+        {0.8, 0.8, 0.8, 0.8},
+        {0.8, 0.8, 0.8, 0.8},
+        {0.8, 0.8, 0.8, 0.8}
+    };
     make_cube_faces(
         data, ao, light,
         1, 1, 1, 1, 1, 1,

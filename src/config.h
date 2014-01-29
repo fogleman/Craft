@@ -11,10 +11,11 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
-#define DAY_LENGTH 300
+#define DAY_LENGTH 600
 #define INVERT_MOUSE 0
 
 // rendering options
+#define SHOW_LIGHTS 1
 #define SHOW_PLANTS 1
 #define SHOW_CLOUDS 1
 #define SHOW_TREES 1
@@ -26,7 +27,6 @@
 #define SHOW_PLAYER_NAMES 1
 
 // key bindings
-#define CRAFT_KEY_QUIT 'Q'
 #define CRAFT_KEY_FORWARD 'W'
 #define CRAFT_KEY_BACKWARD 'S'
 #define CRAFT_KEY_LEFT 'A'

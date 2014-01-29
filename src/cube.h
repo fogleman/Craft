@@ -13,7 +13,7 @@ void make_cube(
     float x, float y, float z, float n, int w);
 
 void make_plant(
-    float *data,
+    float *data, float ao, float light,
     float px, float py, float pz, float n, int w, float rotation);
 
 void make_player(

@@ -2699,10 +2699,6 @@ int main(int argc, char **argv) {
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);
             glfwPollEvents();
-            if (!g->typing && glfwGetKey(g->window, CRAFT_KEY_QUIT)) {
-                running = 0;
-                break;
-            }
             if (glfwWindowShouldClose(g->window)) {
                 running = 0;
                 break;

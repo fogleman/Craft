@@ -975,7 +975,7 @@ void gen_chunk_buffer(Chunk *chunk) {
     }
 
     // flood fill light intensities
-    if (SHOW_LIGHTS) {
+    if (has_light) {
         for (int dp = -1; dp <= 1; dp++) {
             for (int dq = -1; dq <= 1; dq++) {
                 Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
@@ -1221,7 +1221,8 @@ void ensure_chunks(Player *player) {
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
-            int score = (invisible << 16) | distance;
+            int priority = chunk ? chunk->dirty : 0;
+            int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
                 best_score = score;
                 best_a = a;

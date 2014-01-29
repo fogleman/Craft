@@ -22,6 +22,7 @@ CHUNK_SIZE = 32
 BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
+DAY_LENGTH = 600
 SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
 RECORD_HISTORY = False
@@ -43,6 +44,7 @@ POSITION = 'P'
 REDRAW = 'R'
 SIGN = 'S'
 TALK = 'T'
+TIME = 'E'
 VERSION = 'V'
 YOU = 'U'
 
@@ -283,6 +285,7 @@ class Model(object):
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
+        client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
         self.send_position(client)

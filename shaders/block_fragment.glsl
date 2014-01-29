@@ -28,7 +28,7 @@ void main() {
     float ao = cloud ? 1.0 - (1.0 - fragment_ao) * 0.2 : fragment_ao;
     ao = min(1.0, ao + fragment_light);
     df = min(1.0, df + fragment_light);
-    float value = min(1.25, daylight + fragment_light);
+    float value = min(1.0, daylight + fragment_light);
     vec3 light_color = vec3(value * 0.3 + 0.2);
     vec3 ambient = vec3(value * 0.3 + 0.2);
     vec3 light = ambient + light_color * df;

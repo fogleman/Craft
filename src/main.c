@@ -124,6 +124,7 @@ typedef struct {
     char db_path[MAX_PATH_LENGTH];
     char server_addr[MAX_ADDR_LENGTH];
     int server_port;
+    int day_length;
     Block block0;
     Block block1;
     Block copy0;
@@ -138,13 +139,12 @@ int chunked(float x) {
 }
 
 float time_of_day() {
-    if (DAY_LENGTH <= 0) {
+    if (g->day_length <= 0) {
         return 0.5;
     }
     float t;
     t = glfwGetTime();
-    t = t + DAY_LENGTH / 3.0;
-    t = t / DAY_LENGTH;
+    t = t / g->day_length;
     t = t - (int)t;
     return t;
 }
@@ -156,7 +156,7 @@ float get_daylight() {
         return 1 / (1 + powf(2, -t));
     }
     else {
-        float t = (timer - 0.90) * 100;
+        float t = (timer - 0.85) * 100;
         return 1 - 1 / (1 + powf(2, -t));
     }
 }
@@ -235,14 +235,23 @@ GLuint gen_sky_buffer() {
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 6);
     float ao[6][4] = {0};
-    float light[6][4] = {0};
+    float light[6][4] = {
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5},
+        {0.5, 0.5, 0.5, 0.5}
+    };
     make_cube(data, ao, light, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
     return gen_faces(10, 6, data);
 }
 
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 4);
-    make_plant(data, x, y, z, n, w, 45);
+    float ao = 0;
+    float light = 1;
+    make_plant(data, ao, light, x, y, z, n, w, 45);
     return gen_faces(10, 4, data);
 }
 
@@ -810,6 +819,9 @@ void gen_sign_buffer(Chunk *chunk) {
 }
 
 int has_lights(Chunk *chunk) {
+    if (!SHOW_LIGHTS) {
+        return 0;
+    }
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             Chunk *other = chunk;
@@ -970,19 +982,21 @@ void gen_chunk_buffer(Chunk *chunk) {
     }
 
     // flood fill light intensities
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
-            if (!other) {
-                continue;
+    if (SHOW_LIGHTS) {
+        for (int dp = -1; dp <= 1; dp++) {
+            for (int dq = -1; dq <= 1; dq++) {
+                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
+                if (!other) {
+                    continue;
+                }
+                Map *map = &other->lights;
+                MAP_FOR_EACH(map, e) {
+                    int x = e->x - ox;
+                    int y = e->y - oy;
+                    int z = e->z - oz;
+                    light_fill(opaque, light, x, y, z, e->w, 1);
+                } END_MAP_FOR_EACH;
             }
-            Map *map = &other->lights;
-            MAP_FOR_EACH(map, e) {
-                int x = e->x - ox;
-                int y = e->y - oy;
-                int z = e->z - oz;
-                light_fill(opaque, light, x, y, z, e->w, 1);
-            } END_MAP_FOR_EACH;
         }
     }
 
@@ -1037,39 +1051,46 @@ void gen_chunk_buffer(Chunk *chunk) {
         if (total == 0) {
             continue;
         }
+        int index = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    neighbors[index] = opaque[x + dx][y + dy][z + dz];
+                    lights[index] = light[x + dx][y + dy][z + dz];
+                    shades[index] = 0;
+                    if (y + dy < highest[x + dx][z + dz]) {
+                        for (int oy = 0; oy < 8; oy++) {
+                            if (opaque[x + dx][y + dy + oy][z + dz]) {
+                                shades[index] = 1.0 - oy * 0.125;
+                                break;
+                            }
+                        }
+                    }
+                    index++;
+                }
+            }
+        }
+        float ao[6][4];
+        float light[6][4];
+        occlusion(neighbors, lights, shades, ao, light);
         if (is_plant(e->w)) {
             total = 4;
-        }
-        if (is_plant(e->w)) {
+            float mean_ao = 0;
+            float mean_light = 0;
+            for (int a = 0; a < 6; a++) {
+                for (int b = 0; b < 4; b++) {
+                    mean_ao += ao[a][b];
+                    mean_light += light[a][b];
+                }
+            }
+            mean_ao /= 24;
+            mean_light /= 24;
             float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
-                data + offset,
+                data + offset, mean_ao, mean_light,
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {
-            int index = 0;
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        neighbors[index] = opaque[x + dx][y + dy][z + dz];
-                        lights[index] = light[x + dx][y + dy][z + dz];
-                        shades[index] = 0;
-                        if (y + dy < highest[x + dx][z + dz]) {
-                            for (int oy = 0; oy < 8; oy++) {
-                                if (opaque[x + dx][y + dy + oy][z + dz])
-                                {
-                                    shades[index] = 1.0 - oy * 0.125;
-                                    break;
-                                }
-                            }
-                        }
-                        index++;
-                    }
-                }
-            }
-            float ao[6][4];
-            float light[6][4];
-            occlusion(neighbors, lights, shades, ao, light);
             make_cube(
                 data + offset, ao, light,
                 f1, f2, f3, f4, f5, f6,
@@ -1293,16 +1314,10 @@ void toggle_light(int x, int y, int z) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->lights;
-        if (map_get(map, x, y, z)) {
-            map_set(map, x, y, z, 0);
-            db_insert_light(p, q, x, y, z, 0);
-            client_light(x, y, z, 0);
-        }
-        else {
-            map_set(map, x, y, z, 15);
-            db_insert_light(p, q, x, y, z, 15);
-            client_light(x, y, z, 15);
-        }
+        int w = map_get(map, x, y, z) ? 0 : 15;
+        map_set(map, x, y, z, w);
+        db_insert_light(p, q, x, y, z, w);
+        client_light(x, y, z, w);
         dirty_chunk(chunk);
     }
 }
@@ -2281,6 +2296,12 @@ void parse_buffer(char *buffer) {
                 dirty_chunk(chunk);
             }
         }
+        double elapsed;
+        int day_length;
+        if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
+            glfwSetTime((int)elapsed % day_length);
+            g->day_length = day_length;
+        }
         if (line[0] == 'T' && line[1] == ',') {
             char *text = line + 2;
             add_message(text);
@@ -2322,6 +2343,8 @@ void reset_model() {
     g->typing = 0;
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);
     g->message_index = 0;
+    g->day_length = DAY_LENGTH;
+    glfwSetTime(g->day_length / 3.0);
 }
 
 int main(int argc, char **argv) {
@@ -2528,7 +2551,9 @@ int main(int argc, char **argv) {
             // FRAME RATE //
             update_fps(&fps);
             double now = glfwGetTime();
-            double dt = MIN(now - previous, 0.2);
+            double dt = now - previous;
+            dt = MIN(dt, 0.2);
+            dt = MAX(dt, 0.0);
             previous = now;
 
             // HANDLE MOUSE INPUT //

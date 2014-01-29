@@ -1069,19 +1069,17 @@ void gen_chunk_buffer(Chunk *chunk) {
         occlusion(neighbors, lights, shades, ao, light);
         if (is_plant(e->w)) {
             total = 4;
-            float mean_ao = 0;
-            float mean_light = 0;
+            float min_ao = 1;
+            float max_light = 0;
             for (int a = 0; a < 6; a++) {
                 for (int b = 0; b < 4; b++) {
-                    mean_ao += ao[a][b];
-                    mean_light += light[a][b];
+                    min_ao = MIN(min_ao, ao[a][b]);
+                    max_light = MAX(max_light, light[a][b]);
                 }
             }
-            mean_ao /= 24;
-            mean_light /= 24;
             float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
             make_plant(
-                data + offset, mean_ao, mean_light,
+                data + offset, min_ao, max_light,
                 e->x, e->y, e->z, 0.5, e->w, rotation);
         }
         else {

@@ -591,9 +591,9 @@ int highest_block(float x, float z) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
-        MAP_FOR_EACH(map, e) {
-            if (is_obstacle(e->w) && e->x == nx && e->z == nz) {
-                result = MAX(result, e->y);
+        MAP_FOR_EACH(map, ex, ey, ez, ew) {
+            if (is_obstacle(ew) && ex == nx && ez == nz) {
+                result = MAX(result, ey);
             }
         } END_MAP_FOR_EACH;
     }
@@ -984,11 +984,11 @@ void compute_chunk(WorkerItem *item) {
             if (!map) {
                 continue;
             }
-            MAP_FOR_EACH(map, e) {
-                int x = e->x - ox;
-                int y = e->y - oy;
-                int z = e->z - oz;
-                int w = e->w;
+            MAP_FOR_EACH(map, ex, ey, ez, ew) {
+                int x = ex - ox;
+                int y = ey - oy;
+                int z = ez - oz;
+                int w = ew;
                 // TODO: this should be unnecessary
                 if (x < 0 || y < 0 || z < 0) {
                     continue;
@@ -1013,11 +1013,11 @@ void compute_chunk(WorkerItem *item) {
                 if (!map) {
                     continue;
                 }
-                MAP_FOR_EACH(map, e) {
-                    int x = e->x - ox;
-                    int y = e->y - oy;
-                    int z = e->z - oz;
-                    light_fill(opaque, light, x, y, z, e->w, 1);
+                MAP_FOR_EACH(map, ex, ey, ez, ew) {
+                    int x = ex - ox;
+                    int y = ey - oy;
+                    int z = ez - oz;
+                    light_fill(opaque, light, x, y, z, ew, 1);
                 } END_MAP_FOR_EACH;
             }
         }
@@ -1029,45 +1029,45 @@ void compute_chunk(WorkerItem *item) {
     int miny = 256;
     int maxy = 0;
     int faces = 0;
-    MAP_FOR_EACH(map, e) {
-        if (e->w <= 0) {
+    MAP_FOR_EACH(map, ex, ey, ez, ew) {
+        if (ew <= 0) {
             continue;
         }
-        int x = e->x - ox;
-        int y = e->y - oy;
-        int z = e->z - oz;
+        int x = ex - ox;
+        int y = ey - oy;
+        int z = ez - oz;
         int f1 = !opaque[XYZ(x - 1, y, z)];
         int f2 = !opaque[XYZ(x + 1, y, z)];
         int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (e->y > 0);
+        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
         int f5 = !opaque[XYZ(x, y, z - 1)];
         int f6 = !opaque[XYZ(x, y, z + 1)];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             continue;
         }
-        if (is_plant(e->w)) {
+        if (is_plant(ew)) {
             total = 4;
         }
-        miny = MIN(miny, e->y);
-        maxy = MAX(maxy, e->y);
+        miny = MIN(miny, ey);
+        maxy = MAX(maxy, ey);
         faces += total;
     } END_MAP_FOR_EACH;
 
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    MAP_FOR_EACH(map, e) {
-        if (e->w <= 0) {
+    MAP_FOR_EACH(map, ex, ey, ez, ew) {
+        if (ew <= 0) {
             continue;
         }
-        int x = e->x - ox;
-        int y = e->y - oy;
-        int z = e->z - oz;
+        int x = ex - ox;
+        int y = ey - oy;
+        int z = ez - oz;
         int f1 = !opaque[XYZ(x - 1, y, z)];
         int f2 = !opaque[XYZ(x + 1, y, z)];
         int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (e->y > 0);
+        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
         int f5 = !opaque[XYZ(x, y, z - 1)];
         int f6 = !opaque[XYZ(x, y, z + 1)];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -1099,7 +1099,7 @@ void compute_chunk(WorkerItem *item) {
         float ao[6][4];
         float light[6][4];
         occlusion(neighbors, lights, shades, ao, light);
-        if (is_plant(e->w)) {
+        if (is_plant(ew)) {
             total = 4;
             float min_ao = 1;
             float max_light = 0;
@@ -1109,16 +1109,16 @@ void compute_chunk(WorkerItem *item) {
                     max_light = MAX(max_light, light[a][b]);
                 }
             }
-            float rotation = simplex2(e->x, e->z, 4, 0.5, 2) * 360;
+            float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
             make_plant(
                 data + offset, min_ao, max_light,
-                e->x, e->y, e->z, 0.5, e->w, rotation);
+                ex, ey, ez, 0.5, ew, rotation);
         }
         else {
             make_cube(
                 data + offset, ao, light,
                 f1, f2, f3, f4, f5, f6,
-                e->x, e->y, e->z, 0.5, e->w);
+                ex, ey, ez, 0.5, ew);
         }
         offset += total * 60;
     } END_MAP_FOR_EACH;
@@ -1201,8 +1201,11 @@ void init_chunk(Chunk *chunk, int p, int q) {
     db_load_signs(signs, p, q);
     Map *block_map = &chunk->map;
     Map *light_map = &chunk->lights;
-    map_alloc(block_map, 0x7fff);
-    map_alloc(light_map, 0xf);
+    int dx = p * CHUNK_SIZE - 1;
+    int dy = 0;
+    int dz = q * CHUNK_SIZE - 1;
+    map_alloc(block_map, dx, dy, dz, 0x7fff);
+    map_alloc(light_map, dx, dy, dz, 0xf);
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {

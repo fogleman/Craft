@@ -1359,10 +1359,8 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             }
             if (other) {
                 Map *block_map = malloc(sizeof(Map));
-                map_alloc(block_map, 0x7fff);
                 map_copy(block_map, &other->map);
                 Map *light_map = malloc(sizeof(Map));
-                map_alloc(light_map, 0xf);
                 map_copy(light_map, &other->lights);
                 item->block_maps[dp + 1][dq + 1] = block_map;
                 item->light_maps[dp + 1][dq + 1] = light_map;

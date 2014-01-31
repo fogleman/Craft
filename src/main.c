@@ -36,8 +36,10 @@
 #define MODE_ONLINE 1
 
 #define WORKER_IDLE 0
-#define WORKER_BUSY 1
-#define WORKER_DONE 2
+#define WORKER_CREATE 1
+#define WORKER_CREATED 2
+#define WORKER_UPDATE 3
+#define WORKER_UPDATED 4
 
 typedef struct {
     Map map;
@@ -57,13 +59,20 @@ typedef struct {
 typedef struct {
     int p;
     int q;
+    Map *block_map;
+    Map *light_map;
+} CreateItem;
+
+typedef struct {
+    int p;
+    int q;
     Map *block_maps[3][3];
     Map *light_maps[3][3];
     int miny;
     int maxy;
     int faces;
     GLfloat *data;
-} WorkerItem;
+} UpdateItem;
 
 typedef struct {
     int index;
@@ -71,7 +80,8 @@ typedef struct {
     thrd_t thrd;
     mtx_t mtx;
     cnd_t cnd;
-    WorkerItem item;
+    CreateItem create_item;
+    UpdateItem update_item;
 } Worker;
 
 typedef struct {
@@ -954,7 +964,7 @@ void light_fill(
     light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
-void compute_chunk(WorkerItem *item) {
+void compute_chunk(UpdateItem *item) {
     char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
@@ -1132,7 +1142,7 @@ void compute_chunk(WorkerItem *item) {
     item->data = data;
 }
 
-void generate_chunk(Chunk *chunk, WorkerItem *item) {
+void generate_chunk(Chunk *chunk, UpdateItem *item) {
     chunk->miny = item->miny;
     chunk->maxy = item->maxy;
     chunk->faces = item->faces;
@@ -1142,8 +1152,8 @@ void generate_chunk(Chunk *chunk, WorkerItem *item) {
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
-    WorkerItem _item;
-    WorkerItem *item = &_item;
+    UpdateItem _item;
+    UpdateItem *item = &_item;
     item->p = chunk->p;
     item->q = chunk->q;
     for (int dp = -1; dp <= 1; dp++) {
@@ -1180,6 +1190,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     chunk->buffer = 0;
     chunk->sign_buffer = 0;
     dirty_chunk(chunk);
+    //
     Map *map = &chunk->map;
     Map *lights = &chunk->lights;
     SignList *signs = &chunk->signs;
@@ -1190,7 +1201,6 @@ void create_chunk(Chunk *chunk, int p, int q) {
     db_load_blocks(map, p, q);
     db_load_lights(lights, p, q);
     db_load_signs(signs, p, q);
-    // gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
 }
@@ -1242,8 +1252,8 @@ void check_workers() {
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
         mtx_lock(&worker->mtx);
-        if (worker->state == WORKER_DONE) {
-            WorkerItem *item = &worker->item;
+        if (worker->state == WORKER_UPDATED) {
+            UpdateItem *item = &worker->update_item;
             for (int a = 0; a < 3; a++) {
                 for (int b = 0; b < 3; b++) {
                     Map *block_map = item->block_maps[a][b];
@@ -1348,7 +1358,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             return;
         }
     }
-    WorkerItem *item = &worker->item;
+    UpdateItem *item = &worker->update_item;
     item->p = chunk->p;
     item->q = chunk->q;
     for (int dp = -1; dp <= 1; dp++) {
@@ -1372,7 +1382,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
         }
     }
     chunk->dirty = 0;
-    worker->state = WORKER_BUSY;
+    worker->state = WORKER_UPDATE;
     cnd_signal(&worker->cnd);
 }
 
@@ -1394,14 +1404,14 @@ int worker_run(void *arg) {
     int running = 1;
     while (running) {
         mtx_lock(&worker->mtx);
-        while (worker->state != WORKER_BUSY) {
+        while (worker->state != WORKER_UPDATE) {
             cnd_wait(&worker->cnd, &worker->mtx);
         }
         mtx_unlock(&worker->mtx);
-        WorkerItem *item = &worker->item;
+        UpdateItem *item = &worker->update_item;
         compute_chunk(item);
         mtx_lock(&worker->mtx);
-        worker->state = WORKER_DONE;
+        worker->state = WORKER_UPDATED;
         mtx_unlock(&worker->mtx);
     }
     return 0;

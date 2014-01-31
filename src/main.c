@@ -1238,6 +1238,36 @@ void delete_all_chunks() {
     g->chunk_count = 0;
 }
 
+void check_workers() {
+    for (int i = 0; i < WORKERS; i++) {
+        Worker *worker = g->workers + i;
+        mtx_lock(&worker->mtx);
+        if (worker->state == WORKER_DONE) {
+            WorkerItem *item = &worker->item;
+            for (int a = 0; a < 3; a++) {
+                for (int b = 0; b < 3; b++) {
+                    Map *block_map = item->block_maps[a][b];
+                    Map *light_map = item->light_maps[a][b];
+                    if (block_map) {
+                        map_free(block_map);
+                        free(block_map);
+                    }
+                    if (light_map) {
+                        map_free(light_map);
+                        free(light_map);
+                    }
+                }
+            }
+            Chunk *chunk = find_chunk(item->p, item->q);
+            if (chunk) {
+                generate_chunk(chunk, item);
+            }
+            worker->state = WORKER_IDLE;
+        }
+        mtx_unlock(&worker->mtx);
+    }
+}
+
 void force_chunks(Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
@@ -1254,15 +1284,15 @@ void force_chunks(Player *player) {
                 }
             }
             else if (g->chunk_count < MAX_CHUNKS) {
-                create_chunk(g->chunks + g->chunk_count, a, b);
-                g->chunk_count++;
+                chunk = g->chunks + g->chunk_count++;
+                create_chunk(chunk, a, b);
+                gen_chunk_buffer(chunk);
             }
         }
     }
 }
 
-void ensure_chunks(Player *player) {
-    force_chunks(player);
+void ensure_chunks_worker(Player *player, Worker *worker) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
@@ -1281,6 +1311,10 @@ void ensure_chunks(Player *player) {
         for (int dq = -r; dq <= r; dq++) {
             int a = p + dp;
             int b = q + dq;
+            int index = (ABS(a) ^ ABS(b)) % WORKERS;
+            if (index != worker->index) {
+                continue;
+            }
             Chunk *chunk = find_chunk(a, b);
             if (chunk && !chunk->dirty) {
                 continue;
@@ -1305,12 +1339,55 @@ void ensure_chunks(Player *player) {
     int a = best_a;
     int b = best_b;
     Chunk *chunk = find_chunk(a, b);
-    if (chunk) {
-        gen_chunk_buffer(chunk);
+    if (!chunk) {
+        if (g->chunk_count < MAX_CHUNKS) {
+            chunk = g->chunks + g->chunk_count++;
+            create_chunk(chunk, a, b);
+        }
+        else {
+            return;
+        }
     }
-    else if (g->chunk_count < MAX_CHUNKS) {
-        create_chunk(g->chunks + g->chunk_count, a, b);
-        g->chunk_count++;
+    WorkerItem *item = &worker->item;
+    item->p = chunk->p;
+    item->q = chunk->q;
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            Chunk *other = chunk;
+            if (dp || dq) {
+                other = find_chunk(chunk->p + dp, chunk->q + dq);
+            }
+            if (other) {
+                Map *block_map = malloc(sizeof(Map));
+                map_alloc(block_map, 0x7fff);
+                map_copy(block_map, &other->map);
+                Map *light_map = malloc(sizeof(Map));
+                map_alloc(light_map, 0xf);
+                map_copy(light_map, &other->lights);
+                item->block_maps[dp + 1][dq + 1] = block_map;
+                item->light_maps[dp + 1][dq + 1] = light_map;
+            }
+            else {
+                item->block_maps[dp + 1][dq + 1] = 0;
+                item->light_maps[dp + 1][dq + 1] = 0;
+            }
+        }
+    }
+    chunk->dirty = 0;
+    worker->state = WORKER_BUSY;
+    cnd_signal(&worker->cnd);
+}
+
+void ensure_chunks(Player *player) {
+    check_workers();
+    force_chunks(player);
+    for (int i = 0; i < WORKERS; i++) {
+        Worker *worker = g->workers + i;
+        mtx_lock(&worker->mtx);
+        if (worker->state == WORKER_IDLE) {
+            ensure_chunks_worker(player, worker);
+        }
+        mtx_unlock(&worker->mtx);
     }
 }
 

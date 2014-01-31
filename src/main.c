@@ -912,8 +912,8 @@ void occlusion(
 #define XZ_LO (CHUNK_SIZE)
 #define XZ_HI (CHUNK_SIZE * 2 + 1)
 #define Y_SIZE 258
-#define XYZ_INDEX(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
-#define XZ_INDEX(x, z) ((x) * XZ_SIZE + (z))
+#define XYZ(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
+#define XZ(x, z) ((x) * XZ_SIZE + (z))
 
 void light_fill(
     char *opaque, char *light,
@@ -928,13 +928,13 @@ void light_fill(
     if (y < 0 || y >= Y_SIZE) {
         return;
     }
-    if (light[XYZ_INDEX(x, y, z)] >= w) {
+    if (light[XYZ(x, y, z)] >= w) {
         return;
     }
-    if (!force && opaque[XYZ_INDEX(x, y, z)]) {
+    if (!force && opaque[XYZ(x, y, z)]) {
         return;
     }
-    light[XYZ_INDEX(x, y, z)] = w--;
+    light[XYZ(x, y, z)] = w--;
     light_fill(opaque, light, x - 1, y, z, w, 0);
     light_fill(opaque, light, x + 1, y, z, w, 0);
     light_fill(opaque, light, x, y - 1, z, w, 0);
@@ -980,9 +980,9 @@ void gen_chunk_buffer(Chunk *chunk) {
                     continue;
                 }
                 // END TODO
-                opaque[XYZ_INDEX(x, y, z)] = !is_transparent(w);
-                if (opaque[XYZ_INDEX(x, y, z)]) {
-                    highest[XZ_INDEX(x, z)] = MAX(highest[XZ_INDEX(x, z)], y);
+                opaque[XYZ(x, y, z)] = !is_transparent(w);
+                if (opaque[XYZ(x, y, z)]) {
+                    highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
                 }
             } END_MAP_FOR_EACH;
         }
@@ -1023,12 +1023,12 @@ void gen_chunk_buffer(Chunk *chunk) {
         int x = e->x - ox;
         int y = e->y - oy;
         int z = e->z - oz;
-        int f1 = !opaque[XYZ_INDEX(x - 1, y, z)];
-        int f2 = !opaque[XYZ_INDEX(x + 1, y, z)];
-        int f3 = !opaque[XYZ_INDEX(x, y + 1, z)];
-        int f4 = !opaque[XYZ_INDEX(x, y - 1, z)] && (e->y > 0);
-        int f5 = !opaque[XYZ_INDEX(x, y, z - 1)];
-        int f6 = !opaque[XYZ_INDEX(x, y, z + 1)];
+        int f1 = !opaque[XYZ(x - 1, y, z)];
+        int f2 = !opaque[XYZ(x + 1, y, z)];
+        int f3 = !opaque[XYZ(x, y + 1, z)];
+        int f4 = !opaque[XYZ(x, y - 1, z)] && (e->y > 0);
+        int f5 = !opaque[XYZ(x, y, z - 1)];
+        int f6 = !opaque[XYZ(x, y, z + 1)];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             continue;
@@ -1051,12 +1051,12 @@ void gen_chunk_buffer(Chunk *chunk) {
         int x = e->x - ox;
         int y = e->y - oy;
         int z = e->z - oz;
-        int f1 = !opaque[XYZ_INDEX(x - 1, y, z)];
-        int f2 = !opaque[XYZ_INDEX(x + 1, y, z)];
-        int f3 = !opaque[XYZ_INDEX(x, y + 1, z)];
-        int f4 = !opaque[XYZ_INDEX(x, y - 1, z)] && (e->y > 0);
-        int f5 = !opaque[XYZ_INDEX(x, y, z - 1)];
-        int f6 = !opaque[XYZ_INDEX(x, y, z + 1)];
+        int f1 = !opaque[XYZ(x - 1, y, z)];
+        int f2 = !opaque[XYZ(x + 1, y, z)];
+        int f3 = !opaque[XYZ(x, y + 1, z)];
+        int f4 = !opaque[XYZ(x, y - 1, z)] && (e->y > 0);
+        int f5 = !opaque[XYZ(x, y, z - 1)];
+        int f6 = !opaque[XYZ(x, y, z + 1)];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
         if (total == 0) {
             continue;
@@ -1068,12 +1068,12 @@ void gen_chunk_buffer(Chunk *chunk) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    neighbors[index] = opaque[XYZ_INDEX(x + dx, y + dy, z + dz)];
-                    lights[index] = light[XYZ_INDEX(x + dx, y + dy, z + dz)];
+                    neighbors[index] = opaque[XYZ(x + dx, y + dy, z + dz)];
+                    lights[index] = light[XYZ(x + dx, y + dy, z + dz)];
                     shades[index] = 0;
-                    if (y + dy <= highest[XZ_INDEX(x + dx, z + dz)]) {
+                    if (y + dy <= highest[XZ(x + dx, z + dz)]) {
                         for (int oy = 0; oy < 8; oy++) {
-                            if (opaque[XYZ_INDEX(x + dx, y + dy + oy, z + dz)]) {
+                            if (opaque[XYZ(x + dx, y + dy + oy, z + dz)]) {
                                 shades[index] = 1.0 - oy * 0.125;
                                 break;
                             }

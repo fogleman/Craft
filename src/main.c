@@ -55,12 +55,23 @@ typedef struct {
 } Chunk;
 
 typedef struct {
+    int p;
+    int q;
+    Map *block_maps[3][3];
+    Map *light_maps[3][3];
+    int miny;
+    int maxy;
+    int faces;
+    GLfloat *data;
+} WorkerItem;
+
+typedef struct {
     int index;
     int state;
     thrd_t thrd;
     mtx_t mtx;
     cnd_t cnd;
-    Chunk chunk;
+    WorkerItem item;
 } Worker;
 
 typedef struct {
@@ -943,25 +954,21 @@ void light_fill(
     light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
-void generate_chunk(
-    int p, int q,
-    Map *block_maps[3][3], Map *light_maps[3][3],
-    int *_miny, int *_maxy, int *_faces, GLfloat **_data)
-{
+void compute_chunk(WorkerItem *item) {
     char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
 
-    int ox = p * CHUNK_SIZE - CHUNK_SIZE - 1;
+    int ox = item->p * CHUNK_SIZE - CHUNK_SIZE - 1;
     int oy = -1;
-    int oz = q * CHUNK_SIZE - CHUNK_SIZE - 1;
+    int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
 
     // check for lights
     int has_light = 0;
     if (SHOW_LIGHTS) {
         for (int a = 0; a < 3; a++) {
             for (int b = 0; b < 3; b++) {
-                Map *map = light_maps[a][b];
+                Map *map = item->light_maps[a][b];
                 if (map && map->size) {
                     has_light = 1;
                 }
@@ -972,7 +979,7 @@ void generate_chunk(
     // populate opaque array
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            Map *map = block_maps[a][b];
+            Map *map = item->block_maps[a][b];
             if (!map) {
                 continue;
             }
@@ -1001,7 +1008,7 @@ void generate_chunk(
     if (has_light) {
         for (int a = 0; a < 3; a++) {
             for (int b = 0; b < 3; b++) {
-                Map *map = light_maps[a][b];
+                Map *map = item->light_maps[a][b];
                 if (!map) {
                     continue;
                 }
@@ -1015,7 +1022,7 @@ void generate_chunk(
         }
     }
 
-    Map *map = block_maps[1][1];
+    Map *map = item->block_maps[1][1];
 
     // count exposed faces
     int miny = 256;
@@ -1119,15 +1126,26 @@ void generate_chunk(
     free(light);
     free(highest);
 
-    *_miny = miny;
-    *_maxy = maxy;
-    *_faces = faces;
-    *_data = data;
+    item->miny = miny;
+    item->maxy = maxy;
+    item->faces = faces;
+    item->data = data;
+}
+
+void generate_chunk(Chunk *chunk, WorkerItem *item) {
+    chunk->miny = item->miny;
+    chunk->maxy = item->maxy;
+    chunk->faces = item->faces;
+    del_buffer(chunk->buffer);
+    chunk->buffer = gen_faces(10, item->faces, item->data);
+    gen_sign_buffer(chunk);
 }
 
 void gen_chunk_buffer(Chunk *chunk) {
-    Map *block_maps[3][3];
-    Map *light_maps[3][3];
+    WorkerItem _item;
+    WorkerItem *item = &_item;
+    item->p = chunk->p;
+    item->q = chunk->q;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             Chunk *other = chunk;
@@ -1135,26 +1153,17 @@ void gen_chunk_buffer(Chunk *chunk) {
                 other = find_chunk(chunk->p + dp, chunk->q + dq);
             }
             if (other) {
-                block_maps[dp + 1][dq + 1] = &other->map;
-                light_maps[dp + 1][dq + 1] = &other->lights;
+                item->block_maps[dp + 1][dq + 1] = &other->map;
+                item->light_maps[dp + 1][dq + 1] = &other->lights;
             }
             else {
-                block_maps[dp + 1][dq + 1] = 0;
-                light_maps[dp + 1][dq + 1] = 0;
+                item->block_maps[dp + 1][dq + 1] = 0;
+                item->light_maps[dp + 1][dq + 1] = 0;
             }
         }
     }
-    int miny, maxy, faces;
-    GLfloat *data;
-    generate_chunk(
-        chunk->p, chunk->q, block_maps, light_maps,
-        &miny, &maxy, &faces, &data);
-    chunk->miny = miny;
-    chunk->maxy = maxy;
-    chunk->faces = faces;
-    del_buffer(chunk->buffer);
-    chunk->buffer = gen_faces(10, faces, data);
-    gen_sign_buffer(chunk);
+    compute_chunk(item);
+    generate_chunk(chunk, item);
     chunk->dirty = 0;
 }
 
@@ -1181,7 +1190,7 @@ void create_chunk(Chunk *chunk, int p, int q) {
     db_load_blocks(map, p, q);
     db_load_lights(lights, p, q);
     db_load_signs(signs, p, q);
-    gen_chunk_buffer(chunk);
+    // gen_chunk_buffer(chunk);
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
 }
@@ -1278,7 +1287,10 @@ void ensure_chunks(Player *player) {
             }
             int distance = MAX(ABS(dp), ABS(dq));
             int invisible = !chunk_visible(planes, a, b, 0, 256);
-            int priority = chunk ? chunk->dirty : 0;
+            int priority = 0;
+            if (chunk) {
+                priority = chunk->buffer && chunk->dirty;
+            }
             int score = (invisible << 24) | (priority << 16) | distance;
             if (score < best_score) {
                 best_score = score;
@@ -1310,6 +1322,11 @@ int worker_run(void *arg) {
         while (worker->state != WORKER_BUSY) {
             cnd_wait(&worker->cnd, &worker->mtx);
         }
+        mtx_unlock(&worker->mtx);
+        WorkerItem *item = &worker->item;
+        compute_chunk(item);
+        mtx_lock(&worker->mtx);
+        worker->state = WORKER_DONE;
         mtx_unlock(&worker->mtx);
     }
     return 0;

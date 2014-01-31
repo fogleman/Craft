@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "map.h"
 
 int hash_int(int key) {
@@ -26,6 +27,13 @@ void map_alloc(Map *map, int mask) {
 
 void map_free(Map *map) {
     free(map->data);
+}
+
+void map_copy(Map *dst, Map *src) {
+    dst->mask = src->mask;
+    dst->size = src->size;
+    dst->data = (MapEntry *)calloc(dst->mask + 1, sizeof(MapEntry));
+    memcpy(dst->data, src->data, (dst->mask + 1) * sizeof(MapEntry));
 }
 
 int map_set(Map *map, int x, int y, int z, int w) {

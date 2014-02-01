@@ -24,6 +24,7 @@ static Ring ring;
 static thrd_t thrd;
 static mtx_t mtx;
 static cnd_t cnd;
+static mtx_t load_mtx;
 
 void db_enable() {
     db_enabled = 1;
@@ -409,6 +410,7 @@ void db_load_blocks(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
     }
+    mtx_lock(&load_mtx);
     sqlite3_reset(load_blocks_stmt);
     sqlite3_bind_int(load_blocks_stmt, 1, p);
     sqlite3_bind_int(load_blocks_stmt, 2, q);
@@ -419,12 +421,14 @@ void db_load_blocks(Map *map, int p, int q) {
         int w = sqlite3_column_int(load_blocks_stmt, 3);
         map_set(map, x, y, z, w);
     }
+    mtx_unlock(&load_mtx);
 }
 
 void db_load_lights(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
     }
+    mtx_lock(&load_mtx);
     sqlite3_reset(load_lights_stmt);
     sqlite3_bind_int(load_lights_stmt, 1, p);
     sqlite3_bind_int(load_lights_stmt, 2, q);
@@ -435,6 +439,7 @@ void db_load_lights(Map *map, int p, int q) {
         int w = sqlite3_column_int(load_lights_stmt, 3);
         map_set(map, x, y, z, w);
     }
+    mtx_unlock(&load_mtx);
 }
 
 void db_load_signs(SignList *list, int p, int q) {
@@ -492,6 +497,7 @@ void db_worker_start(char *path) {
     }
     ring_alloc(&ring, 1024);
     mtx_init(&mtx, mtx_plain);
+    mtx_init(&load_mtx, mtx_plain);
     cnd_init(&cnd);
     thrd_create(&thrd, db_worker_run, path);
 }
@@ -506,6 +512,7 @@ void db_worker_stop() {
     mtx_unlock(&mtx);
     thrd_join(thrd, NULL);
     cnd_destroy(&cnd);
+    mtx_destroy(&load_mtx);
     mtx_destroy(&mtx);
     ring_free(&ring);
 }

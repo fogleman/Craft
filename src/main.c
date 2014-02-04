@@ -248,6 +248,17 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     return gen_buffer(sizeof(data), data);
 }
 
+GLuint gen_rect_buffer(
+    float x1, float y1, float x2, float y2,
+    float u1, float v1, float u2, float v2)
+{
+    float data[] = {
+        x1, y1, u1, v1, x2, y2, u2, v2, x1, y2, u1, v2,
+        x1, y1, u1, v1, x2, y1, u2, v1, x2, y2, u2, v2
+    };
+    return gen_buffer(sizeof(data), data);
+}
+
 GLuint gen_sky_buffer() {
     float data[12288];
     make_sphere(data, 1, 3);
@@ -506,7 +517,8 @@ float player_crosshair_distance(Player *p1, Player *p2) {
 
 Player *player_crosshair(Player *player) {
     Player *result = 0;
-    float threshold = RADIANS(5);
+    float distance_threshold = CHUNK_SIZE * RENDER_CHUNK_RADIUS;
+    float angle_threshold = RADIANS(5);
     float best = 0;
     for (int i = 0; i < g->player_count; i++) {
         Player *other = g->players + i;
@@ -515,7 +527,7 @@ Player *player_crosshair(Player *player) {
         }
         float p = player_crosshair_distance(player, other);
         float d = player_player_distance(player, other);
-        if (d < 96 && p / d < threshold) {
+        if (d < distance_threshold && p / d < angle_threshold) {
             if (best == 0 || d < best) {
                 best = d;
                 result = other;
@@ -1606,6 +1618,22 @@ void builder_block(int x, int y, int z, int w) {
     }
 }
 
+void render_text(
+    Attrib *attrib, int justify, float x, float y, float n, char *text)
+{
+    float matrix[16];
+    set_matrix_2d(matrix, g->width, g->height);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 1);
+    glUniform1i(attrib->extra1, 0);
+    int length = strlen(text);
+    x -= n * justify * (length - 1) / 2;
+    GLuint buffer = gen_text_buffer(x, y, n, text);
+    draw_text(attrib, buffer, length);
+    del_buffer(buffer);
+}
+
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;
@@ -1718,6 +1746,55 @@ void render_players(Attrib *attrib, Player *player) {
     }
 }
 
+void render_player_markers(Attrib *marker, Attrib *text, Player *player) {
+    State *s = &player->state;
+    float mat2[16];
+    float mat3[16];
+    set_matrix_2d(mat2, g->width, g->height);
+    set_matrix_3d_z(
+        mat3, g->width, g->height,
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, 1, 32000);
+    for (int i = 0; i < g->player_count; i++) {
+        Player *other = g->players + i;
+        if (other != player) {
+            State *t = &other->state;
+            float vec[4] = {t->x, t->y + 0.75, t->z, 1};
+            mat_vec_multiply(vec, mat3, vec);
+            float x = vec[0] / vec[3];
+            float y = vec[1] / vec[3];
+            float z = vec[2] / vec[3];
+            if (x <= -1 || y <= -1 || z < -1) {
+                continue;
+            }
+            if (x >= 1 || y >= 1 || z > 1) {
+                continue;
+            }
+            x = roundf(g->width * ((x + 1) / 2));
+            y = roundf(g->height * ((y + 1) / 2));
+            // marker
+            glUseProgram(marker->program);
+            glUniformMatrix4fv(marker->matrix, 1, GL_FALSE, mat2);
+            glUniform1i(marker->sampler, 0);
+            int tile = 240;
+            float s = 0.0625;
+            float du = (tile % 16) * s;
+            float dv = (tile / 16) * s;
+            float p = 16;
+            GLuint buffer = gen_rect_buffer(
+                x - p, y - p, x + p, y + p,
+                du, dv, du + s, dv + s);
+            draw_triangles_2d(marker, buffer, 6);
+            del_buffer(buffer);
+            // text
+            float d = player_player_distance(player, other);
+            char line[64];
+            snprintf(line, sizeof(line), "%.0f", d);
+            float ts = 10 * g->scale;
+            render_text(text, ALIGN_CENTER, x, y + p + 6, ts, line);
+        }
+    }
+}
+
 void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
@@ -1783,22 +1860,6 @@ void render_item(Attrib *attrib) {
         draw_cube(attrib, buffer);
         del_buffer(buffer);
     }
-}
-
-void render_text(
-    Attrib *attrib, int justify, float x, float y, float n, char *text)
-{
-    float matrix[16];
-    set_matrix_2d(matrix, g->width, g->height);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 1);
-    glUniform1i(attrib->extra1, 0);
-    int length = strlen(text);
-    x -= n * justify * (length - 1) / 2;
-    GLuint buffer = gen_text_buffer(x, y, n, text);
-    draw_text(attrib, buffer, length);
-    del_buffer(buffer);
 }
 
 void add_message(const char *text) {
@@ -2656,6 +2717,7 @@ int main(int argc, char **argv) {
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
+    Attrib texture_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -2697,6 +2759,14 @@ int main(int argc, char **argv) {
     sky_attrib.matrix = glGetUniformLocation(program, "matrix");
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
+
+    program = load_program(
+        "shaders/texture_vertex.glsl", "shaders/texture_fragment.glsl");
+    texture_attrib.program = program;
+    texture_attrib.position = glGetAttribLocation(program, "position");
+    texture_attrib.uv = glGetAttribLocation(program, "uv");
+    texture_attrib.matrix = glGetUniformLocation(program, "matrix");
+    texture_attrib.sampler = glGetUniformLocation(program, "sampler");
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {
@@ -2843,6 +2913,8 @@ int main(int argc, char **argv) {
             }
 
             // RENDER HUD //
+            glClear(GL_DEPTH_BUFFER_BIT);
+            render_player_markers(&texture_attrib, &text_attrib, player);
             glClear(GL_DEPTH_BUFFER_BIT);
             if (SHOW_CROSSHAIRS) {
                 render_crosshairs(&line_attrib);

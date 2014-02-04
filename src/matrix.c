@@ -208,16 +208,14 @@ void set_matrix_2d(float *matrix, int width, int height) {
     mat_ortho(matrix, 0, width, 0, height, -1, 1);
 }
 
-void set_matrix_3d(
+void set_matrix_3d_z(
     float *matrix, int width, int height,
     float x, float y, float z, float rx, float ry,
-    float fov, int ortho, int radius)
+    float fov, int ortho, float znear, float zfar)
 {
     float a[16];
     float b[16];
     float aspect = (float)width / height;
-    float znear = 0.125;
-    float zfar = radius * 32 + 64;
     mat_identity(a);
     mat_translate(b, -x, -y, -z);
     mat_multiply(a, b, a);
@@ -235,6 +233,19 @@ void set_matrix_3d(
     mat_multiply(a, b, a);
     mat_identity(matrix);
     mat_multiply(matrix, a, matrix);
+}
+
+void set_matrix_3d(
+    float *matrix, int width, int height,
+    float x, float y, float z, float rx, float ry,
+    float fov, int ortho, int radius)
+{
+    float znear = 0.125;
+    float zfar = radius * 32 + 64;
+    set_matrix_3d_z(
+        matrix, width, height,
+        x, y, z, rx, ry,
+        fov, ortho, znear, zfar);
 }
 
 void set_matrix_item(float *matrix, int width, int height, int scale) {

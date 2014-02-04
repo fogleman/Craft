@@ -19,6 +19,10 @@ void mat_ortho(
     float *matrix,
     float left, float right, float bottom, float top, float near, float far);
 void set_matrix_2d(float *matrix, int width, int height);
+void set_matrix_3d_z(
+    float *matrix, int width, int height,
+    float x, float y, float z, float rx, float ry,
+    float fov, int ortho, float znear, float zfar);
 void set_matrix_3d(
     float *matrix, int width, int height,
     float x, float y, float z, float rx, float ry,

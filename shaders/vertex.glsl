@@ -16,6 +16,6 @@ void main() {
     gl_Position = matrix * position;
 
     camera_distance = distance(camera, vec3(position));
-    fog_factor = pow(clamp(camera_distance / 80, 0, 1), 4);
+    fog_factor = pow(clamp(camera_distance / 160, 0, 1), 4);
     diffuse = max(0, dot(normal, light_direction));
 }

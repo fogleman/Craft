@@ -16,7 +16,7 @@
 #define FULLSCREEN 0
 #define VSYNC 1
 #define SHOW_FPS 0
-#define SIZE 200
+#define SIZE 400
 
 static GLFWwindow *window;
 static int exclusive = 1;
@@ -51,7 +51,7 @@ void update_matrix_3d(
     mat_rotate(b, 0, 1, 0, -rx);
     mat_multiply(a, b, a);
     if (ortho) {
-        int size = 32;
+        int size = 128;
         mat_ortho(b, -size * aspect, size * aspect, -size, size, -256, 256);
     }
     else {
@@ -98,9 +98,9 @@ void make_mesh(GLuint *position_buffer, GLuint *normal_buffer) {
     float *p = position;
     float *normal = malloc(sizeof(float) * count);
     float *n = normal;
-    float amplitude = 32;
-    float persistence = 0.25;
-    float m = 0.02;
+    float amplitude = 64;
+    float persistence = 0.5;
+    float m = 0.005;
     float lookup[width + 1][depth + 1][3];
     memset(lookup, 0, (width + 1) * (depth + 1) * 3 * sizeof(float));
     for (int z = 0; z < depth; z++) {
@@ -109,10 +109,10 @@ void make_mesh(GLuint *position_buffer, GLuint *normal_buffer) {
             float x2 = x + 1;
             float z1 = z;
             float z2 = z + 1;
-            float y1 = simplex2(x1 * m, z1 * m, 6, persistence, 2) * amplitude;
-            float y2 = simplex2(x2 * m, z1 * m, 6, persistence, 2) * amplitude;
-            float y3 = simplex2(x1 * m, z2 * m, 6, persistence, 2) * amplitude;
-            float y4 = simplex2(x2 * m, z2 * m, 6, persistence, 2) * amplitude;
+            float y1 = simplex2(x1 * m, z1 * m, 4, persistence, 2) * amplitude;
+            float y2 = simplex2(x2 * m, z1 * m, 4, persistence, 2) * amplitude;
+            float y3 = simplex2(x1 * m, z2 * m, 4, persistence, 2) * amplitude;
+            float y4 = simplex2(x2 * m, z2 * m, 4, persistence, 2) * amplitude;
             float y = (y1 + y2 + y3 + y4) / 4;
             grid[z * SIZE + x] = y;
             *(p++) = x2; *(p++) = y2; *(p++) = z1;
@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0.53, 0.81, 0.92, 1);
 
     GLuint vertex_array;
     glGenVertexArrays(1, &vertex_array);
@@ -363,7 +363,7 @@ int main(int argc, char **argv) {
         if (glfwGetKey(window, 'N')) {
             vx = 0; vy = 0; vz = 1;
         }
-        float speed = flying ? 20 : 5;
+        float speed = flying ? 20 : 50;
         int step = 8;
         float ut = dt / step;
         vx = vx * ut * speed;
@@ -397,7 +397,7 @@ int main(int argc, char **argv) {
         float ty =
             f00 + (f10 - f00) * x0 + (f01 - f00) * z0 +
             (f00 - f10 - f01 + f11) * x0 * z0;
-        y = MAX(y, ty + 2);
+        y = MAX(y, ty + 5);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

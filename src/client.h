@@ -1,6 +1,10 @@
 #ifndef _client_h_
 #define _client_h_
 
+#ifdef _MSC_VER
+	#define snprintf _snprintf
+#endif
+
 #define DEFAULT_PORT 4080
 
 void client_enable();

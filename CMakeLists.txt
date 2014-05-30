@@ -23,7 +23,7 @@ include_directories(deps/noise)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 
-if(MINGW)
+if(MINGW OR MSVC)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}
         "C:/Program Files/CURL/lib" "C:/Program Files (x86)/CURL/lib")
     set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH}
@@ -43,7 +43,7 @@ if(UNIX)
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
-if(MINGW)
+if(MINGW OR MSVC)
     target_link_libraries(craft ws2_32.lib glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()

@@ -1,4 +1,5 @@
-## Craft
+Craft
+=====
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
 

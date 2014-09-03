@@ -4,7 +4,7 @@ Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C 
 
 http://www.michaelfogleman.com/craft/
 
-![](http://www.michaelfogleman.com/static/img/craft1.png)
+![Screenshot](http://i.imgur.com/SH7wcas.png)
 
 ### Features
 
@@ -73,11 +73,11 @@ https://craft.michaelfogleman.com/
 
 You can connect to a server with command line arguments...
 
-    ./craft michaelfogleman.com
+    ./craft craft.michaelfogleman.com
 
 Or, with the "/online" command in the game itself.
 
-    /online michaelfogleman.com
+    /online craft.michaelfogleman.com
 
 #### Server
 
@@ -145,7 +145,7 @@ Teleport back to the spawn point.
 
 ### Screenshot
 
-![](http://www.michaelfogleman.com/static/img/craft3.png)
+![Screenshot](http://i.imgur.com/foYz3aN.png)
 
 ### Implementation Details
 

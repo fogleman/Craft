@@ -3,6 +3,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include "config.h"
 
 #define PI 3.14159265359
 #define DEGREES(radians) ((radians) * 180 / PI)
@@ -10,6 +11,13 @@
 #define ABS(x) ((x) < 0 ? (-(x)) : (x))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define SIGN(x) (((x) > 0) - ((x) < 0))
+
+#if DEBUG
+    #define LOG(...) printf(__VA_ARGS__)
+#else
+    #define LOG(...)
+#endif
 
 typedef struct {
     unsigned int fps;
@@ -30,5 +38,9 @@ GLuint load_shader(GLenum type, const char *path);
 GLuint make_program(GLuint shader1, GLuint shader2);
 GLuint load_program(const char *path1, const char *path2);
 void load_png_texture(const char *file_name, GLint level);
+char *tokenize(char *str, const char *delim, char **key);
+int char_width(char input);
+int string_width(const char *input);
+int wrap(const char *input, int max_width, char *output, int max_length);
 
 #endif

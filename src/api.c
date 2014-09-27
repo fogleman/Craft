@@ -29,7 +29,6 @@ luaL_Reg clua_regs[] =
     { NULL, NULL }
 };
 
-
 // structs
 struct module_name_list {
     char *filename;
@@ -48,7 +47,7 @@ struct loaded_module_list *loaded_mods;
 // lua init/shutdown
 int clua_init()
 {
-    struct module_name_list *mod, *mod_names;
+    struct module_name_list *mod_n, *mod_names;
     mod_names = NULL;
     loaded_mods = NULL;
 
@@ -62,7 +61,7 @@ int clua_init()
     sprintf(sPath, "%s\\*.lua", MODULE_DIR);
 
     if((hFind = FindFirstFile(sPath, &fdFile)) == INVALID_HANDLE_VALUE) {
-        dprintf(stderr, "Module folder not found: [%s]\n", sDir);
+        fprintf(stderr, "[Lua] Module folder not found: [%s]\n", sDir);
         return 1;
     }
 
@@ -72,10 +71,10 @@ int clua_init()
         {
             sprintf(sPath, "%s\\%s", sDir, fdFile.cFileName);
 
-            mod = malloc(sizeof(struct module_name_list));
-            mod->filename = sPath;
+            mod_n = malloc(sizeof(struct module_name_list));
+            mod_n->filename = sPath;
 
-            SGLIB_LIST_ADD(struct module_name_list, mod_names, mod, next_ptr);
+            SGLIB_LIST_ADD(struct module_name_list, mod_names, mod_n, next_ptr);
         }
     } while (FindNextFile(hFind, &fdFile));
 
@@ -96,17 +95,17 @@ int clua_init()
                 char module_filename[MAX_FILENAME_LENGTH] = {0};
 
                 if (MAX_FILENAME_LENGTH <= (strlen(MODULE_DIR) + strlen(dir->d_name))) {
-                    fprintf(stderr, "Module name is too large: %s\n", dir->d_name);
+                    fprintf(stderr, "[Lua] Module name is too large: %s\n", dir->d_name);
                     continue;
                 }
 
                 strncpy(module_filename, MODULE_DIR, strlen(MODULE_DIR));
                 strncat(module_filename, dir->d_name, MAX_FILENAME_LENGTH - strlen(MODULE_DIR) - 1);
 
-                mod = malloc(sizeof(struct module_name_list));
-                mod->filename = module_filename;
+                mod_n = malloc(sizeof(struct module_name_list));
+                mod_n->filename = module_filename;
 
-                SGLIB_LIST_ADD(struct module_name_list, mod_names, mod, next_ptr);
+                SGLIB_LIST_ADD(struct module_name_list, mod_names, mod_n, next_ptr);
             }
         }
 
@@ -115,10 +114,11 @@ int clua_init()
 #endif
 
     // load lua modules
-    SGLIB_LIST_MAP_ON_ELEMENTS(struct module_name_list, mod_names, mod_name, next_ptr, {
-        printf("Loading module %s\n", mod_name->filename);
+    struct loaded_module_list *mod; // temp
 
-        struct loaded_module_list *mod;
+    SGLIB_LIST_MAP_ON_ELEMENTS(struct module_name_list, mod_names, mod_n, next_ptr, {
+        printf("[Lua] Loading module %s\n", mod_n->filename);
+
         mod = malloc(sizeof(struct loaded_module_list));
 
         // we have a separate lua state for every single module we load
@@ -130,20 +130,20 @@ int clua_init()
         luaL_setfuncs(mod->L, clua_regs, 0);
         lua_setglobal(mod->L, "api");
 
-        if (luaL_loadfile(mod->L, mod_name->filename)) {
-            fprintf(stderr, "Lua module %s failed to load\n", mod_name->filename);
+        if (luaL_loadfile(mod->L, mod_n->filename)) {
+            fprintf(stderr, "[Lua] Module %s failed to load\n", mod_n->filename);
             free(mod);
         }
         else {
             if (lua_pcall(mod->L, 0, 0, 0)) {
-                fprintf(stderr, "Lua module %s failed to run\n", mod_name->filename);
+                fprintf(stderr, "[Lua] Module %s failed to run\n", mod_n->filename);
                 free(mod);
             }
             else {
                 lua_getglobal(mod->L, "startup");
 
                 if (lua_pcall(mod->L, 0, 0, 0)) {
-                    fprintf(stderr, "Startup in %s failed\n", mod_name->filename);
+                    fprintf(stderr, "[Lua] Startup in %s failed\n", mod_n->filename);
                     free(mod);
                 }
                 else {
@@ -160,7 +160,16 @@ int clua_init()
 int clua_close()
 {
     // close lua on every loaded module
+    struct loaded_module_list *mod; // temp
+
     SGLIB_LIST_MAP_ON_ELEMENTS(struct loaded_module_list, loaded_mods, mod, next_ptr, {
+        lua_getglobal(mod->L, "shutdown");
+
+        if (lua_pcall(mod->L, 0, 0, 0)) {
+            fprintf(stderr, "[Lua] Shutdown in %s failed\n", mod->filename);
+            free(mod);
+        }
+
         lua_close(mod->L);
         free(mod);
     });

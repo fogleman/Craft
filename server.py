@@ -1,15 +1,15 @@
+#!/usr/bin/env python
+#
+import sys, time, socket, re
 from math import floor
 from world import World
 import Queue
 import SocketServer
 import datetime
 import random
-import re
 import requests
 import sqlite3
-import sys
 import threading
-import time
 import traceback
 
 DEFAULT_HOST = '0.0.0.0'
@@ -164,9 +164,20 @@ class Handler(SocketServer.BaseRequestHandler):
         self.send_raw(packet(*args))
 
 class Model(object):
-    def __init__(self, seed):
+    def __init__(self, seed, lan_mode=False, force_hour=None):
         self.world = World(seed)
         self.clients = []
+
+        self.lan_mode = lan_mode
+
+        if force_hour is not None:
+            # make the day progress VERY slowly, and start at indicated time
+            dl = 60000
+            force_hour %= 24
+            self.time_config = lambda: (force_hour*dl/24., dl)
+        else:
+            self.time_config = lambda: (time.time(), DAY_LENGTH)
+
         self.queue = Queue.Queue()
         self.commands = {
             AUTHENTICATE: self.on_authenticate,
@@ -185,6 +196,12 @@ class Model(object):
             (re.compile(r'^/help(?:\s+(\S+))?$'), self.on_help),
             (re.compile(r'^/list$'), self.on_list),
         ]
+
+        if self.lan_mode:
+            self.patterns.extend([
+                (re.compile(r'^/nick(?:\s+(\S+))?$'), self.on_set_nick),
+            ])
+
     def start(self):
         thread = threading.Thread(target=self.run)
         thread.setDaemon(True)
@@ -285,7 +302,7 @@ class Model(object):
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
-        client.send(TIME, time.time(), DAY_LENGTH)
+        client.send(TIME, *self.time_config())
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
         self.send_position(client)
@@ -315,16 +332,32 @@ class Model(object):
         # TODO: client.start() here
     def on_authenticate(self, client, username, access_token):
         user_id = None
-        if username and access_token:
-            url = 'https://craft.michaelfogleman.com/api/1/access'
-            payload = {
-                'username': username,
-                'access_token': access_token,
-            }
-            response = requests.post(url, data=payload)
-            if response.status_code == 200 and response.text.isdigit():
-                user_id = int(response.text)
+
+        if self.lan_mode:
+            # Use the IP and port as a starting point.
+            ip, port = client.request.getpeername()
+            if not username:
+                try:
+                    username = socket.gethostbyaddr(ip)[0] + ':%s' % port
+                except:
+                    username = '%s:%s' % (ip, port)
+            client.nick = username
+            client.send(TALK, 'Welcome %s' % client.nick)
+            user_id = ((int(ip.replace('.',''))*65536) + port) % 2**30
+            client.user_id = user_id
+        else:
+            if username and access_token:
+                url = 'https://craft.michaelfogleman.com/api/1/access'
+                payload = {
+                    'username': username,
+                    'access_token': access_token,
+                }
+                response = requests.post(url, data=payload)
+                if response.status_code == 200 and response.text.isdigit():
+                    user_id = int(response.text)
+
         client.user_id = user_id
+
         if user_id is None:
             client.nick = 'guest%d' % client.client_id
             client.send(TALK, 'Visit craft.michaelfogleman.com to register!')
@@ -506,6 +539,28 @@ class Model(object):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
+
+    def on_set_nick(self, client, new_nick=None):
+        if new_nick is None:
+            return self.on_help(client, 'nick')
+
+        NICK_RE = r'[a-z0-9A-Z_]{3,32}'
+        if not re.match(NICK_RE, new_nick):
+            client.send(TALK, 'Nicknames are 3 to 32 chars: A-Z a-Z or _')
+            return
+
+        if new_nick.lower() in [i.nick.lower() for i in self.clients 
+                                                if client != i]:
+            client.send(TALK, 'That nickname is taken already.')
+            return
+        
+        old_nick = client.nick
+        client.nick = new_nick
+        self.send_nick(client)
+        self.send_nicks(client)
+        for other in self.clients:
+            other.send(TALK, '%s is now nick-named: %s' % (old_nick, new_nick))
+        
     def on_goto(self, client, nick=None):
         if nick is None:
             clients = [x for x in self.clients if x != client]
@@ -529,6 +584,8 @@ class Model(object):
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
             client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout')
             client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn, /view N')
+            if self.lan_mode:
+                client.send(TALK, '/nick NEW_NICKNAME')
             return
         topic = topic.lower().strip()
         if topic == 'goto':
@@ -562,6 +619,10 @@ class Model(object):
         elif topic == 'view':
             client.send(TALK, 'Help: /view N')
             client.send(TALK, 'Set viewing distance, 1 - 24.')
+        elif self.lan_mode:
+            if topic == 'nick':
+                client.send(TALK, 'Help: /nick NEW_NICKNAME')
+                client.send(TALK, 'Set your nickname.')
     def on_list(self, client):
         client.send(TALK,
             'Players: %s' % ', '.join(x.nick for x in self.clients))
@@ -640,20 +701,42 @@ def cleanup():
     print >> sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
 
 def main():
-    if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Craft multi-user server')
+
+    parser.add_argument('--cleanup', action='store_true', 
+                        help="Wipe all existing world data")
+
+    parser.add_argument('--seed', default=None, type=int)
+    parser.add_argument('--host', default=DEFAULT_HOST)
+    parser.add_argument('--port', '-p', default=DEFAULT_PORT, type=int,
+            help="Port to bind to. Default: %s" % DEFAULT_PORT)
+    parser.add_argument('--hour', default=None, type=int,
+            help="Make it the same time of day all the time (hour: 0...23).")
+    parser.add_argument('--lan', action='store_true',
+            help="No passwords, just hostname/ip. Lan use only!")
+
+    args = parser.parse_args()
+
+    host, port = args.host, args.port
+
+    if args.cleanup:
         cleanup()
         return
-    host, port = DEFAULT_HOST, DEFAULT_PORT
-    if len(sys.argv) > 1:
-        host = sys.argv[1]
-    if len(sys.argv) > 2:
-        port = int(sys.argv[2])
+
     log('SERV', host, port)
-    model = Model(None)
+
+    model = Model(args.seed, lan_mode=args.lan, force_hour=args.hour)
     model.start()
+
     server = Server((host, port), Handler)
     server.model = model
-    server.serve_forever()
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        log("Stopped")
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main() or 0)

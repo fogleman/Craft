@@ -164,11 +164,12 @@ class Handler(SocketServer.BaseRequestHandler):
         self.send_raw(packet(*args))
 
 class Model(object):
-    def __init__(self, seed, lan_mode=False, force_hour=None):
+    def __init__(self, seed, lan_mode=False, force_hour=None, db_path=DB_PATH):
         self.world = World(seed)
         self.clients = []
 
         self.lan_mode = lan_mode
+        self.db_path = db_path
 
         if force_hour is not None:
             # make the day progress VERY slowly, and start at indicated time
@@ -650,6 +651,8 @@ class Model(object):
                 continue
             other.send(DISCONNECT, client.client_id)
     def send_block(self, client, p, q, x, y, z, w):
+        log("Send block: %s" % 
+                    ','.join([str(i) for i in (p, q, x, y, z, w)]))
         for other in self.clients:
             if other == client:
                 continue
@@ -710,6 +713,7 @@ def main():
 
     parser.add_argument('--seed', default=None, type=int)
     parser.add_argument('--host', default=DEFAULT_HOST)
+    parser.add_argument('--db', default=DB_PATH)
     parser.add_argument('--port', '-p', default=DEFAULT_PORT, type=int,
             help="Port to bind to. Default: %s" % DEFAULT_PORT)
     parser.add_argument('--hour', default=None, type=int,
@@ -727,7 +731,7 @@ def main():
 
     log('SERV', host, port)
 
-    model = Model(args.seed, lan_mode=args.lan, force_hour=args.hour)
+    model = Model(args.seed, lan_mode=args.lan, force_hour=args.hour, db_path=args.db)
     model.start()
 
     server = Server((host, port), Handler)

@@ -2,14 +2,16 @@ language: c
 
 install:
  - sudo apt-get update
- - sudo apt-get install build-essential cmake libglew-dev xorg-dev
+ - sudo apt-get install build-essential cmake libglew-dev xorg-dev python-pip
  - sudo apt-get build-dep glfw
  # Ubuntu 12.04 doesn't have a FindGLEW CMake module
  - sudo wget http://pastebin.com/raw.php?i=ax0fDqVa -O /usr/share/cmake-2.8/Modules/FindGLEW.cmake
+ - sudo pip install pylint
 
 script:
  - cmake .
  - make
+ - pylint server.py
 
 # Credit to Aaron1011
 # https://github.com/fogleman/Craft/pull/33/files

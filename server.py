@@ -393,6 +393,8 @@ class Model(object):
             client.send(REDRAW, p, q)
             client.send(TALK, message)
             return
+        client.send(BLOCK, p, q, x, y, z, w)
+        client.send(REDRAW, p, q)
         query = (
             'insert into block_history (timestamp, user_id, x, y, z, w) '
             'values (:timestamp, :user_id, :x, :y, :z, :w);'

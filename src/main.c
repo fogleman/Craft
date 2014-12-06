@@ -1554,27 +1554,6 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     }
 }
 
-void set_block(int x, int y, int z, int w) {
-    int p = chunked(x);
-    int q = chunked(z);
-    _set_block(p, q, x, y, z, w, 1);
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dz = -1; dz <= 1; dz++) {
-            if (dx == 0 && dz == 0) {
-                continue;
-            }
-            if (dx && chunked(x + dx) == p) {
-                continue;
-            }
-            if (dz && chunked(z + dz) == q) {
-                continue;
-            }
-            _set_block(p + dx, q + dz, x, y, z, -w, 1);
-        }
-    }
-    client_block(x, y, z, w);
-}
-
 void record_block(int x, int y, int z, int w) {
     memcpy(&g->block1, &g->block0, sizeof(Block));
     g->block0.x = x;
@@ -1599,10 +1578,10 @@ void builder_block(int x, int y, int z, int w) {
         return;
     }
     if (is_destructable(get_block(x, y, z))) {
-        set_block(x, y, z, 0);
+        client_block(x, y, z, 0);
     }
     if (w) {
-        set_block(x, y, z, w);
+        client_block(x, y, z, w);
     }
 }
 
@@ -2142,10 +2121,10 @@ void on_left_click() {
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
-        set_block(hx, hy, hz, 0);
+        client_block(hx, hy, hz, 0);
         record_block(hx, hy, hz, 0);
         if (is_plant(get_block(hx, hy + 1, hz))) {
-            set_block(hx, hy + 1, hz, 0);
+            client_block(hx, hy + 1, hz, 0);
         }
     }
 }
@@ -2156,7 +2135,7 @@ void on_right_click() {
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-            set_block(hx, hy, hz, items[g->item_index]);
+            client_block(hx, hy, hz, items[g->item_index]);
             record_block(hx, hy, hz, items[g->item_index]);
         }
     }

@@ -2469,7 +2469,25 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
             &bp, &bq, &bx, &by, &bz, &bw) == 6)
         {
+            // Set the received block
             _set_block(bp, bq, bx, by, bz, bw, 0);
+
+            // Update the neighbor blocks
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dz == 0) {
+                        continue;
+                    }
+                    if (dx && chunked(bx + dx) == bp) {
+                        continue;
+                    }
+                    if (dz && chunked(bz + dz) == bq) {
+                        continue;
+                    }
+                    _set_block(bp + dx, bq + dz, bx, by, bz, -bw, 1);
+                }
+            }
+
             if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
                 s->y = highest_block(s->x, s->z) + 2;
             }

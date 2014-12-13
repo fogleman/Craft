@@ -140,8 +140,6 @@ typedef struct {
     int ortho;
     float fov;
     int suppress_char;
-    int mode;
-    int mode_changed;
     char db_path[MAX_PATH_LENGTH];
     char server_addr[MAX_ADDR_LENGTH];
     int server_port;
@@ -2021,26 +2019,6 @@ void parse_command(const char *buffer, int forward) {
             add_message("Unknown username.");
         }
     }
-    else if (sscanf(buffer,
-        "/online %128s %d", server_addr, &server_port) >= 1)
-    {
-        g->mode_changed = 1;
-        g->mode = MODE_ONLINE;
-        strncpy(g->server_addr, server_addr, MAX_ADDR_LENGTH);
-        g->server_port = server_port;
-        snprintf(g->db_path, MAX_PATH_LENGTH,
-            "cache.%s.%d.db", g->server_addr, g->server_port);
-    }
-    else if (sscanf(buffer, "/offline %128s", filename) == 1) {
-        g->mode_changed = 1;
-        g->mode = MODE_OFFLINE;
-        snprintf(g->db_path, MAX_PATH_LENGTH, "%s.db", filename);
-    }
-    else if (strcmp(buffer, "/offline") == 0) {
-        g->mode_changed = 1;
-        g->mode = MODE_OFFLINE;
-        snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
-    }
     else if (sscanf(buffer, "/view %d", &radius) == 1) {
         if (radius >= 1 && radius <= 24) {
             g->create_radius = radius;
@@ -2581,6 +2559,12 @@ void reset_model() {
 }
 
 int main(int argc, char **argv) {
+    // CHECK COMMAND LINE ARGUMENTS //
+    if (argc < 2 || argc > 3) {
+		printf("USAGE: hostname [port]\n");
+		exit(1);
+	}
+
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));
@@ -2695,18 +2679,10 @@ int main(int argc, char **argv) {
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
 
-    // CHECK COMMAND LINE ARGUMENTS //
-    if (argc == 2 || argc == 3) {
-        g->mode = MODE_ONLINE;
-        strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
-        g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
-        snprintf(g->db_path, MAX_PATH_LENGTH,
-            "cache.%s.%d.db", g->server_addr, g->server_port);
-    }
-    else {
-        g->mode = MODE_OFFLINE;
-        snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
-    }
+	strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+	g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
+	snprintf(g->db_path, MAX_PATH_LENGTH,
+		"cache.%s.%d.db", g->server_addr, g->server_port);
 
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
@@ -2727,25 +2703,21 @@ int main(int argc, char **argv) {
     int running = 1;
     while (running) {
         // DATABASE INITIALIZATION //
-        if (g->mode == MODE_OFFLINE || USE_CACHE) {
+        if (USE_CACHE) {
             db_enable();
             if (db_init(g->db_path)) {
                 return -1;
             }
-            if (g->mode == MODE_ONLINE) {
-                // TODO: support proper caching of signs (handle deletions)
-                db_delete_all_signs();
-            }
+            // TODO: support proper caching of signs (handle deletions)
+            db_delete_all_signs();
         }
 
         // CLIENT INITIALIZATION //
-        if (g->mode == MODE_ONLINE) {
-            client_enable();
-            client_connect(g->server_addr, g->server_port);
-            client_start();
-            client_version(1);
-            login();
-        }
+        client_enable();
+        client_connect(g->server_addr, g->server_port);
+        client_start();
+        client_version(1);
+        login();
 
         // LOCAL VARIABLES //
         reset_model();
@@ -2935,10 +2907,6 @@ int main(int argc, char **argv) {
             glfwPollEvents();
             if (glfwWindowShouldClose(g->window)) {
                 running = 0;
-                break;
-            }
-            if (g->mode_changed) {
-                g->mode_changed = 0;
                 break;
             }
         }

@@ -4,7 +4,7 @@
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
 
-http://www.michaelfogleman.com/craft/
+This is a fork of [fogleman/Craft](https://github.com/fogleman/Craft) created for experiments and fun. We are trying to dumb the client down and move logic to the server. There are also plans for a more survival type of gameplay.
 
 ![Screenshot](http://i.imgur.com/SH7wcas.png)
 

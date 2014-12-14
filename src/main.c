@@ -2629,11 +2629,20 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("textures/sign.png");
 
+    GLuint inventory_texture;
+    glGenTextures(1, &inventory_texture);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, inventory_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    load_png_texture("textures/inventory.png");
+
     // LOAD SHADERS //
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
+    Attrib inventory_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -2675,6 +2684,14 @@ int main(int argc, char **argv) {
     sky_attrib.matrix = glGetUniformLocation(program, "matrix");
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
+
+    program = load_program(
+        "shaders/inventory_vertex.glsl", "shaders/inventory_fragment.glsl");
+    inventory_attrib.program = program;
+    inventory_attrib.position = glGetAttribLocation(program, "position");
+    inventory_attrib.uv = glGetAttribLocation(program, "uv");
+    inventory_attrib.matrix = glGetUniformLocation(program, "matrix");
+    inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
 
 	strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
 	g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;

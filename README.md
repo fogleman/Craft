@@ -18,17 +18,11 @@ This is a fork of [fogleman/Craft](https://github.com/fogleman/Craft) created fo
 * World changes persisted in a sqlite3 database.
 * Multiplayer support!
 
-### Download
-
-Mac and Windows binaries are available on the website.
-
-http://www.michaelfogleman.com/craft/
-
-See below to run from source.
-
 ### Install Dependencies
 
 #### Mac OS X
+
+Note: OSX builds are untested on this fork.
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 if you don't already have it. You may use [Homebrew](http://brew.sh) to simplify
@@ -42,6 +36,8 @@ the installation:
     sudo apt-get build-dep glfw
 
 #### Windows
+
+Note: Windows builds are untested on this fork.
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
@@ -122,25 +118,6 @@ If NAME is unspecified, a random user is chosen.
     /list
 
 Display a list of connected users.
-
-    /login NAME
-
-Switch to another registered username.
-The login server will be re-contacted. The username is case-sensitive.
-
-    /logout
-
-Unauthenticate and become a guest user.
-Automatic logins will not occur again until the /login command is re-issued.
-
-    /offline [FILE]
-
-Switch to offline mode.
-FILE specifies the save file to use and defaults to "craft".
-
-    /online HOST [PORT]
-
-Connect to the specified server.
 
     /pq P Q
 

@@ -378,6 +378,13 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    draw_triangles_2d(attrib, buffer, length * 6);
+    glDisable(GL_BLEND);
+}
+
 void draw_chunk(Attrib *attrib, Chunk *chunk) {
     draw_triangles_3d_ao(attrib, chunk->buffer, chunk->faces * 6);
 }
@@ -1791,28 +1798,25 @@ void render_text(
     del_buffer(buffer);
 }
 
-void render_inventory_bar(Attrib *attrib, int width) {
+void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
+        float x, float y, float n, int sel, int width, int height) {
+    render_inventory_bar(window_attrib, x, y, n, sel, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+//    render_inventory_items(item_attrib, x, y, n / 1.5, 0);
+//    glClear(GL_DEPTH_BUFFER_BIT);
+//    render_inventory_texts(text_attrib, x, y, n, 0);
+}
 
-    // inventory bar
+void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel, int width, int height) {
     float matrix[16];
-    int h = 16;
-    int w = width / 2;
-    set_matrix_2d(matrix, w, h);
+    set_matrix_2d(matrix, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
-
-    GLuint inv_buffer = gen_inventory_buffers(w, h - 5, h * 1.5, 1);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_2d(attrib, inv_buffer, INVENTORY_SLOTS * 6);
-    glDisable(GL_BLEND);
-
+    GLuint inv_buffer = gen_inventory_buffers(x, y, n, sel);
+    draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
     del_buffer(inv_buffer);
-    
-    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 void add_message(const char *text) {
@@ -2957,7 +2961,10 @@ int main(int argc, char **argv) {
             }
 
             // RENDER INVENTORY //
-            render_inventory_bar(&inventory_attrib, g->width);
+            int inv_offset = (g->observe2 ? 288 : 0);
+            render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
+                (g->width - inv_offset) / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5,
+                0, g->width, g->height);
 
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);

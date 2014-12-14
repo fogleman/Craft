@@ -45,6 +45,10 @@
 
 // inventory
 #define INVENTORY_SLOTS 9
+#define INVENTORY_ROWS 4
+#define MAX_SLOT_SIZE 64
+#define INVENTORY_ITEM_SIZE 48
+#define INVENTORY_FONT_SIZE 20
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

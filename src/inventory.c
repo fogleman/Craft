@@ -1,3 +1,4 @@
+// From https://github.com/CouleeApps/Craft/tree/mining_crafting
 void make_inventory(float *data, float x, float y, float n, float m, int s) {
     float *d = data;
     float z = 0.5;

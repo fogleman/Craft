@@ -293,6 +293,7 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
+// From https://github.com/CouleeApps/Craft/tree/mining_crafting
 GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
     int length = INVENTORY_SLOTS;
     GLfloat *data = malloc_faces(4, length);
@@ -378,6 +379,7 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// From https://github.com/CouleeApps/Craft/tree/mining_crafting 
 void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1798,6 +1800,7 @@ void render_text(
     del_buffer(buffer);
 }
 
+// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
 void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
         float x, float y, float n, int sel, int width, int height) {
     render_inventory_bar(window_attrib, x, y, n, sel, width, height);
@@ -1807,6 +1810,7 @@ void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_a
 //    render_inventory_texts(text_attrib, x, y, n, 0);
 }
 
+// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
 void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel, int width, int height) {
     float matrix[16];
     set_matrix_2d(matrix, width, height);

@@ -43,6 +43,9 @@
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
 
+// inventory
+#define INVENTORY_SLOTS 9
+
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10
 #define RENDER_CHUNK_RADIUS 10

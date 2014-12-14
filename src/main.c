@@ -19,6 +19,7 @@
 #include "tinycthread.h"
 #include "util.h"
 #include "world.h"
+#include "inventory.h"
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
@@ -147,6 +148,10 @@ typedef struct {
     Block copy0;
     Block copy1;
 } Model;
+
+typedef struct {
+    int items[255];
+} Items;
 
 static Model model;
 static Model *g = &model;
@@ -283,6 +288,17 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     GLfloat *data = malloc_faces(4, length);
     for (int i = 0; i < length; i++) {
         make_character(data + i * 24, x, y, n / 2, n, text[i]);
+        x += n;
+    }
+    return gen_faces(4, length, data);
+}
+
+GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
+    int length = INVENTORY_SLOTS;
+    GLfloat *data = malloc_faces(4, length);
+    x -= n * (length - 1) / 2;
+    for (int i = 0; i < length; i ++) {
+        make_inventory(data + i * 24, x, y, n / 2, n / 2, sel == i ? 1 : 0);
         x += n;
     }
     return gen_faces(4, length, data);
@@ -1775,6 +1791,30 @@ void render_text(
     del_buffer(buffer);
 }
 
+void render_inventory_bar(Attrib *attrib, int width) {
+
+    // inventory bar
+    float matrix[16];
+    int h = 16;
+    int w = width / 2;
+    set_matrix_2d(matrix, w, h);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
+
+    GLuint inv_buffer = gen_inventory_buffers(w, h - 5, h * 1.5, 1);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    draw_triangles_2d(attrib, inv_buffer, INVENTORY_SLOTS * 6);
+    glDisable(GL_BLEND);
+
+    del_buffer(inv_buffer);
+    
+    glClear(GL_DEPTH_BUFFER_BIT);
+}
+
 void add_message(const char *text) {
     printf("%s\n", text);
     snprintf(
@@ -2915,6 +2955,9 @@ int main(int argc, char **argv) {
                         pw / 2, ts, ts, player->name);
                 }
             }
+
+            // RENDER INVENTORY //
+            render_inventory_bar(&inventory_attrib, g->width);
 
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);

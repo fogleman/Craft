@@ -1801,16 +1801,6 @@ void render_text(
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
-        float x, float y, float n, int sel, int width, int height) {
-    render_inventory_bar(window_attrib, x, y, n, sel, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-//    render_inventory_items(item_attrib, x, y, n / 1.5, 0);
-//    glClear(GL_DEPTH_BUFFER_BIT);
-//    render_inventory_texts(text_attrib, x, y, n, 0);
-}
-
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
 void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel, int width, int height) {
     float matrix[16];
     set_matrix_2d(matrix, width, height);
@@ -1822,6 +1812,17 @@ void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel, in
     draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
     del_buffer(inv_buffer);
 }
+
+// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
+void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
+        float x, float y, float n, int sel, int width, int height) {
+    render_inventory_bar(window_attrib, x, y, n, sel, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+//    render_inventory_items(item_attrib, x, y, n / 1.5, 0);
+//    glClear(GL_DEPTH_BUFFER_BIT);
+//    render_inventory_texts(text_attrib, x, y, n, 0);
+}
+
 
 void add_message(const char *text) {
     printf("%s\n", text);

@@ -150,11 +150,18 @@ typedef struct {
 } Model;
 
 typedef struct {
-    int items[255];
-} Items;
+    int id;
+    int num;
+} Item;
+
+typedef struct {
+    Item *items;
+    int selected;
+} Inventory;
 
 static Model model;
 static Model *g = &model;
+static Inventory inventory;
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
@@ -1801,25 +1808,64 @@ void render_text(
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_bar(Attrib *attrib, float x, float y, float n, int sel, int width, int height) {
+void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos,
+        int width, int height, int sel) {
+    glUseProgram(attrib->program);
+    glUniform3f(attrib->camera, 0, 0, 5);
+    glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
+    glUniform1f(attrib->timer, PI*2);
+    float matrix[16];
+    GLuint buffer;
+    set_matrix_item_offs(matrix, width, height, 0.65, xpos, ypos, sel);
+    if (is_plant(item.id)) {
+        glDeleteBuffers(1, &buffer);
+        buffer = gen_plant_buffer(0, 0, 0, 0.5, item.id);
+    } else {
+        buffer = gen_cube_buffer(0, 0, 0, 0.5, item.id);
+    }
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    if (is_plant(item.id)) {
+        draw_plant(attrib, buffer);
+    } else {
+        draw_cube(attrib, buffer);
+    }
+    del_buffer(buffer);
+}
+
+void render_inventory_items(Attrib *attrib, float pos_x, int width, int height) {
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        Item block = inventory.items[item];
+        if (block.id == 0 || block.num == 0) continue;
+
+        float slotoff = -1 *  ((float)item - (float)(INVENTORY_SLOTS - 1) / 2);
+        float xpos = slotoff * ((0.125*1024)/width);
+        float ypos = 1 - ((0.17*768)/height);
+        int sel = inventory.selected == item ? 1 : 0;
+        render_inventory_item(attrib, block, xpos, ypos, width, height, sel);
+    }
+}
+
+// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
+void render_inventory_bar(Attrib *attrib, float x, int sel,
+        int width, int height) {
     float matrix[16];
     set_matrix_2d(matrix, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
-    GLuint inv_buffer = gen_inventory_buffers(x, y, n, sel);
+    GLuint inv_buffer = gen_inventory_buffers(x, 64, 64, sel);
     draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
     del_buffer(inv_buffer);
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory(Attrib *window_attrib, Attrib *item_attrib, Attrib *text_attrib,
-        float x, float y, float n, int sel, int width, int height) {
-    render_inventory_bar(window_attrib, x, y, n, sel, width, height);
+void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
+        float pos_x, int sel, int width, int height) {
+    render_inventory_bar(window_attrib, pos_x, sel, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-//    render_inventory_items(item_attrib, x, y, n / 1.5, 0);
-//    glClear(GL_DEPTH_BUFFER_BIT);
+    render_inventory_items(block_attrib, pos_x, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
 //    render_inventory_texts(text_attrib, x, y, n, 0);
 }
 
@@ -2314,14 +2360,12 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     static double ypos = 0;
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
-        g->item_index = (g->item_index + 1) % item_count;
+        if (INVENTORY_SLOTS > inventory.selected + 1)
+            inventory.selected = inventory.selected + 1;
         ypos = 0;
-    }
-    if (ypos > SCROLL_THRESHOLD) {
-        g->item_index--;
-        if (g->item_index < 0) {
-            g->item_index = item_count - 1;
-        }
+    } else if (ypos > SCROLL_THRESHOLD) {
+        if (inventory.selected > 0)
+            inventory.selected = inventory.selected - 1;
         ypos = 0;
     }
 }
@@ -2607,14 +2651,21 @@ void reset_model() {
 int main(int argc, char **argv) {
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc < 2 || argc > 3) {
-		printf("USAGE: hostname [port]\n");
-		exit(1);
-	}
+        printf("USAGE: hostname [port]\n");
+        exit(1);
+    }
 
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));
     rand();
+
+    inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
+        inventory.items[item].id = rand() % 10 + 1;
+        inventory.items[item].num = rand() % 63 + 1;
+    }
+    inventory.selected = 1;
 
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
@@ -2742,10 +2793,10 @@ int main(int argc, char **argv) {
     inventory_attrib.matrix = glGetUniformLocation(program, "matrix");
     inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
 
-	strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
-	g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
-	snprintf(g->db_path, MAX_PATH_LENGTH,
-		"cache.%s.%d.db", g->server_addr, g->server_port);
+    strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+    g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
+    snprintf(g->db_path, MAX_PATH_LENGTH,
+        "cache.%s.%d.db", g->server_addr, g->server_port);
 
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
@@ -2968,8 +3019,7 @@ int main(int argc, char **argv) {
             // RENDER INVENTORY //
             int inv_offset = (g->observe2 ? 288 : 0);
             render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                (g->width - inv_offset) / 2, INVENTORY_ITEM_SIZE, INVENTORY_ITEM_SIZE * 1.5,
-                0, g->width, g->height);
+                (g->width - inv_offset) / 2, inventory.selected, g->width, g->height);
 
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);

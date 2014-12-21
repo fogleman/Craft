@@ -23,6 +23,8 @@ include_directories(deps/noise)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 if(MINGW)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}
         "C:/Program Files/CURL/lib" "C:/Program Files (x86)/CURL/lib")

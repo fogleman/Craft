@@ -19,7 +19,6 @@
 #define SHOW_PLANTS 1
 #define SHOW_CLOUDS 1
 #define SHOW_TREES 1
-#define SHOW_ITEM 1
 #define SHOW_CROSSHAIRS 1
 #define SHOW_WIREFRAME 1
 #define SHOW_INFO_TEXT 1
@@ -42,6 +41,13 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+
+// inventory
+#define INVENTORY_SLOTS 9
+#define INVENTORY_ROWS 4
+#define MAX_SLOT_SIZE 64
+#define INVENTORY_ITEM_SIZE 48
+#define INVENTORY_FONT_SIZE 20
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

@@ -19,6 +19,7 @@
 #include "tinycthread.h"
 #include "util.h"
 #include "world.h"
+#include "inventory.h"
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
@@ -132,7 +133,6 @@ typedef struct {
     int observe1;
     int observe2;
     int flying;
-    int item_index;
     int scale;
     int ortho;
     float fov;
@@ -148,8 +148,19 @@ typedef struct {
     Block copy1;
 } Model;
 
+typedef struct {
+    int id;
+    int num;
+} Item;
+
+typedef struct {
+    Item *items;
+    int selected;
+} Inventory;
+
 static Model model;
 static Model *g = &model;
+static Inventory inventory;
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
@@ -288,6 +299,18 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
+// From https://github.com/CouleeApps/Craft/tree/mining_crafting
+GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
+    int length = INVENTORY_SLOTS;
+    GLfloat *data = malloc_faces(4, length);
+    x -= n * (length - 1) / 2;
+    for (int i = 0; i < length; i ++) {
+        make_inventory(data + i * 24, x, y, n / 2, n / 2, sel == i ? 1 : 0);
+        x += n;
+    }
+    return gen_faces(4, length, data);
+}
+
 void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -360,6 +383,14 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glDrawArrays(GL_LINES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+// From https://github.com/CouleeApps/Craft/tree/mining_crafting 
+void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    draw_triangles_2d(attrib, buffer, length * 6);
+    glDisable(GL_BLEND);
 }
 
 void draw_chunk(Attrib *attrib, Chunk *chunk) {
@@ -1738,27 +1769,6 @@ void render_crosshairs(Attrib *attrib) {
     glDisable(GL_COLOR_LOGIC_OP);
 }
 
-void render_item(Attrib *attrib) {
-    float matrix[16];
-    set_matrix_item(matrix, g->width, g->height, g->scale);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform3f(attrib->camera, 0, 0, 5);
-    glUniform1i(attrib->sampler, 0);
-    glUniform1f(attrib->timer, time_of_day());
-    int w = items[g->item_index];
-    if (is_plant(w)) {
-        GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
-        draw_plant(attrib, buffer);
-        del_buffer(buffer);
-    }
-    else {
-        GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
-        draw_cube(attrib, buffer);
-        del_buffer(buffer);
-    }
-}
-
 void render_text(
     Attrib *attrib, int justify, float x, float y, float n, char *text)
 {
@@ -1774,6 +1784,69 @@ void render_text(
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
 }
+
+// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
+void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos,
+        int width, int height, int sel) {
+    glUseProgram(attrib->program);
+    glUniform3f(attrib->camera, 0, 0, 5);
+    glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
+    glUniform1f(attrib->timer, PI*2);
+    float matrix[16];
+    GLuint buffer;
+    set_matrix_item_offs(matrix, width, height, 0.65, xpos, ypos, sel);
+    if (is_plant(item.id)) {
+        glDeleteBuffers(1, &buffer);
+        buffer = gen_plant_buffer(0, 0, 0, 0.5, item.id);
+    } else {
+        buffer = gen_cube_buffer(0, 0, 0, 0.5, item.id);
+    }
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    if (is_plant(item.id)) {
+        draw_plant(attrib, buffer);
+    } else {
+        draw_cube(attrib, buffer);
+    }
+    del_buffer(buffer);
+}
+
+void render_inventory_items(Attrib *attrib, float pos_x, int width, int height) {
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        Item block = inventory.items[item];
+        if (block.id == 0 || block.num == 0) continue;
+
+        float slotoff = -1 *  ((float)item - (float)(INVENTORY_SLOTS - 1) / 2);
+        float xpos = slotoff * ((0.125*1024)/width);
+        float ypos = 1 - ((0.17*768)/height);
+        int sel = inventory.selected == item ? 1 : 0;
+        render_inventory_item(attrib, block, xpos, ypos, width, height, sel);
+    }
+}
+
+// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
+void render_inventory_bar(Attrib *attrib, float x, int sel,
+        int width, int height) {
+    float matrix[16];
+    set_matrix_2d(matrix, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
+    GLuint inv_buffer = gen_inventory_buffers(x, 64, 64, sel);
+    draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
+    del_buffer(inv_buffer);
+}
+
+// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
+void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
+        float pos_x, int sel, int width, int height) {
+    render_inventory_bar(window_attrib, pos_x, sel, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    render_inventory_items(block_attrib, pos_x, width, height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+//    render_inventory_texts(text_attrib, x, y, n, 0);
+}
+
 
 void add_message(const char *text) {
     printf("%s\n", text);
@@ -2110,22 +2183,14 @@ void on_right_click() {
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-            client_block(hx, hy, hz, items[g->item_index]);
-            record_block(hx, hy, hz, items[g->item_index]);
+            client_block(hx, hy, hz, inventory.items[inventory.selected].id);
+            record_block(hx, hy, hz, inventory.items[inventory.selected].id);
         }
     }
 }
 
 void on_middle_click() {
-    State *s = &g->players->state;
-    int hx, hy, hz;
-    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    for (int i = 0; i < item_count; i++) {
-        if (items[i] == hw) {
-            g->item_index = i;
-            break;
-        }
-    }
+    // disable
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -2204,21 +2269,6 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_FLY) {
             g->flying = !g->flying;
         }
-        if (key >= '1' && key <= '9') {
-            g->item_index = key - '1';
-        }
-        if (key == '0') {
-            g->item_index = 9;
-        }
-        if (key == CRAFT_KEY_ITEM_NEXT) {
-            g->item_index = (g->item_index + 1) % item_count;
-        }
-        if (key == CRAFT_KEY_ITEM_PREV) {
-            g->item_index--;
-            if (g->item_index < 0) {
-                g->item_index = item_count - 1;
-            }
-        }
         if (key == CRAFT_KEY_OBSERVE) {
             g->observe1 = (g->observe1 + 1) % g->player_count;
         }
@@ -2265,14 +2315,12 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     static double ypos = 0;
     ypos += ydelta;
     if (ypos < -SCROLL_THRESHOLD) {
-        g->item_index = (g->item_index + 1) % item_count;
+        if (INVENTORY_SLOTS > inventory.selected + 1)
+            inventory.selected = inventory.selected + 1;
         ypos = 0;
-    }
-    if (ypos > SCROLL_THRESHOLD) {
-        g->item_index--;
-        if (g->item_index < 0) {
-            g->item_index = item_count - 1;
-        }
+    } else if (ypos > SCROLL_THRESHOLD) {
+        if (inventory.selected > 0)
+            inventory.selected = inventory.selected - 1;
         ypos = 0;
     }
 }
@@ -2545,7 +2593,6 @@ void reset_model() {
     g->observe1 = 0;
     g->observe2 = 0;
     g->flying = 0;
-    g->item_index = 0;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);
@@ -2558,14 +2605,21 @@ void reset_model() {
 int main(int argc, char **argv) {
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc < 2 || argc > 3) {
-		printf("USAGE: hostname [port]\n");
-		exit(1);
-	}
+        printf("USAGE: hostname [port]\n");
+        exit(1);
+    }
 
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));
     rand();
+
+    inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
+    for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
+        inventory.items[item].id = rand() % 10 + 1;
+        inventory.items[item].num = rand() % 63 + 1;
+    }
+    inventory.selected = 1;
 
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
@@ -2629,11 +2683,20 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("textures/sign.png");
 
+    GLuint inventory_texture;
+    glGenTextures(1, &inventory_texture);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, inventory_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    load_png_texture("textures/inventory.png");
+
     // LOAD SHADERS //
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
+    Attrib inventory_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -2676,10 +2739,18 @@ int main(int argc, char **argv) {
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
 
-	strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
-	g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
-	snprintf(g->db_path, MAX_PATH_LENGTH,
-		"cache.%s.%d.db", g->server_addr, g->server_port);
+    program = load_program(
+        "shaders/inventory_vertex.glsl", "shaders/inventory_fragment.glsl");
+    inventory_attrib.program = program;
+    inventory_attrib.position = glGetAttribLocation(program, "position");
+    inventory_attrib.uv = glGetAttribLocation(program, "uv");
+    inventory_attrib.matrix = glGetUniformLocation(program, "matrix");
+    inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
+
+    strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+    g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
+    snprintf(g->db_path, MAX_PATH_LENGTH,
+        "cache.%s.%d.db", g->server_addr, g->server_port);
 
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
@@ -2813,9 +2884,6 @@ int main(int argc, char **argv) {
             if (SHOW_CROSSHAIRS) {
                 render_crosshairs(&line_attrib);
             }
-            if (SHOW_ITEM) {
-                render_item(&block_attrib);
-            }
 
             // RENDER TEXT //
             char text_buffer[1024];
@@ -2898,6 +2966,11 @@ int main(int argc, char **argv) {
                         pw / 2, ts, ts, player->name);
                 }
             }
+
+            // RENDER INVENTORY //
+            int inv_offset = (g->observe2 ? 288 : 0);
+            render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
+                (g->width - inv_offset) / 2, inventory.selected, g->width, g->height);
 
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);

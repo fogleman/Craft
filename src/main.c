@@ -1855,9 +1855,9 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y,
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1); // GL_TEXTURE1
     char text_buffer[16];
-    float ts = INVENTORY_FONT_SIZE;
-    snprintf(text_buffer, 16, "%d", item.num);
-    x += ts * (2.5 - strlen(text_buffer));
+    float ts = 12;
+    snprintf(text_buffer, 16, "%02d", item.num);
+    x += ts * strlen(text_buffer);
     print(attrib, 1, x, y, ts, text_buffer);
 }
 
@@ -1867,9 +1867,8 @@ void render_inventory_texts(Attrib *attrib, float x, float y, int width, int hei
         Item block = inventory.items[item];
         if (block.id == 0 || block.num <= 0) continue;
 
-        float sep = INVENTORY_ITEM_SIZE * 1.5;
-        float tx = x + sep * (item - (((float)INVENTORY_SLOTS - 1.) / 2.));
-        float ty = y == 0 ? sep / 3 : y - sep / 3;
+        float tx = 12 + x + 64 * (item - ((float)INVENTORY_SLOTS / 2.));
+        float ty = 20; //y == 0 ? sep / 3 : y - sep / 3;
         render_inventory_text(attrib, block, tx, ty, width, height);
     }
 }
@@ -1882,7 +1881,7 @@ void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_
     glClear(GL_DEPTH_BUFFER_BIT);
     render_inventory_items(block_attrib, pos_x, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_texts(text_attrib, pos_x, 1, width, height);
+    render_inventory_texts(text_attrib, pos_x, 0, width, height);
 }
 
 

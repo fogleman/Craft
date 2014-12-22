@@ -1861,7 +1861,6 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y,
     print(attrib, 1, x, y, ts, text_buffer);
 }
 
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
 void render_inventory_texts(Attrib *attrib, float x, int width, int height) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
@@ -1873,8 +1872,6 @@ void render_inventory_texts(Attrib *attrib, float x, int width, int height) {
     }
 }
 
-
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
 void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
         float pos_x, int sel, int width, int height) {
     render_inventory_bar(window_attrib, pos_x, sel, width, height);

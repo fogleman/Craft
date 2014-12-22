@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "map.h"
+#include "config.h"
 
 int hash_int(int key) {
     key = ~key + (key << 15);
@@ -82,9 +83,9 @@ int map_get(Map *map, int x, int y, int z) {
     x -= map->dx;
     y -= map->dy;
     z -= map->dz;
-    if (x < 0 || x > 65535) return 0;
-    if (y < 0 || y > 65535) return 0;
-    if (z < 0 || z > 65535) return 0;
+    if (x < 0 || x >= MAX_BLOCK_HEIGHT) return 0;
+    if (y < 0 || y >= MAX_BLOCK_HEIGHT) return 0;
+    if (z < 0 || z >= MAX_BLOCK_HEIGHT) return 0;
     MapEntry *entry = map->data + index;
     while (!EMPTY_ENTRY(entry)) {
         if (entry->e.x == x && entry->e.y == y && entry->e.z == z) {

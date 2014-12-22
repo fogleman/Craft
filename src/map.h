@@ -1,7 +1,7 @@
 #ifndef _map_h_
 #define _map_h_
 
-#define EMPTY_ENTRY(entry) ((entry)->value == 0)
+#define EMPTY_ENTRY(entry) ((entry)->value == 0L)
 
 #define MAP_FOR_EACH(map, ex, ey, ez, ew) \
     for (unsigned int i = 0; i <= map->mask; i++) { \
@@ -17,7 +17,7 @@
 #define END_MAP_FOR_EACH }
 
 typedef union {
-    unsigned int value;
+    unsigned long long value;
     struct {
         unsigned short x;
         unsigned short y;

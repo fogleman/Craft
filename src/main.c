@@ -1862,13 +1862,13 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y,
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_texts(Attrib *attrib, float x, float y, int width, int height) {
+void render_inventory_texts(Attrib *attrib, float x, int width, int height) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
         if (block.id == 0 || block.num <= 0) continue;
 
         float tx = 12 + x + 64 * (item - ((float)INVENTORY_SLOTS / 2.));
-        float ty = 20; //y == 0 ? sep / 3 : y - sep / 3;
+        float ty = 20;
         render_inventory_text(attrib, block, tx, ty, width, height);
     }
 }
@@ -1881,7 +1881,7 @@ void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_
     glClear(GL_DEPTH_BUFFER_BIT);
     render_inventory_items(block_attrib, pos_x, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_texts(text_attrib, pos_x, 0, width, height);
+    render_inventory_texts(text_attrib, pos_x, width, height);
 }
 
 

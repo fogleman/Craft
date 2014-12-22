@@ -2215,10 +2215,23 @@ void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+
+    // Check for a empty slot
+    if (inventory.items[inventory.selected].id == 0) return;
+
     if (hy > 0 && hy < 256 && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
             client_block(hx, hy, hz, inventory.items[inventory.selected].id);
             record_block(hx, hy, hz, inventory.items[inventory.selected].id);
+
+            if (inventory.items[inventory.selected].num <= 1) {
+                // Last block placed, set to AIR
+                inventory.items[inventory.selected].num = 0;
+                inventory.items[inventory.selected].id = 0;
+            } else {
+                inventory.items[inventory.selected].num =
+                    inventory.items[inventory.selected].num - 1;
+            }
         }
     }
 }

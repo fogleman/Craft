@@ -6,7 +6,7 @@ Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C 
 
 This is a fork of [fogleman/Craft](https://github.com/fogleman/Craft) created for experiments and fun. We are trying to dumb the client down and move logic to the server. There are also plans for a more survival type of gameplay.
 
-![Screenshot](http://i.imgur.com/6bf1uWa.jpg)
+![Screenshot](http://i.imgur.com/MCkqcUY.png)
 
 ### Features
 

@@ -2355,6 +2355,9 @@ void on_char(GLFWwindow *window, unsigned int u) {
             g->typing_buffer[0] = CRAFT_KEY_SIGN;
             g->typing_buffer[1] = '\0';
         }
+        if (u > 48 && u < 58) {
+            inventory.selected = (int)u - 49;
+        }
     }
 }
 

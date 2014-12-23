@@ -378,7 +378,7 @@ class Model(object):
         message = None
         if client.user_id is None:
             message = 'Only logged in users are allowed to build.'
-        elif y <= 0 or y > 255:
+        elif y <= 0: #or y > 255: TODO: detect the real value
             message = 'Invalid block coordinates.'
         elif w not in ALLOWED_ITEMS:
             message = 'That item is not allowed.'

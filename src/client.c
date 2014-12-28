@@ -14,16 +14,15 @@
 #include "client.h"
 #include "tinycthread.h"
 
-#define QUEUE_SIZE 1048576
-#define RECV_SIZE 4096
+#define RECV_SIZE 256*256*256
 
 static int client_enabled = 0;
 static int running = 0;
 static int sd = 0;
 static int bytes_sent = 0;
 static int bytes_received = 0;
-static char *queue = 0;
-static int qsize = 0;
+static char *packet_buffer = 0;
+static int packet_buffer_size = 0;
 static thrd_t recv_thread;
 static mtx_t mutex;
 
@@ -60,7 +59,13 @@ void client_send(char *data) {
     if (!client_enabled) {
         return;
     }
-    if (client_sendall(sd, data, strlen(data)) == -1) {
+    int length = strlen(data);
+    int header_size = htonl(length);
+    if (client_sendall(sd, (char*)&header_size, sizeof(header_size)) == -1) {
+        perror("client_sendall");
+        exit(1);
+    }
+    if (client_sendall(sd, data, length) == -1) {
         perror("client_sendall");
         exit(1);
     }
@@ -71,7 +76,7 @@ void client_version(int version) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "V,%d\n", version);
+    snprintf(buffer, 1024, "V,%d", version);
     client_send(buffer);
 }
 
@@ -80,7 +85,7 @@ void client_login(const char *username, const char *identity_token) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "A,%s,%s\n", username, identity_token);
+    snprintf(buffer, 1024, "A,%s,%s", username, identity_token);
     client_send(buffer);
 }
 
@@ -100,7 +105,7 @@ void client_position(float x, float y, float z, float rx, float ry) {
     }
     px = x; py = y; pz = z; prx = rx; pry = ry;
     char buffer[1024];
-    snprintf(buffer, 1024, "P,%.2f,%.2f,%.2f,%.2f,%.2f\n", x, y, z, rx, ry);
+    snprintf(buffer, 1024, "P,%.2f,%.2f,%.2f,%.2f,%.2f", x, y, z, rx, ry);
     client_send(buffer);
 }
 
@@ -109,7 +114,7 @@ void client_chunk(int p, int q, int key) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "C,%d,%d,%d\n", p, q, key);
+    snprintf(buffer, 1024, "C,%d,%d,%d", p, q, key);
     client_send(buffer);
 }
 
@@ -118,7 +123,7 @@ void client_block(int x, int y, int z, int w) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "B,%d,%d,%d,%d\n", x, y, z, w);
+    snprintf(buffer, 1024, "B,%d,%d,%d,%d", x, y, z, w);
     client_send(buffer);
 }
 
@@ -127,7 +132,7 @@ void client_light(int x, int y, int z, int w) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "L,%d,%d,%d,%d\n", x, y, z, w);
+    snprintf(buffer, 1024, "L,%d,%d,%d,%d", x, y, z, w);
     client_send(buffer);
 }
 
@@ -136,7 +141,7 @@ void client_sign(int x, int y, int z, int face, const char *text) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "S,%d,%d,%d,%d,%s\n", x, y, z, face, text);
+    snprintf(buffer, 1024, "S,%d,%d,%d,%d,%s", x, y, z, face, text);
     client_send(buffer);
 }
 
@@ -148,54 +153,71 @@ void client_talk(const char *text) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "T,%s\n", text);
+    snprintf(buffer, 1024, "T,%s", text);
     client_send(buffer);
 }
 
-char *client_recv() {
+Packet client_recv() {
+    Packet packet = { 0, 0 };
     if (!client_enabled) {
-        return 0;
+        return packet;
     }
-    char *result = 0;
     mtx_lock(&mutex);
-    char *p = queue + qsize - 1;
-    while (p >= queue && *p != '\n') {
-        p--;
-    }
-    if (p >= queue) {
-        int length = p - queue + 1;
-        result = malloc(sizeof(char) * (length + 1));
-        memcpy(result, queue, sizeof(char) * length);
-        result[length] = '\0';
-        int remaining = qsize - length;
-        memmove(queue, p + 1, remaining);
-        qsize -= length;
-        bytes_received += length;
+    if (packet_buffer_size > 0) {
+        packet.payload = malloc(sizeof(char) * packet_buffer_size);
+        memcpy(packet.payload, packet_buffer, sizeof(char) * packet_buffer_size);
+        packet.size = packet_buffer_size;
+        packet_buffer_size = 0;
     }
     mtx_unlock(&mutex);
-    return result;
+
+    return packet;
 }
 
+// recv worker thread
 int recv_worker(void *arg) {
     char *data = malloc(sizeof(char) * RECV_SIZE);
+    int size;
     while (1) {
-        int length;
-        if ((length = recv(sd, data, RECV_SIZE - 1, 0)) <= 0) {
+
+        // get package length
+        if (recv(sd, &size, 4, 0) <= 0) {
             if (running) {
                 perror("recv");
                 exit(1);
-            }
-            else {
+            } else {
                 break;
             }
         }
-        data[length] = '\0';
+        size = ntohl(size);
+
+        if (size > RECV_SIZE) {
+            printf("package to large, received %d bytes\n", size);
+            exit(1);
+        }
+
+        // read 'size' bytes from the network
+        int t=0;
+        int length = 0;
+        while(t < size) {
+            if ((length = recv(sd, data+t, size-t, 0)) <= 0) {
+                if (running) {
+                    perror("recv");
+                    exit(1);
+                } else {
+                    break;
+                }
+            }
+            t += length;
+        }
+
+        // move data over to packet_buffer
         while (1) {
             int done = 0;
             mtx_lock(&mutex);
-            if (qsize + length < QUEUE_SIZE) {
-                memcpy(queue + qsize, data, sizeof(char) * (length + 1));
-                qsize += length;
+            if (packet_buffer_size == 0) {
+                memcpy(packet_buffer, data, sizeof(char) * size);
+                packet_buffer_size = size;
                 done = 1;
             }
             mtx_unlock(&mutex);
@@ -238,8 +260,8 @@ void client_start() {
         return;
     }
     running = 1;
-    queue = (char *)calloc(QUEUE_SIZE, sizeof(char));
-    qsize = 0;
+    packet_buffer = (char *)calloc(RECV_SIZE, sizeof(char));
+    packet_buffer_size = 0;
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
         perror("thrd_create");
@@ -258,8 +280,8 @@ void client_stop() {
     //     exit(1);
     // }
     // mtx_destroy(&mutex);
-    qsize = 0;
-    free(queue);
+    packet_buffer_size = 0;
+    free(packet_buffer);
     // printf("Bytes Sent: %d, Bytes Received: %d\n",
     //     bytes_sent, bytes_received);
 }

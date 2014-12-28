@@ -3,6 +3,11 @@
 
 #define DEFAULT_PORT 4080
 
+typedef struct {
+    int size;
+    char *payload;
+} Packet;
+
 void client_enable();
 void client_disable();
 int get_client_enabled();
@@ -10,7 +15,7 @@ void client_connect(char *hostname, int port);
 void client_start();
 void client_stop();
 void client_send(char *data);
-char *client_recv();
+Packet client_recv();
 void client_version(int version);
 void client_login(const char *username, const char *identity_token);
 void client_position(float x, float y, float z, float rx, float ry);

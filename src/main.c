@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <curl/curl.h>
+#include <arpa/inet.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2521,12 +2522,59 @@ void handle_movement(double dt) {
     }
 }
 
-void parse_buffer(char *buffer) {
+void parse_block(int p, int q, int x, int y, int z, int w, State *s) {
+    _set_block(p, q, x, y, z, w, 0);
+
+    if (player_intersects_block(2, s->x, s->y, s->z, x, y, z)) {
+        s->y = highest_block(s->x, s->z) + 2;
+    }
+
+}
+
+void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
+    g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+
+    for (int x = 0; x < CHUNK_SIZE; x++) {
+        for (int y = 0; y < CHUNK_SIZE; y++) {
+            for (int z = 0; z < CHUNK_SIZE; z++) {
+                int w = blocks[x+y*CHUNK_SIZE+y*CHUNK_SIZE*CHUNK_SIZE];
+                parse_block(p, q, p*CHUNK_SIZE+x, k*CHUNK_SIZE+y, q*CHUNK_SIZE+z, w, s);
+            }
+        }
+    }
+
+    Chunk *chunk = find_chunk(p, q);
+    if (chunk) {
+        dirty_chunk(chunk);
+    }
+}
+
+void parse_buffer(Packet packet) {
+
     Player *me = g->players;
     State *s = &g->players->state;
-    char *key;
-    char *line = tokenize(buffer, "\n", &key);
-    while (line) {
+
+    if (packet.payload[0] == 'B') {
+        int bp, bq, bk;
+        char *pos = packet.payload + 1;
+
+        bp = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        bq = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        bk = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        parse_blocks(bp, bq, bk, pos, packet.size - 1 - sizeof(int)*3, s);
+    } else {
+        int bp, bq, bx, by, bz, bw;
+
+        char *line = malloc((packet.size + 1) * sizeof(char));
+        memcpy(line, packet.payload, packet.size);
+        line[packet.size] = '\0';
+
         int pid;
         float ux, uy, uz, urx, ury;
         if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
@@ -2536,35 +2584,6 @@ void parse_buffer(char *buffer) {
             s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
             force_chunks(me);
             if (uy == 0) {
-                s->y = highest_block(s->x, s->z) + 2;
-            }
-        }
-        int bp, bq, bx, by, bz, bw;
-        if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
-            &bp, &bq, &bx, &by, &bz, &bw) == 6)
-        {
-            g->blocks_recv = g->blocks_recv + 1;
-
-            // Set the received block
-            _set_block(bp, bq, bx, by, bz, bw, 0);
-
-            // Update the neighbor blocks
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    if (dx == 0 && dz == 0) {
-                        continue;
-                    }
-                    if (dx && chunked(bx + dx) == bp) {
-                        continue;
-                    }
-                    if (dz && chunked(bz + dz) == bq) {
-                        continue;
-                    }
-                    _set_block(bp + dx, bq + dz, bx, by, bz, -bw, 1);
-                }
-            }
-
-            if (player_intersects_block(2, s->x, s->y, s->z, bx, by, bz)) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
         }
@@ -2634,8 +2653,10 @@ void parse_buffer(char *buffer) {
         {
             _set_sign(bp, bq, bx, by, bz, face, text, 0);
         }
-        line = tokenize(NULL, "\n", &key);
+
+
     }
+
 }
 
 void reset_model() {
@@ -2839,7 +2860,7 @@ int main(int argc, char **argv) {
         client_enable();
         client_connect(g->server_addr, g->server_port);
         client_start();
-        client_version(1);
+        client_version(2);
         login();
 
         // LOCAL VARIABLES //
@@ -2892,10 +2913,10 @@ int main(int argc, char **argv) {
             handle_movement(dt);
 
             // HANDLE DATA FROM SERVER //
-            char *buffer = client_recv();
-            if (buffer) {
-                parse_buffer(buffer);
-                free(buffer);
+            Packet packet = client_recv();
+            if (packet.size != 0) {
+                parse_buffer(packet);
+                free(packet.payload);
             }
 
             // FLUSH DATABASE //

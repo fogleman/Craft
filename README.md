@@ -62,32 +62,6 @@ terminal.
     make
     ./craft
 
-### Multiplayer
-
-Register for an account!
-
-https://craft.michaelfogleman.com/
-
-#### Client
-
-You can connect to a server with command line arguments...
-
-    ./craft craft.michaelfogleman.com
-
-#### Server
-
-You can run your own server or connect to mine. The server is written in Python
-but requires a compiled DLL so it can perform the terrain generation just like
-the client.
-
-    python server.py [HOST [PORT]]
-
-##### Windows & OSX
-    gcc -std=c99 -O3 -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
-
-##### Linux
-    gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
-
 ### Controls
 
 - WASD to move forward, left, backward, right.

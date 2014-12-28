@@ -146,6 +146,7 @@ typedef struct {
     Block block1;
     Block copy0;
     Block copy1;
+    int blocks_recv;
 } Model;
 
 typedef struct {
@@ -2542,6 +2543,8 @@ void parse_buffer(char *buffer) {
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
             &bp, &bq, &bx, &by, &bz, &bw) == 6)
         {
+            g->blocks_recv = g->blocks_recv + 1;
+
             // Set the received block
             _set_block(bp, bq, bx, by, bz, bw, 0);
 
@@ -2670,6 +2673,8 @@ int main(int argc, char **argv) {
         inventory.items[item].num = rand() % 63 + 1;
     }
     inventory.selected = 1;
+
+    g->blocks_recv = 0;
 
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
@@ -2947,10 +2952,15 @@ int main(int argc, char **argv) {
                 hour = hour ? hour : 12;
                 snprintf(
                     text_buffer, 1024,
-                    "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
+                    "(%d, %d) (%.2f, %.2f, %.2f) %d%cm %dfps",
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
-                    g->player_count, g->chunk_count,
-                    face_count * 2, hour, am_pm, fps.fps);
+                    hour, am_pm, fps.fps);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                ty -= ts * 2;
+                snprintf(
+                    text_buffer, 1024,
+                    "%d pl, %d ch, %d bl, %d fa",
+                    g->player_count, g->chunk_count, g->blocks_recv, face_count * 2);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }

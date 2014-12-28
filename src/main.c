@@ -2554,7 +2554,7 @@ void parse_buffer(Packet packet) {
     Player *me = g->players;
     State *s = &g->players->state;
 
-    if (packet.payload[0] == 'B') {
+    if (packet.payload[0] == 'C') {
         int bp, bq, bk;
         char *pos = packet.payload + 1;
 
@@ -2585,6 +2585,16 @@ void parse_buffer(Packet packet) {
             force_chunks(me);
             if (uy == 0) {
                 s->y = highest_block(s->x, s->z) + 2;
+            }
+        }
+        if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
+            &bp, &bq, &bx, &by, &bz, &bw) == 6) {
+
+            g->blocks_recv = g->blocks_recv + 1;
+            parse_block(bp, bq, bx, by, bz, bw, s);
+            Chunk *chunk = find_chunk(bp, bq);
+            if (chunk) {
+                dirty_chunk(chunk);
             }
         }
         if (sscanf(line, "L,%d,%d,%d,%d,%d,%d",

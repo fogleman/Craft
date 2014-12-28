@@ -2554,7 +2554,7 @@ void parse_buffer(Packet packet) {
     Player *me = g->players;
     State *s = &g->players->state;
 
-    if (packet.payload[0] == 'B') {
+    if (packet.payload[0] == 'C') {
         int bp, bq, bk;
         char *pos = packet.payload + 1;
 

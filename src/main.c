@@ -2813,6 +2813,7 @@ int main(int argc, char **argv) {
 
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
+        int blocks_recv = g->blocks_recv;
         while (1) {
             // WINDOW SIZE AND SCALE //
             g->scale = get_scale_factor();
@@ -2886,6 +2887,8 @@ int main(int argc, char **argv) {
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
+            int blocks_recv_diff = g->blocks_recv - blocks_recv;
+            blocks_recv = g->blocks_recv;
             if (g->debug_screen) {
                 int hour = time_of_day() * 24;
                 char am_pm = hour < 12 ? 'a' : 'p';
@@ -2900,12 +2903,17 @@ int main(int argc, char **argv) {
                 ty -= ts * 2;
                 snprintf(
                     text_buffer, 1024,
-                    "%d pl, %d ch, %d bl, %d fa",
-                    g->player_count, g->chunk_count, g->blocks_recv, face_count * 2);
+                    "%d pl, %d ch, %d(%d) bl, %d fa",
+                    g->player_count, g->chunk_count, blocks_recv_diff,
+                    g->blocks_recv, face_count * 2);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             } else {
-                snprintf(text_buffer, 1024, "F3: Debug");
+                if (blocks_recv_diff > 0) {
+                    snprintf(text_buffer, 1024, "F3: Debug; Loading blocks ...");
+                } else {
+                    snprintf(text_buffer, 1024, "F3: Debug");
+                }
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }

@@ -384,7 +384,7 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting 
+// From https://github.com/CouleeApps/Craft/tree/mining_crafting
 void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -2475,7 +2475,7 @@ void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int y = 0; y < CHUNK_SIZE; y++) {
             for (int z = 0; z < CHUNK_SIZE; z++) {
-                int w = blocks[x+y*CHUNK_SIZE+y*CHUNK_SIZE*CHUNK_SIZE];
+                int w = blocks[x+y*CHUNK_SIZE+z*CHUNK_SIZE*CHUNK_SIZE];
                 parse_block(p, q, p*CHUNK_SIZE+x, k*CHUNK_SIZE+y, q*CHUNK_SIZE+z, w, s);
             }
         }

@@ -2300,6 +2300,7 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
         if (u > 48 && u < 58) {
             inventory.selected = (int)u - 49;
+            client_inventory_select((int)u - 49);
         }
     }
 }
@@ -2310,10 +2311,12 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     if (ypos < -SCROLL_THRESHOLD) {
         if (INVENTORY_SLOTS > inventory.selected + 1)
             inventory.selected = inventory.selected + 1;
+            client_inventory_select(inventory.selected);
         ypos = 0;
     } else if (ypos > SCROLL_THRESHOLD) {
         if (inventory.selected > 0)
             inventory.selected = inventory.selected - 1;
+            client_inventory_select(inventory.selected);
         ypos = 0;
     }
 }
@@ -2535,6 +2538,9 @@ void parse_buffer(Packet packet) {
         if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
             inventory.items[pos].id = id;
             inventory.items[pos].num = amount;
+        }
+        if (sscanf(line, "A,%d", &id) == 1) {
+            inventory.selected = id;
         }
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
             &bp, &bq, &bx, &by, &bz, &bw) == 6) {

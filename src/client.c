@@ -116,6 +116,15 @@ void client_inventory() {
     client_send("I");
 }
 
+void client_inventory_select(int pos) {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[16];
+    snprintf(buffer, 16, "A,%d", pos);
+    client_send(buffer);
+}
+
 void client_chunk(int p, int q, int key) {
     if (!client_enabled) {
         return;

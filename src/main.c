@@ -2531,6 +2531,11 @@ void parse_buffer(Packet packet) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
         }
+        int pos, amount, id;
+        if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
+            inventory.items[pos].id = id;
+            inventory.items[pos].num = amount;
+        }
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
             &bp, &bq, &bx, &by, &bz, &bw) == 6) {
 
@@ -2640,10 +2645,10 @@ int main(int argc, char **argv) {
 
     inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
-        inventory.items[item].id = rand() % 10 + 1;
-        inventory.items[item].num = rand() % 63 + 1;
+        inventory.items[item].id = 0;
+        inventory.items[item].num = 0;
     }
-    inventory.selected = 1;
+    inventory.selected = 0;
 
     g->blocks_recv = 0;
     g->debug_screen = 0;
@@ -2818,6 +2823,9 @@ int main(int argc, char **argv) {
 
         force_chunks(me);
         s->y = highest_block(s->x, s->z) + 2;
+
+        // Ask server for inventory
+        client_inventory();
 
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
@@ -3012,5 +3020,6 @@ int main(int argc, char **argv) {
 
     glfwTerminate();
     free(g->chunk_buffer);
+    free(inventory.items);
     return 0;
 }

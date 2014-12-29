@@ -24,5 +24,6 @@ void client_block(int x, int y, int z, int w);
 void client_light(int x, int y, int z, int w);
 void client_sign(int x, int y, int z, int face, const char *text);
 void client_talk(const char *text);
+void client_inventory();
 
 #endif

@@ -132,6 +132,7 @@ typedef struct {
     int observe1;
     int observe2;
     int flying;
+    int debug_screen;
     int scale;
     int ortho;
     float fov;
@@ -2276,6 +2277,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_FLY) {
             g->flying = !g->flying;
         }
+        if (key == CRAFT_KEY_DEBUG_SCREEN) {
+            g->debug_screen = !g->debug_screen;
+        }
         if (key == CRAFT_KEY_OBSERVE) {
             g->observe1 = (g->observe1 + 1) % g->player_count;
         }
@@ -2663,6 +2667,7 @@ int main(int argc, char **argv) {
     inventory.selected = 1;
 
     g->blocks_recv = 0;
+    g->debug_screen = 0;
 
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
@@ -2932,7 +2937,7 @@ int main(int argc, char **argv) {
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
-            if (SHOW_INFO_TEXT) {
+            if (g->debug_screen) {
                 int hour = time_of_day() * 24;
                 char am_pm = hour < 12 ? 'a' : 'p';
                 hour = hour % 12;
@@ -2948,6 +2953,10 @@ int main(int argc, char **argv) {
                     text_buffer, 1024,
                     "%d pl, %d ch, %d bl, %d fa",
                     g->player_count, g->chunk_count, g->blocks_recv, face_count * 2);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                ty -= ts * 2;
+            } else {
+                snprintf(text_buffer, 1024, "F3: Debug");
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }

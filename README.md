@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/nsg/Craft.svg?branch=master)](https://travis-ci.org/nsg/Craft)
 
-Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
+Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders).
 
 This is a fork of [fogleman/Craft](https://github.com/fogleman/Craft) created for experiments and fun. We are trying to dumb the client down and move logic to the server. There are also plans for a more survival type of gameplay.
 
@@ -93,6 +93,10 @@ Teleport to the specified chunk.
 
 Teleport back to the spawn point.
 
+### Server
+
+You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game.
+
 ### Implementation Details
 
 For a in depth description of the technical detals see [README.md at fogleman/Craft](https://github.com/fogleman/Craft/blob/master/README.md). fogleman (Michael Fogleman) has written most of the grafic stack and has a excellent description.
@@ -101,7 +105,5 @@ For a in depth description of the technical detals see [README.md at fogleman/Cr
 
 * GLEW is used for managing OpenGL extensions across platforms.
 * GLFW is used for cross-platform window management.
-* CURL is used for HTTPS / SSL POST for the authentication process.
 * lodepng is used for loading PNG textures.
-* sqlite3 is used for saving the blocks added / removed by the user.
 * tinycthread is used for cross-platform threading.

@@ -21,7 +21,6 @@
 #define SHOW_TREES 1
 #define SHOW_CROSSHAIRS 1
 #define SHOW_WIREFRAME 1
-#define SHOW_INFO_TEXT 1
 #define SHOW_CHAT_TEXT 1
 #define SHOW_PLAYER_NAMES 1
 
@@ -41,6 +40,7 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+#define CRAFT_KEY_DEBUG_SCREEN 292 // F3
 
 // inventory
 #define INVENTORY_SLOTS 9

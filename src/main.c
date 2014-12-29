@@ -18,6 +18,7 @@
 #include "util.h"
 #include "world.h"
 #include "inventory.h"
+#include "compress.h"
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
@@ -145,6 +146,8 @@ typedef struct {
     Block copy0;
     Block copy1;
     int blocks_recv;
+    char *chunk_buffer;
+    int chunk_buffer_size;
 } Model;
 
 typedef struct {
@@ -2471,11 +2474,13 @@ void parse_block(int p, int q, int x, int y, int z, int w, State *s) {
 
 void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
     g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+    int out_size = inflate_data(blocks, size, g->chunk_buffer,
+            g->chunk_buffer_size);
 
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int y = 0; y < CHUNK_SIZE; y++) {
             for (int z = 0; z < CHUNK_SIZE; z++) {
-                int w = blocks[x+y*CHUNK_SIZE+z*CHUNK_SIZE*CHUNK_SIZE];
+                int w = g->chunk_buffer[x+y*CHUNK_SIZE+z*CHUNK_SIZE*CHUNK_SIZE];
                 if(w != 0)
                   parse_block(p, q, p*CHUNK_SIZE+x, k*CHUNK_SIZE+y, q*CHUNK_SIZE+z, w, s);
             }
@@ -2642,6 +2647,8 @@ int main(int argc, char **argv) {
 
     g->blocks_recv = 0;
     g->debug_screen = 0;
+    g->chunk_buffer_size = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
+    g->chunk_buffer = malloc(sizeof(char)*g->chunk_buffer_size);
 
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
@@ -3004,5 +3011,6 @@ int main(int argc, char **argv) {
     }
 
     glfwTerminate();
+    free(g->chunk_buffer);
     return 0;
 }

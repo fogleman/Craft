@@ -9,7 +9,6 @@
 #include "client.h"
 #include "config.h"
 #include "cube.h"
-#include "db.h"
 #include "item.h"
 #include "map.h"
 #include "matrix.h"
@@ -137,7 +136,6 @@ typedef struct {
     int ortho;
     float fov;
     int suppress_char;
-    char db_path[MAX_PATH_LENGTH];
     char server_addr[MAX_ADDR_LENGTH];
     int server_port;
     int day_length;
@@ -1206,13 +1204,10 @@ void load_chunk(WorkerItem *item) {
     Map *block_map = item->block_maps[1][1];
     Map *light_map = item->light_maps[1][1];
     create_world(p, q, map_set_func, block_map);
-    db_load_blocks(block_map, p, q);
-    db_load_lights(light_map, p, q);
 }
 
 void request_chunk(int p, int q) {
-    int key = db_get_key(p, q);
-    client_chunk(p, q, key);
+    client_chunk(p, q, -1); // -1 is a dummy key
 }
 
 void init_chunk(Chunk *chunk, int p, int q) {
@@ -1225,7 +1220,6 @@ void init_chunk(Chunk *chunk, int p, int q) {
     dirty_chunk(chunk);
     SignList *signs = &chunk->signs;
     sign_list_alloc(signs, 16);
-    db_load_signs(signs, p, q);
     Map *block_map = &chunk->map;
     Map *light_map = &chunk->lights;
     int dx = p * CHUNK_SIZE - 1;
@@ -1484,11 +1478,7 @@ void unset_sign(int x, int y, int z) {
         SignList *signs = &chunk->signs;
         if (sign_list_remove_all(signs, x, y, z)) {
             chunk->dirty = 1;
-            db_delete_signs(x, y, z);
         }
-    }
-    else {
-        db_delete_signs(x, y, z);
     }
 }
 
@@ -1500,11 +1490,7 @@ void unset_sign_face(int x, int y, int z, int face) {
         SignList *signs = &chunk->signs;
         if (sign_list_remove(signs, x, y, z, face)) {
             chunk->dirty = 1;
-            db_delete_sign(x, y, z, face);
         }
-    }
-    else {
-        db_delete_sign(x, y, z, face);
     }
 }
 
@@ -1523,7 +1509,6 @@ void _set_sign(
             chunk->dirty = 1;
         }
     }
-    db_insert_sign(p, q, x, y, z, face, text);
 }
 
 void set_sign(int x, int y, int z, int face, const char *text) {
@@ -1541,7 +1526,6 @@ void toggle_light(int x, int y, int z) {
         Map *map = &chunk->lights;
         int w = map_get(map, x, y, z) ? 0 : 15;
         map_set(map, x, y, z, w);
-        db_insert_light(p, q, x, y, z, w);
         client_light(x, y, z, w);
         dirty_chunk(chunk);
     }
@@ -1553,11 +1537,7 @@ void set_light(int p, int q, int x, int y, int z, int w) {
         Map *map = &chunk->lights;
         if (map_set(map, x, y, z, w)) {
             dirty_chunk(chunk);
-            db_insert_light(p, q, x, y, z, w);
         }
-    }
-    else {
-        db_insert_light(p, q, x, y, z, w);
     }
 }
 
@@ -1569,11 +1549,7 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
             if (dirty) {
                 dirty_chunk(chunk);
             }
-            db_insert_block(p, q, x, y, z, w);
         }
-    }
-    else {
-        db_insert_block(p, q, x, y, z, w);
     }
     if (w == 0 && chunked(x) == p && chunked(z) == q) {
         unset_sign(x, y, z);
@@ -2585,9 +2561,6 @@ void parse_buffer(Packet packet) {
             delete_player(pid);
         }
         int kp, kq, kk;
-        if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
-            db_set_key(kp, kq, kk);
-        }
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
@@ -2797,8 +2770,6 @@ int main(int argc, char **argv) {
 
     strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
     g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
-    snprintf(g->db_path, MAX_PATH_LENGTH,
-        "cache.%s.%d.db", g->server_addr, g->server_port);
 
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
@@ -2818,16 +2789,6 @@ int main(int argc, char **argv) {
     // OUTER LOOP //
     int running = 1;
     while (running) {
-        // DATABASE INITIALIZATION //
-        if (USE_CACHE) {
-            db_enable();
-            if (db_init(g->db_path)) {
-                return -1;
-            }
-            // TODO: support proper caching of signs (handle deletions)
-            db_delete_all_signs();
-        }
-
         // CLIENT INITIALIZATION //
         client_enable();
         client_connect(g->server_addr, g->server_port);
@@ -2837,7 +2798,6 @@ int main(int argc, char **argv) {
         // LOCAL VARIABLES //
         reset_model();
         FPS fps = {0, 0, 0};
-        double last_commit = glfwGetTime();
         double last_update = glfwGetTime();
         GLuint sky_buffer = gen_sky_buffer();
 
@@ -2848,12 +2808,8 @@ int main(int argc, char **argv) {
         me->buffer = 0;
         g->player_count = 1;
 
-        // LOAD STATE FROM DATABASE //
-        int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
         force_chunks(me);
-        if (!loaded) {
-            s->y = highest_block(s->x, s->z) + 2;
-        }
+        s->y = highest_block(s->x, s->z) + 2;
 
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
@@ -2866,7 +2822,6 @@ int main(int argc, char **argv) {
             // FRAME RATE //
             if (g->time_changed) {
                 g->time_changed = 0;
-                last_commit = glfwGetTime();
                 last_update = glfwGetTime();
                 memset(&fps, 0, sizeof(fps));
             }
@@ -2888,12 +2843,6 @@ int main(int argc, char **argv) {
             if (packet.size != 0) {
                 parse_buffer(packet);
                 free(packet.payload);
-            }
-
-            // FLUSH DATABASE //
-            if (now - last_commit > COMMIT_INTERVAL) {
-                last_commit = now;
-                db_commit();
             }
 
             // SEND POSITION TO SERVER //
@@ -3038,9 +2987,6 @@ int main(int argc, char **argv) {
         }
 
         // SHUTDOWN //
-        db_save_state(s->x, s->y, s->z, s->rx, s->ry);
-        db_close();
-        db_disable();
         client_stop();
         client_disable();
         del_buffer(sky_buffer);

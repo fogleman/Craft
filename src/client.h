@@ -26,5 +26,6 @@ void client_sign(int x, int y, int z, int face, const char *text);
 void client_talk(const char *text);
 void client_inventory();
 void client_inventory_select(int pos);
+void click_at(int button, int x, int y, int z);
 
 #endif

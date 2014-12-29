@@ -10,7 +10,6 @@ add_executable(
     deps/glew/src/glew.c
     deps/lodepng/lodepng.c
     deps/noise/noise.c
-    deps/sqlite/sqlite3.c
     deps/tinycthread/tinycthread.c)
 
 add_definitions(-std=c99 -O3)
@@ -20,7 +19,6 @@ include_directories(deps/glew/include)
 include_directories(deps/glfw/include)
 include_directories(deps/lodepng)
 include_directories(deps/noise)
-include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 
 set(CMAKE_BUILD_TYPE Debug)

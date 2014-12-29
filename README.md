@@ -33,7 +33,7 @@ the installation:
 
 #### Linux (Ubuntu)
 
-    sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
+    sudo apt-get install cmake libglew-dev xorg-dev
     sudo apt-get build-dep glfw
 
 #### Windows
@@ -42,9 +42,6 @@ Note: Windows builds are untested on this fork.
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
-
-Download and install [cURL](http://curl.haxx.se/download.html) so that
-CURL/lib and CURL/include are in your Program Files directory.
 
 Use the following commands in place of the ones described in the next section.
 

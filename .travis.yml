@@ -10,7 +10,6 @@ install:
 script:
  - cmake .
  - make
- - python -m py_compile server.py
 
 # Credit to Aaron1011
 # https://github.com/fogleman/Craft/pull/33/files

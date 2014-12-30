@@ -240,9 +240,10 @@ int recv_worker(void *arg) {
         while (1) {
             int done = 0;
             mtx_lock(&mutex);
-            if (packet_buffer_size == 0) {
-                memcpy(packet_buffer, data, sizeof(char) * size);
-                packet_buffer_size = size;
+            if (packet_buffer_size + size + sizeof(size) < RECV_SIZE) {
+                memcpy(packet_buffer + packet_buffer_size, &size, sizeof(size));
+                memcpy(packet_buffer + packet_buffer_size + sizeof(size), data, sizeof(char) * size);
+                packet_buffer_size += size + sizeof(size);
                 done = 1;
             }
             mtx_unlock(&mutex);

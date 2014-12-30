@@ -2482,122 +2482,128 @@ void parse_buffer(Packet packet) {
     Player *me = g->players;
     State *s = &g->players->state;
 
-    if (packet.payload[0] == 'C') {
-        int bp, bq, bk;
-        char *pos = packet.payload + 1;
+    char *payload = packet.payload;
+    int size = *((int*)payload);
+    payload += sizeof(size);
+    while(payload < packet.payload + packet.size) {
+        if (payload[0] == 'C') {
+            int bp, bq, bk;
+            char *pos = payload + 1;
 
-        bp = ntohl(*((int*)pos));
-        pos += sizeof(int);
+            bp = ntohl(*((int*)pos));
+            pos += sizeof(int);
 
-        bq = ntohl(*((int*)pos));
-        pos += sizeof(int);
+            bq = ntohl(*((int*)pos));
+            pos += sizeof(int);
 
-        bk = ntohl(*((int*)pos));
-        pos += sizeof(int);
+            bk = ntohl(*((int*)pos));
+            pos += sizeof(int);
 
-        parse_blocks(bp, bq, bk, pos, packet.size - 1 - sizeof(int)*3, s);
-    } else {
-        int bp, bq, bx, by, bz, bw;
+            parse_blocks(bp, bq, bk, pos, size - 1 - sizeof(int)*3, s);
+        } else {
+            int bp, bq, bx, by, bz, bw;
 
-        char *line = malloc((packet.size + 1) * sizeof(char));
-        memcpy(line, packet.payload, packet.size);
-        line[packet.size] = '\0';
+            char *line = malloc((size + 1) * sizeof(char));
+            memcpy(line, payload, size);
+            line[size] = '\0';
 
-        int pid;
-        float ux, uy, uz, urx, ury;
-        if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
-            &pid, &ux, &uy, &uz, &urx, &ury) == 6)
-        {
-            me->id = pid;
-            s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
-            force_chunks(me);
-            if (uy == 0) {
-                s->y = highest_block(s->x, s->z) + 2;
+            int pid;
+            float ux, uy, uz, urx, ury;
+            if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
+                       &pid, &ux, &uy, &uz, &urx, &ury) == 6)
+            {
+                me->id = pid;
+                s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
+                force_chunks(me);
+                if (uy == 0) {
+                    s->y = highest_block(s->x, s->z) + 2;
+                }
+            }
+            int pos, amount, id;
+            if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
+                inventory.items[pos].id = id;
+                inventory.items[pos].num = amount;
+            }
+            if (sscanf(line, "A,%d", &id) == 1) {
+                inventory.selected = id;
+            }
+            if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
+                       &bp, &bq, &bx, &by, &bz, &bw) == 6) {
+
+                g->blocks_recv = g->blocks_recv + 1;
+                parse_block(bp, bq, bx, by, bz, bw, s);
+                Chunk *chunk = find_chunk(bp, bq);
+                if (chunk) {
+                    dirty_chunk(chunk);
+                }
+            }
+            if (sscanf(line, "L,%d,%d,%d,%d,%d,%d",
+                       &bp, &bq, &bx, &by, &bz, &bw) == 6)
+            {
+                set_light(bp, bq, bx, by, bz, bw);
+            }
+            float px, py, pz, prx, pry;
+            if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
+                       &pid, &px, &py, &pz, &prx, &pry) == 6)
+            {
+                Player *player = find_player(pid);
+                if (!player && g->player_count < MAX_PLAYERS) {
+                    player = g->players + g->player_count;
+                    g->player_count++;
+                    player->id = pid;
+                    player->buffer = 0;
+                    snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
+                    update_player(player, px, py, pz, prx, pry, 1); // twice
+                }
+                if (player) {
+                    update_player(player, px, py, pz, prx, pry, 1);
+                }
+            }
+            if (sscanf(line, "D,%d", &pid) == 1) {
+                delete_player(pid);
+            }
+            int kp, kq, kk;
+            if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
+                Chunk *chunk = find_chunk(kp, kq);
+                if (chunk) {
+                    dirty_chunk(chunk);
+                }
+            }
+            double elapsed;
+            int day_length;
+            if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
+                glfwSetTime(fmod(elapsed, day_length));
+                g->day_length = day_length;
+                g->time_changed = 1;
+            }
+            if (line[0] == 'T' && line[1] == ',') {
+                char *text = line + 2;
+                add_message(text);
+            }
+            char format[64];
+            snprintf(
+                     format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
+            char name[MAX_NAME_LENGTH];
+            if (sscanf(line, format, &pid, name) == 2) {
+                Player *player = find_player(pid);
+                if (player) {
+                    strncpy(player->name, name, MAX_NAME_LENGTH);
+                }
+            }
+            snprintf(
+                     format, sizeof(format),
+                     "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
+            int face;
+            char text[MAX_SIGN_LENGTH] = {0};
+            if (sscanf(line, format,
+                       &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
+            {
+                _set_sign(bp, bq, bx, by, bz, face, text, 0);
             }
         }
-        int pos, amount, id;
-        if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
-            inventory.items[pos].id = id;
-            inventory.items[pos].num = amount;
-        }
-        if (sscanf(line, "A,%d", &id) == 1) {
-            inventory.selected = id;
-        }
-        if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
-            &bp, &bq, &bx, &by, &bz, &bw) == 6) {
-
-            g->blocks_recv = g->blocks_recv + 1;
-            parse_block(bp, bq, bx, by, bz, bw, s);
-            Chunk *chunk = find_chunk(bp, bq);
-            if (chunk) {
-                dirty_chunk(chunk);
-            }
-        }
-        if (sscanf(line, "L,%d,%d,%d,%d,%d,%d",
-            &bp, &bq, &bx, &by, &bz, &bw) == 6)
-        {
-            set_light(bp, bq, bx, by, bz, bw);
-        }
-        float px, py, pz, prx, pry;
-        if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
-            &pid, &px, &py, &pz, &prx, &pry) == 6)
-        {
-            Player *player = find_player(pid);
-            if (!player && g->player_count < MAX_PLAYERS) {
-                player = g->players + g->player_count;
-                g->player_count++;
-                player->id = pid;
-                player->buffer = 0;
-                snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
-                update_player(player, px, py, pz, prx, pry, 1); // twice
-            }
-            if (player) {
-                update_player(player, px, py, pz, prx, pry, 1);
-            }
-        }
-        if (sscanf(line, "D,%d", &pid) == 1) {
-            delete_player(pid);
-        }
-        int kp, kq, kk;
-        if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
-            Chunk *chunk = find_chunk(kp, kq);
-            if (chunk) {
-                dirty_chunk(chunk);
-            }
-        }
-        double elapsed;
-        int day_length;
-        if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
-            glfwSetTime(fmod(elapsed, day_length));
-            g->day_length = day_length;
-            g->time_changed = 1;
-        }
-        if (line[0] == 'T' && line[1] == ',') {
-            char *text = line + 2;
-            add_message(text);
-        }
-        char format[64];
-        snprintf(
-            format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
-        char name[MAX_NAME_LENGTH];
-        if (sscanf(line, format, &pid, name) == 2) {
-            Player *player = find_player(pid);
-            if (player) {
-                strncpy(player->name, name, MAX_NAME_LENGTH);
-            }
-        }
-        snprintf(
-            format, sizeof(format),
-            "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
-        int face;
-        char text[MAX_SIGN_LENGTH] = {0};
-        if (sscanf(line, format,
-            &bp, &bq, &bx, &by, &bz, &face, text) >= 6)
-        {
-            _set_sign(bp, bq, bx, by, bz, face, text, 0);
-        }
-
-
+        payload += size;
+        size = *((int*)payload);
+        payload += sizeof(size);
     }
 
 }

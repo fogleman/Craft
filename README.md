@@ -16,7 +16,6 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 * Supports plants (grass, flowers, trees, etc.) and transparency (glass).
 * Simple clouds in the sky (they don't move).
 * Day / night cycles and a textured sky dome.
-* World changes persisted in a sqlite3 database.
 * Survival type of gameplay (work in progress)
 
 ### Install Dependencies
@@ -72,7 +71,9 @@ terminal.
 - O to observe players in the main view.
 - P to observe players in the picture-in-picture view.
 - Arrow keys emulate mouse movement.
-- Enter emulates mouse click.
+- Enter emulates left mouse click.
+- 1 to 9 to select a item slot.
+- F3 to toggle debug mode.
 
 ### Chat Commands
 
@@ -107,3 +108,4 @@ For a in depth description of the technical detals see [README.md at fogleman/Cr
 * GLFW is used for cross-platform window management.
 * lodepng is used for loading PNG textures.
 * tinycthread is used for cross-platform threading.
+* zlib for chunk data decompression (server sends compressed chunks).

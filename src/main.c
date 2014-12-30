@@ -2142,42 +2142,23 @@ void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < MAX_BLOCK_HEIGHT && is_destructable(hw)) {
-        client_block(hx, hy, hz, 0);
-        record_block(hx, hy, hz, 0);
-        if (is_plant(get_block(hx, hy + 1, hz))) {
-            client_block(hx, hy + 1, hz, 0);
-        }
-    }
+    if (hw > 0) click_at(hx, hy, hz, 1);
 }
 
 void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-
-    // Check for a empty slot
-    if (inventory.items[inventory.selected].id == 0) return;
-
-    if (hy > 0 && hy < MAX_BLOCK_HEIGHT && is_obstacle(hw)) {
-        if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-            client_block(hx, hy, hz, inventory.items[inventory.selected].id);
-            record_block(hx, hy, hz, inventory.items[inventory.selected].id);
-
-            if (inventory.items[inventory.selected].num <= 1) {
-                // Last block placed, set to AIR
-                inventory.items[inventory.selected].num = 0;
-                inventory.items[inventory.selected].id = 0;
-            } else {
-                inventory.items[inventory.selected].num =
-                    inventory.items[inventory.selected].num - 1;
-            }
-        }
+    if (hw > 0 && !player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
+        click_at(hx, hy, hz, 2);
     }
 }
 
 void on_middle_click() {
-    // disable
+    State *s = &g->players->state;
+    int hx, hy, hz;
+    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+    if (hw > 0) click_at(hx, hy, hz, 3);
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {

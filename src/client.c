@@ -125,6 +125,15 @@ void client_inventory_select(int pos) {
     client_send(buffer);
 }
 
+void click_at(int x, int y, int z, int button) {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[64];
+    snprintf(buffer, 64, "M,%d,%d,%d,%d", x, y, z, button);
+    client_send(buffer);
+}
+
 void client_chunk(int p, int q, int key) {
     if (!client_enabled) {
         return;

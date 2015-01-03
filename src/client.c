@@ -71,12 +71,12 @@ void client_send(char *data) {
     }
 }
 
-void client_version(int version) {
+void client_version(int version, char *nick) {
     if (!client_enabled) {
         return;
     }
     char buffer[1024];
-    snprintf(buffer, 1024, "V,%d", version);
+    snprintf(buffer, 1024, "V,%d,%s", version, nick);
     client_send(buffer);
 }
 

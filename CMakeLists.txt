@@ -24,19 +24,22 @@ include_directories(deps/tinycthread)
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(ZLIB REQUIRED)
+find_package(OpenSSL)
+
 include_directories(${ZLIB_INCLUDE_DIRS})
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 if(APPLE)
     target_link_libraries(craft glfw
-        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
+        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES} ${OPENSSL_LIBRARIES})
 endif()
 
 if(UNIX)
     target_link_libraries(craft dl glfw
-        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
+        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES} ${OPENSSL_LIBRARIES})
 endif()
 
 if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
-        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
+        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES} ${OPENSSL_LIBRARIES})
 endif()

@@ -10,10 +10,8 @@ static void binary_to_hex(char *in, char *out) {
 }
 
 void hash_password(char *data, char *out) {
-  size_t length = sizeof(data);
+  int length = strlen(data);
   unsigned char hash[SHA_DIGEST_LENGTH];
-  char *base64;
-
   SHA1(data, length, hash);
   binary_to_hex(hash, out);
 }

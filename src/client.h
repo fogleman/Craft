@@ -16,7 +16,7 @@ void client_start();
 void client_stop();
 void client_send(char *data);
 Packet client_recv();
-void client_version(int version);
+void client_version(int version, char *nick);
 void client_login(const char *username, const char *identity_token);
 void client_position(float x, float y, float z, float rx, float ry);
 void client_chunk(int p, int q, int key);

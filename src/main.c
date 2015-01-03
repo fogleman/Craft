@@ -2621,8 +2621,8 @@ void reset_model() {
 
 int main(int argc, char **argv) {
     // CHECK COMMAND LINE ARGUMENTS //
-    if (argc < 3 || argc > 4) {
-        printf("USAGE: hostname nick [port]\n");
+    if (argc < 4 || argc > 5) {
+        printf("USAGE: hostname nick password [port]\n");
         exit(1);
     }
 
@@ -2769,7 +2769,7 @@ int main(int argc, char **argv) {
     inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
 
     strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
-    g->server_port = argc == 4 ? atoi(argv[3]) : DEFAULT_PORT;
+    g->server_port = argc == 5 ? atoi(argv[4]) : DEFAULT_PORT;
 
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
@@ -2793,7 +2793,16 @@ int main(int argc, char **argv) {
         client_enable();
         client_connect(g->server_addr, g->server_port);
         client_start();
-        client_version(2, argv[2]);
+
+        char out_hash[41];
+        char in_hash[strlen(argv[2]) + strlen(argv[3])];
+        strcpy(in_hash, argv[2]);
+        strcat(in_hash, argv[3]);
+        hash_password(in_hash, out_hash);
+        client_version(2, argv[2], out_hash);
+
+        printf("Server: %s:%d\n", g->server_addr, g->server_port);
+        printf("Login:  %s/%s\n", argv[2], out_hash);
 
         // LOCAL VARIABLES //
         reset_model();

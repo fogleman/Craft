@@ -18,6 +18,7 @@
 #include "util.h"
 #include "inventory.h"
 #include "compress.h"
+#include "crypto.h"
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128

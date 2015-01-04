@@ -12,11 +12,17 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 
 ### Features
 
-* Simple but nice looking terrain generation using perlin / simplex noise.
-* Supports plants (grass, flowers, trees, etc.) and transparency (glass).
-* Simple clouds in the sky (they don't move).
+* Support normal blocks, plants (grass, flowers, etc.) and transparency (glass).
 * Day / night cycles and a textured sky dome.
-* Survival type of gameplay (work in progress)
+* No height limit (65536 blocks really).
+* Survival type of gameplay (work in progress).
+* Simple player inventory.
+
+#### Unique to this fork
+
+* Compressed binary chunk data (we are sending full chunks from the server).
+* The client is just a viewer, the server decides what happens in the world.
+* Auth against the server, no central registry.
 
 ### Install Dependencies
 
@@ -75,25 +81,6 @@ terminal.
 - 1 to 9 to select a item slot.
 - F3 to toggle debug mode.
 
-### Chat Commands
-
-    /goto [NAME]
-
-Teleport to another user.
-If NAME is unspecified, a random user is chosen.
-
-    /list
-
-Display a list of connected users.
-
-    /pq P Q
-
-Teleport to the specified chunk.
-
-    /spawn
-
-Teleport back to the spawn point.
-
 ### Server
 
 You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game. You can download a compiled JAR from [bintray](https://bintray.com/nsg/craft/craft-server/view).
@@ -111,3 +98,4 @@ For a in depth description of the technical detals see [README.md at fogleman/Cr
 * lodepng is used for loading PNG textures.
 * tinycthread is used for cross-platform threading.
 * zlib for chunk data decompression (server sends compressed chunks).
+* OpenSSL to generate SHA1 hashes.

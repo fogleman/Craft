@@ -15,6 +15,7 @@
 #include "tinycthread.h"
 
 #define RECV_SIZE 256*256*256
+#define HEADER_SIZE 4
 
 static int client_enabled = 0;
 static int running = 0;
@@ -204,15 +205,19 @@ int recv_worker(void *arg) {
     char *data = malloc(sizeof(char) * RECV_SIZE);
     int size;
     while (1) {
-
+        int t = 0;
+        int length = 0;
         // get package length
-        if (recv(sd, &size, 4, 0) <= 0) {
-            if (running) {
-                perror("recv");
-                exit(1);
-            } else {
-                break;
+        while(t < HEADER_SIZE) {
+            if ((length = recv(sd, ((char *)&size) + t, HEADER_SIZE - t, 0)) <= 0) {
+                if (running) {
+                    perror("recv");
+                    exit(1);
+                } else {
+                    break;
+                }
             }
+            t += length;
         }
         size = ntohl(size);
 
@@ -222,8 +227,8 @@ int recv_worker(void *arg) {
         }
 
         // read 'size' bytes from the network
-        int t=0;
-        int length = 0;
+        t=0;
+        length = 0;
         while(t < size) {
             if ((length = recv(sd, data+t, size-t, 0)) <= 0) {
                 if (running) {

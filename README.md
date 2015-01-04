@@ -98,3 +98,4 @@ For a in depth description of the technical detals see [README.md at fogleman/Cr
 * lodepng is used for loading PNG textures.
 * tinycthread is used for cross-platform threading.
 * zlib for chunk data decompression (server sends compressed chunks).
+* OpenSSL to generate SHA1 hashes.

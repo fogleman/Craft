@@ -96,7 +96,9 @@ Teleport back to the spawn point.
 
 ### Server
 
-You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game.
+You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game. You can download a compiled JAR from [bintray](https://bintray.com/nsg/craft/craft-server/view).
+
+Start it with `java -jar craft-server*.jar` and connect to it with the client, for example: `./craft localhost nsg mypassword`.
 
 ### Implementation Details
 

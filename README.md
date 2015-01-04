@@ -81,25 +81,6 @@ terminal.
 - 1 to 9 to select a item slot.
 - F3 to toggle debug mode.
 
-### Chat Commands
-
-    /goto [NAME]
-
-Teleport to another user.
-If NAME is unspecified, a random user is chosen.
-
-    /list
-
-Display a list of connected users.
-
-    /pq P Q
-
-Teleport to the specified chunk.
-
-    /spawn
-
-Teleport back to the spawn point.
-
 ### Server
 
 You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game. You can download a compiled JAR from [bintray](https://bintray.com/nsg/craft/craft-server/view).

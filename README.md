@@ -12,11 +12,17 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 
 ### Features
 
-* Simple but nice looking terrain generation using perlin / simplex noise.
-* Supports plants (grass, flowers, trees, etc.) and transparency (glass).
-* Simple clouds in the sky (they don't move).
+* Support normal blocks, plants (grass, flowers, etc.) and transparency (glass).
 * Day / night cycles and a textured sky dome.
-* Survival type of gameplay (work in progress)
+* No height limit (65536 blocks really).
+* Survival type of gameplay (work in progress).
+* Simple player inventory.
+
+#### Unique to this fork
+
+* Compressed binary chunk data (we are sending full chunks from the server).
+* The client is just a viewer, the server decides what happens in the world.
+* Auth against the server, no central registry.
 
 ### Install Dependencies
 

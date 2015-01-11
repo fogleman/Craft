@@ -1,0 +1,41 @@
+#/bin/bash
+
+# Install packages
+sudo apt-get -y install ruby-dev rubygems rpm
+sudo gem install fpm --no-ri --no-rdoc
+
+# Install
+sudo mv craft /usr/local/bin/craft
+sudo mkdir -p /usr/local/share/craft/{textures,shaders}
+sudo cp -r textures/* /usr/local/share/craft/textures
+sudo cp -r shaders/* /usr/local/share/craft/shaders
+
+# Make deb package
+sudo fpm -s dir -t deb \
+  -v $(git describe --tags --abbrev=0 | tr -d v) \
+  --iteration ${TRAVIS_BUILD_NUMBER} \
+  --license MIT \
+  --depends libglfw2 \
+  --depends zlib1g \
+  --depends openssl \
+  --maintainer "Stefan Berggren <nsg@nsg.cc>" \
+  --url https://github.com/nsg/Craft \
+  -n craft \
+  /usr/local/bin/craft \
+  /usr/local/share/craft/textures \
+  /usr/local/share/craft/shaders
+
+# Make rpm package
+sudo fpm -s dir -t rpm \
+  -v $(git describe --tags --abbrev=0 | tr -d v) \
+  --iteration ${TRAVIS_BUILD_NUMBER} \
+  --license MIT \
+  --depends libglfw2 \
+  --depends zlib1g \
+  --depends openssl \
+  --maintainer "Stefan Berggren <nsg@nsg.cc>" \
+  --url https://github.com/nsg/Craft \
+  -n craft \
+  /usr/local/bin/craft \
+  /usr/local/share/craft/textures \
+  /usr/local/share/craft/shaders

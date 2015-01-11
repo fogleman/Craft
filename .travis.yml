@@ -10,6 +10,8 @@ install:
 script:
  - cmake .
  - make
+ - ./make-packages
+ - ./bintray
 
 # Credit to Aaron1011
 # https://github.com/fogleman/Craft/pull/33/files

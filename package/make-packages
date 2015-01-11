@@ -6,9 +6,11 @@ sudo gem install fpm --no-ri --no-rdoc
 
 # Install
 sudo mv craft /usr/local/bin/craft
+sudo cp package/linux-launcher /usr/local/bin/craft-launcher
 sudo mkdir -p /usr/local/share/craft/{textures,shaders}
 sudo cp -r textures/* /usr/local/share/craft/textures
 sudo cp -r shaders/* /usr/local/share/craft/shaders
+sudo cp package/Craft.desktop /usr/share/applications/Craft.desktop
 
 # Make deb package
 sudo fpm -s dir -t deb \
@@ -18,12 +20,15 @@ sudo fpm -s dir -t deb \
   --depends libglfw2 \
   --depends zlib1g \
   --depends openssl \
+  --depends zenity \
   --maintainer "Stefan Berggren <nsg@nsg.cc>" \
   --url https://github.com/nsg/Craft \
   -n craft \
   /usr/local/bin/craft \
+  /usr/local/bin/craft-launcher \
   /usr/local/share/craft/textures \
-  /usr/local/share/craft/shaders
+  /usr/local/share/craft/shaders \
+  /usr/share/applications/Craft.desktop
 
 # Make rpm package
 sudo fpm -s dir -t rpm \
@@ -35,7 +40,9 @@ sudo fpm -s dir -t rpm \
   --depends openssl \
   --maintainer "Stefan Berggren <nsg@nsg.cc>" \
   --url https://github.com/nsg/Craft \
-  -n craft \
+  -n craft-untested \
   /usr/local/bin/craft \
+  /usr/local/bin/craft-launcher \
   /usr/local/share/craft/textures \
-  /usr/local/share/craft/shaders
+  /usr/local/share/craft/shaders \
+  /usr/share/applications/Craft.desktop

@@ -59,6 +59,10 @@ To let the server manage the world we needed to change the test based protocol t
 
 In the long term we want textures to be managed and sent by the server.  It should be up to the server administrator to choose what type of blocks and textures that are avaiable.
 
+### Compile and Install
+
+See [INSTALL.md](INSTALL.md)
+
 ### Server
 
 You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game. You can download a compiled JAR from [bintray](https://bintray.com/nsg/craft/craft-server/view).

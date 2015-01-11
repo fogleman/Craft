@@ -24,46 +24,6 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 * The client is just a viewer, the server decides what happens in the world.
 * Auth against the server, no central registry.
 
-### Install Dependencies
-
-#### Mac OS X
-
-Note: OS X builds are untested on this fork.
-
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
-if you don't already have it. You may use [Homebrew](http://brew.sh) to simplify
-the installation:
-
-    brew install cmake
-
-#### Linux (Ubuntu)
-
-    sudo apt-get install cmake libglew-dev xorg-dev
-    sudo apt-get build-dep glfw
-
-#### Windows
-
-Note: Windows builds are untested on this fork.
-
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
-and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
-
-Use the following commands in place of the ones described in the next section.
-
-    cmake -G "MinGW Makefiles"
-    mingw32-make
-
-### Compile and Run
-
-Once you have the dependencies (see above), run the following commands in your
-terminal.
-
-    git clone https://github.com/nsg/Craft.git
-    cd Craft
-    cmake .
-    make
-    ./craft
-
 ### Controls
 
 - WASD to move forward, left, backward, right.
@@ -81,21 +41,27 @@ terminal.
 - 1 to 9 to select a item slot.
 - F3 to toggle debug mode.
 
+# Purpose
+
+The project aims at building a client that can render and interact with a block based world. The goal is to keep the client as simple as possible leavning the game logic to the server.
+
+We also like the server to support a survival type of game with inventories and crafting. To this extent we are also extending the client to handle this.
+
+## History
+
+The project is based of [Craft](https://github.com/fogleman/Craft) written by Michael Fogleman. The original project was primaly focused on single player. We forked Craft to focus on simplifying the client for a multiplayer only game. You can still start a local server if you like to run singleplayer.
+
+## Protocol changes
+
+To let the server manage the world we needed to change the test based protocol to allow binary extensions. This has been done by intruducing a four byte header to all commands. We changed only the `C` (chunk) command to transfer compressed binary data, this reduces the amount of data being sent and greatly improves the speed of the client.
+
+## Textures
+
+In the long term we want textures to be managed and sent by the server.  It should be up to the server administrator to choose what type of blocks and textures that are avaiable.
+
 ### Server
 
 You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game. You can download a compiled JAR from [bintray](https://bintray.com/nsg/craft/craft-server/view).
 
 Start it with `java -jar craft-server*.jar` and connect to it with the client, for example: `./craft localhost nsg mypassword`.
 
-### Implementation Details
-
-For a in depth description of the technical detals see [README.md at fogleman/Craft](https://github.com/fogleman/Craft/blob/master/README.md). fogleman (Michael Fogleman) has written most of the grafic stack and has a excellent description.
-
-#### Dependencies
-
-* GLEW is used for managing OpenGL extensions across platforms.
-* GLFW is used for cross-platform window management.
-* lodepng is used for loading PNG textures.
-* tinycthread is used for cross-platform threading.
-* zlib for chunk data decompression (server sends compressed chunks).
-* OpenSSL to generate SHA1 hashes.

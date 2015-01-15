@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "lodepng.h"
 #include "matrix.h"
 #include "util.h"
@@ -216,4 +217,10 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
     }
     free(text);
     return line_number;
+}
+
+int file_exist(const char *filename) {
+  struct stat st;
+  int result = stat(filename, &st);
+  return result == 0;
 }

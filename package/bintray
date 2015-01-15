@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+ARTIFACTS="*.deb *.rpm"
+API_URL=https://api.bintray.com
+API_AUTH=-unsg:$bintray_api_key
+
+# Upload master to bintray
+if [ "x$TRAVIS_BRANCH" == "xmaster" ] && [ "x$TRAVIS_PULL_REQUEST" == "xfalse" ]; then
+	curl -X DELETE $API_AUTH $API_URL/packages/nsg/craft/client/versions/dev
+	for art in $ARTIFACTS; do
+		curl -T $art $API_AUTH $API_URL/content/nsg/craft/client/dev/$art
+	done
+	curl -X POST -unsg:$bintray_api_key $API_URL/content/nsg/craft/client/dev/publish
+fi
+
+# Upload tagged releases to bintray
+if [ $TRAVIS_TAG ]; then
+	for art in $ARTIFACTS; do
+		curl -T $art $API_AUTH $API_URL/content/nsg/craft/client/$TRAVIS_TAG/$art
+	done
+	curl -X POST -unsg:$bintray_api_key $API_URL/content/nsg/craft/client/$TRAVIS_TAG/publish
+fi

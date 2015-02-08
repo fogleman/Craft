@@ -53,7 +53,7 @@ The project is based of [Craft](https://github.com/fogleman/Craft) written by Mi
 
 ### Protocol changes
 
-To let the server manage the world we needed to change the test based protocol to allow binary extensions. This has been done by intruducing a four byte header to all commands. We changed only the `C` (chunk) command to transfer compressed binary data, this reduces the amount of data being sent and greatly improves the speed of the client.
+To let the server manage the world we needed to change the text based protocol to allow binary extensions. This has been done by intruducing a four byte header to all commands. We changed only the `C` (chunk) command to transfer compressed binary data, this reduces the amount of data being sent and greatly improves the speed of the client.
 
 ### Textures
 

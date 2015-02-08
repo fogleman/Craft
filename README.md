@@ -61,11 +61,18 @@ In the long term we want textures to be managed and sent by the server.  It shou
 
 ### Compile and Install
 
-See [INSTALL.md](INSTALL.md)
+#### Install binaries
+
+We have Linux deb and rpm:s hosted at [bintray.com/nsg/craft/client/](https://bintray.com/nsg/craft/client/view#files).
+
+#### Build from source
+
+See [BUILD.md](BUILD.md)
 
 ### Server
 
-You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game. You can download a compiled JAR from [bintray](https://bintray.com/nsg/craft/craft-server/view).
+You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game.
+You can download a compiled JAR from [bintray.com/nsg/craft/craft-server/](https://bintray.com/nsg/craft/craft-server/view#files).
 
 Start it with `java -jar craft-server*.jar` and connect to it with the client, for example: `./craft localhost nsg mypassword`.
 

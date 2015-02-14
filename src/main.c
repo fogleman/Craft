@@ -2789,7 +2789,7 @@ int main(int argc, char **argv) {
 
             // RENDER INVENTORY //
             render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                0, 0.8, inventory.selected, g->width, g->height);
+                0, 0.8, 1, inventory.selected, g->width, g->height);
 
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);

@@ -52,7 +52,7 @@ void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos,
+void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, float scale,
         int width, int height, int sel) {
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
@@ -60,7 +60,7 @@ void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos,
     glUniform1f(attrib->timer, PI*2);
     float matrix[16];
     GLuint buffer;
-    set_matrix_item_offs(matrix, width, height, 0.65, xpos, ypos, sel);
+    set_matrix_item_offs(matrix, width, height, 0.65 * scale, xpos, ypos, sel);
     if (is_plant(item.id)) {
         glDeleteBuffers(1, &buffer);
         buffer = gen_plant_buffer(0, 0, 0, 0.5, item.id);
@@ -76,21 +76,22 @@ void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos,
     del_buffer(buffer);
 }
 
-void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, int width, int height) {
+void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, float scale,
+        int width, int height) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
         if (block.id == 0 || block.num == 0) continue;
 
         float slotoff = -1 *  ((float)item - (float)(INVENTORY_SLOTS - 1) / 2);
-        float xpos = slotoff * ((0.125*1024)/width) + xoffs;
+        float xpos = slotoff * ((0.125*scale*1024)/width) + xoffs;
 
         int sel = inventory.selected == item ? 1 : 0;
-        render_inventory_item(attrib, block, xpos, yoffs, width, height, sel);
+        render_inventory_item(attrib, block, xpos, yoffs, scale, width, height, sel);
     }
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_bar(Attrib *attrib, float x, float y, int sel,
+void render_inventory_bar(Attrib *attrib, float x, float y, float scale, int sel,
         int width, int height) {
     float matrix[16];
     set_matrix_2d(matrix, width, height);
@@ -98,13 +99,13 @@ void render_inventory_bar(Attrib *attrib, float x, float y, int sel,
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
-    GLuint inv_buffer = gen_inventory_buffers((width/2)*(x*-1+1), (height/2)*(y*-1+1), 64, sel);
+    GLuint inv_buffer = gen_inventory_buffers((width/2)*(x*-1+1), (height/2)*(y*-1+1), 64*scale, sel);
     draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
     del_buffer(inv_buffer);
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_text(Attrib *attrib, Item item, float x, float y,
+void render_inventory_text(Attrib *attrib, Item item, float x, float y, float scale,
         int width, int height) {
     float matrix[16];
     set_matrix_2d(matrix, width, height);
@@ -112,29 +113,29 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y,
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1); // GL_TEXTURE1
     char text_buffer[16];
-    float ts = 12;
+    float ts = 12*scale;
     snprintf(text_buffer, 16, "%02d", item.num);
     x += ts * strlen(text_buffer);
     print(attrib, 1, x, y, ts, text_buffer);
 }
 
-void render_inventory_texts(Attrib *attrib, float x, float y, int width, int height) {
+void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int width, int height) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
         if (block.id == 0 || block.num <= 0) continue;
 
-        float tx = (width/2)*(x*-1+1) - (INVENTORY_SLOTS * 64)/2 + (item * 64) + 12;
-        float ty = (height/2)*(y*-1+1) - 32;
-        render_inventory_text(attrib, block, tx, ty, width, height);
+        float tx = (width/2)*(x*-1+1) - (INVENTORY_SLOTS * 64*scale)/2 + (item * 64*scale) + 12*scale;
+        float ty = (height/2)*(y*-1+1) - 32*scale;
+        render_inventory_text(attrib, block, tx, ty, scale, width, height);
     }
 }
 
 void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
-        float xoffs, float yoffs, int sel, int width, int height) {
-    render_inventory_bar(window_attrib, xoffs, yoffs, sel, width, height);
+        float xoffs, float yoffs, float scale, int sel, int width, int height) {
+    render_inventory_bar(window_attrib, xoffs, yoffs, scale, sel, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_items(block_attrib, xoffs, yoffs, width, height);
+    render_inventory_items(block_attrib, xoffs, yoffs, scale, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_texts(text_attrib, xoffs, yoffs, width, height);
+    render_inventory_texts(text_attrib, xoffs, yoffs, scale, width, height);
 }
 

@@ -121,6 +121,7 @@ typedef struct {
     int observe2;
     int flying;
     int debug_screen;
+    int inventory_screen;
     int scale;
     int ortho;
     float fov;

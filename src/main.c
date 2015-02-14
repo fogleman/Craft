@@ -1985,6 +1985,9 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_DEBUG_SCREEN) {
             g->debug_screen = !g->debug_screen;
         }
+        if (key == CRAFT_KEY_INVENTORY_TOGGLE) {
+            g->inventory_screen = !g->inventory_screen;
+        }
         if (key == CRAFT_KEY_OBSERVE) {
             g->observe1 = (g->observe1 + 1) % g->player_count;
         }
@@ -2390,6 +2393,7 @@ int main(int argc, char **argv) {
 
     g->blocks_recv = 0;
     g->debug_screen = 0;
+    g->inventory_screen = 0;
     g->chunk_buffer_size = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
     g->chunk_buffer = malloc(sizeof(char)*g->chunk_buffer_size);
 
@@ -2789,7 +2793,14 @@ int main(int argc, char **argv) {
 
             // RENDER INVENTORY //
             render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                0, 0.8, 1, inventory.selected, g->width, g->height);
+                0, 0.8, 1, inventory.selected, 0, g->width, g->height);
+
+			if(g->inventory_screen) {
+				for (int invnr=0; invnr < INVENTORY_ROWS; invnr++) {
+					render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
+						0.5, 0.4 + -0.2 * invnr, 0.8, -1, invnr, g->width, g->height);
+				}
+			}
 
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);

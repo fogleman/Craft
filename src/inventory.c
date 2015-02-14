@@ -76,9 +76,9 @@ void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, fl
     del_buffer(buffer);
 }
 
-void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, float scale,
+void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, float scale, int ioffs,
         int width, int height) {
-    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+    for (int item = ioffs; item < ioffs+INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
         if (block.id == 0 || block.num == 0) continue;
 
@@ -119,8 +119,8 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float sc
     print(attrib, 1, x, y, ts, text_buffer);
 }
 
-void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int width, int height) {
-    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int ioffs, int width, int height) {
+    for (int item = ioffs; item < ioffs + INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
         if (block.id == 0 || block.num <= 0) continue;
 
@@ -131,11 +131,12 @@ void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int w
 }
 
 void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
-        float xoffs, float yoffs, float scale, int sel, int width, int height) {
+        float xoffs, float yoffs, float scale, int sel, int row, int width, int height) {
+    int ioffs = INVENTORY_SLOTS * row;
     render_inventory_bar(window_attrib, xoffs, yoffs, scale, sel, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_items(block_attrib, xoffs, yoffs, scale, width, height);
+    render_inventory_items(block_attrib, xoffs, yoffs, scale, ioffs, width, height);
     glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_texts(text_attrib, xoffs, yoffs, scale, width, height);
+    render_inventory_texts(text_attrib, xoffs, yoffs, scale, ioffs, width, height);
 }
 

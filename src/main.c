@@ -2788,9 +2788,8 @@ int main(int argc, char **argv) {
             }
 
             // RENDER INVENTORY //
-            int inv_offset = (g->observe2 ? 288 : 0);
             render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                (g->width - inv_offset) / 2, inventory.selected, g->width, g->height);
+                0, 0.8, inventory.selected, g->width, g->height);
 
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);

@@ -19,150 +19,10 @@
 #include "inventory.h"
 #include "compress.h"
 #include "crypto.h"
-
-#define MAX_CHUNKS 8192
-#define MAX_PLAYERS 128
-#define WORKERS 4
-#define MAX_TEXT_LENGTH 256
-#define MAX_NAME_LENGTH 32
-#define MAX_PATH_LENGTH 256
-#define MAX_ADDR_LENGTH 256
-
-#define ALIGN_LEFT 0
-#define ALIGN_CENTER 1
-#define ALIGN_RIGHT 2
-
-#define WORKER_IDLE 0
-#define WORKER_BUSY 1
-#define WORKER_DONE 2
-
-typedef struct {
-    Map map;
-    Map lights;
-    SignList signs;
-    int p;
-    int q;
-    int faces;
-    int sign_faces;
-    int dirty;
-    int miny;
-    int maxy;
-    GLuint buffer;
-    GLuint sign_buffer;
-} Chunk;
-
-typedef struct {
-    int p;
-    int q;
-    int load;
-    Map *block_maps[3][3];
-    Map *light_maps[3][3];
-    int miny;
-    int maxy;
-    int faces;
-    GLfloat *data;
-} WorkerItem;
-
-typedef struct {
-    int index;
-    int state;
-    thrd_t thrd;
-    mtx_t mtx;
-    cnd_t cnd;
-    WorkerItem item;
-} Worker;
-
-typedef struct {
-    int x;
-    int y;
-    int z;
-    int w;
-} Block;
-
-typedef struct {
-    float x;
-    float y;
-    float z;
-    float rx;
-    float ry;
-    float t;
-} State;
-
-typedef struct {
-    int id;
-    char name[MAX_NAME_LENGTH];
-    State state;
-    State state1;
-    State state2;
-    GLuint buffer;
-} Player;
-
-typedef struct {
-    GLuint program;
-    GLuint position;
-    GLuint normal;
-    GLuint uv;
-    GLuint matrix;
-    GLuint sampler;
-    GLuint camera;
-    GLuint timer;
-    GLuint extra1;
-    GLuint extra2;
-    GLuint extra3;
-    GLuint extra4;
-} Attrib;
-
-typedef struct {
-    GLFWwindow *window;
-    Worker workers[WORKERS];
-    Chunk chunks[MAX_CHUNKS];
-    int chunk_count;
-    int create_radius;
-    int render_radius;
-    int delete_radius;
-    int sign_radius;
-    Player players[MAX_PLAYERS];
-    int player_count;
-    int typing;
-    char typing_buffer[MAX_TEXT_LENGTH];
-    int message_index;
-    char messages[MAX_MESSAGES][MAX_TEXT_LENGTH];
-    int width;
-    int height;
-    int observe1;
-    int observe2;
-    int flying;
-    int debug_screen;
-    int scale;
-    int ortho;
-    float fov;
-    int suppress_char;
-    char server_addr[MAX_ADDR_LENGTH];
-    int server_port;
-    int day_length;
-    int time_changed;
-    Block block0;
-    Block block1;
-    Block copy0;
-    Block copy1;
-    int blocks_recv;
-    char *chunk_buffer;
-    int chunk_buffer_size;
-} Model;
-
-typedef struct {
-    int id;
-    int num;
-} Item;
-
-typedef struct {
-    Item *items;
-    int selected;
-} Inventory;
+#include "craft.h"
 
 static Model model;
 static Model *g = &model;
-static Inventory inventory;
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
@@ -301,18 +161,6 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
-GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
-    int length = INVENTORY_SLOTS;
-    GLfloat *data = malloc_faces(4, length);
-    x -= n * (length - 1) / 2;
-    for (int i = 0; i < length; i ++) {
-        make_inventory(data + i * 24, x, y, n / 2, n / 2, sel == i ? 1 : 0);
-        x += n;
-    }
-    return gen_faces(4, length, data);
-}
-
 void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -385,14 +233,6 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glDrawArrays(GL_LINES, 0, count);
     glDisableVertexAttribArray(attrib->position);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
-void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_2d(attrib, buffer, length * 6);
-    glDisable(GL_BLEND);
 }
 
 void draw_chunk(Attrib *attrib, Chunk *chunk) {
@@ -1766,95 +1606,6 @@ void print(Attrib *attrib, int justify, float x, float y, float n, char *text) {
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
 }
-
-
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos,
-        int width, int height, int sel) {
-    glUseProgram(attrib->program);
-    glUniform3f(attrib->camera, 0, 0, 5);
-    glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
-    glUniform1f(attrib->timer, PI*2);
-    float matrix[16];
-    GLuint buffer;
-    set_matrix_item_offs(matrix, width, height, 0.65, xpos, ypos, sel);
-    if (is_plant(item.id)) {
-        glDeleteBuffers(1, &buffer);
-        buffer = gen_plant_buffer(0, 0, 0, 0.5, item.id);
-    } else {
-        buffer = gen_cube_buffer(0, 0, 0, 0.5, item.id);
-    }
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    if (is_plant(item.id)) {
-        draw_plant(attrib, buffer);
-    } else {
-        draw_cube(attrib, buffer);
-    }
-    del_buffer(buffer);
-}
-
-void render_inventory_items(Attrib *attrib, float pos_x, int width, int height) {
-    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
-        Item block = inventory.items[item];
-        if (block.id == 0 || block.num == 0) continue;
-
-        float slotoff = -1 *  ((float)item - (float)(INVENTORY_SLOTS - 1) / 2);
-        float xpos = slotoff * ((0.125*1024)/width);
-        float ypos = 1 - ((0.17*768)/height);
-        int sel = inventory.selected == item ? 1 : 0;
-        render_inventory_item(attrib, block, xpos, ypos, width, height, sel);
-    }
-}
-
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_bar(Attrib *attrib, float x, int sel,
-        int width, int height) {
-    float matrix[16];
-    set_matrix_2d(matrix, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
-    GLuint inv_buffer = gen_inventory_buffers(x, 64, 64, sel);
-    draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
-    del_buffer(inv_buffer);
-}
-
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_text(Attrib *attrib, Item item, float x, float y,
-        int width, int height) {
-    float matrix[16];
-    set_matrix_2d(matrix, width, height);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 1); // GL_TEXTURE1
-    char text_buffer[16];
-    float ts = 12;
-    snprintf(text_buffer, 16, "%02d", item.num);
-    x += ts * strlen(text_buffer);
-    print(attrib, 1, x, y, ts, text_buffer);
-}
-
-void render_inventory_texts(Attrib *attrib, float x, int width, int height) {
-    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
-        Item block = inventory.items[item];
-        if (block.id == 0 || block.num <= 0) continue;
-
-        float tx = 12 + x + 64 * (item - ((float)INVENTORY_SLOTS / 2.));
-        float ty = 20;
-        render_inventory_text(attrib, block, tx, ty, width, height);
-    }
-}
-
-void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
-        float pos_x, int sel, int width, int height) {
-    render_inventory_bar(window_attrib, pos_x, sel, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_items(block_attrib, pos_x, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_texts(text_attrib, pos_x, width, height);
-}
-
 
 void add_message(const char *text) {
     printf("%s\n", text);

@@ -33,8 +33,12 @@ char *load_file(const char *path) {
     int length = ftell(file);
     rewind(file);
     char *data = calloc(length + 1, sizeof(char));
-    fread(data, 1, length, file);
+    int read = fread(data, 1, length, file);
     fclose(file);
+    if(read != length) {
+      fprintf(stderr, "Failed to load file %s\n", path);
+      exit(1);
+    }
     return data;
 }
 

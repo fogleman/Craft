@@ -1,0 +1,23 @@
+#!/bin/bash
+
+log() {
+  echo
+  echo "###"
+  echo $@
+  echo "###"
+  echo
+}
+
+log "Make Linux (x86_64) build"
+
+rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake craft Makefile
+
+cmake .
+make
+
+log "Package a Linux build"
+
+mkdir -p craft-linux && cd craft-linux
+cp ../craft .
+cp -r ../shaders ../textures .
+cd .. && zip -r craft-linux.zip craft-linux

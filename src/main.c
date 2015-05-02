@@ -1,6 +1,12 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <arpa/inet.h>
+
+#ifdef _WIN32
+  #include <winsock2.h>
+#else
+  #include <arpa/inet.h>
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2597,11 +2603,11 @@ int main(int argc, char **argv) {
         char in_hash[strlen(argv[2]) + strlen(argv[3])];
         strcpy(in_hash, argv[2]);
         strcat(in_hash, argv[3]);
-        hash_password(in_hash, out_hash);
-        client_version(2, argv[2], out_hash);
+        //hash_password(in_hash, out_hash);
+        client_version(2, argv[2], in_hash);
 
         printf("Server: %s:%d\n", g->server_addr, g->server_port);
-        printf("Login:  %s/%s\n", argv[2], out_hash);
+        printf("Login:  %s/%s\n", argv[2], in_hash);
 
         // LOCAL VARIABLES //
         reset_model();

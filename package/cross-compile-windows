@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -e
+
+log() {
+  echo
+  echo "###"
+  echo $@
+  echo "###"
+  echo
+}
+
+if [ ! -d /tmp/build-deps/zlib ]; then
+  log "Download zlib"
+  mkdir -p /tmp/build-deps/zlib
+  wget http://netcologne.dl.sourceforge.net/project/gnuwin32/zlib/1.2.3/zlib-1.2.3-lib.zip \
+    -O /tmp/build-deps/zlib-1.2.3-lib.zip
+  echo "b0a2df1a2b0dd0bd801d71d06ce42360  /tmp/build-deps/zlib-1.2.3-lib.zip" | md5sum -c -
+  (cd /tmp/build-deps/zlib && unzip ../zlib*lib.zip)
+fi
+
+
+log "Make Windows (32-bit) build"
+
+rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake craft Makefile
+
+PREFIX=x86_64-w64-mingw32
+export CC=$PREFIX-gcc
+export CXX=$PREFIX-g++
+export CPP=$PREFIX-cpp
+export RANLIB=$PREFIX-ranlib
+export PATH="/usr/$PREFIX/bin:$PATH"
+
+cmake -DCMAKE_TOOLCHAIN_FILE=./Toolchain-mingw32.cmake .
+make
+
+
+if [ ! -d /tmp/build-deps/zlib-bin ]; then
+  log "Download zlib-bin"
+  mkdir -p /tmp/build-deps/zlib-bin
+  wget http://netcologne.dl.sourceforge.net/project/gnuwin32/zlib/1.2.3/zlib-1.2.3-bin.zip \
+    -O /tmp/build-deps/zlib-1.2.3-bin.zip
+  echo "0b431b557399c1b3948c13c803a22c95  /tmp/build-deps/zlib-1.2.3-bin.zip" | md5sum -c -
+  (cd /tmp/build-deps/zlib-bin && unzip ../zlib*bin.zip)
+fi
+
+log "Package a Windows build"
+
+mkdir -p craft-win && cd craft-win
+cp ../craft.exe .
+cp /tmp/build-deps/zlib-bin/bin/zlib1.dll .
+cp -r ../shaders ../textures .
+cd .. && zip -r craft-win.zip craft-win

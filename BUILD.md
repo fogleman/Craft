@@ -45,5 +45,4 @@ terminal.
 * lodepng is used for loading PNG textures.
 * tinycthread is used for cross-platform threading.
 * zlib for chunk data decompression (server sends compressed chunks).
-* OpenSSL to generate SHA1 hashes.
 

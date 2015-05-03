@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
   #include <winsock2.h>
+  #include <windows.h>
 #else
   #include <arpa/inet.h>
 #endif
@@ -2380,6 +2381,26 @@ void reset_model() {
 }
 
 int main(int argc, char **argv) {
+
+#ifdef _WIN32
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    int err;
+
+    wVersionRequested = MAKEWORD(2, 2);
+    err = WSAStartup(wVersionRequested, &wsaData);
+    if (err != 0) {
+        printf("WSAStartup failed with error: %d\n", err);
+        return 1;
+    }
+
+    if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+        printf("Could not find a usable version of Winsock.dll\n");
+        WSACleanup();
+        return 1;
+    }
+#endif
+
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc < 4 || argc > 5) {
         printf("USAGE: hostname nick password [port]\n");
@@ -2828,5 +2849,8 @@ int main(int argc, char **argv) {
     glfwTerminate();
     free(g->chunk_buffer);
     free(inventory.items);
+#ifdef _WIN32
+    WSACleanup();
+#endif
     return 0;
 }

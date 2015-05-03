@@ -269,6 +269,9 @@ void client_connect(char *hostname, int port) {
     struct hostent *host;
     struct sockaddr_in address;
     if ((host = gethostbyname(hostname)) == 0) {
+#ifdef _WIN32
+        printf("WSAGetLastError: %d",  WSAGetLastError());
+#endif
         perror("gethostbyname");
         exit(1);
     }

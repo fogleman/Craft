@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-ARTIFACTS="*.deb *.rpm"
+ARTIFACTS="*.deb *.rpm *.zip"
 API_URL=https://api.bintray.com
 API_AUTH=-unsg:$bintray_api_key
 

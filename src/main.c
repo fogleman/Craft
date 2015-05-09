@@ -1050,8 +1050,11 @@ void load_chunk(WorkerItem *item) {
     Map *light_map = item->light_maps[1][1];
 }
 
-void request_chunk(int p, int q) {
-    client_chunk(p, q, -1); // -1 is a dummy key
+void request_chunks() {
+  int chunks = (int)((float)MAX_PENDING_CHUNKS * ((float)g->fps.fps / 60.0));
+  chunks = chunks < 1 ? 1 : chunks;
+  client_chunk(chunks);
+  g->pending_chunks += chunks;
 }
 
 void init_chunk(Chunk *chunk, int p, int q) {
@@ -1083,8 +1086,6 @@ void create_chunk(Chunk *chunk, int p, int q) {
     item->block_maps[1][1] = &chunk->map;
     item->light_maps[1][1] = &chunk->lights;
     load_chunk(item);
-
-    request_chunk(p, q);
 }
 
 void delete_chunks() {
@@ -1145,7 +1146,6 @@ void check_workers() {
                     map_free(&chunk->lights);
                     map_copy(&chunk->map, block_map);
                     map_copy(&chunk->lights, light_map);
-                    request_chunk(item->p, item->q);
                 }
                 generate_chunk(chunk, item);
             }
@@ -2255,6 +2255,10 @@ void parse_buffer(Packet packet) {
             pos += sizeof(int);
 
             parse_blocks(bp, bq, bk, pos, size - 1 - sizeof(int)*3, s);
+            g->pending_chunks -= 1;
+            if(g->pending_chunks <= 0) {
+              request_chunks();
+            }
         } else {
             int bp, bq, bx, by, bz, bw;
 
@@ -2619,7 +2623,7 @@ int main(int argc, char **argv) {
         client_enable();
         client_connect(g->server_addr, g->server_port);
         client_start();
-
+        g->pending_chunks = 0;
         char out_hash[41];
         char in_hash[strlen(argv[2]) + strlen(argv[3])];
         strcpy(in_hash, argv[2]);
@@ -2630,9 +2634,11 @@ int main(int argc, char **argv) {
         printf("Server: %s:%d\n", g->server_addr, g->server_port);
         printf("Login:  %s/%s\n", argv[2], in_hash);
 
+        // global variables
+        memset(&g->fps, 0, sizeof(g->fps));
+
         // LOCAL VARIABLES //
         reset_model();
-        FPS fps = {0, 0, 0};
         double last_update = glfwGetTime();
         GLuint sky_buffer = gen_sky_buffer();
 
@@ -2649,6 +2655,9 @@ int main(int argc, char **argv) {
         // Ask server for inventory
         client_inventory();
 
+        // Ask for the initial chunk
+        request_chunks();
+
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
         int blocks_recv = g->blocks_recv;
@@ -2662,9 +2671,9 @@ int main(int argc, char **argv) {
             if (g->time_changed) {
                 g->time_changed = 0;
                 last_update = glfwGetTime();
-                memset(&fps, 0, sizeof(fps));
+                memset(&g->fps, 0, sizeof(g->fps));
             }
-            update_fps(&fps);
+            update_fps(&g->fps);
             double now = glfwGetTime();
             double dt = now - previous;
             dt = MIN(dt, 0.2);
@@ -2736,7 +2745,7 @@ int main(int argc, char **argv) {
                     text_buffer, 1024,
                     "(%d, %d) (%.2f, %.2f, %.2f) %d%cm %dfps",
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
-                    hour, am_pm, fps.fps);
+                    hour, am_pm, g->fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
                 snprintf(

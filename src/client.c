@@ -135,12 +135,12 @@ void click_at(int x, int y, int z, int button) {
     client_send(buffer);
 }
 
-void client_chunk(int p, int q, int key) {
+void client_chunk(int amount) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "C,%d,%d,%d", p, q, key);
+    char buffer[32];
+    snprintf(buffer, 32, "C,%d", amount);
     client_send(buffer);
 }
 

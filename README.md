@@ -70,6 +70,11 @@ Import Bintray's signing key
 sudo apt-key adv --keyserver pgp.mit.edu --recv-key 379CE192D401AB61
 ```
 
+Add the repository
+```
+echo 'deb https://dl.bintray.com/konstructs/debian jessie main' | sudo tee /etc/apt/sources.list.d/konstructs.list
+```
+
 Update the package database and install the package `konstructs-client`:
 
 ```

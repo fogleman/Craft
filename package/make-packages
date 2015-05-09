@@ -1,4 +1,5 @@
-#/bin/bash -x
+#/bin/bash
+set -x
 
 # Install packages
 sudo apt-get -y install ruby-dev rubygems rpm
@@ -22,7 +23,6 @@ sudo fpm -s dir -t deb \
   --depends zenity \
   --maintainer "Stefan Berggren <nsg@nsg.cc>" \
   --url https://github.com/konstructs/client \
-  --description "Konstructs client" \
   -n konstructs-client \
   /usr/local/bin/konstructs-client \
   /usr/local/bin/konstructs-client-launcher \

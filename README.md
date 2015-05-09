@@ -63,7 +63,23 @@ In the long term we want textures to be managed and sent by the server.  It shou
 
 #### Install binaries
 
-We have Linux deb and rpm:s hosted at [bintray.com/nsg/craft/client/](https://bintray.com/nsg/craft/client/view#files).
+##### Debian (Ubuntu)
+
+Import Bintray's signing key
+```
+sudo apt-key adv --keyserver pgp.mit.edu --recv-key 379CE192D401AB61
+```
+
+Update the package database and install the package `konstructs-client`:
+
+```
+sudo apt-get update
+sudo apt-get install konstructs-client
+```
+
+##### Linux (tar archive)
+
+We have a Linux build ready at [bintray.com/konstructs/linux/client](https://bintray.com/konstructs/linux/client/view#files).
 
 #### Build from source
 

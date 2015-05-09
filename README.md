@@ -1,6 +1,6 @@
 ## Craft
 
-[![Build Status](https://travis-ci.org/nsg/Craft.svg?branch=master)](https://travis-ci.org/nsg/Craft)
+[![Build Status](https://travis-ci.org/konstructs/client.svg?branch=master)](https://travis-ci.org/konstructs/client)
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders).
 
@@ -71,7 +71,7 @@ See [BUILD.md](BUILD.md)
 
 ### Server
 
-You need the [petterarvidsson/craft-akka-server](https://github.com/petterarvidsson/craft-akka-server) to play the game.
+You need the [konstructs/server](https://github.com/konstructs/server) to play the game.
 You can download a compiled JAR from [bintray.com/nsg/craft/craft-server/](https://bintray.com/nsg/craft/craft-server/view#files).
 
 Start it with `java -jar craft-server*.jar` and connect to it with the client, for example: `./craft localhost nsg mypassword`.

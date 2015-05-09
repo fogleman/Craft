@@ -46,8 +46,8 @@ fi
 
 log "Package a Windows build"
 
-mkdir -p craft-win && cd craft-win
-cp ../craft.exe .
+mkdir -p konstructs-client && cd konstructs-client
+cp ../craft.exe konstructs-client.exe
 cp /tmp/build-deps/zlib-bin/bin/zlib1.dll .
 cp -r ../shaders ../textures .
-cd .. && zip -r craft-win.zip craft-win
+cd .. && zip -r konstructs-client.zip konstructs-client

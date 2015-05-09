@@ -3,4 +3,4 @@
 HOST=$(zenity --entry --text="Server to connect to" --entry-text="craft.nsg.cc")
 USERPASS="$(zenity --username --password | tr '|' ' ')"
 
-/usr/local/bin/craft $HOST $USERPASS
+/usr/local/bin/konstructs-client $HOST $USERPASS

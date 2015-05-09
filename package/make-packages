@@ -9,6 +9,7 @@ sudo gem install fpm --no-ri --no-rdoc
 sudo mv craft /usr/local/bin/konstructs-client
 sudo cp package/linux-launcher /usr/local/bin/konstructs-client-launcher
 sudo mkdir -p /usr/local/share/konstructs-client/{textures,shaders}
+sudo mkdir -p /usr/share/applications/
 sudo cp -r textures/* /usr/local/share/konstructs-client/textures
 sudo cp -r shaders/* /usr/local/share/konstructs-client/shaders
 sudo cp package/konstructs-client.desktop /usr/share/applications/konstructs-client.desktop

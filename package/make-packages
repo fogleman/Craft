@@ -1,4 +1,4 @@
-#/bin/bash
+#/bin/bash -x
 
 # Install packages
 sudo apt-get -y install ruby-dev rubygems rpm

@@ -17,7 +17,7 @@ make
 
 log "Package a Linux build"
 
-mkdir -p craft-linux && cd craft-linux
-cp ../craft .
+mkdir -p konstructs-client-linux && cd konstructs-client-linux
+cp ../craft konstructs-client
 cp -r ../shaders ../textures .
-cd .. && zip -r craft-linux.zip craft-linux
+cd .. && tar cfj konstructs-client.tar.bz2 konstructs-client-linux

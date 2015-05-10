@@ -59,7 +59,7 @@ To let the server manage the world we needed to change the text based protocol t
 
 In the long term we want textures to be managed and sent by the server.  It should be up to the server administrator to choose what type of blocks and textures that are avaiable.
 
-### Compile and Install
+### Compile and/or Install
 
 #### Install binaries
 
@@ -85,6 +85,14 @@ sudo apt-get install konstructs-client
 ##### Linux (tar archive)
 
 We have a Linux build ready at [bintray.com/konstructs/linux/client](https://bintray.com/konstructs/linux/client/view#files).
+
+##### Windows (zip archive)
+
+We have a Windows build ready at [bintray.com/konstructs/windows/client](https://bintray.com/konstructs/windows/client/view#files).
+
+##### OS X
+
+Sorry, we have no automatic builds for OS X. You need to build it from source.
 
 #### Build from source
 

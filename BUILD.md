@@ -2,8 +2,6 @@
 
 ## Mac OS X
 
-Note: OS X builds are untested on this fork.
-
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 if you don\'t already have it. You may use [Homebrew](http://brew.sh) to simplify
 the installation:
@@ -29,11 +27,11 @@ Use the following commands in place of the ones described in the next section.
 
 ## Compile and Run
 
-Once you have the dependencies (see above), run the following commands in your
+Once you have the dependencies, run the following commands in your
 terminal.
 
-    git clone https://github.com/nsg/Craft.git
-    cd Craft
+    git clone https://github.com/konstructs/client.git
+    cd client
     cmake .
     make
     ./craft

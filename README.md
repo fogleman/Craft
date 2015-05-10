@@ -8,7 +8,7 @@ This is a fork of [fogleman/Craft](https://github.com/fogleman/Craft) created fo
 
 Note: Offline mode is removed in this fork, a server is required. You need to start a server on the same computer for single player.
 
-![Screenshot](http://i.imgur.com/MCkqcUY.png)
+[![Video](http://i.imgur.com/ciU1c0l.png)](https://www.youtube.com/watch?v=lylgqim9cW4)
 
 ### Features
 

@@ -16,7 +16,7 @@ sudo cp package/konstructs-client.desktop /usr/share/applications/konstructs-cli
 
 # Make deb package
 sudo fpm -s dir -t deb \
-  -v $(git describe --tags --abbrev=0 | tr -d v) \
+  -v 1 \
   --iteration ${TRAVIS_BUILD_NUMBER} \
   --license MIT \
   --depends libglfw2 \
@@ -33,7 +33,7 @@ sudo fpm -s dir -t deb \
 
 # Make rpm package
 sudo fpm -s dir -t rpm \
-  -v $(git describe --tags --abbrev=0 | tr -d v) \
+  -v 1 \
   --iteration ${TRAVIS_BUILD_NUMBER} \
   --license MIT \
   --depends libglfw2 \

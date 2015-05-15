@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "config.h"
-#include "craft.h"
+#include "konstructs.h"
 #include "inventory.h"
 
 Inventory inventory;
@@ -139,4 +139,3 @@ void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_
     glClear(GL_DEPTH_BUFFER_BIT);
     render_inventory_texts(text_attrib, xoffs, yoffs, scale, ioffs, width, height);
 }
-

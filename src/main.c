@@ -26,7 +26,7 @@
 #include "inventory.h"
 #include "compress.h"
 #include "crypto.h"
-#include "craft.h"
+#include "konstructs.h"
 
 static Model model;
 static Model *g = &model;
@@ -1499,7 +1499,7 @@ void render_signs(Attrib *attrib, Player *player) {
 }
 
 void render_sign(Attrib *attrib, Player *player) {
-    if (!g->typing || g->typing_buffer[0] != CRAFT_KEY_SIGN) {
+    if (!g->typing || g->typing_buffer[0] != KONSTRUCTS_KEY_SIGN) {
         return;
     }
     int x, y, z, face;
@@ -1950,7 +1950,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             }
             else {
                 g->typing = 0;
-                if (g->typing_buffer[0] == CRAFT_KEY_SIGN) {
+                if (g->typing_buffer[0] == KONSTRUCTS_KEY_SIGN) {
                     Player *player = g->players;
                     int x, y, z, face;
                     if (hit_test_face(player, &x, &y, &z, &face)) {
@@ -1986,19 +1986,19 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if (!g->typing) {
-        if (key == CRAFT_KEY_FLY) {
+        if (key == KONSTRUCTS_KEY_FLY) {
             g->flying = !g->flying;
         }
-        if (key == CRAFT_KEY_DEBUG_SCREEN) {
+        if (key == KONSTRUCTS_KEY_DEBUG_SCREEN) {
             g->debug_screen = !g->debug_screen;
         }
-        if (key == CRAFT_KEY_INVENTORY_TOGGLE) {
+        if (key == KONSTRUCTS_KEY_INVENTORY_TOGGLE) {
             g->inventory_screen = !g->inventory_screen;
         }
-        if (key == CRAFT_KEY_OBSERVE) {
+        if (key == KONSTRUCTS_KEY_OBSERVE) {
             g->observe1 = (g->observe1 + 1) % g->player_count;
         }
-        if (key == CRAFT_KEY_OBSERVE_INSET) {
+        if (key == KONSTRUCTS_KEY_OBSERVE_INSET) {
             g->observe2 = (g->observe2 + 1) % g->player_count;
         }
     }
@@ -2020,18 +2020,18 @@ void on_char(GLFWwindow *window, unsigned int u) {
         }
     }
     else {
-        if (u == CRAFT_KEY_CHAT) {
+        if (u == KONSTRUCTS_KEY_CHAT) {
             g->typing = 1;
             g->typing_buffer[0] = '\0';
         }
-        if (u == CRAFT_KEY_COMMAND) {
+        if (u == KONSTRUCTS_KEY_COMMAND) {
             g->typing = 1;
             g->typing_buffer[0] = '/';
             g->typing_buffer[1] = '\0';
         }
-        if (u == CRAFT_KEY_SIGN) {
+        if (u == KONSTRUCTS_KEY_SIGN) {
             g->typing = 1;
-            g->typing_buffer[0] = CRAFT_KEY_SIGN;
+            g->typing_buffer[0] = KONSTRUCTS_KEY_SIGN;
             g->typing_buffer[1] = '\0';
         }
         if (u > 48 && u < 58) {
@@ -2106,7 +2106,7 @@ void create_window() {
         window_height = modes[mode_count - 1].height;
     }
     g->window = glfwCreateWindow(
-        window_width, window_height, "Craft", monitor, NULL);
+        window_width, window_height, "Konstructs", monitor, NULL);
 }
 
 void handle_mouse_input() {
@@ -2149,12 +2149,12 @@ void handle_movement(double dt) {
     int sx = 0;
     if (!g->typing) {
         float m = dt * 1.0;
-        g->ortho = glfwGetKey(g->window, CRAFT_KEY_ORTHO) ? 64 : 0;
-        g->fov = glfwGetKey(g->window, CRAFT_KEY_ZOOM) ? 15 : 65;
-        if (glfwGetKey(g->window, CRAFT_KEY_FORWARD)) sz--;
-        if (glfwGetKey(g->window, CRAFT_KEY_BACKWARD)) sz++;
-        if (glfwGetKey(g->window, CRAFT_KEY_LEFT)) sx--;
-        if (glfwGetKey(g->window, CRAFT_KEY_RIGHT)) sx++;
+        g->ortho = glfwGetKey(g->window, KONSTRUCTS_KEY_ORTHO) ? 64 : 0;
+        g->fov = glfwGetKey(g->window, KONSTRUCTS_KEY_ZOOM) ? 15 : 65;
+        if (glfwGetKey(g->window, KONSTRUCTS_KEY_FORWARD)) sz--;
+        if (glfwGetKey(g->window, KONSTRUCTS_KEY_BACKWARD)) sz++;
+        if (glfwGetKey(g->window, KONSTRUCTS_KEY_LEFT)) sx--;
+        if (glfwGetKey(g->window, KONSTRUCTS_KEY_RIGHT)) sx++;
         if (glfwGetKey(g->window, GLFW_KEY_LEFT)) s->rx -= m;
         if (glfwGetKey(g->window, GLFW_KEY_RIGHT)) s->rx += m;
         if (glfwGetKey(g->window, GLFW_KEY_UP)) s->ry += m;
@@ -2163,7 +2163,7 @@ void handle_movement(double dt) {
     float vx, vy, vz;
     get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
     if (!g->typing) {
-        if (glfwGetKey(g->window, CRAFT_KEY_JUMP)) {
+        if (glfwGetKey(g->window, KONSTRUCTS_KEY_JUMP)) {
             if (g->flying) {
                 vy = 1;
             }
@@ -2461,7 +2461,7 @@ int main(int argc, char **argv) {
     if (file_exist("textures/texture.png")) {
       strcpy(texture_path, "textures/");
     } else {
-      strcpy(texture_path, "/usr/local/share/craft/textures/");
+      strcpy(texture_path, "/usr/local/share/konstructs/textures/");
     }
 
     // Search for shaders
@@ -2471,7 +2471,7 @@ int main(int argc, char **argv) {
     if (file_exist("shaders/block_vertex.glsl")) {
       strcpy(shader_path, "shaders/");
     } else {
-      strcpy(shader_path, "/usr/local/share/craft/shaders/");
+      strcpy(shader_path, "/usr/local/share/konstructs/shaders/");
     }
 
     // LOAD TEXTURES //

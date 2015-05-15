@@ -2,7 +2,7 @@ Makefile
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
-craft
+konstructs
 env
 log.txt
 *.o

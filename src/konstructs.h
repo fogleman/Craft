@@ -1,5 +1,5 @@
-#ifndef _craft_h_
-#define _craft_h_
+#ifndef _konstructs_h_
+#define _konstructs_h_
 
 #define MAX_CHUNKS 8192
 #define MAX_PENDING_CHUNKS 50

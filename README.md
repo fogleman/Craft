@@ -1,4 +1,4 @@
-## Craft
+## Konstructs
 
 [![Build Status](https://travis-ci.org/konstructs/client.svg?branch=master)](https://travis-ci.org/konstructs/client)
 
@@ -101,7 +101,6 @@ See [BUILD.md](BUILD.md)
 ### Server
 
 You need the [konstructs/server](https://github.com/konstructs/server) to play the game.
-You can download a compiled JAR from [bintray.com/nsg/craft/craft-server/](https://bintray.com/nsg/craft/craft-server/view#files).
+You can download a compiled JAR from [bintray.com/konstructs/jars/server/](https://bintray.com/konstructs/jars/server/view#files).
 
-Start it with `java -jar craft-server*.jar` and connect to it with the client, for example: `./craft localhost nsg mypassword`.
-
+Start it with `java -jar konstructs-server*.jar` and connect to it with the client, for example: `./konstructs localhost nsg mypassword`.

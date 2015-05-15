@@ -34,7 +34,7 @@ terminal.
     cd client
     cmake .
     make
-    ./craft
+    ./konstructs
 
 ## Dependencies
 
@@ -43,4 +43,3 @@ terminal.
 * lodepng is used for loading PNG textures.
 * tinycthread is used for cross-platform threading.
 * zlib for chunk data decompression (server sends compressed chunks).
-

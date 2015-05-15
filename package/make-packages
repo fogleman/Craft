@@ -6,7 +6,7 @@ sudo apt-get -y install ruby-dev rubygems rpm
 sudo gem install fpm --no-ri --no-rdoc
 
 # Install
-sudo mv craft /usr/local/bin/konstructs-client
+sudo mv konstructs /usr/local/bin/konstructs-client
 sudo cp package/linux-launcher /usr/local/bin/konstructs-client-launcher
 sudo mkdir -p /usr/local/share/konstructs-client/{textures,shaders}
 sudo mkdir -p /usr/share/applications/

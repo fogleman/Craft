@@ -10,7 +10,7 @@ log() {
 
 log "Make Linux (x86_64) build"
 
-rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake craft Makefile
+rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake konstructs Makefile
 
 cmake .
 make
@@ -18,6 +18,6 @@ make
 log "Package a Linux build"
 
 mkdir -p konstructs-client-linux && cd konstructs-client-linux
-cp ../craft konstructs-client
+cp ../konstructs konstructs-client
 cp -r ../shaders ../textures .
 cd .. && tar cfj konstructs-client.tar.bz2 konstructs-client-linux

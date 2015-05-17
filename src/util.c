@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "lodepng.h"
 #include "matrix.h"
 #include "util.h"
@@ -32,8 +33,12 @@ char *load_file(const char *path) {
     int length = ftell(file);
     rewind(file);
     char *data = calloc(length + 1, sizeof(char));
-    fread(data, 1, length, file);
+    int read = fread(data, 1, length, file);
     fclose(file);
+    if(read != length) {
+      fprintf(stderr, "Failed to load file %s\n", path);
+      exit(1);
+    }
     return data;
 }
 
@@ -216,4 +221,10 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
     }
     free(text);
     return line_number;
+}
+
+int file_exist(const char *filename) {
+  struct stat st;
+  int result = stat(filename, &st);
+  return result == 0;
 }

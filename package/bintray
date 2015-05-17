@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+
+API_URL=https://api.bintray.com
+API_AUTH=-unsg:$bintray_api_key
+
+upload_client_deb() {
+  local repo=$1
+  local package=$2
+  local file=$3
+  local path=pool/main/k/konstructs-client/$file
+  local version=$4
+  local arch=amd64
+
+  curl -X DELETE $API_AUTH $API_URL/packages/konstructs/$repo/$package/versions/$version
+  curl -T $file $API_AUTH "$API_URL/content/konstructs/$repo/$package/$version/$path;deb_distribution=jessie;deb_component=main;deb_architecture=$arch"
+  curl -X POST $API_AUTH $API_URL/content/konstructs/$repo/$package/$version/publish
+}
+
+upload_client() {
+  local repo=$1
+  local package=$2
+  local file=$3
+  local path=$file
+  local version=$4
+
+  curl -X DELETE $API_AUTH $API_URL/packages/konstructs/$repo/$package/versions/$version
+  curl -T $file $API_AUTH "$API_URL/content/konstructs/$repo/$package/$version/$path"
+  curl -X POST $API_AUTH $API_URL/content/konstructs/$repo/$package/$version/publish
+}
+
+# Upload master to bintray
+if [ "x$TRAVIS_BRANCH" == "xmaster" ] && [ "x$TRAVIS_PULL_REQUEST" == "xfalse" ]; then
+  upload_client_deb debian client $(echo *.deb) master-dev
+  upload_client windows client $(echo *.zip) master-dev
+  upload_client linux client $(echo *.tar.bz2) master-dev
+fi
+
+# Upload tagged releases to bintray
+if [ $TRAVIS_TAG ]; then
+  upload_client_deb debian client $(echo *.deb) $TRAVIS_TAG
+  upload_client windows client $(echo *.zip) $TRAVIS_TAG
+  upload_client linux client $(echo *.tar.bz2) $TRAVIS_TAG
+fi

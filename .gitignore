@@ -1,16 +1,10 @@
-.DS_Store
 Makefile
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
-config.py
-craft
-world
+konstructs
 env
 log.txt
 *.o
-*.db
 *.exe
 *.dll
-*.pyc
-

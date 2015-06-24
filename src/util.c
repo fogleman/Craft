@@ -27,6 +27,7 @@ void update_fps(FPS *fps) {
 }
 
 char *load_file(const char *path) {
+    printf("load file: %s\n", path);
     FILE *file = fopen(path, "rb");
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
@@ -108,8 +109,20 @@ GLuint make_program(GLuint shader1, GLuint shader2) {
 }
 
 GLuint load_program(const char *path1, const char *path2) {
-    GLuint shader1 = load_shader(GL_VERTEX_SHADER, path1);
-    GLuint shader2 = load_shader(GL_FRAGMENT_SHADER, path2);
+    #ifdef EMSCRIPTEN
+      char shaderPath1[100] = "shaders.webgl/";
+      char shaderPath2[100] = "shaders.webgl/";
+    #else
+      char shaderPath1[100] = "shaders/";
+      char shaderPath2[100] = "shaders/";
+    #endif
+
+    strcat(shaderPath1, path1);
+    strcat(shaderPath2, path2);
+
+    printf("load_program: %s %s\n", shaderPath1, shaderPath2);
+    GLuint shader1 = load_shader(GL_VERTEX_SHADER, shaderPath1);
+    GLuint shader2 = load_shader(GL_FRAGMENT_SHADER, shaderPath2);
     GLuint program = make_program(shader1, shader2);
     return program;
 }

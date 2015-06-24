@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "client.h"
-#include "tinycthread.h"
+// #include "tinycthread.h"
 
 #define QUEUE_SIZE 1048576
 #define RECV_SIZE 4096
@@ -24,11 +24,11 @@ static int bytes_sent = 0;
 static int bytes_received = 0;
 static char *queue = 0;
 static int qsize = 0;
-static thrd_t recv_thread;
-static mtx_t mutex;
+// static thrd_t recv_thread;
+// static mtx_t mutex;
 
 void client_enable() {
-    client_enabled = 1;
+    client_enabled = 0;
 }
 
 void client_disable() {
@@ -43,27 +43,27 @@ int client_sendall(int sd, char *data, int length) {
     if (!client_enabled) {
         return 0;
     }
-    int count = 0;
-    while (count < length) {
-        int n = send(sd, data + count, length, 0);
-        if (n == -1) {
-            return -1;
-        }
-        count += n;
-        length -= n;
-        bytes_sent += n;
-    }
-    return 0;
+    // int count = 0;
+    // while (count < length) {
+    //     int n = send(sd, data + count, length, 0);
+    //     if (n == -1) {
+    //         return -1;
+    //     }
+    //     count += n;
+    //     length -= n;
+    //     bytes_sent += n;
+    // }
+    // return 0;
 }
 
 void client_send(char *data) {
     if (!client_enabled) {
         return;
     }
-    if (client_sendall(sd, data, strlen(data)) == -1) {
-        perror("client_sendall");
-        exit(1);
-    }
+    // if (client_sendall(sd, data, strlen(data)) == -1) {
+    //     perror("client_sendall");
+    //     exit(1);
+    // }
 }
 
 void client_version(int version) {
@@ -156,58 +156,58 @@ char *client_recv() {
     if (!client_enabled) {
         return 0;
     }
-    char *result = 0;
-    mtx_lock(&mutex);
-    char *p = queue + qsize - 1;
-    while (p >= queue && *p != '\n') {
-        p--;
-    }
-    if (p >= queue) {
-        int length = p - queue + 1;
-        result = malloc(sizeof(char) * (length + 1));
-        memcpy(result, queue, sizeof(char) * length);
-        result[length] = '\0';
-        int remaining = qsize - length;
-        memmove(queue, p + 1, remaining);
-        qsize -= length;
-        bytes_received += length;
-    }
-    mtx_unlock(&mutex);
-    return result;
+    // char *result = 0;
+    // mtx_lock(&mutex);
+    // char *p = queue + qsize - 1;
+    // while (p >= queue && *p != '\n') {
+    //     p--;
+    // }
+    // if (p >= queue) {
+    //     int length = p - queue + 1;
+    //     result = malloc(sizeof(char) * (length + 1));
+    //     memcpy(result, queue, sizeof(char) * length);
+    //     result[length] = '\0';
+    //     int remaining = qsize - length;
+    //     memmove(queue, p + 1, remaining);
+    //     qsize -= length;
+    //     bytes_received += length;
+    // }
+    // mtx_unlock(&mutex);
+    // return result;
 }
 
-int recv_worker(void *arg) {
-    char *data = malloc(sizeof(char) * RECV_SIZE);
-    while (1) {
-        int length;
-        if ((length = recv(sd, data, RECV_SIZE - 1, 0)) <= 0) {
-            if (running) {
-                perror("recv");
-                exit(1);
-            }
-            else {
-                break;
-            }
-        }
-        data[length] = '\0';
-        while (1) {
-            int done = 0;
-            mtx_lock(&mutex);
-            if (qsize + length < QUEUE_SIZE) {
-                memcpy(queue + qsize, data, sizeof(char) * (length + 1));
-                qsize += length;
-                done = 1;
-            }
-            mtx_unlock(&mutex);
-            if (done) {
-                break;
-            }
-            sleep(0);
-        }
-    }
-    free(data);
-    return 0;
-}
+// int recv_worker(void *arg) {
+//     char *data = malloc(sizeof(char) * RECV_SIZE);
+//     while (1) {
+//         int length;
+//         if ((length = recv(sd, data, RECV_SIZE - 1, 0)) <= 0) {
+//             if (running) {
+//                 perror("recv");
+//                 exit(1);
+//             }
+//             else {
+//                 break;
+//             }
+//         }
+//         data[length] = '\0';
+//         while (1) {
+//             int done = 0;
+//             mtx_lock(&mutex);
+//             if (qsize + length < QUEUE_SIZE) {
+//                 memcpy(queue + qsize, data, sizeof(char) * (length + 1));
+//                 qsize += length;
+//                 done = 1;
+//             }
+//             mtx_unlock(&mutex);
+//             if (done) {
+//                 break;
+//             }
+//             sleep(0);
+//         }
+//     }
+//     free(data);
+//     return 0;
+// }
 
 void client_connect(char *hostname, int port) {
     if (!client_enabled) {
@@ -237,14 +237,14 @@ void client_start() {
     if (!client_enabled) {
         return;
     }
-    running = 1;
-    queue = (char *)calloc(QUEUE_SIZE, sizeof(char));
-    qsize = 0;
-    mtx_init(&mutex, mtx_plain);
-    if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
-        perror("thrd_create");
-        exit(1);
-    }
+    // running = 1;
+    // queue = (char *)calloc(QUEUE_SIZE, sizeof(char));
+    // qsize = 0;
+    // mtx_init(&mutex, mtx_plain);
+    // if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
+    //     perror("thrd_create");
+    //     exit(1);
+    // }
 }
 
 void client_stop() {

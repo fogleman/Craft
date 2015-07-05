@@ -11,6 +11,7 @@ typedef struct {
 void client_enable();
 void client_disable();
 int get_client_enabled();
+int check_server(char *server);
 void client_connect(char *hostname, int port);
 void client_start();
 void client_stop();

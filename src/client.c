@@ -262,6 +262,11 @@ int recv_worker(void *arg) {
     return 0;
 }
 
+int check_server(char *server) {
+    struct hostent *host;
+    return ((host = gethostbyname(server)) == 0 ? 0 : 1);
+}
+
 void client_connect(char *hostname, int port) {
     if (!client_enabled) {
         return;

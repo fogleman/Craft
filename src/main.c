@@ -2095,18 +2095,8 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
 }
 
 void create_window() {
-    int window_width = WINDOW_WIDTH;
-    int window_height = WINDOW_HEIGHT;
     GLFWmonitor *monitor = NULL;
-    if (FULLSCREEN) {
-        int mode_count;
-        monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
-        window_width = modes[mode_count - 1].width;
-        window_height = modes[mode_count - 1].height;
-    }
-    g->window = glfwCreateWindow(
-        window_width, window_height, "Konstructs", monitor, NULL);
+    g->window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Konstructs", monitor, NULL);
 }
 
 void handle_mouse_input() {
@@ -2384,9 +2374,8 @@ void reset_model() {
     g->time_changed = 1;
 }
 
-int main(int argc, char **argv) {
-
 #ifdef _WIN32
+int init_winsock() {
     WORD wVersionRequested;
     WSADATA wsaData;
     int err;
@@ -2403,37 +2392,189 @@ int main(int argc, char **argv) {
         WSACleanup();
         return 1;
     }
+
+    return 0;
+}
+#else
+int init_winsock() { return 0; }
 #endif
 
-    // CHECK COMMAND LINE ARGUMENTS //
-    if (argc < 4 || argc > 5) {
-        printf("USAGE: hostname nick password [port]\n");
-        exit(1);
-    }
-
-    // INITIALIZATION //
-    srand(time(NULL));
-    rand();
-
+int init_initory() {
     inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].id = 0;
         inventory.items[item].num = 0;
     }
     inventory.selected = 0;
+}
+
+char* shtxt_path(const char *name, const char *type, char *path) {
+    sprintf(path, "%s/%s", type, name);
+
+    if (!file_exist(path)) {
+        sprintf(path, "/usr/local/share/konstructs/%s/%s", type, name);
+    }
+
+    if (!file_exist(path)) {
+        printf("Error, no %s for %s found.\n", type, name);
+    }
+}
+
+char* texture_path(const char *name, char *path) {
+    return shtxt_path(name, "textures", path);
+}
+
+char* shader_path(const char *name, char *path) {
+    return shtxt_path(name, "shaders", path);
+}
+
+int load_textures() {
+    char txtpth[64];
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    texture_path("texture.png", txtpth);
+    load_png_texture(txtpth);
+
+    GLuint font;
+    glGenTextures(1, &font);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, font);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    texture_path("font.png", txtpth);
+    load_png_texture(txtpth);
+
+    GLuint sky;
+    glGenTextures(1, &sky);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, sky);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    texture_path("sky.png", txtpth);
+    load_png_texture(txtpth);
+
+    GLuint sign;
+    glGenTextures(1, &sign);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, sign);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    texture_path("sign.png", txtpth);
+    load_png_texture(txtpth);
+
+    GLuint inventory_texture;
+    glGenTextures(1, &inventory_texture);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, inventory_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    texture_path("inventory.png", txtpth);
+    load_png_texture(txtpth);
+
+}
+
+int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
+        Attrib *sky_attrib, Attrib *inventory_attrib) {
+    char vertex_path[64];
+    char fragment_path[64];
+    GLuint program;
+
+    shader_path("block_vertex.glsl", vertex_path);
+    shader_path("block_fragment.glsl", fragment_path);
+
+    program = load_program(vertex_path, fragment_path);
+    block_attrib->program = program;
+    block_attrib->position = glGetAttribLocation(program, "position");
+    block_attrib->normal = glGetAttribLocation(program, "normal");
+    block_attrib->uv = glGetAttribLocation(program, "uv");
+    block_attrib->matrix = glGetUniformLocation(program, "matrix");
+    block_attrib->sampler = glGetUniformLocation(program, "sampler");
+    block_attrib->extra1 = glGetUniformLocation(program, "sky_sampler");
+    block_attrib->extra2 = glGetUniformLocation(program, "daylight");
+    block_attrib->extra3 = glGetUniformLocation(program, "fog_distance");
+    block_attrib->extra4 = glGetUniformLocation(program, "ortho");
+    block_attrib->camera = glGetUniformLocation(program, "camera");
+    block_attrib->timer = glGetUniformLocation(program, "timer");
+
+    shader_path("line_vertex.glsl", vertex_path);
+    shader_path("line_fragment.glsl", fragment_path);
+
+    program = load_program(vertex_path, fragment_path);
+    line_attrib->program = program;
+    line_attrib->position = glGetAttribLocation(program, "position");
+    line_attrib->matrix = glGetUniformLocation(program, "matrix");
+
+    shader_path("text_vertex.glsl", vertex_path);
+    shader_path("text_fragment.glsl", fragment_path);
+
+    program = load_program(vertex_path, fragment_path);
+    text_attrib->program = program;
+    text_attrib->position = glGetAttribLocation(program, "position");
+    text_attrib->uv = glGetAttribLocation(program, "uv");
+    text_attrib->matrix = glGetUniformLocation(program, "matrix");
+    text_attrib->sampler = glGetUniformLocation(program, "sampler");
+    text_attrib->extra1 = glGetUniformLocation(program, "is_sign");
+
+    shader_path("sky_vertex.glsl", vertex_path);
+    shader_path("sky_fragment.glsl", fragment_path);
+
+    program = load_program(vertex_path, fragment_path);
+    sky_attrib->program = program;
+    sky_attrib->position = glGetAttribLocation(program, "position");
+    sky_attrib->normal = glGetAttribLocation(program, "normal");
+    sky_attrib->uv = glGetAttribLocation(program, "uv");
+    sky_attrib->matrix = glGetUniformLocation(program, "matrix");
+    sky_attrib->sampler = glGetUniformLocation(program, "sampler");
+    sky_attrib->timer = glGetUniformLocation(program, "timer");
+
+    shader_path("inventory_vertex.glsl", vertex_path);
+    shader_path("inventory_fragment.glsl", fragment_path);
+
+    program = load_program(vertex_path, fragment_path);
+    inventory_attrib->program = program;
+    inventory_attrib->position = glGetAttribLocation(program, "position");
+    inventory_attrib->uv = glGetAttribLocation(program, "uv");
+    inventory_attrib->matrix = glGetUniformLocation(program, "matrix");
+    inventory_attrib->sampler = glGetUniformLocation(program, "sampler");
+
+}
+
+int main(int argc, char **argv) {
+
+    init_initory();
+
+    if (init_winsock()) {
+        printf("Failed to load winsock");
+        return 1;
+    }
+
+    srand(time(NULL));
+    rand();
 
     g->blocks_recv = 0;
     g->debug_screen = 0;
     g->inventory_screen = 0;
     g->chunk_buffer_size = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
     g->chunk_buffer = malloc(sizeof(char)*g->chunk_buffer_size);
+    g->create_radius = CREATE_CHUNK_RADIUS;
+    g->render_radius = RENDER_CHUNK_RADIUS;
+    g->delete_radius = DELETE_CHUNK_RADIUS;
+    g->sign_radius = RENDER_SIGN_RADIUS;
 
-    // WINDOW INITIALIZATION //
-    if (!glfwInit()) {
+    if (glfwInit() == GL_FALSE) {
+        printf("Failed to init glfw");
         return -1;
     }
     create_window();
     if (!g->window) {
+        printf("Failed to init window.");
         glfwTerminate();
         return -1;
     }
@@ -2447,6 +2588,7 @@ int main(int argc, char **argv) {
     glfwSetScrollCallback(g->window, on_scroll);
 
     if (glewInit() != GLEW_OK) {
+        printf("Failed to init glwe");
         return -1;
     }
 
@@ -2455,158 +2597,16 @@ int main(int argc, char **argv) {
     glLogicOp(GL_INVERT);
     glClearColor(0, 0, 0, 1);
 
-    // Search for textures
-    char texture_path[64];
-    char texture_path_temp[64];
-    if (file_exist("textures/texture.png")) {
-      strcpy(texture_path, "textures/");
-    } else {
-      strcpy(texture_path, "/usr/local/share/konstructs/textures/");
-    }
+    load_textures();
 
-    // Search for shaders
-    char shader_path[64];
-    char shader_path_temp_vertex[64];
-    char shader_path_temp_fragment[64];
-    if (file_exist("shaders/block_vertex.glsl")) {
-      strcpy(shader_path, "shaders/");
-    } else {
-      strcpy(shader_path, "/usr/local/share/konstructs/shaders/");
-    }
-
-    // LOAD TEXTURES //
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    strcpy(texture_path_temp, texture_path);
-    strcat(texture_path_temp, "texture.png");
-    load_png_texture(texture_path_temp);
-
-    GLuint font;
-    glGenTextures(1, &font);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, font);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    strcpy(texture_path_temp, texture_path);
-    strcat(texture_path_temp, "font.png");
-    load_png_texture(texture_path_temp);
-
-    GLuint sky;
-    glGenTextures(1, &sky);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, sky);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    strcpy(texture_path_temp, texture_path);
-    strcat(texture_path_temp, "sky.png");
-    load_png_texture(texture_path_temp);
-
-    GLuint sign;
-    glGenTextures(1, &sign);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, sign);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    strcpy(texture_path_temp, texture_path);
-    strcat(texture_path_temp, "sign.png");
-    load_png_texture(texture_path_temp);
-
-    GLuint inventory_texture;
-    glGenTextures(1, &inventory_texture);
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, inventory_texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    strcpy(texture_path_temp, texture_path);
-    strcat(texture_path_temp, "inventory.png");
-    load_png_texture(texture_path_temp);
-
-    // LOAD SHADERS //
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
     Attrib inventory_attrib = {0};
-    GLuint program;
 
-    strcpy(shader_path_temp_vertex, shader_path);
-    strcpy(shader_path_temp_fragment, shader_path);
-    strcat(shader_path_temp_vertex, "block_vertex.glsl");
-    strcat(shader_path_temp_fragment, "block_fragment.glsl");
-    program = load_program(shader_path_temp_vertex, shader_path_temp_fragment);
-    block_attrib.program = program;
-    block_attrib.position = glGetAttribLocation(program, "position");
-    block_attrib.normal = glGetAttribLocation(program, "normal");
-    block_attrib.uv = glGetAttribLocation(program, "uv");
-    block_attrib.matrix = glGetUniformLocation(program, "matrix");
-    block_attrib.sampler = glGetUniformLocation(program, "sampler");
-    block_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
-    block_attrib.extra2 = glGetUniformLocation(program, "daylight");
-    block_attrib.extra3 = glGetUniformLocation(program, "fog_distance");
-    block_attrib.extra4 = glGetUniformLocation(program, "ortho");
-    block_attrib.camera = glGetUniformLocation(program, "camera");
-    block_attrib.timer = glGetUniformLocation(program, "timer");
+    load_shaders(&block_attrib, &line_attrib, &text_attrib, &sky_attrib, &inventory_attrib);
 
-    strcpy(shader_path_temp_vertex, shader_path);
-    strcpy(shader_path_temp_fragment, shader_path);
-    strcat(shader_path_temp_vertex, "line_vertex.glsl");
-    strcat(shader_path_temp_fragment, "line_fragment.glsl");
-    program = load_program(shader_path_temp_vertex, shader_path_temp_fragment);
-    line_attrib.program = program;
-    line_attrib.position = glGetAttribLocation(program, "position");
-    line_attrib.matrix = glGetUniformLocation(program, "matrix");
-
-    strcpy(shader_path_temp_vertex, shader_path);
-    strcpy(shader_path_temp_fragment, shader_path);
-    strcat(shader_path_temp_vertex, "text_vertex.glsl");
-    strcat(shader_path_temp_fragment, "text_fragment.glsl");
-    program = load_program(shader_path_temp_vertex, shader_path_temp_fragment);
-    text_attrib.program = program;
-    text_attrib.position = glGetAttribLocation(program, "position");
-    text_attrib.uv = glGetAttribLocation(program, "uv");
-    text_attrib.matrix = glGetUniformLocation(program, "matrix");
-    text_attrib.sampler = glGetUniformLocation(program, "sampler");
-    text_attrib.extra1 = glGetUniformLocation(program, "is_sign");
-
-    strcpy(shader_path_temp_vertex, shader_path);
-    strcpy(shader_path_temp_fragment, shader_path);
-    strcat(shader_path_temp_vertex, "sky_vertex.glsl");
-    strcat(shader_path_temp_fragment, "sky_fragment.glsl");
-    program = load_program(shader_path_temp_vertex, shader_path_temp_fragment);
-    sky_attrib.program = program;
-    sky_attrib.position = glGetAttribLocation(program, "position");
-    sky_attrib.normal = glGetAttribLocation(program, "normal");
-    sky_attrib.uv = glGetAttribLocation(program, "uv");
-    sky_attrib.matrix = glGetUniformLocation(program, "matrix");
-    sky_attrib.sampler = glGetUniformLocation(program, "sampler");
-    sky_attrib.timer = glGetUniformLocation(program, "timer");
-
-    strcpy(shader_path_temp_vertex, shader_path);
-    strcpy(shader_path_temp_fragment, shader_path);
-    strcat(shader_path_temp_vertex, "inventory_vertex.glsl");
-    strcat(shader_path_temp_fragment, "inventory_fragment.glsl");
-    program = load_program(shader_path_temp_vertex, shader_path_temp_fragment);
-    inventory_attrib.program = program;
-    inventory_attrib.position = glGetAttribLocation(program, "position");
-    inventory_attrib.uv = glGetAttribLocation(program, "uv");
-    inventory_attrib.matrix = glGetUniformLocation(program, "matrix");
-    inventory_attrib.sampler = glGetUniformLocation(program, "sampler");
-
-    strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
-    g->server_port = argc == 5 ? atoi(argv[4]) : DEFAULT_PORT;
-
-    g->create_radius = CREATE_CHUNK_RADIUS;
-    g->render_radius = RENDER_CHUNK_RADIUS;
-    g->delete_radius = DELETE_CHUNK_RADIUS;
-    g->sign_radius = RENDER_SIGN_RADIUS;
-
-    // INITIALIZE WORKER THREADS
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
         worker->index = i;
@@ -2616,9 +2616,13 @@ int main(int argc, char **argv) {
         thrd_create(&worker->thrd, worker_run, worker);
     }
 
+    strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+    g->server_port = argc == 5 ? atoi(argv[4]) : DEFAULT_PORT;
+
     // OUTER LOOP //
     int running = 1;
     while (running) {
+
         // CLIENT INITIALIZATION //
         client_enable();
         client_connect(g->server_addr, g->server_port);

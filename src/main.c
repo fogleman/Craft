@@ -2438,7 +2438,7 @@ int init_winsock() {
 int init_winsock() { return 0; }
 #endif
 
-int init_initory() {
+int init_inventory() {
     inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].id = 0;
@@ -2685,7 +2685,7 @@ void main_connect() {
 
 int main(int argc, char **argv) {
 
-    init_initory();
+    init_inventory();
 
     if (init_winsock()) {
         printf("Failed to load winsock");

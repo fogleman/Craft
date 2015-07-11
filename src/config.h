@@ -11,6 +11,7 @@
 #define MAX_MESSAGES 4
 #define DAY_LENGTH 600
 #define INVERT_MOUSE 0
+#define KONSTRUCTS_TEXT_MESSAGE_SIZE 1024
 
 // rendering options
 #define SHOW_LIGHTS 1

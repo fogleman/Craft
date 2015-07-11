@@ -142,8 +142,8 @@ typedef struct {
   int chunk_buffer_size;
   int pending_chunks;
   FPS fps;
-  char text_message[1024];
-  char text_prompt[1024];
+  char text_message[KONSTRUCTS_TEXT_MESSAGE_SIZE];
+  char text_prompt[KONSTRUCTS_TEXT_MESSAGE_SIZE];
 } Model;
 
 // in main.c

@@ -2468,7 +2468,7 @@ void shader_path(const char *name, char *path) {
 }
 
 int load_textures() {
-    char txtpth[64];
+    char txtpth[KONSTRUCTS_PATH_SIZE];
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -2521,8 +2521,8 @@ int load_textures() {
 
 int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
         Attrib *sky_attrib, Attrib *inventory_attrib) {
-    char vertex_path[64];
-    char fragment_path[64];
+    char vertex_path[KONSTRUCTS_PATH_SIZE];
+    char fragment_path[KONSTRUCTS_PATH_SIZE];
     GLuint program;
 
     shader_path("block_vertex.glsl", vertex_path);

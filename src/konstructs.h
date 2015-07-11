@@ -133,10 +133,6 @@ typedef struct {
   char server_pass[64];
   int day_length;
   int time_changed;
-  Block block0;
-  Block block1;
-  Block copy0;
-  Block copy1;
   int blocks_recv;
   char *chunk_buffer;
   int chunk_buffer_size;

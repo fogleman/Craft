@@ -14,9 +14,15 @@ sudo cp -r textures/* /usr/local/share/konstructs-client/textures
 sudo cp -r shaders/* /usr/local/share/konstructs-client/shaders
 sudo cp package/konstructs-client.desktop /usr/share/applications/konstructs-client.desktop
 
+# Fetch the remote tags
+git fetch --tags
+
+# Travis only fetch the 50 last commits, this fixes that.
+git fetch --unshallow
+
 # Make deb package
 sudo fpm -s dir -t deb \
-  -v 1 \
+  -v $(git describe --abbrev=0 --tags | tr -d v) \
   --iteration ${TRAVIS_BUILD_NUMBER} \
   --license MIT \
   --depends libglfw2 \
@@ -33,7 +39,7 @@ sudo fpm -s dir -t deb \
 
 # Make rpm package
 sudo fpm -s dir -t rpm \
-  -v 1 \
+  -v $(git describe --abbrev=0 --tags | tr -d v) \
   --iteration ${TRAVIS_BUILD_NUMBER} \
   --license MIT \
   --depends libglfw2 \

@@ -11,13 +11,12 @@
 #define MAX_MESSAGES 4
 #define DAY_LENGTH 600
 #define INVERT_MOUSE 0
+#define KONSTRUCTS_TEXT_MESSAGE_SIZE 1024
+#define KONSTRUCTS_PATH_SIZE 64
 
 // rendering options
 #define SHOW_LIGHTS 1
 #define SHOW_CROSSHAIRS 1
-#define SHOW_WIREFRAME 1
-#define SHOW_CHAT_TEXT 1
-#define SHOW_PLAYER_NAMES 1
 
 // key bindings
 #define KONSTRUCTS_KEY_FORWARD 'W'

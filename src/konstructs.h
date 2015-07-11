@@ -129,6 +129,8 @@ typedef struct {
   int suppress_char;
   char server_addr[MAX_ADDR_LENGTH];
   int server_port;
+  char server_user[32];
+  char server_pass[64];
   int day_length;
   int time_changed;
   Block block0;
@@ -140,6 +142,8 @@ typedef struct {
   int chunk_buffer_size;
   int pending_chunks;
   FPS fps;
+  char text_message[KONSTRUCTS_TEXT_MESSAGE_SIZE];
+  char text_prompt[KONSTRUCTS_TEXT_MESSAGE_SIZE];
 } Model;
 
 // in main.c

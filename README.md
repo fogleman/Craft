@@ -98,6 +98,10 @@ Sorry, we have no automatic builds for OS X. You need to build it from source.
 
 See [BUILD.md](BUILD.md)
 
+### How to play
+
+See http://www.konstructs.org/download/
+
 ### Server
 
 You need the [konstructs/server](https://github.com/konstructs/server) to play the game.

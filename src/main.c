@@ -652,6 +652,17 @@ int player_intersects_block(
 
 void dirty_chunk(Chunk *chunk) {
     chunk->dirty = 1;
+    int r = 1;
+    for (int dp = -r; dp <= r; dp++) {
+        for (int dq = -r; dq <= r; dq++) {
+            int a = chunk->p + dp;
+            int b = chunk->q + dq;
+            Chunk *c = find_chunk(a, b);
+            if (c) {
+                c->dirty = 1;
+            }
+        }
+    }
 }
 
 void occlusion(
@@ -886,7 +897,7 @@ void init_chunk(Chunk *chunk, int p, int q) {
     chunk->q = q;
     chunk->faces = 0;
     chunk->buffer = 0;
-    dirty_chunk(chunk);
+    chunk->dirty = 1;
     Map *block_map = &chunk->map;
     int dx = p * CHUNK_SIZE - 1;
     int dy = 0;
@@ -1079,18 +1090,6 @@ int worker_run(void *arg) {
         mtx_unlock(&worker->mtx);
     }
     return 0;
-}
-
-void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
-    Chunk *chunk = find_chunk(p, q);
-    if (chunk) {
-        Map *map = &chunk->map;
-        if (map_set(map, x, y, z, w)) {
-            if (dirty) {
-                dirty_chunk(chunk);
-            }
-        }
-    }
 }
 
 int render_chunks(Attrib *attrib, Player *player) {
@@ -1508,8 +1507,9 @@ void handle_movement(double dt) {
     }
 }
 
-void parse_block(int p, int q, int x, int y, int z, int w, State *s) {
-    _set_block(p, q, x, y, z, w, 0);
+void parse_block(Chunk * chunk, int x, int y, int z, int w, State *s) {
+    Map *map = &chunk->map;
+    map_set(map, x, y, z, w);
 
     if (player_intersects_block(2, s->x, s->y, s->z, x, y, z)) {
         s->y = highest_block(s->x, s->z) + 2;
@@ -1518,22 +1518,21 @@ void parse_block(int p, int q, int x, int y, int z, int w, State *s) {
 }
 
 void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
-    g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-    int out_size = inflate_data(blocks + BLOCKS_HEADER_SIZE, size - BLOCKS_HEADER_SIZE,
-                                g->chunk_buffer, g->chunk_buffer_size);
+    Chunk *chunk = find_chunk(p, q);
+    if(chunk) {
+        g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+        int out_size = inflate_data(blocks + BLOCKS_HEADER_SIZE, size - BLOCKS_HEADER_SIZE,
+                                    g->chunk_buffer, g->chunk_buffer_size);
 
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-        for (int y = 0; y < CHUNK_SIZE; y++) {
-            for (int z = 0; z < CHUNK_SIZE; z++) {
-                int w = g->chunk_buffer[x+y*CHUNK_SIZE+z*CHUNK_SIZE*CHUNK_SIZE];
-                if(w != 0)
-                  parse_block(p, q, p*CHUNK_SIZE+x, k*CHUNK_SIZE+y, q*CHUNK_SIZE+z, w, s);
+        for (int x = 0; x < CHUNK_SIZE; x++) {
+            for (int y = 0; y < CHUNK_SIZE; y++) {
+                for (int z = 0; z < CHUNK_SIZE; z++) {
+                    int w = g->chunk_buffer[x+y*CHUNK_SIZE+z*CHUNK_SIZE*CHUNK_SIZE];
+                    if(w != 0)
+                      parse_block(chunk, p*CHUNK_SIZE+x, k*CHUNK_SIZE+y, q*CHUNK_SIZE+z, w, s);
+                 }
             }
         }
-    }
-
-    Chunk *chunk = find_chunk(p, q);
-    if (chunk) {
         dirty_chunk(chunk);
     }
 }
@@ -1596,9 +1595,9 @@ void parse_buffer(Packet packet) {
                        &bp, &bq, &bx, &by, &bz, &bw) == 6) {
 
                 g->blocks_recv = g->blocks_recv + 1;
-                parse_block(bp, bq, bx, by, bz, bw, s);
                 Chunk *chunk = find_chunk(bp, bq);
-                if (chunk) {
+                if(chunk) {
+                    parse_block(chunk, bx, by, bz, bw, s);
                     dirty_chunk(chunk);
                 }
             }
@@ -1621,13 +1620,6 @@ void parse_buffer(Packet packet) {
             }
             if (sscanf(line, "D,%d", &pid) == 1) {
                 delete_player(pid);
-            }
-            int kp, kq, kk;
-            if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
-                Chunk *chunk = find_chunk(kp, kq);
-                if (chunk) {
-                    dirty_chunk(chunk);
-                }
             }
             double elapsed;
             int day_length;

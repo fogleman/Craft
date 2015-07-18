@@ -36,11 +36,17 @@
 #define KONSTRUCTS_KEY_DEBUG_SCREEN 292 // F3
 
 // inventory
-#define INVENTORY_SLOTS 9
-#define INVENTORY_ROWS 4
 #define MAX_SLOT_SIZE 64
 #define INVENTORY_ITEM_SIZE 48
 #define INVENTORY_FONT_SIZE 20
+
+// belt/player inventory
+#define INVENTORY_SLOTS 9
+#define INVENTORY_ROWS 4
+
+// extended/server inventory
+#define EXT_INVENTORY_COLS 16
+#define EXT_INVENTORY_ROWS 8
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

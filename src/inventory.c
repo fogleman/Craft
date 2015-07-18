@@ -7,6 +7,7 @@
 #include "inventory.h"
 
 Inventory inventory;
+Inventory ext_inventory;
 
 // From https://github.com/CouleeApps/Craft/tree/mining_crafting
 void make_inventory(float *data, float x, float y, float n, float m, int s) {
@@ -143,3 +144,63 @@ void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_
     glClear(GL_DEPTH_BUFFER_BIT);
     render_inventory_texts(text_attrib, xoffs, yoffs, scale, ioffs, width, height);
 }
+
+/* new code */
+
+void render_belt_background(Attrib *attrib, int width, int height) {
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    GLfloat vertex_data[INVENTORY_SLOTS * 6 * 4];
+
+    float s = 0.1;
+    float px = (s*9)/-2 + s;
+    float py = -0.9;
+    float t = 0.5;
+    for (int i=0; i<INVENTORY_SLOTS; i++) {
+        GLfloat side[] = {
+        //   X            Y      U     V
+             (i*s)+px-s,  py+s,  0.0f, 1.0f,
+             (i*s)+px,    py,    1.0f, 0.0f,
+             (i*s)+px-s,  py,    0.0f, 1.0f,
+
+             (i*s)+px,    py+s,  1.0f, 0.0f,
+             (i*s)+px,    py,    1.0f, 0.0f,
+             (i*s)+px-s,  py+s,  0.0f, 1.0f,
+        };
+        memcpy(vertex_data + 6*4*i, side, sizeof(float)*6*4);
+    }
+
+    // Load vertex_data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+
+    glUseProgram(attrib->program);
+
+    // Our texture is saved in GL_TEXTURE4 from main.c
+    glUniform1i(attrib->sampler, 2);
+
+    glEnableVertexAttribArray(attrib->position);
+    glVertexAttribPointer(attrib->position, 2, GL_FLOAT, GL_FALSE,
+                          4*sizeof(GLfloat),
+                          0);
+
+    glEnableVertexAttribArray(attrib->uv);
+    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+                          4*sizeof(GLfloat),
+                          (void*)(2*sizeof(float)));
+
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDrawArrays(GL_TRIANGLES, 0, INVENTORY_SLOTS * 6);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+
+}
+
+

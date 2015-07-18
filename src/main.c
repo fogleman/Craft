@@ -1669,12 +1669,23 @@ int init_winsock() { return 0; }
 #endif
 
 int init_inventory() {
+
+    // player inventory/belt
     inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].id = 0;
         inventory.items[item].num = 0;
     }
     inventory.selected = 0;
+
+    // external inventory
+    ext_inventory.items = calloc(EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS, sizeof(Item));
+    for (int item = 0; item < EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS; item ++) {
+        ext_inventory.items[item].id = 0;
+        ext_inventory.items[item].num = 0;
+    }
+    ext_inventory.selected = 0;
+
 }
 
 void shtxt_path(const char *name, const char *type, char *path, size_t max_len) {
@@ -1803,7 +1814,6 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     inventory_attrib->program = program;
     inventory_attrib->position = glGetAttribLocation(program, "position");
     inventory_attrib->uv = glGetAttribLocation(program, "uv");
-    inventory_attrib->matrix = glGetUniformLocation(program, "matrix");
     inventory_attrib->sampler = glGetUniformLocation(program, "sampler");
 
 }
@@ -2078,16 +2088,19 @@ int main(int argc, char **argv) {
 
         main_render_text(me, s, player, text_attrib, blocks_recv, face_count);
 
-        if (is_connected()) {
-            render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                0, 0.8, 1, inventory.selected, 0, g->width, g->height);
+        render_belt_background(&inventory_attrib, g->width, g->height);
 
-            if(g->inventory_screen) {
-                for (int invnr=0; invnr < INVENTORY_ROWS; invnr++) {
-                    render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                        0.5, 0.4 + -0.2 * invnr, 0.8, -1, invnr, g->width, g->height);
-                }
-            }
+        if (is_connected()) {
+
+//            render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
+//                0, 0.8, 1, inventory.selected, 0, g->width, g->height);
+
+//            if(g->inventory_screen) {
+//                for (int invnr=0; invnr < EXT_INVENTORY_ROWS; invnr++) {
+//                    render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
+//                        0.5, 0.4 + -0.2 * invnr, 0.8, -1, invnr, g->width, g->height);
+//                }
+        //    }
         }
 
         // SWAP AND POLL //

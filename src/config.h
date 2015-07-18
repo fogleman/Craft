@@ -12,7 +12,7 @@
 #define DAY_LENGTH 600
 #define INVERT_MOUSE 0
 #define KONSTRUCTS_TEXT_MESSAGE_SIZE 1024
-#define KONSTRUCTS_PATH_SIZE 64
+#define KONSTRUCTS_PATH_SIZE 256
 
 // rendering options
 #define SHOW_LIGHTS 1

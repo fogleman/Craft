@@ -753,44 +753,12 @@ void gen_sign_buffer(Chunk *chunk) {
     chunk->sign_faces = faces;
 }
 
-int has_lights(Chunk *chunk) {
-    if (!SHOW_LIGHTS) {
-        return 0;
-    }
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = chunk;
-            if (dp || dq) {
-                other = find_chunk(chunk->p + dp, chunk->q + dq);
-            }
-            if (!other) {
-                continue;
-            }
-            Map *map = &other->lights;
-            if (map->size) {
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
 void dirty_chunk(Chunk *chunk) {
     chunk->dirty = 1;
-    if (has_lights(chunk)) {
-        for (int dp = -1; dp <= 1; dp++) {
-            for (int dq = -1; dq <= 1; dq++) {
-                Chunk *other = find_chunk(chunk->p + dp, chunk->q + dq);
-                if (other) {
-                    other->dirty = 1;
-                }
-            }
-        }
-    }
 }
 
 void occlusion(
-    char neighbors[27], char lights[27], float shades[27],
+    char neighbors[27], float shades[27],
     float ao[6][4], float light[6][4])
 {
     static const int lookup3[6][4][3] = {
@@ -818,13 +786,8 @@ void occlusion(
             int value = side1 && side2 ? 3 : corner + side1 + side2;
             float shade_sum = 0;
             float light_sum = 0;
-            int is_light = lights[13] == 15;
             for (int k = 0; k < 4; k++) {
                 shade_sum += shades[lookup4[i][j][k]];
-                light_sum += lights[lookup4[i][j][k]];
-            }
-            if (is_light) {
-                light_sum = 15 * 4 * 10;
             }
             float total = curve[value] + shade_sum / 4.0;
             ao[i][j] = MIN(total, 1.0);
@@ -840,55 +803,13 @@ void occlusion(
 #define XYZ(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
 #define XZ(x, z) ((x) * XZ_SIZE + (z))
 
-void light_fill(
-    char *opaque, char *light,
-    int x, int y, int z, int w, int force)
-{
-    if (x + w < XZ_LO || z + w < XZ_LO) {
-        return;
-    }
-    if (x - w > XZ_HI || z - w > XZ_HI) {
-        return;
-    }
-    if (y < 0 || y >= Y_SIZE) {
-        return;
-    }
-    if (light[XYZ(x, y, z)] >= w) {
-        return;
-    }
-    if (!force && opaque[XYZ(x, y, z)]) {
-        return;
-    }
-    light[XYZ(x, y, z)] = w--;
-    light_fill(opaque, light, x - 1, y, z, w, 0);
-    light_fill(opaque, light, x + 1, y, z, w, 0);
-    light_fill(opaque, light, x, y - 1, z, w, 0);
-    light_fill(opaque, light, x, y + 1, z, w, 0);
-    light_fill(opaque, light, x, y, z - 1, w, 0);
-    light_fill(opaque, light, x, y, z + 1, w, 0);
-}
-
 void compute_chunk(WorkerItem *item) {
     char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
-    char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
 
     int ox = item->p * CHUNK_SIZE - CHUNK_SIZE - 1;
     int oy = -1;
     int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
-
-    // check for lights
-    int has_light = 0;
-    if (SHOW_LIGHTS) {
-        for (int a = 0; a < 3; a++) {
-            for (int b = 0; b < 3; b++) {
-                Map *map = item->light_maps[a][b];
-                if (map && map->size) {
-                    has_light = 1;
-                }
-            }
-        }
-    }
 
     // populate opaque array
     for (int a = 0; a < 3; a++) {
@@ -915,24 +836,6 @@ void compute_chunk(WorkerItem *item) {
                     highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
                 }
             } END_MAP_FOR_EACH;
-        }
-    }
-
-    // flood fill light intensities
-    if (has_light) {
-        for (int a = 0; a < 3; a++) {
-            for (int b = 0; b < 3; b++) {
-                Map *map = item->light_maps[a][b];
-                if (!map) {
-                    continue;
-                }
-                MAP_FOR_EACH(map, ex, ey, ez, ew) {
-                    int x = ex - ox;
-                    int y = ey - oy;
-                    int z = ez - oz;
-                    light_fill(opaque, light, x, y, z, ew, 1);
-                } END_MAP_FOR_EACH;
-            }
         }
     }
 
@@ -988,14 +891,12 @@ void compute_chunk(WorkerItem *item) {
             continue;
         }
         char neighbors[27] = {0};
-        char lights[27] = {0};
         float shades[27] = {0};
         int index = 0;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
                     neighbors[index] = opaque[XYZ(x + dx, y + dy, z + dz)];
-                    lights[index] = light[XYZ(x + dx, y + dy, z + dz)];
                     shades[index] = 0;
                     if (y + dy <= highest[XZ(x + dx, z + dz)]) {
                         for (int oy = 0; oy < 8; oy++) {
@@ -1011,7 +912,7 @@ void compute_chunk(WorkerItem *item) {
         }
         float ao[6][4];
         float light[6][4];
-        occlusion(neighbors, lights, shades, ao, light);
+        occlusion(neighbors, shades, ao, light);
         if (is_plant(ew)) {
             total = 4;
             float min_ao = 1;
@@ -1019,12 +920,11 @@ void compute_chunk(WorkerItem *item) {
             for (int a = 0; a < 6; a++) {
                 for (int b = 0; b < 4; b++) {
                     min_ao = MIN(min_ao, ao[a][b]);
-                    max_light = MAX(max_light, light[a][b]);
                 }
             }
             float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
             make_plant(
-                data + offset, min_ao, max_light,
+                data + offset, min_ao, 0,
                 ex, ey, ez, 0.5, ew, rotation);
         }
         else {
@@ -1037,7 +937,6 @@ void compute_chunk(WorkerItem *item) {
     } END_MAP_FOR_EACH;
 
     free(opaque);
-    free(light);
     free(highest);
 
     item->miny = miny;
@@ -1068,11 +967,9 @@ void gen_chunk_buffer(Chunk *chunk) {
             }
             if (other) {
                 item->block_maps[dp + 1][dq + 1] = &other->map;
-                item->light_maps[dp + 1][dq + 1] = &other->lights;
             }
             else {
                 item->block_maps[dp + 1][dq + 1] = 0;
-                item->light_maps[dp + 1][dq + 1] = 0;
             }
         }
     }
@@ -1085,7 +982,6 @@ void load_chunk(WorkerItem *item) {
     int p = item->p;
     int q = item->q;
     Map *block_map = item->block_maps[1][1];
-    Map *light_map = item->light_maps[1][1];
 }
 
 void request_chunks() {
@@ -1106,12 +1002,10 @@ void init_chunk(Chunk *chunk, int p, int q) {
     SignList *signs = &chunk->signs;
     sign_list_alloc(signs, 16);
     Map *block_map = &chunk->map;
-    Map *light_map = &chunk->lights;
     int dx = p * CHUNK_SIZE - 1;
     int dy = 0;
     int dz = q * CHUNK_SIZE - 1;
     map_alloc(block_map, dx, dy, dz, 0x7fff);
-    map_alloc(light_map, dx, dy, dz, 0xf);
 }
 
 void create_chunk(Chunk *chunk, int p, int q) {
@@ -1122,7 +1016,6 @@ void create_chunk(Chunk *chunk, int p, int q) {
     item->p = chunk->p;
     item->q = chunk->q;
     item->block_maps[1][1] = &chunk->map;
-    item->light_maps[1][1] = &chunk->lights;
     load_chunk(item);
 }
 
@@ -1146,7 +1039,6 @@ void delete_chunks() {
         }
         if (delete) {
             map_free(&chunk->map);
-            map_free(&chunk->lights);
             sign_list_free(&chunk->signs);
             del_buffer(chunk->buffer);
             del_buffer(chunk->sign_buffer);
@@ -1161,7 +1053,6 @@ void delete_all_chunks() {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
         map_free(&chunk->map);
-        map_free(&chunk->lights);
         sign_list_free(&chunk->signs);
         del_buffer(chunk->buffer);
         del_buffer(chunk->sign_buffer);
@@ -1179,25 +1070,17 @@ void check_workers() {
             if (chunk) {
                 if (item->load) {
                     Map *block_map = item->block_maps[1][1];
-                    Map *light_map = item->light_maps[1][1];
                     map_free(&chunk->map);
-                    map_free(&chunk->lights);
                     map_copy(&chunk->map, block_map);
-                    map_copy(&chunk->lights, light_map);
                 }
                 generate_chunk(chunk, item);
             }
             for (int a = 0; a < 3; a++) {
                 for (int b = 0; b < 3; b++) {
                     Map *block_map = item->block_maps[a][b];
-                    Map *light_map = item->light_maps[a][b];
                     if (block_map) {
                         map_free(block_map);
                         free(block_map);
-                    }
-                    if (light_map) {
-                        map_free(light_map);
-                        free(light_map);
                     }
                 }
             }
@@ -1302,14 +1185,10 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             if (other) {
                 Map *block_map = malloc(sizeof(Map));
                 map_copy(block_map, &other->map);
-                Map *light_map = malloc(sizeof(Map));
-                map_copy(light_map, &other->lights);
                 item->block_maps[dp + 1][dq + 1] = block_map;
-                item->light_maps[dp + 1][dq + 1] = light_map;
             }
             else {
                 item->block_maps[dp + 1][dq + 1] = 0;
-                item->light_maps[dp + 1][dq + 1] = 0;
             }
         }
     }
@@ -1400,29 +1279,6 @@ void set_sign(int x, int y, int z, int face, const char *text) {
     client_sign(x, y, z, face, text);
 }
 
-void toggle_light(int x, int y, int z) {
-    int p = chunked(x);
-    int q = chunked(z);
-    Chunk *chunk = find_chunk(p, q);
-    if (chunk) {
-        Map *map = &chunk->lights;
-        int w = map_get(map, x, y, z) ? 0 : 15;
-        map_set(map, x, y, z, w);
-        client_light(x, y, z, w);
-        dirty_chunk(chunk);
-    }
-}
-
-void set_light(int p, int q, int x, int y, int z, int w) {
-    Chunk *chunk = find_chunk(p, q);
-    if (chunk) {
-        Map *map = &chunk->lights;
-        if (map_set(map, x, y, z, w)) {
-            dirty_chunk(chunk);
-        }
-    }
-}
-
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
@@ -1435,7 +1291,6 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     }
     if (w == 0 && chunked(x) == p && chunked(z) == q) {
         unset_sign(x, y, z);
-        set_light(p, q, x, y, z, 0);
     }
 }
 
@@ -1651,15 +1506,6 @@ void add_message(const char *text) {
     g->message_index = (g->message_index + 1) % MAX_MESSAGES;
 }
 
-void on_light() {
-    State *s = &g->players->state;
-    int hx, hy, hz;
-    int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < MAX_BLOCK_HEIGHT && is_destructable(hw)) {
-        toggle_light(hx, hy, hz);
-    }
-}
-
 void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
@@ -1844,13 +1690,8 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (exclusive) {
-            if (control) {
-                on_light();
-            }
-            else {
-                on_right_click();
-            }
-        }
+            on_right_click();
+         }
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
         if (exclusive) {
@@ -2050,11 +1891,6 @@ void parse_buffer(Packet packet) {
                 if (chunk) {
                     dirty_chunk(chunk);
                 }
-            }
-            if (sscanf(line, "L,%d,%d,%d,%d,%d,%d",
-                       &bp, &bq, &bx, &by, &bz, &bw) == 6)
-            {
-                set_light(bp, bq, bx, by, bz, bw);
             }
             float px, py, pz, prx, pry;
             if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",

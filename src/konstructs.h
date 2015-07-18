@@ -27,7 +27,6 @@
 
 typedef struct {
   Map map;
-  Map lights;
   SignList signs;
   int p;
   int q;
@@ -45,7 +44,6 @@ typedef struct {
   int q;
   int load;
   Map *block_maps[3][3];
-  Map *light_maps[3][3];
   int miny;
   int maxy;
   int faces;

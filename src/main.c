@@ -591,11 +591,6 @@ int collide(int height, float *x, float *y, float *z) {
     int result = 0;
     int p = chunked(*x);
     int q = chunked(*z);
-    Chunk *chunk = find_chunk(p, q);
-    if (!chunk) {
-        return result;
-    }
-    Map *map = &chunk->map;
     int nx = roundf(*x);
     int ny = roundf(*y);
     int nz = roundf(*z);
@@ -603,26 +598,37 @@ int collide(int height, float *x, float *y, float *z) {
     float py = *y - ny;
     float pz = *z - nz;
     float pad = 0.25;
-    for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
-            *x = nx - pad;
-        }
-        if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {
-            *x = nx + pad;
-        }
-        if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {
-            *y = ny - pad;
-            result = 1;
-        }
-        if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {
-            *y = ny + pad;
-            result = 1;
-        }
-        if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {
-            *z = nz - pad;
-        }
-        if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
+    int r = 1;
+    for (int dp = -r; dp <= r; dp++) {
+        for (int dq = -r; dq <= r; dq++) {
+          Chunk *chunk = find_chunk(p + dp, q + dq);
+          if (!chunk) {
+            continue;
+          }
+          Map *map = &chunk->map;
+
+          for (int dy = 0; dy < height; dy++) {
+            if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
+              *x = nx - pad;
+            }
+            if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {
+              *x = nx + pad;
+            }
+            if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {
+              *y = ny - pad;
+              result = 1;
+            }
+            if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {
+              *y = ny + pad;
+              result = 1;
+            }
+            if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {
+              *z = nz - pad;
+            }
+            if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
             *z = nz + pad;
+            }
+          }
         }
     }
     return result;

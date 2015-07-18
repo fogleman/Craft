@@ -51,4 +51,8 @@
 #define COMMIT_INTERVAL 5
 #define MAX_BLOCK_HEIGHT 4096
 
+// protocol parameters
+#define BLOCKS_HEADER_SIZE 2
+#define PROTOCOL_VERSION 3
+
 #endif

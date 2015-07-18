@@ -1968,8 +1968,8 @@ void parse_block(int p, int q, int x, int y, int z, int w, State *s) {
 
 void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
     g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-    int out_size = inflate_data(blocks, size, g->chunk_buffer,
-            g->chunk_buffer_size);
+    int out_size = inflate_data(blocks + BLOCKS_HEADER_SIZE, size - BLOCKS_HEADER_SIZE,
+                                g->chunk_buffer, g->chunk_buffer_size);
 
     for (int x = 0; x < CHUNK_SIZE; x++) {
         for (int y = 0; y < CHUNK_SIZE; y++) {
@@ -2398,7 +2398,7 @@ void main_connect() {
     strcpy(in_hash, g->server_user);
     strcat(in_hash, g->server_pass);
     //hash_password(in_hash, out_hash);
-    client_version(2, g->server_user, in_hash);
+    client_version(PROTOCOL_VERSION, g->server_user, in_hash);
 
     // Ask server for inventory
     client_inventory();

@@ -19,7 +19,6 @@
 #define WORKER_DONE 2
 
 #include "map.h"
-#include "sign.h"
 #include "tinycthread.h"
 #include "util.h"
 #include "matrix.h"
@@ -27,25 +26,19 @@
 
 typedef struct {
   Map map;
-  Map lights;
-  SignList signs;
   int p;
   int q;
   int faces;
-  int sign_faces;
   int dirty;
   int miny;
   int maxy;
   GLuint buffer;
-  GLuint sign_buffer;
 } Chunk;
 
 typedef struct {
   int p;
   int q;
-  int load;
   Map *block_maps[3][3];
-  Map *light_maps[3][3];
   int miny;
   int maxy;
   int faces;
@@ -109,7 +102,6 @@ typedef struct {
   int create_radius;
   int render_radius;
   int delete_radius;
-  int sign_radius;
   Player players[MAX_PLAYERS];
   int player_count;
   int typing;

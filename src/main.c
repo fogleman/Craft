@@ -1701,24 +1701,25 @@ int init_inventory() {
     inventory.selected = 0;
 }
 
-void shtxt_path(const char *name, const char *type, char *path) {
-    sprintf(path, "%s/%s", type, name);
+void shtxt_path(const char *name, const char *type, char *path, size_t max_len) {
+    snprintf(path, max_len, "%s/%s", type, name);
 
     if (!file_exist(path)) {
-        sprintf(path, "/usr/local/share/konstructs/%s/%s", type, name);
+        snprintf(path, max_len, "/usr/local/share/konstructs-client/%s/%s", type, name);
     }
 
     if (!file_exist(path)) {
         printf("Error, no %s for %s found.\n", type, name);
+        exit(1);
     }
 }
 
-void texture_path(const char *name, char *path) {
-    shtxt_path(name, "textures", path);
+void texture_path(const char *name, char *path, size_t max_len) {
+    shtxt_path(name, "textures", path, max_len);
 }
 
-void shader_path(const char *name, char *path) {
-    shtxt_path(name, "shaders", path);
+void shader_path(const char *name, char *path, size_t max_len) {
+    shtxt_path(name, "shaders", path, max_len);
 }
 
 int load_textures() {
@@ -1730,7 +1731,7 @@ int load_textures() {
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    texture_path("texture.png", txtpth);
+    texture_path("texture.png", txtpth, KONSTRUCTS_PATH_SIZE);
     load_png_texture(txtpth);
 
     GLuint font;
@@ -1739,7 +1740,7 @@ int load_textures() {
     glBindTexture(GL_TEXTURE_2D, font);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    texture_path("font.png", txtpth);
+    texture_path("font.png", txtpth, KONSTRUCTS_PATH_SIZE);
     load_png_texture(txtpth);
 
     GLuint sky;
@@ -1750,7 +1751,7 @@ int load_textures() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    texture_path("sky.png", txtpth);
+    texture_path("sky.png", txtpth, KONSTRUCTS_PATH_SIZE);
     load_png_texture(txtpth);
 
     GLuint inventory_texture;
@@ -1759,7 +1760,7 @@ int load_textures() {
     glBindTexture(GL_TEXTURE_2D, inventory_texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    texture_path("inventory.png", txtpth);
+    texture_path("inventory.png", txtpth, KONSTRUCTS_PATH_SIZE);
     load_png_texture(txtpth);
 
 }
@@ -1770,8 +1771,8 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     char fragment_path[KONSTRUCTS_PATH_SIZE];
     GLuint program;
 
-    shader_path("block_vertex.glsl", vertex_path);
-    shader_path("block_fragment.glsl", fragment_path);
+    shader_path("block_vertex.glsl", vertex_path, KONSTRUCTS_PATH_SIZE);
+    shader_path("block_fragment.glsl", fragment_path, KONSTRUCTS_PATH_SIZE);
 
     program = load_program(vertex_path, fragment_path);
     block_attrib->program = program;
@@ -1787,16 +1788,16 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     block_attrib->camera = glGetUniformLocation(program, "camera");
     block_attrib->timer = glGetUniformLocation(program, "timer");
 
-    shader_path("line_vertex.glsl", vertex_path);
-    shader_path("line_fragment.glsl", fragment_path);
+    shader_path("line_vertex.glsl", vertex_path, KONSTRUCTS_PATH_SIZE);
+    shader_path("line_fragment.glsl", fragment_path, KONSTRUCTS_PATH_SIZE);
 
     program = load_program(vertex_path, fragment_path);
     line_attrib->program = program;
     line_attrib->position = glGetAttribLocation(program, "position");
     line_attrib->matrix = glGetUniformLocation(program, "matrix");
 
-    shader_path("text_vertex.glsl", vertex_path);
-    shader_path("text_fragment.glsl", fragment_path);
+    shader_path("text_vertex.glsl", vertex_path, KONSTRUCTS_PATH_SIZE);
+    shader_path("text_fragment.glsl", fragment_path, KONSTRUCTS_PATH_SIZE);
 
     program = load_program(vertex_path, fragment_path);
     text_attrib->program = program;
@@ -1805,8 +1806,8 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     text_attrib->matrix = glGetUniformLocation(program, "matrix");
     text_attrib->sampler = glGetUniformLocation(program, "sampler");
 
-    shader_path("sky_vertex.glsl", vertex_path);
-    shader_path("sky_fragment.glsl", fragment_path);
+    shader_path("sky_vertex.glsl", vertex_path, KONSTRUCTS_PATH_SIZE);
+    shader_path("sky_fragment.glsl", fragment_path, KONSTRUCTS_PATH_SIZE);
 
     program = load_program(vertex_path, fragment_path);
     sky_attrib->program = program;
@@ -1817,8 +1818,8 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     sky_attrib->sampler = glGetUniformLocation(program, "sampler");
     sky_attrib->timer = glGetUniformLocation(program, "timer");
 
-    shader_path("inventory_vertex.glsl", vertex_path);
-    shader_path("inventory_fragment.glsl", fragment_path);
+    shader_path("inventory_vertex.glsl", vertex_path, KONSTRUCTS_PATH_SIZE);
+    shader_path("inventory_fragment.glsl", fragment_path, KONSTRUCTS_PATH_SIZE);
 
     program = load_program(vertex_path, fragment_path);
     inventory_attrib->program = program;

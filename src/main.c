@@ -1118,29 +1118,6 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     }
 }
 
-int get_block(int x, int y, int z) {
-    int p = chunked(x);
-    int q = chunked(z);
-    Chunk *chunk = find_chunk(p, q);
-    if (chunk) {
-        Map *map = &chunk->map;
-        return map_get(map, x, y, z);
-    }
-    return 0;
-}
-
-void builder_block(int x, int y, int z, int w) {
-    if (y <= 0 || y >= MAX_BLOCK_HEIGHT) {
-        return;
-    }
-    if (is_destructable(get_block(x, y, z))) {
-        client_block(x, y, z, 0);
-    }
-    if (w) {
-        client_block(x, y, z, w);
-    }
-}
-
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;

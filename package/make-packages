@@ -7,7 +7,6 @@ sudo gem install fpm --no-ri --no-rdoc
 
 # Install
 sudo mv konstructs /usr/local/bin/konstructs-client
-sudo cp package/linux-launcher /usr/local/bin/konstructs-client-launcher
 sudo mkdir -p /usr/local/share/konstructs-client/{textures,shaders}
 sudo mkdir -p /usr/share/applications/
 sudo cp -r textures/* /usr/local/share/konstructs-client/textures
@@ -27,12 +26,10 @@ sudo fpm -s dir -t deb \
   --license MIT \
   --depends libglfw2 \
   --depends zlib1g \
-  --depends zenity \
   --maintainer "Stefan Berggren <nsg@nsg.cc>" \
   --url https://github.com/konstructs/client \
   -n konstructs-client \
   /usr/local/bin/konstructs-client \
-  /usr/local/bin/konstructs-client-launcher \
   /usr/local/share/konstructs-client/textures \
   /usr/local/share/konstructs-client/shaders \
   /usr/share/applications/konstructs-client.desktop
@@ -48,7 +45,6 @@ sudo fpm -s dir -t rpm \
   --url https://github.com/konstructs/client \
   -n konstructs-client \
   /usr/local/bin/konstructs-client \
-  /usr/local/bin/konstructs-client-launcher \
   /usr/local/share/konstructs-client/textures \
   /usr/local/share/konstructs-client/shaders \
   /usr/share/applications/konstructs-client.desktop

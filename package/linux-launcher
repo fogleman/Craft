@@ -1,6 +1,0 @@
-#!/bin/bash
-
-HOST=$(zenity --entry --text="Server to connect to" --entry-text="play.konstructs.org")
-USERPASS="$(zenity --username --password | tr '|' ' ')"
-
-/usr/local/bin/konstructs-client $HOST $USERPASS

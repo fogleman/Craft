@@ -30,6 +30,8 @@
 static Model model;
 static Model *g = &model;
 
+void init_chunk(Chunk *chunk, int p, int q);
+
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }
@@ -415,6 +417,11 @@ Chunk *find_chunk(int p, int q) {
         if (chunk->p == p && chunk->q == q) {
             return chunk;
         }
+    }
+    if (g->chunk_count < MAX_CHUNKS) {
+        Chunk *chunk = g->chunks + g->chunk_count++;
+        init_chunk(chunk, p, q);
+        return chunk;
     }
     return 0;
 }
@@ -861,12 +868,6 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
-void load_chunk(WorkerItem *item) {
-    int p = item->p;
-    int q = item->q;
-    Map *block_map = item->block_maps[1][1];
-}
-
 void request_chunks() {
   int chunks = (int)((float)MAX_PENDING_CHUNKS * ((float)g->fps.fps / 60.0));
   chunks = chunks < 1 ? 1 : chunks;
@@ -885,17 +886,6 @@ void init_chunk(Chunk *chunk, int p, int q) {
     int dy = 0;
     int dz = q * CHUNK_SIZE - 1;
     map_alloc(block_map, dx, dy, dz, 0x7fff);
-}
-
-void create_chunk(Chunk *chunk, int p, int q) {
-    init_chunk(chunk, p, q);
-
-    WorkerItem _item;
-    WorkerItem *item = &_item;
-    item->p = chunk->p;
-    item->q = chunk->q;
-    item->block_maps[1][1] = &chunk->map;
-    load_chunk(item);
 }
 
 void delete_chunks() {
@@ -943,11 +933,6 @@ void check_workers() {
             WorkerItem *item = &worker->item;
             Chunk *chunk = find_chunk(item->p, item->q);
             if (chunk) {
-                if (item->load) {
-                    Map *block_map = item->block_maps[1][1];
-                    map_free(&chunk->map);
-                    map_copy(&chunk->map, block_map);
-                }
                 generate_chunk(chunk, item);
             }
             for (int a = 0; a < 3; a++) {
@@ -979,11 +964,6 @@ void force_chunks(Player *player) {
                 if (chunk->dirty) {
                     gen_chunk_buffer(chunk);
                 }
-            }
-            else if (g->chunk_count < MAX_CHUNKS) {
-                chunk = g->chunks + g->chunk_count++;
-                create_chunk(chunk, a, b);
-                gen_chunk_buffer(chunk);
             }
         }
     }
@@ -1038,19 +1018,11 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     int load = 0;
     Chunk *chunk = find_chunk(a, b);
     if (!chunk) {
-        load = 1;
-        if (g->chunk_count < MAX_CHUNKS) {
-            chunk = g->chunks + g->chunk_count++;
-            init_chunk(chunk, a, b);
-        }
-        else {
-            return;
-        }
+      return;
     }
     WorkerItem *item = &worker->item;
     item->p = chunk->p;
     item->q = chunk->q;
-    item->load = load;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             Chunk *other = chunk;
@@ -1095,9 +1067,6 @@ int worker_run(void *arg) {
         }
         mtx_unlock(&worker->mtx);
         WorkerItem *item = &worker->item;
-        if (item->load) {
-            load_chunk(item);
-        }
         compute_chunk(item);
         mtx_lock(&worker->mtx);
         worker->state = WORKER_DONE;

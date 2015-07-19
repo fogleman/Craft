@@ -2088,7 +2088,7 @@ int main(int argc, char **argv) {
 
         main_render_text(me, s, player, text_attrib, blocks_recv, face_count);
 
-        render_belt_background(&inventory_attrib, g->width, g->height);
+        render_belt_background(&inventory_attrib, inventory.selected);
 
         if (is_connected()) {
 

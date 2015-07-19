@@ -25,7 +25,7 @@ void render_inventory_text(Attrib *attrib, Item item, float x, float y, float sc
 void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int ioffs, int width, int height);
 void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
 	float xoffs, float yoffs, float scale, int sel, int row, int width, int height);
-void render_belt_background(Attrib *inventory_attrib, int width, int height);
+void render_belt_background(Attrib *inventory_attrib, int selected);
 
 extern Inventory inventory;
 extern Inventory ext_inventory;

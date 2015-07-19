@@ -145,9 +145,10 @@ void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_
     render_inventory_texts(text_attrib, xoffs, yoffs, scale, ioffs, width, height);
 }
 
-/* new code */
-
-void render_belt_background(Attrib *attrib, int width, int height) {
+/*
+ * Render the inventory belt on the bottom center of the screen.
+ */
+void render_belt_background(Attrib *attrib, int selected) {
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -159,20 +160,27 @@ void render_belt_background(Attrib *attrib, int width, int height) {
 
     GLfloat vertex_data[INVENTORY_SLOTS * 6 * 4];
 
-    float s = 0.1;
-    float px = (s*9)/-2 + s;
-    float py = -0.9;
-    float t = 0.5;
-    for (int i=0; i<INVENTORY_SLOTS; i++) {
-        GLfloat side[] = {
-        //   X            Y      U     V
-             (i*s)+px-s,  py+s,  0.0f, 1.0f,
-             (i*s)+px,    py,    1.0f, 0.0f,
-             (i*s)+px-s,  py,    0.0f, 1.0f,
+    float s = 0.15;           // belt size on screen
+    float px = (s*9)/-2 + s;  // belt start x
+    float py = -0.9;          // belt pos y
+    float t = 1;              // selected default image
+    float ts = 0.25;          // image size (1/images)
+    int lt = t;               // image to show
 
-             (i*s)+px,    py+s,  1.0f, 0.0f,
-             (i*s)+px,    py,    1.0f, 0.0f,
-             (i*s)+px-s,  py+s,  0.0f, 1.0f,
+    // Generate matrix for all inventory belt slots
+    for (int i=0; i<INVENTORY_SLOTS; i++) {
+
+        lt = selected == i ? t + 1 : t;
+
+        GLfloat side[] = {
+        //   X            Y      U           V
+             (i*s)+px-s,  py+s,  (ts*lt),    1.0f,
+             (i*s)+px,    py,    (ts*lt)+ts, 0.0f,
+             (i*s)+px-s,  py,    (ts*lt),    1.0f,
+
+             (i*s)+px,    py+s,  (ts*lt)+ts, 0.0f,
+             (i*s)+px,    py,    (ts*lt)+ts, 0.0f,
+             (i*s)+px-s,  py+s,  (ts*lt),    1.0f,
         };
         memcpy(vertex_data + 6*4*i, side, sizeof(float)*6*4);
     }
@@ -183,7 +191,7 @@ void render_belt_background(Attrib *attrib, int width, int height) {
     glUseProgram(attrib->program);
 
     // Our texture is saved in GL_TEXTURE4 from main.c
-    glUniform1i(attrib->sampler, 2);
+    glUniform1i(attrib->sampler, 4);
 
     glEnableVertexAttribArray(attrib->position);
     glVertexAttribPointer(attrib->position, 2, GL_FLOAT, GL_FALSE,

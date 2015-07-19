@@ -650,21 +650,6 @@ int player_intersects_block(
     return 0;
 }
 
-void dirty_chunk(Chunk *chunk) {
-    chunk->dirty = 1;
-    int r = 1;
-    for (int dp = -r; dp <= r; dp++) {
-        for (int dq = -r; dq <= r; dq++) {
-            int a = chunk->p + dp;
-            int b = chunk->q + dq;
-            Chunk *c = find_chunk(a, b);
-            if (c) {
-                c->dirty = 1;
-            }
-        }
-    }
-}
-
 void occlusion(
     char neighbors[27], float shades[27],
     float ao[6][4], float light[6][4])
@@ -1533,7 +1518,19 @@ void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
                  }
             }
         }
-        dirty_chunk(chunk);
+        int r = 1;
+        chunk->dirty = 1;
+        /* Make all adjacent chunks dirty */
+        for (int dp = -r; dp <= r; dp++) {
+            for (int dq = -r; dq <= r; dq++) {
+                int a = chunk->p + dp;
+                int b = chunk->q + dq;
+                Chunk *c = find_chunk(a, b);
+                if (c) {
+                    c->dirty = 1;
+                }
+            }
+        }
     }
 }
 
@@ -1598,7 +1595,21 @@ void parse_buffer(Packet packet) {
                 Chunk *chunk = find_chunk(bp, bq);
                 if(chunk) {
                     parse_block(chunk, bx, by, bz, bw, s);
-                    dirty_chunk(chunk);
+                    chunk->dirty = 1;
+                    /* Make any chunk that owns an adjacent block dirty as well */
+                    int r = 1;
+                    for (int dx = -r; dx <= r; dx++) {
+                        for (int dz = -r; dz <= r; dz++) {
+                            int x = bx + dx;
+                            int z = bz + dz;
+                            int np = (x / CHUNK_SIZE) - 1;
+                            int nq = (z / CHUNK_SIZE) - 1;
+                            Chunk *c = find_chunk(np, nq);
+                            if (c) {
+                                c->dirty = 1;
+                            }
+                        }
+                    }
                 }
             }
             float px, py, pz, prx, pry;

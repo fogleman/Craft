@@ -2090,6 +2090,8 @@ int main(int argc, char **argv) {
 
         render_belt_background(&inventory_attrib, inventory.selected);
 
+        render_belt_texts(&text_attrib);
+
         if (is_connected()) {
 
 //            render_inventory(&inventory_attrib, &block_attrib, &text_attrib,

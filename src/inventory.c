@@ -60,30 +60,33 @@ void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, float scal
     }
 }
 
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_text(Attrib *attrib, Item item, float x, float y, float scale,
-        int width, int height) {
+void render_belt_texts(Attrib *attrib) {
+
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        Item block = inventory.items[item];
+        if (block.id == 0 || block.num <= 0) continue;
+        render_belt_text(attrib, item, block);
+    }
+
+}
+
+void render_belt_text(Attrib *attrib, int pos, Item block) {
+
+    float s = 0.15;
+    float gl_x = (s * INVENTORY_SLOTS)/-2 + s/2 + s*pos;
+    float gl_y = -0.9f;
+
+    int x = (WINDOW_WIDTH / 2)  + (WINDOW_WIDTH / 2)  * gl_x;
+    int y = (WINDOW_HEIGHT / 2) + (WINDOW_HEIGHT / 2) * gl_y;
+
     float matrix[16];
-    set_matrix_2d(matrix, width, height);
+    set_matrix_2d(matrix, WINDOW_WIDTH, WINDOW_HEIGHT);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1); // GL_TEXTURE1
     char text_buffer[16];
-    float ts = 12*scale;
-    snprintf(text_buffer, 16, "%02d", item.num);
-    x += ts * strlen(text_buffer);
-    print(attrib, 1, x, y, ts, text_buffer);
-}
-
-void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int ioffs, int width, int height) {
-    for (int item = ioffs; item < ioffs + INVENTORY_SLOTS; item ++) {
-        Item block = inventory.items[item];
-        if (block.id == 0 || block.num <= 0) continue;
-
-        float tx = (width/2)*(x*-1+1) - (INVENTORY_SLOTS * 64*scale)/2 + (item * 64*scale) + 12*scale;
-        float ty = (height/2)*(y*-1+1) - 32*scale;
-        render_inventory_text(attrib, block, tx, ty, scale, width, height);
-    }
+    snprintf(text_buffer, 16, "%02d", block.num);
+    print(attrib, 1, x, y, 12, text_buffer);
 }
 
 /*
@@ -101,12 +104,12 @@ void render_belt_background(Attrib *attrib, int selected) {
 
     GLfloat vertex_data[INVENTORY_SLOTS * 6 * 4];
 
-    float s = 0.15;           // belt size on screen
-    float px = (s*9)/-2 + s;  // belt start x
-    float py = -0.9;          // belt pos y
-    float t = 1;              // selected default image
-    float ts = 0.25;          // image size (1/images)
-    int lt = t;               // image to show
+    float s = 0.15;                         // belt size on screen
+    float px = (s*INVENTORY_SLOTS)/-2 + s;  // belt start x
+    float py = -0.9;                        // belt pos y
+    float t = 1;                            // selected default image
+    float ts = 0.25;                        // image size (1/images)
+    int lt = t;                             // image to show
 
     // Generate matrix for all inventory belt slots
     for (int i=0; i<INVENTORY_SLOTS; i++) {

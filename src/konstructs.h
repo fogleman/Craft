@@ -1,7 +1,7 @@
 #ifndef _konstructs_h_
 #define _konstructs_h_
 
-#define MAX_CHUNKS 8192
+#define MAX_CHUNKS 8192 * 4
 #define MAX_PENDING_CHUNKS 50
 #define MAX_PLAYERS 128
 #define WORKERS 4
@@ -18,29 +18,17 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
-#include "map.h"
 #include "tinycthread.h"
 #include "util.h"
 #include "matrix.h"
 #include "item.h"
-
-typedef struct {
-  Map map;
-  int p;
-  int q;
-  int faces;
-  int dirty;
-  int miny;
-  int maxy;
-  GLuint buffer;
-} Chunk;
+#include "chunk.h"
 
 typedef struct {
   int p;
   int q;
-  Map *block_maps[3][3];
-  int miny;
-  int maxy;
+  int k;
+  char neighbour_blocks[3][3][3][(CHUNK_SIZE + 2)*(CHUNK_SIZE + 2)*(CHUNK_SIZE + 2)];
   int faces;
   GLfloat *data;
 } WorkerItem;
@@ -92,6 +80,8 @@ typedef struct {
   GLuint extra2;
   GLuint extra3;
   GLuint extra4;
+  GLuint extra5;
+  GLuint extra6;
 } Attrib;
 
 typedef struct {

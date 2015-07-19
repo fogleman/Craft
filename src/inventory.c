@@ -10,41 +10,6 @@ Inventory inventory;
 Inventory ext_inventory;
 
 // From https://github.com/CouleeApps/Craft/tree/mining_crafting
-void make_inventory(float *data, float x, float y, float n, float m, int s) {
-    float *d = data;
-    float z = 0.5;
-    float a = z;
-    float b = z * 2;
-    int w = s;
-    float du = w * a;
-    float p = 0;
-    *(d++) = x - n; *(d++) = y - m;
-    *(d++) = du + 0; *(d++) = p;
-    *(d++) = x + n; *(d++) = y - m;
-    *(d++) = du + a; *(d++) = p;
-    *(d++) = x + n; *(d++) = y + m;
-    *(d++) = du + a; *(d++) = b - p;
-    *(d++) = x - n; *(d++) = y - m;
-    *(d++) = du + 0; *(d++) = p;
-    *(d++) = x + n; *(d++) = y + m;
-    *(d++) = du + a; *(d++) = b - p;
-    *(d++) = x - n; *(d++) = y + m;
-    *(d++) = du + 0; *(d++) = b - p;
-}
-
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
-GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
-    int length = INVENTORY_SLOTS;
-    GLfloat *data = malloc_faces(4, length);
-    x -= n * (length - 1) / 2;
-    for (int i = 0; i < length; i ++) {
-        make_inventory(data + i * 24, x, y, n / 2, n / 2, sel == i ? 1 : 0);
-        x += n;
-    }
-    return gen_faces(4, length, data);
-}
-
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
 void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -96,20 +61,6 @@ void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, float scal
 }
 
 // Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_bar(Attrib *attrib, float x, float y, float scale, int sel,
-        int width, int height) {
-    float matrix[16];
-    set_matrix_2d(matrix, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
-    GLuint inv_buffer = gen_inventory_buffers((width/2)*(x*-1+1), (height/2)*(y*-1+1), 64*scale, sel);
-    draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
-    del_buffer(inv_buffer);
-}
-
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
 void render_inventory_text(Attrib *attrib, Item item, float x, float y, float scale,
         int width, int height) {
     float matrix[16];
@@ -133,16 +84,6 @@ void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int i
         float ty = (height/2)*(y*-1+1) - 32*scale;
         render_inventory_text(attrib, block, tx, ty, scale, width, height);
     }
-}
-
-void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
-        float xoffs, float yoffs, float scale, int sel, int row, int width, int height) {
-    int ioffs = INVENTORY_SLOTS * row;
-    render_inventory_bar(window_attrib, xoffs, yoffs, scale, sel, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_items(block_attrib, xoffs, yoffs, scale, ioffs, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_texts(text_attrib, xoffs, yoffs, scale, ioffs, width, height);
 }
 
 /*

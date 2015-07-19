@@ -9,17 +9,14 @@
 Inventory inventory;
 Inventory ext_inventory;
 
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
-void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_2d(attrib, buffer, length * 6);
-    glDisable(GL_BLEND);
-}
+void render_belt_block(Attrib *attrib, int pos, Item block) {
 
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, float scale,
-        int width, int height, int sel) {
+    float scale = 0.8;      // block scale
+    float s = 0.15;
+    float xpos = (s * INVENTORY_SLOTS)/-2 + s/2 + s*pos;
+    float ypos = 0.8;
+    int sel = 1;
+
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
@@ -27,18 +24,15 @@ void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, fl
     glUniform4f(attrib->extra5,0.0, 0.0, 0.0, 0.0);
     float matrix[16];
     GLuint buffer;
-    set_matrix_item_offs(matrix, width, height, 0.65 * scale, xpos, ypos, sel);
-    if (is_plant(item.id)) {
+    set_matrix_item_offs(matrix, WINDOW_WIDTH, WINDOW_HEIGHT, scale, xpos, ypos, sel);
+    if (is_plant(block.id)) {
         glDeleteBuffers(1, &buffer);
-        buffer = gen_plant_buffer(0, 0, 0, 0.5, item.id);
+        buffer = gen_plant_buffer(0, 0, 0, 0.5, block.id);
     } else {
-        buffer = gen_cube_buffer(0, 0, 0, 0.5, item.id);
+        buffer = gen_cube_buffer(0, 0, 0, 0.5, block.id);
     }
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    float identity[16];
-    mat_identity(identity);
-    glUniformMatrix4fv(attrib->extra6, 1, GL_FALSE, identity);
-    if (is_plant(item.id)) {
+    if (is_plant(block.id)) {
         draw_plant(attrib, buffer);
     } else {
         draw_cube(attrib, buffer);
@@ -89,6 +83,15 @@ void render_belt_text(Attrib *attrib, int pos, Item block) {
     print(attrib, 1, x, y, 12, text_buffer);
 }
 
+void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
+        Item block = inventory.items[item];
+        if (block.id == 0 || block.num <= 0) continue;
+        render_belt_text(text_attrib, item, block);
+        render_belt_block(block_attrib, INVENTORY_SLOTS - item - 1, block);
+    }
+}
+
 /*
  * Render the inventory belt on the bottom center of the screen.
  */
@@ -107,7 +110,7 @@ void render_belt_background(Attrib *attrib, int selected) {
     float s = 0.15;                         // belt size on screen
     float px = (s*INVENTORY_SLOTS)/-2 + s;  // belt start x
     float py = -0.9;                        // belt pos y
-    float t = 1;                            // selected default image
+    float t = 0;                            // selected default image
     float ts = 0.25;                        // image size (1/images)
     int lt = t;                             // image to show
 
@@ -120,9 +123,9 @@ void render_belt_background(Attrib *attrib, int selected) {
         //   X            Y      U           V
              (i*s)+px-s,  py+s,  (ts*lt),    1.0f,
              (i*s)+px,    py,    (ts*lt)+ts, 0.0f,
-             (i*s)+px-s,  py,    (ts*lt),    1.0f,
+             (i*s)+px-s,  py,    (ts*lt),    0.0f,
 
-             (i*s)+px,    py+s,  (ts*lt)+ts, 0.0f,
+             (i*s)+px,    py+s,  (ts*lt)+ts, 1.0f,
              (i*s)+px,    py,    (ts*lt)+ts, 0.0f,
              (i*s)+px-s,  py+s,  (ts*lt),    1.0f,
         };
@@ -149,7 +152,10 @@ void render_belt_background(Attrib *attrib, int selected) {
 
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDrawArrays(GL_TRIANGLES, 0, INVENTORY_SLOTS * 6);
+    glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
 

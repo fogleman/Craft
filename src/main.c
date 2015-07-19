@@ -2088,21 +2088,13 @@ int main(int argc, char **argv) {
 
         main_render_text(me, s, player, text_attrib, blocks_recv, face_count);
 
-        render_belt_background(&inventory_attrib, inventory.selected);
-
-        render_belt_texts(&text_attrib);
-
         if (is_connected()) {
+            render_belt_background(&inventory_attrib, inventory.selected);
+            render_belt_text_blocks(&text_attrib, &block_attrib);
 
-//            render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-//                0, 0.8, 1, inventory.selected, 0, g->width, g->height);
+            //if(g->inventory_screen) {
 
-//            if(g->inventory_screen) {
-//                for (int invnr=0; invnr < EXT_INVENTORY_ROWS; invnr++) {
-//                    render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-//                        0.5, 0.4 + -0.2 * invnr, 0.8, -1, invnr, g->width, g->height);
-//                }
-        //    }
+            //}
         }
 
         // SWAP AND POLL //

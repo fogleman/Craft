@@ -8,14 +8,15 @@
 
 Inventory inventory;
 Inventory ext_inventory;
+Model *g;
 
 void render_belt_block(Attrib *attrib, int pos, Item block) {
 
     float scale = 0.7;      // block scale
-    float s = 0.15;
+    float s = 0.15 * WINDOW_WIDTH/g->width;
     float xpos = (s * INVENTORY_SLOTS)/-2 + s/2 + s*pos;
-    float ypos = 0.8;
-    int sel = inventory.selected == INVENTORY_SLOTS - pos - 1? 1 : 0;
+    float ypos = ((float)g->height - 120.0f)/(float)g->height;
+    int sel = inventory.selected == INVENTORY_SLOTS - pos - 1 ? 1 : 0;
 
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
@@ -23,7 +24,7 @@ void render_belt_block(Attrib *attrib, int pos, Item block) {
     glUniform1f(attrib->timer, PI*2);
     float matrix[16];
     GLuint buffer;
-    set_matrix_item_offs(matrix, WINDOW_WIDTH, WINDOW_HEIGHT, scale, xpos, ypos, sel);
+    set_matrix_item_offs(matrix, g->width, g->height, scale, xpos, ypos, sel);
     if (is_plant(block.id)) {
         glDeleteBuffers(1, &buffer);
         buffer = gen_plant_buffer(0, 0, 0, 0.5, block.id);
@@ -43,9 +44,10 @@ void render_belt_block(Attrib *attrib, int pos, Item block) {
 void render_ext_inventory_block(Attrib *attrib, int row, int col, Item block) {
 
     float scale = 0.5;      // block scale
-    float s = 0.12;
+    float s = 0.12 * WINDOW_WIDTH/g->width;
+    float v = 0.12 * WINDOW_HEIGHT/g->height;
     float xpos = (s * EXT_INVENTORY_COLS)/-2 + s/2 + s*col;
-    float ypos = -0.775 + row*s;
+    float ypos = ((float)g->height - 260.0f)/(float)g->height - row * v - v/3;
     int sel = 1;
 
     glUseProgram(attrib->program);
@@ -55,7 +57,7 @@ void render_ext_inventory_block(Attrib *attrib, int row, int col, Item block) {
     glUniform4f(attrib->extra5,0.0, 0.0, 0.0, 0.0);
     float matrix[16];
     GLuint buffer;
-    set_matrix_item_offs(matrix, WINDOW_WIDTH, WINDOW_HEIGHT, scale, xpos, ypos, sel);
+    set_matrix_item_offs(matrix, g->width, g->height, scale, xpos, ypos, sel);
     if (is_plant(block.id)) {
         glDeleteBuffers(1, &buffer);
         buffer = gen_plant_buffer(0, 0, 0, 0.5, block.id);
@@ -97,15 +99,15 @@ void render_belt_texts(Attrib *attrib) {
 
 void render_belt_text(Attrib *attrib, int pos, Item block) {
 
-    float s = 0.15;
+    float s = 0.15 * WINDOW_WIDTH/g->width;
     float gl_x = (s * INVENTORY_SLOTS)/-2 + s/2 + s*pos;
-    float gl_y = -0.9f;
+    float gl_y = -1 * ((float)g->height - 70.0f)/(float)g->height;
 
-    int x = (WINDOW_WIDTH / 2)  + (WINDOW_WIDTH / 2)  * gl_x;
-    int y = (WINDOW_HEIGHT / 2) + (WINDOW_HEIGHT / 2) * gl_y;
+    int x = (g->width / 2)  + (g->width / 2)  * gl_x;
+    int y = (g->height / 2) + (g->height / 2) * gl_y;
 
     float matrix[16];
-    mat_ortho(matrix, 0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 10);
+    mat_ortho(matrix, 0, g->width, 0, g->height, -1, 10);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1); // GL_TEXTURE1
@@ -116,15 +118,16 @@ void render_belt_text(Attrib *attrib, int pos, Item block) {
 
 void render_ext_inventory_text(Attrib *attrib, int row, int col, Item block) {
 
-    float s = 0.12;
+    float s = 0.12 * WINDOW_WIDTH/g->width;
+    float v = 0.12 * WINDOW_HEIGHT/g->height;
     float gl_x = (s * EXT_INVENTORY_COLS)/-2 + s/2 + s*col;
-    float gl_y = 0.755f - row * s;
+    float gl_y = (-1 * ((float)g->height - 260.0f)/(float)g->height) + row * v;
 
-    int x = (WINDOW_WIDTH / 2)  + (WINDOW_WIDTH / 2)  * gl_x;
-    int y = (WINDOW_HEIGHT / 2) + (WINDOW_HEIGHT / 2) * gl_y;
+    int x = (gl_x * g->width) / 2 + (g->width / 2);
+    int y = (gl_y * g->height) / 2 + (g->height / 2);
 
     float matrix[16];
-    mat_ortho(matrix, 0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 10);
+    mat_ortho(matrix, 0, g->width, 0, g->height, -1, 10);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1); // GL_TEXTURE1
@@ -146,8 +149,6 @@ void render_ext_inventory_text_blocks(Attrib *text_attrib, Attrib *block_attrib)
     for (int i = 0; i < EXT_INVENTORY_ROWS; i ++) {
         for (int j = 0; j < EXT_INVENTORY_COLS; j ++) {
             Item block = ext_inventory.items[i*EXT_INVENTORY_COLS + j];
-            block.id = j + 1;
-            block.num = (j + 1) + EXT_INVENTORY_COLS*i;
             if (block.id == 0 || block.num <= 0) continue;
             render_ext_inventory_block(block_attrib, i, EXT_INVENTORY_COLS - j - 1, block);
             render_ext_inventory_text(text_attrib, i, j, block);
@@ -170,9 +171,9 @@ void render_belt_background(Attrib *attrib, int selected) {
 
     GLfloat vertex_data[INVENTORY_SLOTS * 6 * 4];
 
-    float s = 0.15;                         // belt size on screen
+    float s = 0.15 * WINDOW_WIDTH/g->width; // belt size on screen
     float px = (s*INVENTORY_SLOTS)/-2 + s;  // belt start x
-    float py = -0.9;                        // belt pos y
+    float py = -1 * ((float)g->height - 50.0f)/(float)g->height;  // belt pos y
     float t = 0;                            // selected default image
     float ts = 0.25;                        // image size (1/images)
     int lt = t;                             // image to show
@@ -236,10 +237,10 @@ void render_ext_inventory_background(Attrib *attrib) {
 
     GLfloat vertex_data[EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS * 6 * 4];
 
-    float s = 0.12;                         // belt size on screen
-    float v = 0.12;
+    float s = 0.12 * WINDOW_WIDTH/g->width;   // belt size on screen
+    float v = 0.12 * WINDOW_HEIGHT/g->height;
     float px = (s*EXT_INVENTORY_COLS)/-2 + s;  // belt start x
-    float py = -0.6;                         // belt pos y
+    float py = -1 * ((float)g->height - 250.0f)/(float)g->height;  // belt pos y
     float t = 2;                            // selected default image
     float ts = 0.25;                        // image size (1/images)
     int lt = t;                             // image to show
@@ -249,13 +250,13 @@ void render_ext_inventory_background(Attrib *attrib) {
         for (int j=0; j<EXT_INVENTORY_COLS; j++) {
             GLfloat side[] = {
             //   X           Y            U           V
-                (j*s)+px-s,  (i*v)+py+s,  (ts*lt),    1.0f,
+                (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
                 (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
                 (j*s)+px-s,  (i*v)+py,    (ts*lt),    0.0f,
 
-                (j*s)+px,    (i*v)+py+s,  (ts*lt)+ts, 1.0f,
+                (j*s)+px,    (i*v)+py+v,  (ts*lt)+ts, 1.0f,
                 (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
-                (j*s)+px-s,  (i*v)+py+s,  (ts*lt),    1.0f,
+                (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
             };
             memcpy(vertex_data + 6*4 * (i*EXT_INVENTORY_COLS + j),
                    side, sizeof(float)*6*4);

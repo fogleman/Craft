@@ -26,8 +26,8 @@
 #include "crypto.h"
 #include "konstructs.h"
 
-static Model model;
-static Model *g = &model;
+Model model;
+Model *g = &model;
 
 void init_chunk(Chunk *chunk, int p, int q, int k);
 
@@ -1161,6 +1161,27 @@ void add_message(const char *text) {
 }
 
 void on_left_click() {
+
+    if(g->inventory_screen) {
+        double xpos;
+        double ypos;
+        glfwGetCursorPos(g->window, &xpos, &ypos);
+
+        float field_x = g->width / EXT_INVENTORY_COLS;
+        float field_y = g->height / EXT_INVENTORY_ROWS;
+
+        float half_x = g->width / 2;
+        float half_y = g->height / 2;
+
+        float xscale = 0.12;
+
+        float rcorner_x = xpos / g->width;
+
+        printf("clicked: %f, %f :: %f, %f\n",xpos,ypos, field_x, rcorner_x);
+
+        return;
+    }
+
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
@@ -1253,6 +1274,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
         if (key == KONSTRUCTS_KEY_INVENTORY_TOGGLE) {
             g->inventory_screen = !g->inventory_screen;
+            if (g->inventory_screen) {
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            } else {
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
         }
         if (key == KONSTRUCTS_KEY_OBSERVE) {
             g->observe1 = (g->observe1 + 1) % g->player_count;
@@ -1315,32 +1341,39 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
     int exclusive =
         glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
-    if (action != GLFW_PRESS) {
-        return;
-    }
-    if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        if (exclusive) {
+
+    // Make sure that a mouse button was pressed
+    if (action != GLFW_PRESS) return;
+
+    switch(button) {
+        case GLFW_MOUSE_BUTTON_LEFT:
+
+            if (!exclusive) {
+                if(g->inventory_screen) {
+                    on_left_click();
+                } else {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
+                break;
+            }
+
             if (control) {
                 on_right_click();
-            }
-            else {
+            } else {
                 on_left_click();
             }
-        }
-        else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
+
+            break;
+
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            if (exclusive) on_right_click();
+            break;
+
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            if (exclusive) on_middle_click();
+            break;
     }
-    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-        if (exclusive) {
-            on_right_click();
-         }
-    }
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-        if (exclusive) {
-            on_middle_click();
-        }
-    }
+
 }
 
 void create_window() {

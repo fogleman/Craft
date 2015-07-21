@@ -1280,6 +1280,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             }
         }
+        if (key == KONSTRUCTS_KEY_INVENTORY_KONSTRUCT) {
+            if(g->inventory_screen) {
+                client_konstruct();
+            }
+        }
         if (key == KONSTRUCTS_KEY_OBSERVE) {
             g->observe1 = (g->observe1 + 1) % g->player_count;
         }

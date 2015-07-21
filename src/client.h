@@ -22,6 +22,7 @@ void client_login(const char *username, const char *identity_token);
 void client_position(float x, float y, float z, float rx, float ry);
 void client_chunk(int amount);
 void client_block(int x, int y, int z, int w);
+void client_konstruct();
 void client_light(int x, int y, int z, int w);
 void client_sign(int x, int y, int z, int face, const char *text);
 void client_talk(const char *text);

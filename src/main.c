@@ -1614,6 +1614,7 @@ void parse_buffer(Packet packet) {
                     ext_inventory.items[pos].id = id;
                     ext_inventory.items[pos].num = amount;
                     ext_inventory.items[pos].show = id == -1 ? 0 : 1;
+                    g->inventory_screen = 1;
                 }
             }
             if (sscanf(line, "A,%d", &id) == 1) {

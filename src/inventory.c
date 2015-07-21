@@ -210,18 +210,34 @@ void render_ext_inventory_background(Attrib *attrib) {
     // Generate matrix for all inventory belt slots
     for (int i=0; i<EXT_INVENTORY_ROWS; i++) {
         for (int j=0; j<EXT_INVENTORY_COLS; j++) {
-            GLfloat side[] = {
-            //   X           Y            U           V
-                (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
-                (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
-                (j*s)+px-s,  (i*v)+py,    (ts*lt),    0.0f,
+            if (ext_inventory.items[i*EXT_INVENTORY_COLS + j].show == 0) {
+                GLfloat side[] = {
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f
+                };
 
-                (j*s)+px,    (i*v)+py+v,  (ts*lt)+ts, 1.0f,
-                (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
-                (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
-            };
-            memcpy(vertex_data + 6*4 * (i*EXT_INVENTORY_COLS + j),
-                   side, sizeof(float)*6*4);
+                memcpy(vertex_data + 6*4 * (i*EXT_INVENTORY_COLS + j),
+                    side, sizeof(float)*6*4);
+            } else {
+                GLfloat side[] = {
+                //   X           Y            U           V
+                    (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
+                    (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
+                    (j*s)+px-s,  (i*v)+py,    (ts*lt),    0.0f,
+
+                    (j*s)+px,    (i*v)+py+v,  (ts*lt)+ts, 1.0f,
+                    (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
+                    (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
+                };
+
+                memcpy(vertex_data + 6*4 * (i*EXT_INVENTORY_COLS + j),
+                    side, sizeof(float)*6*4);
+            }
+
         }
     }
 

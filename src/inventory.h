@@ -6,6 +6,7 @@
 typedef struct {
     int id;
     int num;
+    int show;
 } Item;
 
 typedef struct {

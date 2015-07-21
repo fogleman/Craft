@@ -1708,6 +1708,7 @@ int init_inventory() {
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].id = 0;
         inventory.items[item].num = 0;
+        inventory.items[item].show = 1;
     }
     inventory.selected = 0;
 
@@ -1716,6 +1717,7 @@ int init_inventory() {
     for (int item = 0; item < EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS; item ++) {
         ext_inventory.items[item].id = 0;
         ext_inventory.items[item].num = 0;
+        ext_inventory.items[item].show = 0;
     }
     ext_inventory.selected = 0;
 

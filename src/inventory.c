@@ -223,6 +223,14 @@ void render_ext_inventory_background(Attrib *attrib) {
                 memcpy(vertex_data + 6*4 * (i*EXT_INVENTORY_COLS + j),
                     side, sizeof(float)*6*4);
             } else {
+
+                // Select the next texture if, this slot is selected
+                if (ext_inventory.selected == i*EXT_INVENTORY_COLS + j) {
+                    lt = t + 1;
+                } else {
+                    lt = t;
+                }
+
                 GLfloat side[] = {
                 //   X           Y            U           V
                     (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,

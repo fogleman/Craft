@@ -28,6 +28,7 @@
 
 Model model;
 Model *g = &model;
+MoveItem move_item;
 
 void init_chunk(Chunk *chunk, int p, int q, int k);
 
@@ -1163,21 +1164,44 @@ void add_message(const char *text) {
 void on_left_click() {
 
     if(g->inventory_screen) {
-        double xpos;
-        double ypos;
+        double xpos, ypos;
         glfwGetCursorPos(g->window, &xpos, &ypos);
 
-        float field_x = g->width / EXT_INVENTORY_COLS;
-        float field_y = g->height / EXT_INVENTORY_ROWS;
+        // Scale factor for the boxes
+        float s = 0.12 * WINDOW_WIDTH/g->width;
+        float v = 0.12 * WINDOW_HEIGHT/g->height;
 
-        float half_x = g->width / 2;
-        float half_y = g->height / 2;
+        // Position on the screen in glcoords
+        float gl_x = (xpos/g->width * 2 - 1);
+        float gl_y = (ypos/g->height * 2 - 1);
 
-        float xscale = 0.12;
+        // Get selected col/row
+        int col = (gl_x + EXT_INVENTORY_COLS * s)/s - EXT_INVENTORY_COLS/2;
+        int row = (gl_y + EXT_INVENTORY_ROWS * v)/v - EXT_INVENTORY_ROWS/2 + 0.5;
 
-        float rcorner_x = xpos / g->width;
+        // The inventory is rendered upside down so...
+        row = EXT_INVENTORY_ROWS - 1 - row;
 
-        printf("clicked: %f, %f :: %f, %f\n",xpos,ypos, field_x, rcorner_x);
+        // Remove to large/small values
+        row = row > EXT_INVENTORY_ROWS ? EXT_INVENTORY_ROWS : row;
+        col = col > EXT_INVENTORY_COLS ? EXT_INVENTORY_COLS : col;
+
+        // Our inventory position
+        int item = row*EXT_INVENTORY_COLS + col;
+
+        // We have someting selected and an empty slot is clicked
+        if (move_item.use == 1 && ext_inventory.items[item].id == 0) {
+            client_move_inventory(move_item.inventory, move_item.index, 1, item);
+            move_item.use = 0;
+            ext_inventory.selected = -1;
+
+        // Select a item, if there is a item in the slot
+        } else if (ext_inventory.items[item].id > 0) {
+            move_item.inventory = 1;
+            move_item.index = item;
+            move_item.use = 1;
+            ext_inventory.selected = item;
+        }
 
         return;
     }
@@ -1577,9 +1601,20 @@ void parse_buffer(Packet packet) {
                 }
             }
             int pos, amount, id;
+            int inv = 0;
+#if PROTOCOL_VERSION == 3
             if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
-                inventory.items[pos].id = id;
-                inventory.items[pos].num = amount;
+#else
+            if (sscanf(line, "I,%d,%d,%d,%d", &inv, &pos, &amount, &id) == 4) {
+#endif
+                if (inv == 0) {
+                    inventory.items[pos].id = id;
+                    inventory.items[pos].num = amount;
+                } else {
+                    ext_inventory.items[pos].id = id;
+                    ext_inventory.items[pos].num = amount;
+                    ext_inventory.items[pos].show = id == -1 ? 0 : 1;
+                }
             }
             if (sscanf(line, "A,%d", &id) == 1) {
                 inventory.selected = id;
@@ -1724,7 +1759,7 @@ int init_inventory() {
         ext_inventory.items[item].num = 0;
         ext_inventory.items[item].show = 0;
     }
-    ext_inventory.selected = 0;
+    ext_inventory.selected = -1;
 
 }
 
@@ -1980,6 +2015,8 @@ int main(int argc, char **argv) {
     g->server_addr[0] = '\0';
     g->server_user[0] = '\0';
     g->server_pass[0] = '\0';
+
+    move_item.use = 0;
 
     sprintf(g->text_message, "Press T to access the console");
     sprintf(g->text_prompt, "Server");

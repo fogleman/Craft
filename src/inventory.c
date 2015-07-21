@@ -10,6 +10,8 @@ Inventory inventory;
 Inventory ext_inventory;
 Model *g;
 
+// Render a cube with ID w at x, y. This function is used to render the inventory
+// blocks, like the belt and the inventory screen.
 void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, int sel) {
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
@@ -33,6 +35,7 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
     del_buffer(buffer);
 }
 
+// Render a block at the belt at position pos.
 void render_belt_block(Attrib *attrib, int pos, Item block) {
 
     float scale = 0.7;      // block scale
@@ -44,6 +47,7 @@ void render_belt_block(Attrib *attrib, int pos, Item block) {
     render_inventory_block(attrib, block.id, scale, xpos, ypos, sel);
 }
 
+// Render a block in the inventory at col and row.
 void render_ext_inventory_block(Attrib *attrib, int row, int col, Item block) {
 
     float scale = 0.5;      // block scale
@@ -56,6 +60,7 @@ void render_ext_inventory_block(Attrib *attrib, int row, int col, Item block) {
     render_inventory_block(attrib, block.id, scale, xpos, ypos, sel);
 }
 
+// Render a text displaying a int at x, y (opengl coords)
 void render_inventory_number_at(Attrib *attrib, int num, float x, float y) {
     int nx = (g->width / 2)  + (g->width / 2)  * x;
     int ny = (g->height / 2) + (g->height / 2) * y;
@@ -70,6 +75,7 @@ void render_inventory_number_at(Attrib *attrib, int num, float x, float y) {
     print(attrib, 1, nx, ny, 12, text_buffer);
 }
 
+// Render the text at the belt.
 void render_belt_text(Attrib *attrib, int pos, Item block) {
 
     float s = 0.15 * WINDOW_WIDTH/g->width;
@@ -79,6 +85,7 @@ void render_belt_text(Attrib *attrib, int pos, Item block) {
     render_inventory_number_at(attrib, block.num, x, y);
 }
 
+// Render the text in the inventory.
 void render_ext_inventory_text(Attrib *attrib, int row, int col, Item block) {
 
     float s = 0.12 * WINDOW_WIDTH/g->width;
@@ -89,6 +96,7 @@ void render_ext_inventory_text(Attrib *attrib, int row, int col, Item block) {
     render_inventory_number_at(attrib, block.num, x, y);
 }
 
+// Called from main loop, renders the belt's blocks and texts.
 void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
     for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
@@ -98,6 +106,7 @@ void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
     }
 }
 
+// Called from main loop, renders the inventory blocks and texts.
 void render_ext_inventory_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
     for (int i = 0; i < EXT_INVENTORY_ROWS; i ++) {
         for (int j = 0; j < EXT_INVENTORY_COLS; j ++) {
@@ -109,6 +118,7 @@ void render_ext_inventory_text_blocks(Attrib *text_attrib, Attrib *block_attrib)
     }
 }
 
+// Prep a vertex array and vertex buffer object.
 void prep_2dtexture_buffers(GLuint *vao, GLuint *vbo) {
     glGenVertexArrays(1, vao);
     glBindVertexArray(*vao);
@@ -117,10 +127,9 @@ void prep_2dtexture_buffers(GLuint *vao, GLuint *vbo) {
     glBindBuffer(GL_ARRAY_BUFFER, *vbo);
 }
 
+// Ask the graphic card to render the already provided buffer.
 void render_2dtexture(Attrib *attrib, int num) {
     glUseProgram(attrib->program);
-
-    // Our texture is saved in GL_TEXTURE4 from main.c
     glUniform1i(attrib->sampler, 4);
 
     glEnableVertexAttribArray(attrib->position);
@@ -143,6 +152,7 @@ void render_2dtexture(Attrib *attrib, int num) {
     glEnable(GL_DEPTH_TEST);
 }
 
+// Render the 2d texture background for our belt.
 void render_belt_background(Attrib *attrib, int selected) {
 
     GLuint vao, vbo;
@@ -181,6 +191,7 @@ void render_belt_background(Attrib *attrib, int selected) {
     render_2dtexture(attrib, INVENTORY_SLOTS * 6);
 }
 
+// Render the 2d texture background for the inventory.
 void render_ext_inventory_background(Attrib *attrib) {
 
     GLuint vao, vbo;

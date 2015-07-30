@@ -4,6 +4,8 @@ uniform mat4 matrix;
 uniform vec3 camera;
 uniform float fog_distance;
 uniform int ortho;
+uniform vec4 chunk;
+uniform mat4 rotation;
 
 attribute vec4 position;
 attribute vec3 normal;
@@ -20,7 +22,8 @@ const float pi = 3.14159265;
 const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
 
 void main() {
-    gl_Position = matrix * position;
+    vec4 local_position = rotation * (position + chunk);
+    gl_Position = matrix * local_position;
     fragment_uv = uv.xy;
     fragment_ao = 0.3 + (1.0 - uv.z) * 0.7;
     fragment_light = uv.w;
@@ -30,10 +33,10 @@ void main() {
         fog_height = 0.0;
     }
     else {
-        float camera_distance = distance(camera, vec3(position));
+        float camera_distance = distance(camera, vec3(local_position));
         fog_factor = pow(clamp(camera_distance / fog_distance, 0.0, 1.0), 4.0);
-        float dy = position.y - camera.y;
-        float dx = distance(position.xz, camera.xz);
+        float dy = local_position.y - camera.y;
+        float dx = distance(local_position.xz, camera.xz);
         fog_height = (atan(dy, dx) + pi / 2) / pi;
     }
 }

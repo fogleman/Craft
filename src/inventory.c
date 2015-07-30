@@ -58,6 +58,7 @@ void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, fl
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
     glUniform1f(attrib->timer, PI*2);
+    glUniform4f(attrib->extra5,0.0, 0.0, 0.0, 0.0);
     float matrix[16];
     GLuint buffer;
     set_matrix_item_offs(matrix, width, height, 0.65 * scale, xpos, ypos, sel);
@@ -68,6 +69,9 @@ void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, fl
         buffer = gen_cube_buffer(0, 0, 0, 0.5, item.id);
     }
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    float identity[16];
+    mat_identity(identity);
+    glUniformMatrix4fv(attrib->extra6, 1, GL_FALSE, identity);
     if (is_plant(item.id)) {
         draw_plant(attrib, buffer);
     } else {

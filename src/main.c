@@ -17,7 +17,6 @@
 #include "config.h"
 #include "cube.h"
 #include "item.h"
-#include "map.h"
 #include "matrix.h"
 #include "noise.h"
 #include "tinycthread.h"
@@ -30,7 +29,7 @@
 static Model model;
 static Model *g = &model;
 
-void init_chunk(Chunk *chunk, int p, int q);
+void init_chunk(Chunk *chunk, int p, int q, int k);
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
@@ -411,40 +410,44 @@ Player *player_crosshair(Player *player) {
     return result;
 }
 
-Chunk *find_chunk(int p, int q) {
+Chunk *find_chunk(int p, int q, int k, int init) {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk->p == p && chunk->q == q) {
+        if (chunk->p == p && chunk->q == q && chunk->k == k) {
             return chunk;
         }
     }
-    if (g->chunk_count < MAX_CHUNKS) {
-        Chunk *chunk = g->chunks + g->chunk_count++;
-        init_chunk(chunk, p, q);
-        return chunk;
+    if(init) {
+        if (g->chunk_count < MAX_CHUNKS) {
+            Chunk *chunk = g->chunks + g->chunk_count++;
+            init_chunk(chunk, p, q, k);
+            return chunk;
+        }
     }
     return 0;
 }
 
-int chunk_distance(Chunk *chunk, int p, int q) {
+int chunk_distance(Chunk *chunk, int p, int q, int k) {
     int dp = ABS(chunk->p - p);
     int dq = ABS(chunk->q - q);
-    return MAX(dp, dq);
+    int dk = ABS(chunk->k - k);
+    return MAX(MAX(dp, dq), dk);
 }
 
-int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
+int chunk_visible(float planes[6][4], int p, int q, int k) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;
+    int y = k * CHUNK_SIZE - 1;
     int d = CHUNK_SIZE + 1;
     float points[8][3] = {
-        {x + 0, miny, z + 0},
-        {x + d, miny, z + 0},
-        {x + 0, miny, z + d},
-        {x + d, miny, z + d},
-        {x + 0, maxy, z + 0},
-        {x + d, maxy, z + 0},
-        {x + 0, maxy, z + d},
-        {x + d, maxy, z + d}
+        {x + 0, y + 0, z + 0},
+        {x + d, y + 0, z + 0},
+        {x + 0, y + 0, z + d},
+        {x + d, y + 0, z + d},
+        {x + 0, y + d, z + 0},
+        {x + d, y + d, z + 0},
+        {x + 0, y + d, z + d},
+        {x + d, y + d, z + d}
     };
     int n = g->ortho ? 4 : 6;
     for (int i = 0; i < n; i++) {
@@ -473,26 +476,8 @@ int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     return 1;
 }
 
-int highest_block(float x, float z) {
-    int result = -1;
-    int nx = roundf(x);
-    int nz = roundf(z);
-    int p = chunked(x);
-    int q = chunked(z);
-    Chunk *chunk = find_chunk(p, q);
-    if (chunk) {
-        Map *map = &chunk->map;
-        MAP_FOR_EACH(map, ex, ey, ez, ew) {
-            if (is_obstacle(ew) && ex == nx && ez == nz) {
-                result = MAX(result, ey);
-            }
-        } END_MAP_FOR_EACH;
-    }
-    return result;
-}
-
 int _hit_test(
-    Map *map, float max_distance, int previous,
+    Chunk *chunk, float max_distance, int previous,
     float x, float y, float z,
     float vx, float vy, float vz,
     int *hx, int *hy, int *hz)
@@ -506,7 +491,7 @@ int _hit_test(
         int ny = roundf(y);
         int nz = roundf(z);
         if (nx != px || ny != py || nz != pz) {
-            int hw = map_get(map, nx, ny, nz);
+            int hw = chunk_get(chunk, nx, ny, nz);
             if (hw > 0) {
                 if (previous) {
                     *hx = px; *hy = py; *hz = pz;
@@ -531,15 +516,16 @@ int hit_test(
     float best = 0;
     int p = chunked(x);
     int q = chunked(z);
+    int k = chunked(y);
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk_distance(chunk, p, q) > 1) {
+        if (chunk_distance(chunk, p, q, k) > 1) {
             continue;
         }
         int hx, hy, hz;
-        int hw = _hit_test(&chunk->map, 8, previous,
+        int hw = _hit_test(chunk, 8, previous,
             x, y, z, vx, vy, vz, &hx, &hy, &hz);
         if (hw > 0) {
             float d = sqrtf(
@@ -591,6 +577,7 @@ int collide(int height, float *x, float *y, float *z) {
     int result = 0;
     int p = chunked(*x);
     int q = chunked(*z);
+    int k = chunked(*y);
     int nx = roundf(*x);
     int ny = roundf(*y);
     int nz = roundf(*z);
@@ -601,34 +588,34 @@ int collide(int height, float *x, float *y, float *z) {
     int r = 1;
     for (int dp = -r; dp <= r; dp++) {
         for (int dq = -r; dq <= r; dq++) {
-          Chunk *chunk = find_chunk(p + dp, q + dq);
-          if (!chunk) {
-            continue;
-          }
-          Map *map = &chunk->map;
-
-          for (int dy = 0; dy < height; dy++) {
-            if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
-              *x = nx - pad;
+            for (int dk = -r; dk <= r; dk++) {
+              Chunk *chunk = find_chunk(p + dp, q + dq, k + dk, 0);
+                if (!chunk) {
+                    continue;
+                }
+                for (int dy = 0; dy < height; dy++) {
+                    if (px < -pad && is_obstacle(chunk_get(chunk, nx - 1, ny - dy, nz))) {
+                        *x = nx - pad;
+                    }
+                    if (px > pad && is_obstacle(chunk_get(chunk, nx + 1, ny - dy, nz))) {
+                        *x = nx + pad;
+                    }
+                    if (py < -pad && is_obstacle(chunk_get(chunk, nx, ny - dy - 1, nz))) {
+                        *y = ny - pad;
+                        result = 1;
+                    }
+                    if (py > pad && is_obstacle(chunk_get(chunk, nx, ny - dy + 1, nz))) {
+                        *y = ny + pad;
+                        result = 1;
+                    }
+                    if (pz < -pad && is_obstacle(chunk_get(chunk, nx, ny - dy, nz - 1))) {
+                        *z = nz - pad;
+                    }
+                    if (pz > pad && is_obstacle(chunk_get(chunk, nx, ny - dy, nz + 1))) {
+                        *z = nz + pad;
+                    }
+                }
             }
-            if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {
-              *x = nx + pad;
-            }
-            if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {
-              *y = ny - pad;
-              result = 1;
-            }
-            if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {
-              *y = ny + pad;
-              result = 1;
-            }
-            if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {
-              *z = nz - pad;
-            }
-            if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
-            *z = nz + pad;
-            }
-          }
         }
     }
     return result;
@@ -697,48 +684,40 @@ void occlusion(
 #define XZ(x, z) ((x) * XZ_SIZE + (z))
 
 void compute_chunk(WorkerItem *item) {
-    char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
+    char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * XZ_SIZE, sizeof(char));
     char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
 
-    int ox = item->p * CHUNK_SIZE - CHUNK_SIZE - 1;
-    int oy = -1;
-    int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
+    int ox = - CHUNK_SIZE - 1;
+    int oy = - CHUNK_SIZE - 1;
+    int oz = - CHUNK_SIZE - 1;
 
     // populate opaque array
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            Map *map = item->block_maps[a][b];
-            if (!map) {
-                continue;
+    for (int dp = -1; dp <= 1; dp++) {
+        for (int dq = -1; dq <= 1; dq++) {
+            for (int dk = -1; dk <= 1; dk++) {
+                char *blocks = item->neighbour_blocks[dp + 1][dq + 1][dk + 1];
+                if (!blocks) {
+                    continue;
+                }
+                CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+                    int x = ex + dp * CHUNK_SIZE - ox;
+                    int y = ey + dk * CHUNK_SIZE - oy;
+                    int z = ez + dq * CHUNK_SIZE - oz;
+                    int w = ew;
+                    opaque[XYZ(x, y, z)] = !is_transparent(w);
+                    if (opaque[XYZ(x, y, z)]) {
+                        highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+                    }
+                } END_CHUNK_FOR_EACH;
             }
-            MAP_FOR_EACH(map, ex, ey, ez, ew) {
-                int x = ex - ox;
-                int y = ey - oy;
-                int z = ez - oz;
-                int w = ew;
-                // TODO: this should be unnecessary
-                if (x < 0 || y < 0 || z < 0) {
-                    continue;
-                }
-                if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
-                    continue;
-                }
-                // END TODO
-                opaque[XYZ(x, y, z)] = !is_transparent(w);
-                if (opaque[XYZ(x, y, z)]) {
-                    highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
-                }
-            } END_MAP_FOR_EACH;
         }
-    }
+   }
 
-    Map *map = item->block_maps[1][1];
+   char *blocks = item->neighbour_blocks[1][1][1];
 
     // count exposed faces
-    int miny = MAX_BLOCK_HEIGHT;
-    int maxy = 0;
     int faces = 0;
-    MAP_FOR_EACH(map, ex, ey, ez, ew) {
+    CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
         if (ew <= 0) {
             continue;
         }
@@ -748,7 +727,7 @@ void compute_chunk(WorkerItem *item) {
         int f1 = !opaque[XYZ(x - 1, y, z)];
         int f2 = !opaque[XYZ(x + 1, y, z)];
         int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
+        int f4 = !opaque[XYZ(x, y - 1, z)];
         int f5 = !opaque[XYZ(x, y, z - 1)];
         int f6 = !opaque[XYZ(x, y, z + 1)];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -758,15 +737,13 @@ void compute_chunk(WorkerItem *item) {
         if (is_plant(ew)) {
             total = 4;
         }
-        miny = MIN(miny, ey);
-        maxy = MAX(maxy, ey);
         faces += total;
-    } END_MAP_FOR_EACH;
+    } END_CHUNK_FOR_EACH;
 
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    MAP_FOR_EACH(map, ex, ey, ez, ew) {
+    CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
         if (ew <= 0) {
             continue;
         }
@@ -776,7 +753,7 @@ void compute_chunk(WorkerItem *item) {
         int f1 = !opaque[XYZ(x - 1, y, z)];
         int f2 = !opaque[XYZ(x + 1, y, z)];
         int f3 = !opaque[XYZ(x, y + 1, z)];
-        int f4 = !opaque[XYZ(x, y - 1, z)] && (ey > 0);
+        int f4 = !opaque[XYZ(x, y - 1, z)];
         int f5 = !opaque[XYZ(x, y, z - 1)];
         int f6 = !opaque[XYZ(x, y, z + 1)];
         int total = f1 + f2 + f3 + f4 + f5 + f6;
@@ -827,20 +804,16 @@ void compute_chunk(WorkerItem *item) {
                 ex, ey, ez, 0.5, ew);
         }
         offset += total * 60;
-    } END_MAP_FOR_EACH;
+    } END_CHUNK_FOR_EACH;
 
     free(opaque);
     free(highest);
 
-    item->miny = miny;
-    item->maxy = maxy;
     item->faces = faces;
     item->data = data;
 }
 
 void generate_chunk(Chunk *chunk, WorkerItem *item) {
-    chunk->miny = item->miny;
-    chunk->maxy = item->maxy;
     chunk->faces = item->faces;
     del_buffer(chunk->buffer);
     chunk->buffer = gen_faces(10, item->faces, item->data);
@@ -851,17 +824,21 @@ void gen_chunk_buffer(Chunk *chunk) {
     WorkerItem *item = &_item;
     item->p = chunk->p;
     item->q = chunk->q;
+    item->k = chunk->k;
+
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = chunk;
-            if (dp || dq) {
-                other = find_chunk(chunk->p + dp, chunk->q + dq);
-            }
-            if (other) {
-                item->block_maps[dp + 1][dq + 1] = &other->map;
-            }
-            else {
-                item->block_maps[dp + 1][dq + 1] = 0;
+            for (int dk = -1; dk <= 1; dk++) {
+                Chunk *other = chunk;
+                if (dp || dq || dk) {
+                    other = find_chunk(chunk->p + dp, chunk->q + dq, chunk->k + dk, 0);
+                }
+                if (other) {
+                    memcpy(item->neighbour_blocks[dp + 1][dq + 1][dk + 1], other->blocks, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+                }
+                else {
+                    memset(item->neighbour_blocks[dp + 1][dq + 1][dk + 1], 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+                }
             }
         }
     }
@@ -877,17 +854,14 @@ void request_chunks() {
   g->pending_chunks += chunks;
 }
 
-void init_chunk(Chunk *chunk, int p, int q) {
+ void init_chunk(Chunk *chunk, int p, int q, int k) {
     chunk->p = p;
     chunk->q = q;
+    chunk->k = k;
     chunk->faces = 0;
     chunk->buffer = 0;
     chunk->dirty = 1;
-    Map *block_map = &chunk->map;
-    int dx = p * CHUNK_SIZE - 1;
-    int dy = 0;
-    int dz = q * CHUNK_SIZE - 1;
-    map_alloc(block_map, dx, dy, dz, 0x7fff);
+    memset(chunk->blocks, 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
 }
 
 void delete_chunks() {
@@ -903,13 +877,13 @@ void delete_chunks() {
             State *s = states[j];
             int p = chunked(s->x);
             int q = chunked(s->z);
-            if (chunk_distance(chunk, p, q) < g->delete_radius) {
+            int k = chunked(s->y);
+            if (chunk_distance(chunk, p, q, k) < g->delete_radius) {
                 delete = 0;
                 break;
             }
         }
         if (delete) {
-            map_free(&chunk->map);
             del_buffer(chunk->buffer);
             Chunk *other = g->chunks + (--count);
             memcpy(chunk, other, sizeof(Chunk));
@@ -921,7 +895,6 @@ void delete_chunks() {
 void delete_all_chunks() {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        map_free(&chunk->map);
         del_buffer(chunk->buffer);
     }
     g->chunk_count = 0;
@@ -933,41 +906,13 @@ void check_workers() {
         mtx_lock(&worker->mtx);
         if (worker->state == WORKER_DONE) {
             WorkerItem *item = &worker->item;
-            Chunk *chunk = find_chunk(item->p, item->q);
+            Chunk *chunk = find_chunk(item->p, item->q, item->k, 0);
             if (chunk) {
                 generate_chunk(chunk, item);
-            }
-            for (int a = 0; a < 3; a++) {
-                for (int b = 0; b < 3; b++) {
-                    Map *block_map = item->block_maps[a][b];
-                    if (block_map) {
-                        map_free(block_map);
-                        free(block_map);
-                    }
-                }
             }
             worker->state = WORKER_IDLE;
         }
         mtx_unlock(&worker->mtx);
-    }
-}
-
-void force_chunks(Player *player) {
-    State *s = &player->state;
-    int p = chunked(s->x);
-    int q = chunked(s->z);
-    int r = 1;
-    for (int dp = -r; dp <= r; dp++) {
-        for (int dq = -r; dq <= r; dq++) {
-            int a = p + dp;
-            int b = q + dq;
-            Chunk *chunk = find_chunk(a, b);
-            if (chunk) {
-                if (chunk->dirty) {
-                    gen_chunk_buffer(chunk);
-                }
-            }
-        }
     }
 }
 
@@ -981,63 +926,55 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     frustum_planes(planes, g->render_radius, matrix);
     int p = chunked(s->x);
     int q = chunked(s->z);
+    int k = chunked(s->y);
     int r = g->create_radius;
     int start = 0x0fffffff;
     int best_score = start;
-    int best_a = 0;
-    int best_b = 0;
-    for (int dp = -r; dp <= r; dp++) {
-        for (int dq = -r; dq <= r; dq++) {
-            int a = p + dp;
-            int b = q + dq;
-            int index = (ABS(a) ^ ABS(b)) % WORKERS;
-            if (index != worker->index) {
-                continue;
-            }
-            Chunk *chunk = find_chunk(a, b);
-            if (chunk && !chunk->dirty) {
-                continue;
-            }
-            int distance = MAX(ABS(dp), ABS(dq));
-            int invisible = !chunk_visible(planes, a, b, 0, MAX_BLOCK_HEIGHT);
-            int priority = 0;
-            if (chunk) {
-                priority = chunk->buffer && chunk->dirty;
-            }
-            int score = (invisible << 24) | (priority << 16) | distance;
-            if (score < best_score) {
-                best_score = score;
-                best_a = a;
-                best_b = b;
-            }
+    Chunk *best_chunk;
+    for (int i = 0; i < g->chunk_count; i++) {
+        Chunk *chunk = g->chunks + i;
+        int a = chunk->p;
+        int b = chunk->q;
+        int c = chunk->k;
+        int index = (ABS(a) ^ ABS(b) ) % WORKERS;
+        if (index != worker->index) {
+            continue;
+        }
+        if (chunk && !chunk->dirty) {
+            continue;
+        }
+        int distance = MAX(ABS(p - a), MAX(ABS(q - b), ABS(k - c)));
+        int invisible = !chunk_visible(planes, a, b, c);
+        int priority = 0;
+        priority = chunk->buffer && chunk->dirty;
+        int score = (invisible << 24) | (priority << 16) | distance;
+        if (score < best_score) {
+            best_score = score;
+            best_chunk = chunk;
         }
     }
     if (best_score == start) {
         return;
     }
-    int a = best_a;
-    int b = best_b;
-    int load = 0;
-    Chunk *chunk = find_chunk(a, b);
-    if (!chunk) {
-      return;
-    }
+
+    Chunk *chunk = best_chunk;
     WorkerItem *item = &worker->item;
     item->p = chunk->p;
     item->q = chunk->q;
+    item->k = chunk->k;
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
-            Chunk *other = chunk;
-            if (dp || dq) {
-                other = find_chunk(chunk->p + dp, chunk->q + dq);
-            }
-            if (other) {
-                Map *block_map = malloc(sizeof(Map));
-                map_copy(block_map, &other->map);
-                item->block_maps[dp + 1][dq + 1] = block_map;
-            }
-            else {
-                item->block_maps[dp + 1][dq + 1] = 0;
+            for (int dk = -1; dk <= 1; dk++) {
+                Chunk *other = chunk;
+                if (dp || dq || dk) {
+                    other = find_chunk(chunk->p + dp, chunk->q + dq, chunk->k + dk, 0);
+                }
+                if (other) {
+                    memcpy(item->neighbour_blocks[dp + 1][dq + 1][dk + 1], other->blocks, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+                }
+                else {
+                    memset(item->neighbour_blocks[dp + 1][dq + 1][dk + 1], 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+                  }
             }
         }
     }
@@ -1048,7 +985,6 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
 
 void ensure_chunks(Player *player) {
     check_workers();
-    force_chunks(player);
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
         mtx_lock(&worker->mtx);
@@ -1083,6 +1019,7 @@ int render_chunks(Attrib *attrib, Player *player) {
     ensure_chunks(player);
     int p = chunked(s->x);
     int q = chunked(s->z);
+    int k = chunked(s->y);
     float light = get_daylight();
     float matrix[16];
     set_matrix_3d(
@@ -1101,14 +1038,26 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->timer, time_of_day());
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
-        if (chunk_distance(chunk, p, q) > g->render_radius) {
+        if (chunk_distance(chunk, p, q, k) > g->render_radius) {
             continue;
         }
-        if (!chunk_visible(
-            planes, chunk->p, chunk->q, chunk->miny, chunk->maxy))
+        if (!chunk_visible(planes, chunk->p, chunk->q, chunk->k))
         {
             continue;
         }
+        glUniform4f(attrib->extra5,
+                    (float)chunk->p * CHUNK_SIZE, (float)chunk->k * CHUNK_SIZE,
+                    (float)chunk->q * CHUNK_SIZE, 0.0);
+        float rx = 0;
+        float ry = 0;
+        float rotation[16];
+        float tmp[16];
+        mat_identity(rotation);
+        mat_rotate(tmp, 0, 1, 0, rx);
+        mat_multiply(rotation, tmp, rotation);
+        mat_rotate(tmp, cosf(rx), 0, sinf(rx), -ry);
+        mat_multiply(rotation, tmp, rotation);
+        glUniformMatrix4fv(attrib->extra6, 1, GL_FALSE, rotation);
         draw_chunk(attrib, chunk);
         result += chunk->faces;
     }
@@ -1488,48 +1437,58 @@ void handle_movement(double dt) {
         }
     }
     if (s->y < 0) {
-        s->y = highest_block(s->x, s->z) + 2;
+      s->y += 2;
     }
 }
 
 void parse_block(Chunk * chunk, int x, int y, int z, int w, State *s) {
-    Map *map = &chunk->map;
-    map_set(map, x, y, z, w);
+    chunk_set(chunk, x, y, z, w);
 
     if (player_intersects_block(2, s->x, s->y, s->z, x, y, z)) {
-        s->y = highest_block(s->x, s->z) + 2;
+        s->y += 2;
     }
 
 }
 
 void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
-    Chunk *chunk = find_chunk(p, q);
-    if(chunk) {
         g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
         int out_size = inflate_data(blocks + BLOCKS_HEADER_SIZE, size - BLOCKS_HEADER_SIZE,
                                     g->chunk_buffer, g->chunk_buffer_size);
-
+        int is_empty = 1;
         for (int x = 0; x < CHUNK_SIZE; x++) {
             for (int y = 0; y < CHUNK_SIZE; y++) {
                 for (int z = 0; z < CHUNK_SIZE; z++) {
                     int w = g->chunk_buffer[x+y*CHUNK_SIZE+z*CHUNK_SIZE*CHUNK_SIZE];
-                    if(w != 0)
-                      parse_block(chunk, p*CHUNK_SIZE+x, k*CHUNK_SIZE+y, q*CHUNK_SIZE+z, w, s);
-                 }
-            }
-        }
-        int r = 1;
-        chunk->dirty = 1;
-        /* Make all adjacent chunks dirty */
-        for (int dp = -r; dp <= r; dp++) {
-            for (int dq = -r; dq <= r; dq++) {
-                int a = chunk->p + dp;
-                int b = chunk->q + dq;
-                Chunk *c = find_chunk(a, b);
-                if (c) {
-                    c->dirty = 1;
+                    if(w != 0) {
+                      is_empty = 0;
+                      /* break all loops */
+                      x = CHUNK_SIZE;
+                      y = CHUNK_SIZE;
+                      z = CHUNK_SIZE;
+                    }
                 }
             }
+        }
+        if(!is_empty) {
+          Chunk *chunk = find_chunk(p, q, k, 1);
+          if(chunk) {
+          memcpy(chunk->blocks, g->chunk_buffer, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+          int r = 1;
+          chunk->dirty = 1;
+          /* Make all adjacent chunks dirty */
+          for (int dp = -r; dp <= r; dp++) {
+            for (int dq = -r; dq <= r; dq++) {
+              for (int dk = -r; dk <= r; dk++) {
+                int a = chunk->p + dp;
+                int b = chunk->q + dq;
+                int c = chunk->k + dk;
+                Chunk *adj = find_chunk(a, b, c, 0);
+                if (adj) {
+                  adj->dirty = 1;
+                }
+              }
+            }
+          }
         }
     }
 }
@@ -1575,9 +1534,8 @@ void parse_buffer(Packet packet) {
             {
                 me->id = pid;
                 s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
-                force_chunks(me);
                 if (uy == 0) {
-                    s->y = highest_block(s->x, s->z) + 2;
+                  s->y = 200;
                 }
             }
             int pos, amount, id;
@@ -1592,21 +1550,28 @@ void parse_buffer(Packet packet) {
                        &bp, &bq, &bx, &by, &bz, &bw) == 6) {
 
                 g->blocks_recv = g->blocks_recv + 1;
-                Chunk *chunk = find_chunk(bp, bq);
+                int k = (by / CHUNK_SIZE);
+                Chunk *chunk = find_chunk(bp, bq, k, 1);
                 if(chunk) {
-                    parse_block(chunk, bx, by, bz, bw, s);
+                    parse_block(chunk,
+                                bx, by,
+                                bz, bw, s);
                     chunk->dirty = 1;
                     /* Make any chunk that owns an adjacent block dirty as well */
                     int r = 1;
                     for (int dx = -r; dx <= r; dx++) {
                         for (int dz = -r; dz <= r; dz++) {
-                            int x = bx + dx;
-                            int z = bz + dz;
-                            int np = (x / CHUNK_SIZE) - 1;
-                            int nq = (z / CHUNK_SIZE) - 1;
-                            Chunk *c = find_chunk(np, nq);
-                            if (c) {
-                                c->dirty = 1;
+                            for (int dy = -r; dy <= r; dy++) {
+                                int x = bx + dx;
+                                int y = by + dy;
+                                int z = bz + dz;
+                                int np = (x / CHUNK_SIZE);
+                                int nq = (z / CHUNK_SIZE);
+                                int nk = (y / CHUNK_SIZE);
+                                Chunk *c = find_chunk(np, nq, nk, 0);
+                                if (c) {
+                                    c->dirty = 1;
+                                }
                             }
                         }
                     }
@@ -1796,6 +1761,8 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     block_attrib->extra2 = glGetUniformLocation(program, "daylight");
     block_attrib->extra3 = glGetUniformLocation(program, "fog_distance");
     block_attrib->extra4 = glGetUniformLocation(program, "ortho");
+    block_attrib->extra5 = glGetUniformLocation(program, "chunk");
+    block_attrib->extra6 = glGetUniformLocation(program, "rotation");
     block_attrib->camera = glGetUniformLocation(program, "camera");
     block_attrib->timer = glGetUniformLocation(program, "timer");
 
@@ -2024,13 +1991,11 @@ int main(int argc, char **argv) {
 
     Player *me = g->players;
     State *s = &g->players->state;
+    s->y = 250;
     me->id = 0;
     me->name[0] = '\0';
     me->buffer = 0;
     g->player_count = 1;
-
-    force_chunks(me);
-    s->y = highest_block(s->x, s->z) + 2;
 
     // BEGIN MAIN LOOP //
     double previous = glfwGetTime();

@@ -54,7 +54,8 @@ void render_ext_inventory_block(Attrib *attrib, int row, int col, Item block) {
     float s = 0.12 * WINDOW_WIDTH/g->width;
     float v = 0.12 * WINDOW_HEIGHT/g->height;
     float xpos = (s * EXT_INVENTORY_COLS)/-2 + s/2 + s*col;
-    float ypos = ((float)g->height - 260.0f)/(float)g->height - row * v - v/3;
+    float ypos = ((float)g->height
+                 - EXT_INVENTORY_PX_FROM_BOTTOM - 10.0f)/(float)g->height - row * v - v/3;
     int sel = 1;
 
     render_inventory_block(attrib, block.id, scale, xpos, ypos, sel);
@@ -91,7 +92,8 @@ void render_ext_inventory_text(Attrib *attrib, int row, int col, Item block) {
     float s = 0.12 * WINDOW_WIDTH/g->width;
     float v = 0.12 * WINDOW_HEIGHT/g->height;
     float x = (s * EXT_INVENTORY_COLS)/-2 + s/2 + s*col;
-    float y = (-1 * ((float)g->height - 260.0f)/(float)g->height) + row * v;
+    float y = (-1 * ((float)g->height
+              - EXT_INVENTORY_PX_FROM_BOTTOM - 10.0f)/(float)g->height) + row * v;
 
     render_inventory_number_at(attrib, block.num, x, y);
 }
@@ -202,7 +204,8 @@ void render_ext_inventory_background(Attrib *attrib) {
     float s = 0.12 * WINDOW_WIDTH/g->width;   // belt size on screen
     float v = 0.12 * WINDOW_HEIGHT/g->height;
     float px = (s*EXT_INVENTORY_COLS)/-2 + s;  // belt start x
-    float py = -1 * ((float)g->height - 250.0f)/(float)g->height;  // belt pos y
+    float py = -1 * ((float)g->height
+               - EXT_INVENTORY_PX_FROM_BOTTOM)/(float)g->height;  // belt pos y
     float t = 2;                            // selected default image
     float ts = 0.25;                        // image size (1/images)
     int lt = t;                             // image to show

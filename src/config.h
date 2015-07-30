@@ -48,6 +48,7 @@
 // extended/server inventory
 #define EXT_INVENTORY_COLS 16
 #define EXT_INVENTORY_ROWS 12
+#define EXT_INVENTORY_PX_FROM_BOTTOM 250.0f
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

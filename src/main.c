@@ -1176,7 +1176,8 @@ void on_left_click() {
         float gl_y = (ypos/g->height * 2 - 1);
 
         // Calc offset (if the window is resized)
-        gl_y = gl_y + -1 * ((float)g->height - 250.0f)/(float)g->height + v*EXT_INVENTORY_ROWS/2;
+        gl_y = gl_y + -1 * ((float)g->height - EXT_INVENTORY_PX_FROM_BOTTOM)/(float)g->height
+               + v*EXT_INVENTORY_ROWS/2;
 
         // Get selected col/row
         int col = (gl_x + EXT_INVENTORY_COLS * s)/s - EXT_INVENTORY_COLS/2;

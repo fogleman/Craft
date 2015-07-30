@@ -1437,7 +1437,7 @@ void handle_movement(double dt) {
         }
     }
     if (s->y < 0) {
-      s->y += 2;
+      s->y = 2;
     }
 }
 

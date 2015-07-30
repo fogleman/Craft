@@ -2172,12 +2172,12 @@ int main(int argc, char **argv) {
         main_render_text(me, s, player, text_attrib, blocks_recv, face_count);
 
         if (is_connected()) {
-            render_belt_background(&inventory_attrib, inventory.selected);
-            render_belt_text_blocks(&text_attrib, &block_attrib);
-
             if(g->inventory_screen) {
                 render_ext_inventory_background(&inventory_attrib);
                 render_ext_inventory_text_blocks(&text_attrib, &block_attrib);
+            } else {
+                render_belt_background(&inventory_attrib, inventory.selected);
+                render_belt_text_blocks(&text_attrib, &block_attrib);
             }
         }
 

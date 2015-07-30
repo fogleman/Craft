@@ -1175,25 +1175,28 @@ void on_left_click() {
         float gl_x = (xpos/g->width * 2 - 1);
         float gl_y = (ypos/g->height * 2 - 1);
 
+        // Calc offset (if the window is resized)
+        gl_y = gl_y + -1 * ((float)g->height - 250.0f)/(float)g->height + v*EXT_INVENTORY_ROWS/2;
+
         // Get selected col/row
         int col = (gl_x + EXT_INVENTORY_COLS * s)/s - EXT_INVENTORY_COLS/2;
-        int row = (gl_y + EXT_INVENTORY_ROWS * v)/v - EXT_INVENTORY_ROWS/2 + 0.5;
+        int row = (gl_y + EXT_INVENTORY_ROWS * v)/v - EXT_INVENTORY_ROWS/2;
 
         // The inventory is rendered upside down so...
         row = EXT_INVENTORY_ROWS - 1 - row;
 
-        // Remove to large/small values
-        row = row > EXT_INVENTORY_ROWS ? EXT_INVENTORY_ROWS : row;
-        col = col > EXT_INVENTORY_COLS ? EXT_INVENTORY_COLS : col;
-
         // Our inventory position
         int item = row*EXT_INVENTORY_COLS + col;
+
+        // Ignore to large/small selections
+        if(item < 0 || item > EXT_INVENTORY_ROWS*EXT_INVENTORY_COLS) return;
 
         // We have someting selected and an empty slot is clicked
         if (move_item.use == 1 && ext_inventory.items[item].id == 0) {
             client_move_inventory(move_item.inventory, move_item.index, 1, item);
             move_item.use = 0;
             ext_inventory.selected = -1;
+            if (DEBUG) printf("Inventory: Move slot %d to %d\n", move_item.index, item);
 
         // Select a item, if there is a item in the slot
         } else if (ext_inventory.items[item].id > 0) {
@@ -1201,6 +1204,7 @@ void on_left_click() {
             move_item.index = item;
             move_item.use = 1;
             ext_inventory.selected = item;
+            if (DEBUG) printf("Inventory: Select slot %d\n", item);
         }
 
         return;

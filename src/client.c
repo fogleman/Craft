@@ -153,6 +153,24 @@ void client_block(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+void client_konstruct() {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[16];
+    snprintf(buffer, 16, "K");
+    client_send(buffer);
+}
+
+void client_move_inventory(int from_inv, int from_item,
+                           int to_inv, int to_item) {
+    if (!client_enabled) return;
+    char buffer[1024];
+    snprintf(buffer, 1024, "R,%d,%d,%d,%d", from_inv, from_item,
+             to_inv, to_item);
+    client_send(buffer);
+}
+
 void client_light(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;

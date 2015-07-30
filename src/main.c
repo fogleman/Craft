@@ -26,8 +26,9 @@
 #include "crypto.h"
 #include "konstructs.h"
 
-static Model model;
-static Model *g = &model;
+Model model;
+Model *g = &model;
+MoveItem move_item;
 
 void init_chunk(Chunk *chunk, int p, int q, int k);
 
@@ -1161,6 +1162,55 @@ void add_message(const char *text) {
 }
 
 void on_left_click() {
+
+    if(g->inventory_screen) {
+        double xpos, ypos;
+        glfwGetCursorPos(g->window, &xpos, &ypos);
+
+        // Scale factor for the boxes
+        float s = 0.12 * WINDOW_WIDTH/g->width;
+        float v = 0.12 * WINDOW_HEIGHT/g->height;
+
+        // Position on the screen in glcoords
+        float gl_x = (xpos/g->width * 2 - 1);
+        float gl_y = (ypos/g->height * 2 - 1);
+
+        // Calc offset (if the window is resized)
+        gl_y = gl_y + -1 * ((float)g->height - EXT_INVENTORY_PX_FROM_BOTTOM)/(float)g->height
+               + v*EXT_INVENTORY_ROWS/2;
+
+        // Get selected col/row
+        int col = (gl_x + EXT_INVENTORY_COLS * s)/s - EXT_INVENTORY_COLS/2;
+        int row = (gl_y + EXT_INVENTORY_ROWS * v)/v - EXT_INVENTORY_ROWS/2;
+
+        // The inventory is rendered upside down so...
+        row = EXT_INVENTORY_ROWS - 1 - row;
+
+        // Our inventory position
+        int item = row*EXT_INVENTORY_COLS + col;
+
+        // Ignore to large/small selections
+        if(item < 0 || item > EXT_INVENTORY_ROWS*EXT_INVENTORY_COLS) return;
+
+        // We have someting selected and an empty slot is clicked
+        if (move_item.use == 1 && ext_inventory.items[item].id == 0) {
+            client_move_inventory(move_item.inventory, move_item.index, 1, item);
+            move_item.use = 0;
+            ext_inventory.selected = -1;
+            if (DEBUG) printf("Inventory: Move slot %d to %d\n", move_item.index, item);
+
+        // Select a item, if there is a item in the slot
+        } else if (ext_inventory.items[item].id > 0) {
+            move_item.inventory = 1;
+            move_item.index = item;
+            move_item.use = 1;
+            ext_inventory.selected = item;
+            if (DEBUG) printf("Inventory: Select slot %d\n", item);
+        }
+
+        return;
+    }
+
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
@@ -1253,6 +1303,16 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
         if (key == KONSTRUCTS_KEY_INVENTORY_TOGGLE) {
             g->inventory_screen = !g->inventory_screen;
+            if (g->inventory_screen) {
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            } else {
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+        }
+        if (key == KONSTRUCTS_KEY_INVENTORY_KONSTRUCT) {
+            if(g->inventory_screen) {
+                client_konstruct();
+            }
         }
         if (key == KONSTRUCTS_KEY_OBSERVE) {
             g->observe1 = (g->observe1 + 1) % g->player_count;
@@ -1315,32 +1375,39 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
     int exclusive =
         glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
-    if (action != GLFW_PRESS) {
-        return;
-    }
-    if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        if (exclusive) {
+
+    // Make sure that a mouse button was pressed
+    if (action != GLFW_PRESS) return;
+
+    switch(button) {
+        case GLFW_MOUSE_BUTTON_LEFT:
+
+            if (!exclusive) {
+                if(g->inventory_screen) {
+                    on_left_click();
+                } else {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
+                break;
+            }
+
             if (control) {
                 on_right_click();
-            }
-            else {
+            } else {
                 on_left_click();
             }
-        }
-        else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
+
+            break;
+
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            if (exclusive) on_right_click();
+            break;
+
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            if (exclusive) on_middle_click();
+            break;
     }
-    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-        if (exclusive) {
-            on_right_click();
-         }
-    }
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-        if (exclusive) {
-            on_middle_click();
-        }
-    }
+
 }
 
 void create_window() {
@@ -1539,9 +1606,21 @@ void parse_buffer(Packet packet) {
                 }
             }
             int pos, amount, id;
+            int inv = 0;
+#if PROTOCOL_VERSION == 3
             if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
-                inventory.items[pos].id = id;
-                inventory.items[pos].num = amount;
+#else
+            if (sscanf(line, "I,%d,%d,%d,%d", &inv, &pos, &amount, &id) == 4) {
+#endif
+                if (inv == 0) {
+                    inventory.items[pos].id = id;
+                    inventory.items[pos].num = amount;
+                } else {
+                    ext_inventory.items[pos].id = id;
+                    ext_inventory.items[pos].num = amount;
+                    ext_inventory.items[pos].show = id == -1 ? 0 : 1;
+                    g->inventory_screen = 1;
+                }
             }
             if (sscanf(line, "A,%d", &id) == 1) {
                 inventory.selected = id;
@@ -1669,12 +1748,25 @@ int init_winsock() { return 0; }
 #endif
 
 int init_inventory() {
+
+    // player inventory/belt
     inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].id = 0;
         inventory.items[item].num = 0;
+        inventory.items[item].show = 1;
     }
     inventory.selected = 0;
+
+    // external inventory
+    ext_inventory.items = calloc(EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS, sizeof(Item));
+    for (int item = 0; item < EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS; item ++) {
+        ext_inventory.items[item].id = 0;
+        ext_inventory.items[item].num = 0;
+        ext_inventory.items[item].show = 1;
+    }
+    ext_inventory.selected = -1;
+
 }
 
 void shtxt_path(const char *name, const char *type, char *path, size_t max_len) {
@@ -1803,7 +1895,6 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     inventory_attrib->program = program;
     inventory_attrib->position = glGetAttribLocation(program, "position");
     inventory_attrib->uv = glGetAttribLocation(program, "uv");
-    inventory_attrib->matrix = glGetUniformLocation(program, "matrix");
     inventory_attrib->sampler = glGetUniformLocation(program, "sampler");
 
 }
@@ -1930,6 +2021,8 @@ int main(int argc, char **argv) {
     g->server_addr[0] = '\0';
     g->server_user[0] = '\0';
     g->server_pass[0] = '\0';
+
+    move_item.use = 0;
 
     sprintf(g->text_message, "Press T to access the console");
     sprintf(g->text_prompt, "Server");
@@ -2079,14 +2172,12 @@ int main(int argc, char **argv) {
         main_render_text(me, s, player, text_attrib, blocks_recv, face_count);
 
         if (is_connected()) {
-            render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                0, 0.8, 1, inventory.selected, 0, g->width, g->height);
-
             if(g->inventory_screen) {
-                for (int invnr=0; invnr < INVENTORY_ROWS; invnr++) {
-                    render_inventory(&inventory_attrib, &block_attrib, &text_attrib,
-                        0.5, 0.4 + -0.2 * invnr, 0.8, -1, invnr, g->width, g->height);
-                }
+                render_ext_inventory_background(&inventory_attrib);
+                render_ext_inventory_text_blocks(&text_attrib, &block_attrib);
+            } else {
+                render_belt_background(&inventory_attrib, inventory.selected);
+                render_belt_text_blocks(&text_attrib, &block_attrib);
             }
         }
 

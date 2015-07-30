@@ -6,6 +6,7 @@
 typedef struct {
     int id;
     int num;
+    int show;
 } Item;
 
 typedef struct {
@@ -13,19 +14,19 @@ typedef struct {
     int selected;
 } Inventory;
 
-void make_inventory(float *data, float x, float y, float n, float m, int s);
-GLuint gen_inventory_buffers(float x, float y, float n, int sel);
-void draw_inventory(Attrib *attrib, GLuint buffer, int length);
-void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, float scale,
-		int width, int height, int sel);
-void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, float scale, int ioffs,
-		int width, int height);
-void render_inventory_bar(Attrib *attrib, float x, float y, float scale, int sel, int width, int height);
-void render_inventory_text(Attrib *attrib, Item item, float x, float y, float scale, int width, int height);
-void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int ioffs, int width, int height);
-void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
-	float xoffs, float yoffs, float scale, int sel, int row, int width, int height);
+typedef struct {
+    int use;
+    int inventory;
+    int index;
+} MoveItem;
+
+void render_belt_background(Attrib *inventory_attrib, int selected);
+void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib);
+void render_ext_inventory_background(Attrib *attrib);
+void render_ext_inventory_text_blocks(Attrib *text_attrib, Attrib *block_attrib);
 
 extern Inventory inventory;
+extern Inventory ext_inventory;
+extern MoveItem move_item;
 
 #endif

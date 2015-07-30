@@ -7,72 +7,31 @@
 #include "inventory.h"
 
 Inventory inventory;
+Inventory ext_inventory;
+Model *g;
 
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
-void make_inventory(float *data, float x, float y, float n, float m, int s) {
-    float *d = data;
-    float z = 0.5;
-    float a = z;
-    float b = z * 2;
-    int w = s;
-    float du = w * a;
-    float p = 0;
-    *(d++) = x - n; *(d++) = y - m;
-    *(d++) = du + 0; *(d++) = p;
-    *(d++) = x + n; *(d++) = y - m;
-    *(d++) = du + a; *(d++) = p;
-    *(d++) = x + n; *(d++) = y + m;
-    *(d++) = du + a; *(d++) = b - p;
-    *(d++) = x - n; *(d++) = y - m;
-    *(d++) = du + 0; *(d++) = p;
-    *(d++) = x + n; *(d++) = y + m;
-    *(d++) = du + a; *(d++) = b - p;
-    *(d++) = x - n; *(d++) = y + m;
-    *(d++) = du + 0; *(d++) = b - p;
-}
-
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
-GLuint gen_inventory_buffers(float x, float y, float n, int sel) {
-    int length = INVENTORY_SLOTS;
-    GLfloat *data = malloc_faces(4, length);
-    x -= n * (length - 1) / 2;
-    for (int i = 0; i < length; i ++) {
-        make_inventory(data + i * 24, x, y, n / 2, n / 2, sel == i ? 1 : 0);
-        x += n;
-    }
-    return gen_faces(4, length, data);
-}
-
-// From https://github.com/CouleeApps/Craft/tree/mining_crafting
-void draw_inventory(Attrib *attrib, GLuint buffer, int length) {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_2d(attrib, buffer, length * 6);
-    glDisable(GL_BLEND);
-}
-
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, float scale,
-        int width, int height, int sel) {
+// Render a cube with ID w at x, y. This function is used to render the inventory
+// blocks, like the belt and the inventory screen.
+void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, int sel) {
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
     glUniform1f(attrib->timer, PI*2);
     glUniform4f(attrib->extra5,0.0, 0.0, 0.0, 0.0);
-    float matrix[16];
-    GLuint buffer;
-    set_matrix_item_offs(matrix, width, height, 0.65 * scale, xpos, ypos, sel);
-    if (is_plant(item.id)) {
-        glDeleteBuffers(1, &buffer);
-        buffer = gen_plant_buffer(0, 0, 0, 0.5, item.id);
-    } else {
-        buffer = gen_cube_buffer(0, 0, 0, 0.5, item.id);
-    }
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     float identity[16];
     mat_identity(identity);
     glUniformMatrix4fv(attrib->extra6, 1, GL_FALSE, identity);
-    if (is_plant(item.id)) {
+    float matrix[16];
+    GLuint buffer;
+    set_matrix_item_offs(matrix, g->width, g->height, s, x, y, sel);
+    if (is_plant(w)) {
+        glDeleteBuffers(1, &buffer);
+        buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
+    } else {
+        buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
+    }
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    if (is_plant(w)) {
         draw_plant(attrib, buffer);
     } else {
         draw_cube(attrib, buffer);
@@ -80,66 +39,226 @@ void render_inventory_item(Attrib *attrib, Item item, float xpos, float ypos, fl
     del_buffer(buffer);
 }
 
-void render_inventory_items(Attrib *attrib, float xoffs, float yoffs, float scale, int ioffs,
-        int width, int height) {
-    for (int item = ioffs; item < ioffs+INVENTORY_SLOTS; item ++) {
-        Item block = inventory.items[item];
-        if (block.id == 0 || block.num == 0) continue;
+// Render a block at the belt at position pos.
+void render_belt_block(Attrib *attrib, int pos, Item block) {
 
-        float slotoff = -1 *  ((float)item - (float)(INVENTORY_SLOTS - 1) / 2);
-        float xpos = slotoff * ((0.125*scale*1024)/width) + xoffs;
+    float scale = 0.7;      // block scale
+    float s = 0.15 * WINDOW_WIDTH/g->width;
+    float xpos = (s * INVENTORY_SLOTS)/-2 + s/2 + s*pos;
+    float ypos = ((float)g->height - 120.0f)/(float)g->height;
+    int sel = inventory.selected == INVENTORY_SLOTS - pos - 1 ? 1 : 0;
 
-        int sel = inventory.selected == item ? 1 : 0;
-        render_inventory_item(attrib, block, xpos, yoffs, scale, width, height, sel);
-    }
+    render_inventory_block(attrib, block.id, scale, xpos, ypos, sel);
 }
 
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_bar(Attrib *attrib, float x, float y, float scale, int sel,
-        int width, int height) {
-    float matrix[16];
-    set_matrix_2d(matrix, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform1i(attrib->sampler, 4); // GL_TEXTURE4
-    GLuint inv_buffer = gen_inventory_buffers((width/2)*(x*-1+1), (height/2)*(y*-1+1), 64*scale, sel);
-    draw_inventory(attrib, inv_buffer, INVENTORY_SLOTS);
-    del_buffer(inv_buffer);
+// Render a block in the inventory at col and row.
+void render_ext_inventory_block(Attrib *attrib, int row, int col, Item block) {
+
+    float scale = 0.5;      // block scale
+    float s = 0.12 * WINDOW_WIDTH/g->width;
+    float v = 0.12 * WINDOW_HEIGHT/g->height;
+    float xpos = (s * EXT_INVENTORY_COLS)/-2 + s/2 + s*col;
+    float ypos = ((float)g->height
+                 - EXT_INVENTORY_PX_FROM_BOTTOM - 10.0f)/(float)g->height - row * v - v/3;
+    int sel = 1;
+
+    render_inventory_block(attrib, block.id, scale, xpos, ypos, sel);
 }
 
-// Modified version from https://github.com/CouleeApps/Craft/tree/mining_crafting
-void render_inventory_text(Attrib *attrib, Item item, float x, float y, float scale,
-        int width, int height) {
+// Render a text displaying a int at x, y (opengl coords)
+void render_inventory_number_at(Attrib *attrib, int num, float x, float y) {
+    int nx = (g->width / 2)  + (g->width / 2)  * x;
+    int ny = (g->height / 2) + (g->height / 2) * y;
+
     float matrix[16];
-    set_matrix_2d(matrix, width, height);
+    mat_ortho(matrix, 0, g->width, 0, g->height, -1, 10);
     glUseProgram(attrib->program);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 1); // GL_TEXTURE1
     char text_buffer[16];
-    float ts = 12*scale;
-    snprintf(text_buffer, 16, "%02d", item.num);
-    x += ts * strlen(text_buffer);
-    print(attrib, 1, x, y, ts, text_buffer);
+    snprintf(text_buffer, 16, "%02d", num);
+    print(attrib, 1, nx, ny, 12, text_buffer);
 }
 
-void render_inventory_texts(Attrib *attrib, float x, float y, float scale, int ioffs, int width, int height) {
-    for (int item = ioffs; item < ioffs + INVENTORY_SLOTS; item ++) {
+// Render the text at the belt.
+void render_belt_text(Attrib *attrib, int pos, Item block) {
+
+    float s = 0.15 * WINDOW_WIDTH/g->width;
+    float x = (s * INVENTORY_SLOTS)/-2 + s/2 + s*pos;
+    float y = -1 * ((float)g->height - 70.0f)/(float)g->height;
+
+    render_inventory_number_at(attrib, block.num, x, y);
+}
+
+// Render the text in the inventory.
+void render_ext_inventory_text(Attrib *attrib, int row, int col, Item block) {
+
+    float s = 0.12 * WINDOW_WIDTH/g->width;
+    float v = 0.12 * WINDOW_HEIGHT/g->height;
+    float x = (s * EXT_INVENTORY_COLS)/-2 + s/2 + s*col;
+    float y = (-1 * ((float)g->height
+              - EXT_INVENTORY_PX_FROM_BOTTOM - 10.0f)/(float)g->height) + row * v;
+
+    render_inventory_number_at(attrib, block.num, x, y);
+}
+
+// Called from main loop, renders the belt's blocks and texts.
+void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
+    for (int item = 0; item < INVENTORY_SLOTS; item ++) {
         Item block = inventory.items[item];
         if (block.id == 0 || block.num <= 0) continue;
-
-        float tx = (width/2)*(x*-1+1) - (INVENTORY_SLOTS * 64*scale)/2 + (item * 64*scale) + 12*scale;
-        float ty = (height/2)*(y*-1+1) - 32*scale;
-        render_inventory_text(attrib, block, tx, ty, scale, width, height);
+        render_belt_text(text_attrib, item, block);
+        render_belt_block(block_attrib, INVENTORY_SLOTS - item - 1, block);
     }
 }
 
-void render_inventory(Attrib *window_attrib, Attrib *block_attrib, Attrib *text_attrib,
-        float xoffs, float yoffs, float scale, int sel, int row, int width, int height) {
-    int ioffs = INVENTORY_SLOTS * row;
-    render_inventory_bar(window_attrib, xoffs, yoffs, scale, sel, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_items(block_attrib, xoffs, yoffs, scale, ioffs, width, height);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    render_inventory_texts(text_attrib, xoffs, yoffs, scale, ioffs, width, height);
+// Called from main loop, renders the inventory blocks and texts.
+void render_ext_inventory_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
+    for (int i = 0; i < EXT_INVENTORY_ROWS; i ++) {
+        for (int j = 0; j < EXT_INVENTORY_COLS; j ++) {
+            Item block = ext_inventory.items[i*EXT_INVENTORY_COLS + j];
+            if (block.id == 0 || block.num <= 0) continue;
+            render_ext_inventory_block(block_attrib, i, EXT_INVENTORY_COLS - j - 1, block);
+            render_ext_inventory_text(text_attrib, i, j, block);
+        }
+    }
 }
+
+// Prep a vertex array and vertex buffer object.
+void prep_2dtexture_buffers(GLuint *vao, GLuint *vbo) {
+    glGenVertexArrays(1, vao);
+    glBindVertexArray(*vao);
+
+    glGenBuffers(1, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+}
+
+// Ask the graphic card to render the already provided buffer.
+void render_2dtexture(Attrib *attrib, int num) {
+    glUseProgram(attrib->program);
+    glUniform1i(attrib->sampler, 4);
+
+    glEnableVertexAttribArray(attrib->position);
+    glVertexAttribPointer(attrib->position, 2, GL_FLOAT, GL_FALSE,
+                          4*sizeof(GLfloat),
+                          0);
+
+    glEnableVertexAttribArray(attrib->uv);
+    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+                          4*sizeof(GLfloat),
+                          (void*)(2*sizeof(float)));
+
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDrawArrays(GL_TRIANGLES, 0, num);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+}
+
+// Render the 2d texture background for our belt.
+void render_belt_background(Attrib *attrib, int selected) {
+
+    GLuint vao, vbo;
+    prep_2dtexture_buffers(&vao, &vbo);
+
+    GLfloat vertex_data[INVENTORY_SLOTS * 6 * 4];
+
+    float s = 0.15 * WINDOW_WIDTH/g->width; // belt size on screen
+    float px = (s*INVENTORY_SLOTS)/-2 + s;  // belt start x
+    float py = -1 * ((float)g->height - 50.0f)/(float)g->height;  // belt pos y
+    float t = 0;                            // selected default image
+    float ts = 0.25;                        // image size (1/images)
+    int lt = t;                             // image to show
+
+    // Generate matrix for all inventory belt slots
+    for (int i=0; i<INVENTORY_SLOTS; i++) {
+
+        lt = selected == i ? t + 1 : t;
+
+        GLfloat side[] = {
+        //   X            Y      U           V
+             (i*s)+px-s,  py+s,  (ts*lt),    1.0f,
+             (i*s)+px,    py,    (ts*lt)+ts, 0.0f,
+             (i*s)+px-s,  py,    (ts*lt),    0.0f,
+
+             (i*s)+px,    py+s,  (ts*lt)+ts, 1.0f,
+             (i*s)+px,    py,    (ts*lt)+ts, 0.0f,
+             (i*s)+px-s,  py+s,  (ts*lt),    1.0f,
+        };
+        memcpy(vertex_data + 6*4*i, side, sizeof(float)*6*4);
+    }
+
+    // Load vertex_data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+
+    render_2dtexture(attrib, INVENTORY_SLOTS * 6);
+}
+
+// Render the 2d texture background for the inventory.
+void render_ext_inventory_background(Attrib *attrib) {
+
+    GLuint vao, vbo;
+    prep_2dtexture_buffers(&vao, &vbo);
+
+    GLfloat vertex_data[EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS * 6 * 4];
+
+    float s = 0.12 * WINDOW_WIDTH/g->width;   // belt size on screen
+    float v = 0.12 * WINDOW_HEIGHT/g->height;
+    float px = (s*EXT_INVENTORY_COLS)/-2 + s;  // belt start x
+    float py = -1 * ((float)g->height
+               - EXT_INVENTORY_PX_FROM_BOTTOM)/(float)g->height;  // belt pos y
+    float t = 2;                            // selected default image
+    float ts = 0.25;                        // image size (1/images)
+    int lt = t;                             // image to show
+
+    // Generate matrix for all inventory belt slots
+    for (int i=0; i<EXT_INVENTORY_ROWS; i++) {
+        for (int j=0; j<EXT_INVENTORY_COLS; j++) {
+            if (ext_inventory.items[i*EXT_INVENTORY_COLS + j].show == 0) {
+                GLfloat side[] = {
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f
+                };
+
+                memcpy(vertex_data + 6*4 * (i*EXT_INVENTORY_COLS + j),
+                    side, sizeof(float)*6*4);
+            } else {
+
+                // Select the next texture if, this slot is selected
+                if (ext_inventory.selected == i*EXT_INVENTORY_COLS + j) {
+                    lt = t + 1;
+                } else {
+                    lt = t;
+                }
+
+                GLfloat side[] = {
+                //   X           Y            U           V
+                    (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
+                    (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
+                    (j*s)+px-s,  (i*v)+py,    (ts*lt),    0.0f,
+
+                    (j*s)+px,    (i*v)+py+v,  (ts*lt)+ts, 1.0f,
+                    (j*s)+px,    (i*v)+py,    (ts*lt)+ts, 0.0f,
+                    (j*s)+px-s,  (i*v)+py+v,  (ts*lt),    1.0f,
+                };
+
+                memcpy(vertex_data + 6*4 * (i*EXT_INVENTORY_COLS + j),
+                    side, sizeof(float)*6*4);
+            }
+
+        }
+    }
+
+    // Load vertex_data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+
+    render_2dtexture(attrib, EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS * 6);
+}
+

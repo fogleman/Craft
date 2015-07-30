@@ -1489,7 +1489,7 @@ void handle_movement(double dt) {
     vy = vy * ut * speed;
     vz = vz * ut * speed;
     for (int i = 0; i < step; i++) {
-        if (g->flying) {
+        if (g->flying || !find_chunk(chunked(s->x), chunked(s->z), chunked(s->y), 0)) {
             dy = 0;
         }
         else {
@@ -1518,44 +1518,27 @@ void parse_block(Chunk * chunk, int x, int y, int z, int w, State *s) {
 }
 
 void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
-        g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-        int out_size = inflate_data(blocks + BLOCKS_HEADER_SIZE, size - BLOCKS_HEADER_SIZE,
-                                    g->chunk_buffer, g->chunk_buffer_size);
-        int is_empty = 1;
-        for (int x = 0; x < CHUNK_SIZE; x++) {
-            for (int y = 0; y < CHUNK_SIZE; y++) {
-                for (int z = 0; z < CHUNK_SIZE; z++) {
-                    int w = g->chunk_buffer[x+y*CHUNK_SIZE+z*CHUNK_SIZE*CHUNK_SIZE];
-                    if(w != 0) {
-                      is_empty = 0;
-                      /* break all loops */
-                      x = CHUNK_SIZE;
-                      y = CHUNK_SIZE;
-                      z = CHUNK_SIZE;
+    g->blocks_recv = g->blocks_recv + CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+    int out_size = inflate_data(blocks + BLOCKS_HEADER_SIZE, size - BLOCKS_HEADER_SIZE,
+                                g->chunk_buffer, g->chunk_buffer_size);
+    Chunk *chunk = find_chunk(p, q, k, 1);
+    if(chunk) {
+        memcpy(chunk->blocks, g->chunk_buffer, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+        int r = 1;
+        chunk->dirty = 1;
+        /* Make all adjacent chunks dirty */
+        for (int dp = -r; dp <= r; dp++) {
+            for (int dq = -r; dq <= r; dq++) {
+                for (int dk = -r; dk <= r; dk++) {
+                    int a = chunk->p + dp;
+                    int b = chunk->q + dq;
+                    int c = chunk->k + dk;
+                    Chunk *adj = find_chunk(a, b, c, 0);
+                    if (adj) {
+                        adj->dirty = 1;
                     }
                 }
             }
-        }
-        if(!is_empty) {
-          Chunk *chunk = find_chunk(p, q, k, 1);
-          if(chunk) {
-          memcpy(chunk->blocks, g->chunk_buffer, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
-          int r = 1;
-          chunk->dirty = 1;
-          /* Make all adjacent chunks dirty */
-          for (int dp = -r; dp <= r; dp++) {
-            for (int dq = -r; dq <= r; dq++) {
-              for (int dk = -r; dk <= r; dk++) {
-                int a = chunk->p + dp;
-                int b = chunk->q + dq;
-                int c = chunk->k + dk;
-                Chunk *adj = find_chunk(a, b, c, 0);
-                if (adj) {
-                  adj->dirty = 1;
-                }
-              }
-            }
-          }
         }
     }
 }

@@ -3,7 +3,7 @@ set -x
 
 # Install packages
 sudo apt-get -y install ruby-dev rubygems rpm
-sudo gem install fpm --no-ri --no-rdoc
+sudo gem install fpm -v 1.3.3 --no-ri --no-rdoc
 
 # Install
 sudo mv konstructs /usr/local/bin/konstructs-client

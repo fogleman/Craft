@@ -2251,9 +2251,6 @@ void main_connect() {
     //hash_password(in_hash, out_hash);
     client_version(PROTOCOL_VERSION, g->server_user, in_hash);
 
-    // Ask server for inventory
-    client_inventory();
-
     // Ask for the initial chunk
     request_chunks();
 

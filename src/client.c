@@ -110,13 +110,6 @@ void client_position(float x, float y, float z, float rx, float ry) {
     client_send(buffer);
 }
 
-void client_inventory() {
-    if (!client_enabled) {
-        return;
-    }
-    client_send("I");
-}
-
 void client_inventory_select(int pos) {
     if (!client_enabled) {
         return;

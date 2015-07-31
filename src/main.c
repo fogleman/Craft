@@ -2282,15 +2282,18 @@ int main(int argc, char **argv) {
     g->server_user[0] = '\0';
     g->server_pass[0] = '\0';
 
-    if (argc == 1) {
-        strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
-    }
-
     move_item.use = 0;
 
-    sprintf(g->text_message, "Press T to access the console");
-    sprintf(g->text_prompt, "Server");
-
+    if (argc == 4) {
+        strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+        strncpy(g->server_user, argv[2], MAX_NAME_LENGTH);
+        strncpy(g->server_pass, argv[3], 64);
+        g->text_message[0] = '\0';
+        g->text_prompt[0] = '\0';
+    } else {
+        sprintf(g->text_message, "Press T to access the console");
+        sprintf(g->text_prompt, "Server");
+    }
 
     if (glfwInit() == GL_FALSE) {
         printf("Failed to init glfw");

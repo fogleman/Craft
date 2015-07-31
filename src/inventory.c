@@ -38,6 +38,11 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
     del_buffer(buffer);
 }
 
+// Render a block in the hand
+void render_hand_block(Attrib *attrib, Item block) {
+    render_inventory_block(attrib, block.id, 4.0, -0.8, 0.8, 0);
+}
+
 // Render a block at the belt at position pos.
 void render_belt_block(Attrib *attrib, int pos, Item block) {
 
@@ -109,6 +114,7 @@ void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
         render_belt_text(text_attrib, item, block);
         render_belt_block(block_attrib, INVENTORY_SLOTS - item - 1, block);
     }
+    render_hand_block(block_attrib, inventory.items[inventory.selected]);
 }
 
 // Called from main loop, renders the inventory blocks and texts.

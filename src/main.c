@@ -2282,6 +2282,10 @@ int main(int argc, char **argv) {
     g->server_user[0] = '\0';
     g->server_pass[0] = '\0';
 
+    if (argc == 1) {
+        strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+    }
+
     move_item.use = 0;
 
     sprintf(g->text_message, "Press T to access the console");

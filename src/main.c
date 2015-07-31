@@ -1854,15 +1854,9 @@ void parse_buffer(Packet packet) {
                   s->y = 200;
                 }
             }
-            int pos, amount, id;
-            int inv = 0;
-#if PROTOCOL_VERSION == 3
-            if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
-            if (DEBUG) printf("Proto[I]: %d %d %d\n", pos, amount, id);
-#else
+            int pos, amount, id, inv;
             if (sscanf(line, "I,%d,%d,%d,%d", &inv, &pos, &amount, &id) == 4) {
             if (DEBUG) printf("Proto[I]: %d %d %d %d\n", inv, pos, amount, id);
-#endif
                 if (inv == 0) {
                     inventory.items[pos].id = id;
                     inventory.items[pos].num = amount;

@@ -58,6 +58,6 @@
 
 // protocol parameters
 #define BLOCKS_HEADER_SIZE 2
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
 
 #endif

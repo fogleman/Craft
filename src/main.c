@@ -1855,17 +1855,17 @@ void parse_buffer(Packet packet) {
                 }
             }
             int pos, amount, id, inv;
-            if (sscanf(line, "I,%d,%d,%d,%d", &inv, &pos, &amount, &id) == 4) {
-            if (DEBUG) printf("Proto[I]: %d %d %d %d\n", inv, pos, amount, id);
-                if (inv == 0) {
-                    inventory.items[pos].id = id;
-                    inventory.items[pos].num = amount;
-                } else {
-                    ext_inventory.items[pos].id = id;
-                    ext_inventory.items[pos].num = amount;
-                    ext_inventory.items[pos].show = id == -1 ? 0 : 1;
-                    g->inventory_screen = 1;
-                }
+            if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
+                if (DEBUG) printf("Proto[I]: %d %d %d\n", pos, amount, id);
+                ext_inventory.items[pos].id = id;
+                ext_inventory.items[pos].num = amount;
+                ext_inventory.items[pos].show = id == -1 ? 0 : 1;
+                g->inventory_screen = 1;
+            }
+            if (sscanf(line, "G,%d,%d,%d", &pos, &amount, &id) == 3) {
+                if (DEBUG) printf("Proto[G]: %d %d %d\n", pos, amount, id);
+                inventory.items[pos].id = id;
+                inventory.items[pos].num = amount;
             }
             if (sscanf(line, "A,%d", &id) == 1) {
                 if (DEBUG) printf("Proto[A]: %d\n", id);

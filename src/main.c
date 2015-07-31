@@ -1046,19 +1046,19 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             continue;
         }
-        glUniform4f(attrib->extra5,
-                    (float)chunk->p * CHUNK_SIZE, (float)chunk->k * CHUNK_SIZE,
-                    (float)chunk->q * CHUNK_SIZE, 0.0);
+
         float rx = 0;
         float ry = 0;
-        float rotation[16];
+        float translation[16];
         float tmp[16];
-        mat_identity(rotation);
+        mat_identity(translation);
+        mat_translate(tmp, (float)chunk->p * CHUNK_SIZE, (float)chunk->k * CHUNK_SIZE, (float)chunk->q * CHUNK_SIZE);
+        mat_multiply(translation, tmp, translation);
         mat_rotate(tmp, 0, 1, 0, rx);
-        mat_multiply(rotation, tmp, rotation);
+        mat_multiply(translation, tmp, translation);
         mat_rotate(tmp, cosf(rx), 0, sinf(rx), -ry);
-        mat_multiply(rotation, tmp, rotation);
-        glUniformMatrix4fv(attrib->extra6, 1, GL_FALSE, rotation);
+        mat_multiply(translation, tmp, translation);
+        glUniformMatrix4fv(attrib->extra5, 1, GL_FALSE, translation);
         draw_chunk(attrib, chunk);
         result += chunk->faces;
     }
@@ -1836,8 +1836,7 @@ int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
     block_attrib->extra2 = glGetUniformLocation(program, "daylight");
     block_attrib->extra3 = glGetUniformLocation(program, "fog_distance");
     block_attrib->extra4 = glGetUniformLocation(program, "ortho");
-    block_attrib->extra5 = glGetUniformLocation(program, "chunk");
-    block_attrib->extra6 = glGetUniformLocation(program, "rotation");
+    block_attrib->extra5 = glGetUniformLocation(program, "translation");
     block_attrib->camera = glGetUniformLocation(program, "camera");
     block_attrib->timer = glGetUniformLocation(program, "timer");
 

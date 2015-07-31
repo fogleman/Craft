@@ -17,10 +17,9 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
     glUniform1f(attrib->timer, PI*2);
-    glUniform4f(attrib->extra5,0.0, 0.0, 0.0, 0.0);
     float identity[16];
     mat_identity(identity);
-    glUniformMatrix4fv(attrib->extra6, 1, GL_FALSE, identity);
+    glUniformMatrix4fv(attrib->extra5, 1, GL_FALSE, identity);
     float matrix[16];
     GLuint buffer;
     set_matrix_item_offs(matrix, g->width, g->height, s, x, y, sel);
@@ -261,4 +260,3 @@ void render_ext_inventory_background(Attrib *attrib) {
 
     render_2dtexture(attrib, EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS * 6);
 }
-

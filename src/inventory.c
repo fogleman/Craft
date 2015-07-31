@@ -22,7 +22,7 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
     glUniformMatrix4fv(attrib->extra5, 1, GL_FALSE, identity);
     float matrix[16];
     GLuint buffer;
-    set_matrix_item_offs(matrix, g->width, g->height, s, x, y, sel);
+    set_matrix_item_r(matrix, g->width, g->height, s, x, y, sel ? -PI/8 : -PI/4, -PI/10);
     if (is_plant(w)) {
         glDeleteBuffers(1, &buffer);
         buffer = gen_plant_buffer(0, 0, 0, 0.5, w);

@@ -1847,6 +1847,7 @@ void parse_buffer(Packet packet) {
             if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
                        &pid, &ux, &uy, &uz, &urx, &ury) == 6)
             {
+                if (DEBUG) printf("Proto[U]: %d %f %f %f %f %f\n",pid, ux, uy, uz, urx, ury);
                 me->id = pid;
                 s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
                 if (uy == 0) {
@@ -1857,8 +1858,10 @@ void parse_buffer(Packet packet) {
             int inv = 0;
 #if PROTOCOL_VERSION == 3
             if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
+            if (DEBUG) printf("Proto[I]: %d %d %d\n", pos, amount, id);
 #else
             if (sscanf(line, "I,%d,%d,%d,%d", &inv, &pos, &amount, &id) == 4) {
+            if (DEBUG) printf("Proto[I]: %d %d %d %d\n", inv, pos, amount, id);
 #endif
                 if (inv == 0) {
                     inventory.items[pos].id = id;
@@ -1871,6 +1874,7 @@ void parse_buffer(Packet packet) {
                 }
             }
             if (sscanf(line, "A,%d", &id) == 1) {
+                if (DEBUG) printf("Proto[A]: %d\n", id);
                 inventory.selected = id;
             }
             if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
@@ -1938,16 +1942,19 @@ void parse_buffer(Packet packet) {
             }
             if (sscanf(line, "D,%d", &pid) == 1) {
                 delete_player(pid);
+                if (DEBUG) printf("Proto[D]: %d\n", pid);
             }
             double elapsed;
             int day_length;
             if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
+                if (DEBUG) printf("Proto[E]: %lf %d\n", elapsed, day_length);
                 glfwSetTime(fmod(elapsed, day_length));
                 g->day_length = day_length;
                 g->time_changed = 1;
             }
             if (line[0] == 'T' && line[1] == ',') {
                 char *text = line + 2;
+                if (DEBUG) printf("Proto[T]: %s\n", text);
                 add_message(text);
             }
             char format[64];

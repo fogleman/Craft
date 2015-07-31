@@ -16,7 +16,6 @@ typedef struct {
 
 typedef struct {
     int use;
-    int inventory;
     int index;
 } MoveItem;
 

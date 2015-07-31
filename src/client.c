@@ -155,12 +155,10 @@ void client_konstruct() {
     client_send(buffer);
 }
 
-void client_move_inventory(int from_inv, int from_item,
-                           int to_inv, int to_item) {
+void client_move_inventory(int from_item, int to_item) {
     if (!client_enabled) return;
     char buffer[1024];
-    snprintf(buffer, 1024, "R,%d,%d,%d,%d", from_inv, from_item,
-             to_inv, to_item);
+    snprintf(buffer, 1024, "R,%d,%d", from_item, to_item);
     client_send(buffer);
 }
 

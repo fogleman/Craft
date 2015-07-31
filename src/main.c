@@ -1459,14 +1459,13 @@ void on_left_click() {
 
         // We have someting selected and an empty slot is clicked
         if (move_item.use == 1 && ext_inventory.items[item].id == 0) {
-            client_move_inventory(move_item.inventory, move_item.index, 1, item);
+            client_move_inventory(move_item.index, item);
             move_item.use = 0;
             ext_inventory.selected = -1;
             if (DEBUG) printf("Inventory: Move slot %d to %d\n", move_item.index, item);
 
         // Select a item, if there is a item in the slot
         } else if (ext_inventory.items[item].id > 0) {
-            move_item.inventory = 1;
             move_item.index = item;
             move_item.use = 1;
             ext_inventory.selected = item;

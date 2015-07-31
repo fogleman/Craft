@@ -242,11 +242,12 @@ void set_matrix_item(float *matrix, int width, int height, int scale) {
     float xoffset = 1 - (scale * 64) / width * 2;
     float yoffset = 1 - (scale * 64) / height * 2;
 
-    set_matrix_item_r(matrix, width, height, scale * 64, xoffset, yoffset, -PI/4, -PI/10);
+    set_matrix_item_r(matrix, width, height, scale * 64, xoffset, yoffset,
+                      -PI/4, -PI/10, 0);
 }
 
 void set_matrix_item_r(float *matrix, int width, int height, float scale,
-        float xoffset, float yoffset, float rx, float ry) {
+        float xoffset, float yoffset, float rx, float ry, float rz) {
     float a[16];
     float b[16];
     float aspect = (float)width / height;
@@ -257,7 +258,9 @@ void set_matrix_item_r(float *matrix, int width, int height, float scale,
     mat_multiply(a, b, a);
     mat_rotate(b, 1, 0, 0, ry);
     mat_multiply(a, b, a);
-    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 1);
+    mat_rotate(b, 0, 0, 1, rz);
+    mat_multiply(a, b, a);
+    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 2);
     mat_multiply(a, b, a);
     mat_translate(b, -xoffset, -yoffset, 0);
     mat_multiply(a, b, a);

@@ -2442,6 +2442,7 @@ int main(int argc, char **argv) {
             } else {
                 render_belt_background(&inventory_attrib, inventory.selected);
                 render_belt_text_blocks(&text_attrib, &block_attrib);
+                render_hand_blocks(&block_attrib);
             }
         }
 

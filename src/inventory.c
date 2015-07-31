@@ -12,7 +12,7 @@ Model *g;
 
 // Render a cube with ID w at x, y. This function is used to render the inventory
 // blocks, like the belt and the inventory screen.
-void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, int sel) {
+void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, int flag) {
     glUseProgram(attrib->program);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0); // GL_TEXTURE0
@@ -22,12 +22,32 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
     glUniformMatrix4fv(attrib->extra5, 1, GL_FALSE, identity);
     float matrix[16];
     GLuint buffer;
-    set_matrix_item_r(matrix, g->width, g->height, s, x, y, sel ? -PI/8 : -PI/4, -PI/10);
+
+    // Default block rotations
+    float rx = -PI/4;
+    float ry = -PI/10;
+    float rz = 0;
+    float dy = 0;
+
+    switch (flag) {
+        case 1:
+            rx = -PI/8;
+            break;
+        case 2:
+            rx = -PI/8;
+            ry = -PI/10;
+            rz = -PI/16;
+            dy = -1.0;
+            break;
+    }
+
+    set_matrix_item_r(matrix, g->width, g->height, s, x, y, rx, ry, rz);
+
     if (is_plant(w)) {
         glDeleteBuffers(1, &buffer);
-        buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
+        buffer = gen_plant_buffer(0, 0, dy, 0.5, w);
     } else {
-        buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
+        buffer = gen_cube_buffer(0, 0, dy, 0.5, w);
     }
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     if (is_plant(w)) {
@@ -39,8 +59,11 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
 }
 
 // Render a block in the hand
-void render_hand_block(Attrib *attrib, Item block) {
-    render_inventory_block(attrib, block.id, 4.0, -0.8, 0.8, 0);
+void render_hand_blocks(Attrib *attrib) {
+    int w = inventory.items[inventory.selected].id;
+    if (w > 0) {
+        render_inventory_block(attrib, w, 4.0, -1.2, 0.97, 2);
+    }
 }
 
 // Render a block at the belt at position pos.
@@ -114,7 +137,6 @@ void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib) {
         render_belt_text(text_attrib, item, block);
         render_belt_block(block_attrib, INVENTORY_SLOTS - item - 1, block);
     }
-    render_hand_block(block_attrib, inventory.items[inventory.selected]);
 }
 
 // Called from main loop, renders the inventory blocks and texts.

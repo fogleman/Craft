@@ -1076,6 +1076,9 @@ void render_players(Attrib *attrib, Player *player) {
     glUniform3f(attrib->camera, s->x, s->y, s->z);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, time_of_day());
+    float identity[16];
+    mat_identity(identity);
+    glUniformMatrix4fv(attrib->extra5, 1, GL_FALSE, identity);
     for (int i = 0; i < g->player_count; i++) {
         Player *other = g->players + i;
         if (other != player) {

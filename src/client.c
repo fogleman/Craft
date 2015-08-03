@@ -162,6 +162,16 @@ void client_move_inventory(int from_item, int to_item) {
     client_send(buffer);
 }
 
+void client_close_inventory() {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[16];
+    snprintf(buffer, 16, "I");
+    client_send(buffer);
+}
+
+
 void client_light(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;

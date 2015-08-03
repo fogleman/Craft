@@ -1571,6 +1571,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             } else {
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                client_close_inventory();
             }
         }
         if (key == KONSTRUCTS_KEY_INVENTORY_KONSTRUCT) {

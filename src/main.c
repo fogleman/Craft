@@ -1898,6 +1898,7 @@ void parse_buffer(Packet packet) {
                     strncpy(player->name, name, MAX_NAME_LENGTH);
                 }
             }
+            free(line);
         }
         payload += size;
         size = *((int*)payload);

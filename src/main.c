@@ -1028,6 +1028,9 @@ void gen_chunk_buffer(Chunk *chunk) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             for (int dk = -1; dk <= 1; dk++) {
+                /* Only the middle chunk is required below */
+                if(dk == -1 && dq != 0 && dp != 0) continue;
+
                 Chunk *other = chunk;
                 if (dp || dq || dk) {
                     other = find_chunk(chunk->p + dp, chunk->q + dq, chunk->k + dk, 0);
@@ -1164,6 +1167,8 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             for (int dk = -1; dk <= 1; dk++) {
+                /* Only the middle chunk is required below */
+                if(dk == -1 && dq != 0 && dp != 0) continue;
                 Chunk *other = chunk;
                 if (dp || dq || dk) {
                     other = find_chunk(chunk->p + dp, chunk->q + dq, chunk->k + dk, 0);

@@ -1901,15 +1901,18 @@ void parse_buffer(Packet packet) {
                             }
                         }
                     }
-                    for (int dp = -r; dp <= r; dp++) {
-                        for (int dq = -r; dq <= r; dq++) {
-                            for (int dk = -r; dk <= r; dk++) {
-                                int np = bp + dp;
-                                int nq = bq + dq;
-                                int nk = bk + dk;
-                                Chunk *c = find_chunk(np, nq, nk, 0);
-                                if(c && c->dirty) {
-                                    gen_chunk_buffer(chunk);
+                    /* If the chunk is close to the player, force a chunk update */
+                    if(chunk_near_player(bp, bq, bk, s, 10)) {
+                        for (int dp = -r; dp <= r; dp++) {
+                            for (int dq = -r; dq <= r; dq++) {
+                                for (int dk = -r; dk <= r; dk++) {
+                                    int np = bp + dp;
+                                    int nq = bq + dq;
+                                    int nk = bk + dk;
+                                    Chunk *c = find_chunk(np, nq, nk, 0);
+                                    if(c && c->dirty) {
+                                        gen_chunk_buffer(chunk);
+                                    }
                                 }
                             }
                         }

@@ -53,10 +53,8 @@
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10
 #define RENDER_CHUNK_RADIUS 10
-#define RENDER_SIGN_RADIUS 4
 #define DELETE_CHUNK_RADIUS 14
 #define COMMIT_INTERVAL 5
-#define MAX_BLOCK_HEIGHT 4096
 
 // protocol parameters
 #define BLOCKS_HEADER_SIZE 2

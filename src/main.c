@@ -700,7 +700,6 @@ void occlusion(
 #define XZ_SIZE (CHUNK_SIZE * 3 + 2)
 #define XZ_LO (CHUNK_SIZE)
 #define XZ_HI (CHUNK_SIZE * 2 + 1)
-#define Y_SIZE (MAX_BLOCK_HEIGHT + 2)
 #define XYZ(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
 #define XZ(x, z) ((x) * XZ_SIZE + (z))
 

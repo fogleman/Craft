@@ -32,8 +32,16 @@ MoveItem move_item;
 
 void init_chunk(Chunk *chunk, int p, int q, int k);
 
-int chunked(float x) {
-    return floorf(roundf(x) / CHUNK_SIZE);
+int chunked_int(int p) {
+    if(p < 0) {
+        return (p - CHUNK_SIZE + 1) / CHUNK_SIZE;
+    } else {
+        return p / CHUNK_SIZE;
+    }
+}
+
+int chunked(float p) {
+    return chunked_int(roundf(p));
 }
 
 int is_connected() {
@@ -1615,8 +1623,8 @@ void parse_buffer(Packet packet) {
                        &bp, &bq, &bx, &by, &bz, &bw) == 6) {
 
                 g->blocks_recv = g->blocks_recv + 1;
-                int k = (by / CHUNK_SIZE);
-                Chunk *chunk = find_chunk(bp, bq, k, 1);
+                int bk = chunked_int(by);
+                Chunk *chunk = find_chunk(bp, bq, bk, 1);
                 if(chunk) {
                     parse_block(chunk,
                                 bx, by,
@@ -1630,9 +1638,9 @@ void parse_buffer(Packet packet) {
                                 int x = bx + dx;
                                 int y = by + dy;
                                 int z = bz + dz;
-                                int np = (x / CHUNK_SIZE);
-                                int nq = (z / CHUNK_SIZE);
-                                int nk = (y / CHUNK_SIZE);
+                                int np = chunked_int(x);
+                                int nq = chunked_int(z);
+                                int nk = chunked_int(y);
                                 Chunk *c = find_chunk(np, nq, nk, 0);
                                 if (c) {
                                     c->dirty = 1;

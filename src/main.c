@@ -809,11 +809,9 @@ void compute_chunk(WorkerItem *item) {
         }
     } END_CHUNK_FOR_EACH_2D;
 
-    /* Populate the corner cases only above the blocks since they are
-     * only used by the occlusion algorithm
+    /* Populate the corner cases above
      * Shading yet again requires 8 additional blocks
      */
-
 
     for(int i = 0; i < 8; i++) {
         /* Populate the opaque array with the chunk above-left */
@@ -842,7 +840,7 @@ void compute_chunk(WorkerItem *item) {
 
         /* Populate the opaque array with the chunk above-front */
         CHUNK_FOR_EACH_X(item->neighbour_blocks[1][0][2], CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
-            int x = ex;
+            int x = ex - ox;
             int y = ey + CHUNK_SIZE - oy;
             int z = ez - CHUNK_SIZE - oz;
             int w = ew;
@@ -853,7 +851,7 @@ void compute_chunk(WorkerItem *item) {
         } END_CHUNK_FOR_EACH_1D;
         /* Populate the opaque array with the chunk above-back */
         CHUNK_FOR_EACH_X(item->neighbour_blocks[1][2][2], 0, i, ex, ey, ez, ew) {
-            int x = ex;
+            int x = ex - ox;
             int y = ey + CHUNK_SIZE - oy;
             int z = ez + CHUNK_SIZE - oz;
             int w = ew;
@@ -924,6 +922,56 @@ void compute_chunk(WorkerItem *item) {
         }
 
     }
+
+    /* Populate the corner cases on the same level */
+
+    /* Populate the opaque array with the chunk left-front */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[0][0][1], CHUNK_SIZE - 1, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        int x = ex - CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez - CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
+
+    /* Populate the opaque array with the chunk left-back */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[0][2][1], CHUNK_SIZE - 1, 0, ex, ey, ez, ew) {
+        int x = ex - CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez + CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
+
+    /* Populate the opaque array with the chunk right-front */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[2][0][1], 0, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        int x = ex + CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez - CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
+
+    /* Populate the opaque array with the chunk right-back */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[2][2][1], 0, 0, ex, ey, ez, ew) {
+        int x = ex + CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez + CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
 
 
     // count exposed faces

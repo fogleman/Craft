@@ -443,6 +443,18 @@ int chunk_distance(Chunk *chunk, int p, int q, int k) {
     return MAX(MAX(dp, dq), dk);
 }
 
+int chunk_near_player(int p, int q, int k, State *s, float distance) {
+    if(p == chunked(s->x - distance) || p == chunked(s->x + distance)) {
+        return 1;
+    } else if(q == chunked(s->z - distance) || q == chunked(s->z + distance)) {
+        return 1;
+    } else if(k == chunked(s->y - distance) || k == chunked(s->y + distance)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 int chunk_visible(float planes[6][4], int p, int q, int k) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;
@@ -1146,7 +1158,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             continue;
         }
         int distance = MAX(ABS(p - a), MAX(ABS(q - b), ABS(k - c)));
-        int invisible = !chunk_visible(planes, a, b, c);
+        int invisible = !(chunk_near_player(p, q, k, s, 10) || chunk_visible(planes, a, b, c));
         int priority = 0;
         priority = chunk->buffer && chunk->dirty;
         int score = (invisible << 24) | (priority << 16) | distance;

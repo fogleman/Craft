@@ -32,8 +32,16 @@ MoveItem move_item;
 
 void init_chunk(Chunk *chunk, int p, int q, int k);
 
-int chunked(float x) {
-    return floorf(roundf(x) / CHUNK_SIZE);
+int chunked_int(int p) {
+    if(p < 0) {
+        return (p - CHUNK_SIZE + 1) / CHUNK_SIZE;
+    } else {
+        return p / CHUNK_SIZE;
+    }
+}
+
+int chunked(float p) {
+    return chunked_int(roundf(p));
 }
 
 int is_connected() {
@@ -435,6 +443,18 @@ int chunk_distance(Chunk *chunk, int p, int q, int k) {
     return MAX(MAX(dp, dq), dk);
 }
 
+int chunk_near_player(int p, int q, int k, State *s, float distance) {
+    if(p == chunked(s->x - distance) || p == chunked(s->x + distance)) {
+        return 1;
+    } else if(q == chunked(s->z - distance) || q == chunked(s->z + distance)) {
+        return 1;
+    } else if(k == chunked(s->y - distance) || k == chunked(s->y + distance)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 int chunk_visible(float planes[6][4], int p, int q, int k) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;
@@ -680,7 +700,6 @@ void occlusion(
 #define XZ_SIZE (CHUNK_SIZE * 3 + 2)
 #define XZ_LO (CHUNK_SIZE)
 #define XZ_HI (CHUNK_SIZE * 2 + 1)
-#define Y_SIZE (MAX_BLOCK_HEIGHT + 2)
 #define XYZ(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
 #define XZ(x, z) ((x) * XZ_SIZE + (z))
 
@@ -692,29 +711,267 @@ void compute_chunk(WorkerItem *item) {
     int oy = - CHUNK_SIZE - 1;
     int oz = - CHUNK_SIZE - 1;
 
-    // populate opaque array
-    for (int dp = -1; dp <= 1; dp++) {
-        for (int dq = -1; dq <= 1; dq++) {
-            for (int dk = -1; dk <= 1; dk++) {
-                char *blocks = item->neighbour_blocks[dp + 1][dq + 1][dk + 1];
-                if (!blocks) {
-                    continue;
-                }
-                CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
-                    int x = ex + dp * CHUNK_SIZE - ox;
-                    int y = ey + dk * CHUNK_SIZE - oy;
-                    int z = ez + dq * CHUNK_SIZE - oz;
-                    int w = ew;
-                    opaque[XYZ(x, y, z)] = !is_transparent(w);
-                    if (opaque[XYZ(x, y, z)]) {
-                        highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
-                    }
-                } END_CHUNK_FOR_EACH;
+
+    /* Populate the opaque array with the chunk itself */
+    char *blocks = item->neighbour_blocks[1][1][1];
+
+    CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+        int x = ex - ox;
+        int y = ey - oy;
+        int z = ez - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH;
+
+    /* With the six sides of the chunk */
+
+    /* Populate the opaque array with the chunk below */
+    CHUNK_FOR_EACH_XZ(item->neighbour_blocks[1][1][0], CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        int x = ex - ox;
+        int y = ey - CHUNK_SIZE - oy;
+        int z = ez - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_2D;
+
+
+    /* Populate the opaque array with the chunk above
+     * The shading requires additional 8 blocks
+     */
+    for(int i = 0; i < 8; i++) {
+        CHUNK_FOR_EACH_XZ(item->neighbour_blocks[1][1][2], i, ex, ey, ez, ew) {
+            int x = ex - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez - oz;
+            int w = ew;
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        } END_CHUNK_FOR_EACH_2D;
+    }
+
+    /* Populate the opaque array with the chunk left */
+    CHUNK_FOR_EACH_YZ(item->neighbour_blocks[0][1][1], CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        int x = ex - CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_2D;
+
+
+    /* Populate the opaque array with the chunk right */
+    CHUNK_FOR_EACH_YZ(item->neighbour_blocks[2][1][1], 0, ex, ey, ez, ew) {
+        int x = ex + CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_2D;
+
+
+    /* Populate the opaque array with the chunk front */
+    CHUNK_FOR_EACH_XY(item->neighbour_blocks[1][0][1], CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        int x = ex - ox;
+        int y = ey - oy;
+        int z = ez - CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_2D;
+
+
+    /* Populate the opaque array with the chunk back */
+    CHUNK_FOR_EACH_XY(item->neighbour_blocks[1][2][1], 0, ex, ey, ez, ew) {
+        int x = ex - ox;
+        int y = ey - oy;
+        int z = ez + CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_2D;
+
+    /* Populate the corner cases above
+     * Shading yet again requires 8 additional blocks
+     */
+
+    for(int i = 0; i < 8; i++) {
+        /* Populate the opaque array with the chunk above-left */
+        CHUNK_FOR_EACH_Z(item->neighbour_blocks[0][1][2], CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
+            int x = ex - CHUNK_SIZE - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez - oz;
+            int w = ew;
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        } END_CHUNK_FOR_EACH_1D;
+
+        /* Populate the opaque array with the chunk above-right */
+        CHUNK_FOR_EACH_Z(item->neighbour_blocks[2][1][2], 0, i, ex, ey, ez, ew) {
+            int x = ex + CHUNK_SIZE - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez - oz;
+            int w = ew;
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        } END_CHUNK_FOR_EACH_1D;
+
+        /* Populate the opaque array with the chunk above-front */
+        CHUNK_FOR_EACH_X(item->neighbour_blocks[1][0][2], CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
+            int x = ex - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez - CHUNK_SIZE - oz;
+            int w = ew;
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        } END_CHUNK_FOR_EACH_1D;
+        /* Populate the opaque array with the chunk above-back */
+        CHUNK_FOR_EACH_X(item->neighbour_blocks[1][2][2], 0, i, ex, ey, ez, ew) {
+            int x = ex - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez + CHUNK_SIZE - oz;
+            int w = ew;
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        } END_CHUNK_FOR_EACH_1D;
+
+        /* Populate the opaque array with the block above-left-front */
+        {
+            int ex = CHUNK_SIZE - 1;
+            int ey = i;
+            int ez = CHUNK_SIZE - 1;
+            int x = ex - CHUNK_SIZE - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez - CHUNK_SIZE - oz;
+            int w = item->neighbour_blocks[0][0][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
         }
-   }
 
-   char *blocks = item->neighbour_blocks[1][1][1];
+        /* Populate the opaque array with the block above-right-front */
+        {
+            int ex = 0;
+            int ey = i;
+            int ez = CHUNK_SIZE - 1;
+            int x = ex + CHUNK_SIZE - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez - CHUNK_SIZE - oz;
+            int w = item->neighbour_blocks[2][0][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        }
+
+        /* Populate the opaque array with the block above-left-back */
+        {
+            int ex = CHUNK_SIZE - 1;
+            int ey = i;
+            int ez = 0;
+            int x = ex - CHUNK_SIZE - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez + CHUNK_SIZE - oz;
+            int w = item->neighbour_blocks[0][2][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        }
+
+        /* Populate the opaque array with the block above-right-back */
+        {
+            int ex = 0;
+            int ey = i;
+            int ez = 0;
+            int x = ex + CHUNK_SIZE - ox;
+            int y = ey + CHUNK_SIZE - oy;
+            int z = ez + CHUNK_SIZE - oz;
+            int w = item->neighbour_blocks[2][2][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            if (opaque[XYZ(x, y, z)]) {
+                highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+            }
+        }
+
+    }
+
+    /* Populate the corner cases on the same level */
+
+    /* Populate the opaque array with the chunk left-front */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[0][0][1], CHUNK_SIZE - 1, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        int x = ex - CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez - CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
+
+    /* Populate the opaque array with the chunk left-back */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[0][2][1], CHUNK_SIZE - 1, 0, ex, ey, ez, ew) {
+        int x = ex - CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez + CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
+
+    /* Populate the opaque array with the chunk right-front */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[2][0][1], 0, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        int x = ex + CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez - CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
+
+    /* Populate the opaque array with the chunk right-back */
+    CHUNK_FOR_EACH_Y(item->neighbour_blocks[2][2][1], 0, 0, ex, ey, ez, ew) {
+        int x = ex + CHUNK_SIZE - ox;
+        int y = ey - oy;
+        int z = ez + CHUNK_SIZE - oz;
+        int w = ew;
+        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        if (opaque[XYZ(x, y, z)]) {
+            highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
+        }
+    } END_CHUNK_FOR_EACH_1D;
+
 
     // count exposed faces
     int faces = 0;
@@ -830,6 +1087,9 @@ void gen_chunk_buffer(Chunk *chunk) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             for (int dk = -1; dk <= 1; dk++) {
+                /* Only the middle chunk is required below */
+                if(dk == -1 && dq != 0 && dp != 0) continue;
+
                 Chunk *other = chunk;
                 if (dp || dq || dk) {
                     other = find_chunk(chunk->p + dp, chunk->q + dq, chunk->k + dk, 0);
@@ -945,7 +1205,7 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
             continue;
         }
         int distance = MAX(ABS(p - a), MAX(ABS(q - b), ABS(k - c)));
-        int invisible = !chunk_visible(planes, a, b, c);
+        int invisible = !(chunk_near_player(p, q, k, s, 10) || chunk_visible(planes, a, b, c));
         int priority = 0;
         priority = chunk->buffer && chunk->dirty;
         int score = (invisible << 24) | (priority << 16) | distance;
@@ -966,6 +1226,8 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     for (int dp = -1; dp <= 1; dp++) {
         for (int dq = -1; dq <= 1; dq++) {
             for (int dk = -1; dk <= 1; dk++) {
+                /* Only the middle chunk is required below */
+                if(dk == -1 && dq != 0 && dp != 0) continue;
                 Chunk *other = chunk;
                 if (dp || dq || dk) {
                     other = find_chunk(chunk->p + dp, chunk->q + dq, chunk->k + dk, 0);
@@ -1613,10 +1875,9 @@ void parse_buffer(Packet packet) {
             }
             if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
                        &bp, &bq, &bx, &by, &bz, &bw) == 6) {
-
                 g->blocks_recv = g->blocks_recv + 1;
-                int k = (by / CHUNK_SIZE);
-                Chunk *chunk = find_chunk(bp, bq, k, 1);
+                int bk = chunked_int(by);
+                Chunk *chunk = find_chunk(bp, bq, bk, 1);
                 if(chunk) {
                     parse_block(chunk,
                                 bx, by,
@@ -1630,12 +1891,28 @@ void parse_buffer(Packet packet) {
                                 int x = bx + dx;
                                 int y = by + dy;
                                 int z = bz + dz;
-                                int np = (x / CHUNK_SIZE);
-                                int nq = (z / CHUNK_SIZE);
-                                int nk = (y / CHUNK_SIZE);
+                                int np = chunked_int(x);
+                                int nq = chunked_int(z);
+                                int nk = chunked_int(y);
                                 Chunk *c = find_chunk(np, nq, nk, 0);
                                 if (c) {
                                     c->dirty = 1;
+                                }
+                            }
+                        }
+                    }
+                    /* If the chunk is close to the player, force a chunk update */
+                    if(chunk_near_player(bp, bq, bk, s, 10)) {
+                        for (int dp = -r; dp <= r; dp++) {
+                            for (int dq = -r; dq <= r; dq++) {
+                                for (int dk = -r; dk <= r; dk++) {
+                                    int np = bp + dp;
+                                    int nq = bq + dq;
+                                    int nk = bk + dk;
+                                    Chunk *c = find_chunk(np, nq, nk, 0);
+                                    if(c && c->dirty) {
+                                        gen_chunk_buffer(chunk);
+                                    }
                                 }
                             }
                         }
@@ -1683,6 +1960,7 @@ void parse_buffer(Packet packet) {
                     strncpy(player->name, name, MAX_NAME_LENGTH);
                 }
             }
+            free(line);
         }
         payload += size;
         size = *((int*)payload);

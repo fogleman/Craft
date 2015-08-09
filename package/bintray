@@ -5,7 +5,9 @@ API_URL=https://api.bintray.com
 API_AUTH=-unsg:$bintray_api_key
 
 log() {
-  echo "Bintray log: " $@
+  local func=$1
+  shift
+  echo -e "\nBintray log: [$func]" $@
 }
 
 upload_client_deb() {

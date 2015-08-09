@@ -4,6 +4,10 @@ set -e
 API_URL=https://api.bintray.com
 API_AUTH=-unsg:$bintray_api_key
 
+log() {
+  echo "Bintray log: " $@
+}
+
 upload_client_deb() {
   local repo=$1
   local package=$2
@@ -12,8 +16,13 @@ upload_client_deb() {
   local version=$4
   local arch=amd64
 
+  log $FUNCNAME "Remove version $version of $repo/$package"
   curl -X DELETE $API_AUTH $API_URL/packages/konstructs/$repo/$package/versions/$version
+
+  log $FUNCNAME "Upload version $version of $repo/$package (for jessie, arch:$arch)"
   curl -T $file $API_AUTH "$API_URL/content/konstructs/$repo/$package/$version/$path;deb_distribution=jessie;deb_component=main;deb_architecture=$arch"
+
+  log $FUNCNAME "Publish version $version of $repo/$package"
   curl -X POST $API_AUTH $API_URL/content/konstructs/$repo/$package/$version/publish
 }
 
@@ -24,8 +33,13 @@ upload_client() {
   local path=$file
   local version=$4
 
+  log $FUNCNAME "Remove version $version of $repo/$package"
   curl -X DELETE $API_AUTH $API_URL/packages/konstructs/$repo/$package/versions/$version
+
+  log $FUNCNAME "Upload version $version of $repo/$package (file:$file)"
   curl -T $file $API_AUTH "$API_URL/content/konstructs/$repo/$package/$version/$path"
+
+  log $FUNCNAME "Publish version $version of $repo/$package"
   curl -X POST $API_AUTH $API_URL/content/konstructs/$repo/$package/$version/publish
 }
 

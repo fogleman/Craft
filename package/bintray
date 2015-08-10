@@ -32,8 +32,13 @@ upload_client() {
   local repo=$1
   local package=$2
   local file=$3
-  local path=$file
   local version=$4
+
+  if [[ $version == master* ]]; then
+    local path=$file
+  else
+    local path="${file%%.*}-$version-${file#*.}"
+  fi
 
   log $FUNCNAME "Remove version $version of $repo/$package"
   curl -X DELETE $API_AUTH $API_URL/packages/konstructs/$repo/$package/versions/$version

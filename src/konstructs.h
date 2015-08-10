@@ -23,6 +23,7 @@
 #include "matrix.h"
 #include "item.h"
 #include "chunk.h"
+#include <sys/time.h>
 
 typedef struct {
   int p;
@@ -122,6 +123,13 @@ typedef struct {
   char text_message[KONSTRUCTS_TEXT_MESSAGE_SIZE];
   char text_prompt[KONSTRUCTS_TEXT_MESSAGE_SIZE];
 } Model;
+
+typedef struct {
+    struct timeval ts;
+    int x;
+    int y;
+    int z;
+} GhostBlock;
 
 // in main.c
 void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count);

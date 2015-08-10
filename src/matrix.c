@@ -239,44 +239,28 @@ void set_matrix_3d(
 }
 
 void set_matrix_item(float *matrix, int width, int height, int scale) {
-    float a[16];
-    float b[16];
-    float aspect = (float)width / height;
-    float size = 64 * scale;
-    float box = height / size / 2;
-    float xoffset = 1 - size / width * 2;
-    float yoffset = 1 - size / height * 2;
-    mat_identity(a);
-    mat_rotate(b, 0, 1, 0, -PI / 4);
-    mat_multiply(a, b, a);
-    mat_rotate(b, 1, 0, 0, -PI / 10);
-    mat_multiply(a, b, a);
-    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 1);
-    mat_multiply(a, b, a);
-    mat_translate(b, -xoffset, -yoffset, 0);
-    mat_multiply(a, b, a);
-    mat_identity(matrix);
-    mat_multiply(matrix, a, matrix);
+    float xoffset = 1 - (scale * 64) / width * 2;
+    float yoffset = 1 - (scale * 64) / height * 2;
+
+    set_matrix_item_r(matrix, width, height, scale * 64, xoffset, yoffset,
+                      -PI/4, -PI/10, 0);
 }
 
-void set_matrix_item_offs(float *matrix, int width, int height, float scale,
-        float xoffset, float yoffset, int sel) {
+void set_matrix_item_r(float *matrix, int width, int height, float scale,
+        float xoffset, float yoffset, float rx, float ry, float rz) {
     float a[16];
     float b[16];
     float aspect = (float)width / height;
     float size = 64 * scale;
     float box = height / size / 2;
-    //printf("xoffset: %f, yoffset: %f box: %f\n", xoffset, yoffset, box);
     mat_identity(a);
-    if (sel) {
-        mat_rotate(b, 0, 1, 0, -PI / 8);
-    } else {
-        mat_rotate(b, 0, 1, 0, -PI / 4);
-    }
+    mat_rotate(b, 0, 1, 0, rx);
     mat_multiply(a, b, a);
-    mat_rotate(b, 1, 0, 0, -PI / 10);
+    mat_rotate(b, 1, 0, 0, ry);
     mat_multiply(a, b, a);
-    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 1);
+    mat_rotate(b, 0, 0, 1, rz);
+    mat_multiply(a, b, a);
+    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 2);
     mat_multiply(a, b, a);
     mat_translate(b, -xoffset, -yoffset, 0);
     mat_multiply(a, b, a);

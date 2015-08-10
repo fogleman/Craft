@@ -1459,14 +1459,13 @@ void on_left_click() {
 
         // We have someting selected and an empty slot is clicked
         if (move_item.use == 1 && ext_inventory.items[item].id == 0) {
-            client_move_inventory(move_item.inventory, move_item.index, 1, item);
+            client_move_inventory(move_item.index, item);
             move_item.use = 0;
             ext_inventory.selected = -1;
             if (DEBUG) printf("Inventory: Move slot %d to %d\n", move_item.index, item);
 
         // Select a item, if there is a item in the slot
         } else if (ext_inventory.items[item].id > 0) {
-            move_item.inventory = 1;
             move_item.index = item;
             move_item.use = 1;
             ext_inventory.selected = item;
@@ -1572,6 +1571,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             } else {
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                client_close_inventory();
             }
         }
         if (key == KONSTRUCTS_KEY_INVENTORY_KONSTRUCT) {
@@ -1847,30 +1847,29 @@ void parse_buffer(Packet packet) {
             if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
                        &pid, &ux, &uy, &uz, &urx, &ury) == 6)
             {
+                if (DEBUG) printf("Proto[U]: %d %f %f %f %f %f\n",pid, ux, uy, uz, urx, ury);
                 me->id = pid;
                 s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
                 if (uy == 0) {
                   s->y = 200;
                 }
             }
-            int pos, amount, id;
-            int inv = 0;
-#if PROTOCOL_VERSION == 3
+            int pos, amount, id, inv;
             if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
-#else
-            if (sscanf(line, "I,%d,%d,%d,%d", &inv, &pos, &amount, &id) == 4) {
-#endif
-                if (inv == 0) {
-                    inventory.items[pos].id = id;
-                    inventory.items[pos].num = amount;
-                } else {
-                    ext_inventory.items[pos].id = id;
-                    ext_inventory.items[pos].num = amount;
-                    ext_inventory.items[pos].show = id == -1 ? 0 : 1;
-                    g->inventory_screen = 1;
-                }
+                if (DEBUG) printf("Proto[I]: %d %d %d\n", pos, amount, id);
+                ext_inventory.items[pos].id = id;
+                ext_inventory.items[pos].num = amount;
+                ext_inventory.items[pos].show = id == -1 ? 0 : 1;
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                g->inventory_screen = 1;
+            }
+            if (sscanf(line, "G,%d,%d,%d", &pos, &amount, &id) == 3) {
+                if (DEBUG) printf("Proto[G]: %d %d %d\n", pos, amount, id);
+                inventory.items[pos].id = id;
+                inventory.items[pos].num = amount;
             }
             if (sscanf(line, "A,%d", &id) == 1) {
+                if (DEBUG) printf("Proto[A]: %d\n", id);
                 inventory.selected = id;
             }
             if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
@@ -1938,16 +1937,19 @@ void parse_buffer(Packet packet) {
             }
             if (sscanf(line, "D,%d", &pid) == 1) {
                 delete_player(pid);
+                if (DEBUG) printf("Proto[D]: %d\n", pid);
             }
             double elapsed;
             int day_length;
             if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
+                if (DEBUG) printf("Proto[E]: %lf %d\n", elapsed, day_length);
                 glfwSetTime(fmod(elapsed, day_length));
                 g->day_length = day_length;
                 g->time_changed = 1;
             }
             if (line[0] == 'T' && line[1] == ',') {
                 char *text = line + 2;
+                if (DEBUG) printf("Proto[T]: %s\n", text);
                 add_message(text);
             }
             char format[64];
@@ -2027,7 +2029,7 @@ int init_inventory() {
     for (int item = 0; item < EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS; item ++) {
         ext_inventory.items[item].id = 0;
         ext_inventory.items[item].num = 0;
-        ext_inventory.items[item].show = 1;
+        ext_inventory.items[item].show = 0;
     }
     ext_inventory.selected = -1;
 
@@ -2251,9 +2253,6 @@ void main_connect() {
     //hash_password(in_hash, out_hash);
     client_version(PROTOCOL_VERSION, g->server_user, in_hash);
 
-    // Ask server for inventory
-    client_inventory();
-
     // Ask for the initial chunk
     request_chunks();
 
@@ -2287,9 +2286,16 @@ int main(int argc, char **argv) {
 
     move_item.use = 0;
 
-    sprintf(g->text_message, "Press T to access the console");
-    sprintf(g->text_prompt, "Server");
-
+    if (argc == 4) {
+        strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
+        strncpy(g->server_user, argv[2], MAX_NAME_LENGTH);
+        strncpy(g->server_pass, argv[3], 64);
+        g->text_message[0] = '\0';
+        g->text_prompt[0] = '\0';
+    } else {
+        sprintf(g->text_message, "Press T to access the console");
+        sprintf(g->text_prompt, "Server");
+    }
 
     if (glfwInit() == GL_FALSE) {
         printf("Failed to init glfw");
@@ -2441,6 +2447,7 @@ int main(int argc, char **argv) {
             } else {
                 render_belt_background(&inventory_attrib, inventory.selected);
                 render_belt_text_blocks(&text_attrib, &block_attrib);
+                render_hand_blocks(&block_attrib);
             }
         }
 

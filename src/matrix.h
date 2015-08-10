@@ -24,6 +24,6 @@ void set_matrix_3d(
     float x, float y, float z, float rx, float ry,
     float fov, int ortho, int radius);
 void set_matrix_item(float *matrix, int width, int height, int scale);
-void set_matrix_item_offs(float *matrix, int width, int height, float scale, float xoffset, float yoffset, int sel);
+void set_matrix_item_r(float *matrix, int width, int height, float scale, float xoffset, float yoffset, float rx, float ry, float rz);
 
 #endif

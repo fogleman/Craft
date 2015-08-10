@@ -110,13 +110,6 @@ void client_position(float x, float y, float z, float rx, float ry) {
     client_send(buffer);
 }
 
-void client_inventory() {
-    if (!client_enabled) {
-        return;
-    }
-    client_send("I");
-}
-
 void client_inventory_select(int pos) {
     if (!client_enabled) {
         return;
@@ -162,14 +155,22 @@ void client_konstruct() {
     client_send(buffer);
 }
 
-void client_move_inventory(int from_inv, int from_item,
-                           int to_inv, int to_item) {
+void client_move_inventory(int from_item, int to_item) {
     if (!client_enabled) return;
     char buffer[1024];
-    snprintf(buffer, 1024, "R,%d,%d,%d,%d", from_inv, from_item,
-             to_inv, to_item);
+    snprintf(buffer, 1024, "R,%d,%d", from_item, to_item);
     client_send(buffer);
 }
+
+void client_close_inventory() {
+    if (!client_enabled) {
+        return;
+    }
+    char buffer[16];
+    snprintf(buffer, 16, "I");
+    client_send(buffer);
+}
+
 
 void client_light(int x, int y, int z, int w) {
     if (!client_enabled) {

@@ -16,7 +16,6 @@ typedef struct {
 
 typedef struct {
     int use;
-    int inventory;
     int index;
 } MoveItem;
 
@@ -24,6 +23,7 @@ void render_belt_background(Attrib *inventory_attrib, int selected);
 void render_belt_text_blocks(Attrib *text_attrib, Attrib *block_attrib);
 void render_ext_inventory_background(Attrib *attrib);
 void render_ext_inventory_text_blocks(Attrib *text_attrib, Attrib *block_attrib);
+void render_hand_blocks(Attrib *attrib);
 
 extern Inventory inventory;
 extern Inventory ext_inventory;

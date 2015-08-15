@@ -62,7 +62,7 @@
 
 // misc
 #define GHOST_BLOCK_MAX 32
-#define GHOST_BLOCK_MAX_AGE 60000
+#define GHOST_BLOCK_MAX_AGE 750
 #define GHOST_BLOCK_MIN_AGE 750
 
 #endif

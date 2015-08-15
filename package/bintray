@@ -33,11 +33,12 @@ upload_client() {
   local package=$2
   local file=$3
   local version=$4
+  local os=$repo
 
   if [[ $version == master* ]]; then
     local path=$file
   else
-    local path="${file%%.*}-${version}.${file#*.}"
+    local path="${file%%.*}-${version}-${os}.${file#*.}"
   fi
 
   log $FUNCNAME "Remove version $version of $repo/$package"

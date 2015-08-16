@@ -1626,7 +1626,7 @@ void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hw > 0) click_at(hx, hy, hz, 1);
+    click_at(hw > 0 ? 1 : 0, hx, hy, hz, 1);
 }
 
 void on_right_click() {
@@ -1634,21 +1634,22 @@ void on_right_click() {
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hw > 0 && !player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
-        click_at(hx, hy, hz, 2);
+        click_at(1, hx, hy, hz, 2);
 
         insert_ghost_block(gb, ghost_block_num, hx, hy, hz);
         ghost_block_num++;
         if (ghost_block_num >= GHOST_BLOCK_MAX) ghost_block_num = 0;
-
+    } else {
+        click_at(0, 0, 0, 0, 2);
     }
 
 }
 
 void on_middle_click() {
     State *s = &g->players->state;
-    int hx, hy, hz;
+    int hx = 0, hy = 0, hz = 0;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hw > 0) click_at(hx, hy, hz, 3);
+    click_at(hw > 0 ? 1 : 0, hx, hy, hz, 3);
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -1719,11 +1720,18 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == KONSTRUCTS_KEY_DEBUG_SCREEN) {
             g->debug_screen = !g->debug_screen;
         }
-        if (key == KONSTRUCTS_KEY_INVENTORY_TOGGLE) {
-            g->inventory_screen = !g->inventory_screen;
-            if (g->inventory_screen) {
-                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        if (key == KONSTRUCTS_KEY_ACTIVATE_ITEM) {
+            if (!g->inventory_screen) {
+                on_middle_click();
             } else {
+                g->inventory_screen = 0;
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                client_close_inventory();
+            }
+        }
+        if (key == KONSTRUCTS_KEY_CLOSE) {
+            if(g->inventory_screen) {
+                g->inventory_screen = 0;
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 client_close_inventory();
             }

@@ -1646,9 +1646,9 @@ void on_right_click() {
 
 void on_middle_click() {
     State *s = &g->players->state;
-    int hx, hy, hz;
+    int hx = 0, hy = 0, hz = 0;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hw > 0) click_at(hx, hy, hz, 3);
+    click_at(hx, hy, hz, 3);
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -1719,14 +1719,8 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == KONSTRUCTS_KEY_DEBUG_SCREEN) {
             g->debug_screen = !g->debug_screen;
         }
-        if (key == KONSTRUCTS_KEY_INVENTORY_TOGGLE) {
-            g->inventory_screen = !g->inventory_screen;
-            if (g->inventory_screen) {
-                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            } else {
-                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                client_close_inventory();
-            }
+        if (key == KONSTRUCTS_KEY_ACTIVATE_ITEM) {
+            on_middle_click();
         }
         if (key == KONSTRUCTS_KEY_INVENTORY_KONSTRUCT) {
             if(g->inventory_screen) {

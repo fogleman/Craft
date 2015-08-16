@@ -1600,24 +1600,24 @@ void on_left_click() {
         row = EXT_INVENTORY_ROWS - 1 - row;
 
         // Our inventory position
-        int item = row*EXT_INVENTORY_COLS + col;
+        int index = row*EXT_INVENTORY_COLS + col;
 
         // Ignore to large/small selections
-        if(item < 0 || item > EXT_INVENTORY_ROWS*EXT_INVENTORY_COLS) return;
+        if(index < 0 || index > EXT_INVENTORY_ROWS*EXT_INVENTORY_COLS) return;
 
-        // We have someting selected and an empty slot is clicked
-        if (move_item.use == 1 && ext_inventory.items[item].id == 0) {
-            client_move_inventory(move_item.index, item);
+        // We have something selected and a slot is selected
+        if (move_item.use == 1) {
+            client_click_inventory(index);
             move_item.use = 0;
+            if (DEBUG) printf("Inventory: Move slot %d to %d\n", move_item.index, index);
             ext_inventory.selected = -1;
-            if (DEBUG) printf("Inventory: Move slot %d to %d\n", move_item.index, item);
-
         // Select a item, if there is a item in the slot
-        } else if (ext_inventory.items[item].id > 0) {
-            move_item.index = item;
+        } else {
+            client_click_inventory(index);
+            move_item.index = index;
             move_item.use = 1;
-            ext_inventory.selected = item;
-            if (DEBUG) printf("Inventory: Select slot %d\n", item);
+            ext_inventory.selected = index;
+            if (DEBUG) printf("Inventory: Select slot %d\n", index);
         }
 
         return;

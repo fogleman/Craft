@@ -1720,7 +1720,20 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             g->debug_screen = !g->debug_screen;
         }
         if (key == KONSTRUCTS_KEY_ACTIVATE_ITEM) {
-            on_middle_click();
+            if (!g->inventory_screen) {
+                on_middle_click();
+            } else {
+                g->inventory_screen = 0;
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                client_close_inventory();
+            }
+        }
+        if (key == KONSTRUCTS_KEY_CLOSE) {
+            if(g->inventory_screen) {
+                g->inventory_screen = 0;
+                glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                client_close_inventory();
+            }
         }
         if (key == KONSTRUCTS_KEY_INVENTORY_KONSTRUCT) {
             if(g->inventory_screen) {

@@ -23,7 +23,7 @@ void client_position(float x, float y, float z, float rx, float ry);
 void client_chunk(int amount);
 void client_block(int x, int y, int z, int w);
 void client_konstruct();
-void client_move_inventory(int from_item, int to_item);
+void client_click_inventory(int item);
 void client_close_inventory();
 void client_light(int x, int y, int z, int w);
 void client_sign(int x, int y, int z, int face, const char *text);

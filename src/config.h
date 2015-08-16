@@ -58,7 +58,7 @@
 
 // protocol parameters
 #define BLOCKS_HEADER_SIZE 2
-#define PROTOCOL_VERSION 4
+#define PROTOCOL_VERSION 5
 
 // misc
 #define GHOST_BLOCK_MAX 32

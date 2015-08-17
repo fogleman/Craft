@@ -119,12 +119,12 @@ void client_inventory_select(int pos) {
     client_send(buffer);
 }
 
-void click_at(int x, int y, int z, int button) {
+void click_at(int hit, int x, int y, int z, int button) {
     if (!client_enabled) {
         return;
     }
     char buffer[64];
-    snprintf(buffer, 64, "M,%d,%d,%d,%d", x, y, z, button);
+    snprintf(buffer, 64, "M,%d,%d,%d,%d,%d", hit, x, y, z, button);
     client_send(buffer);
 }
 
@@ -155,10 +155,10 @@ void client_konstruct() {
     client_send(buffer);
 }
 
-void client_move_inventory(int from_item, int to_item) {
+void client_click_inventory(int item) {
     if (!client_enabled) return;
-    char buffer[1024];
-    snprintf(buffer, 1024, "R,%d,%d", from_item, to_item);
+    char buffer[64];
+    snprintf(buffer, 64, "R,%d", item);
     client_send(buffer);
 }
 

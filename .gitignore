@@ -8,3 +8,9 @@ log.txt
 *.o
 *.exe
 *.dll
+*.bat
+*.opensdf
+*.sdf
+*.sln
+*.vcxproj
+*.filters

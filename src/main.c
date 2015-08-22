@@ -1219,7 +1219,7 @@ void request_chunks() {
     if(ratio < 1.0) { // FPS is falling
         chunks = g->requested_chunks / 2;
     } else { // FPS is rising
-        chunks = MIN(g->requested_chunks + g->requested_chunks / 4, MAX_PENDING_CHUNKS);
+        chunks = MIN(g->requested_chunks + MAX(g->requested_chunks / 4, 1), MAX_PENDING_CHUNKS);
     }
     chunks = chunks < 1 ? 1 : chunks;
     client_chunk(chunks);

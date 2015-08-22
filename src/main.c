@@ -1214,10 +1214,17 @@ void gen_chunk_buffer(Chunk *chunk) {
 }
 
 void request_chunks() {
-  int chunks = (int)((float)MAX_PENDING_CHUNKS * ((float)g->fps.fps / 60.0));
-  chunks = chunks < 1 ? 1 : chunks;
-  client_chunk(chunks);
-  g->pending_chunks += chunks;
+    float ratio = (float)g->fps.fps / (float)g->fps.old_fps;
+    int chunks;
+    if(ratio < 1.0) { // FPS is falling
+        chunks = g->requested_chunks / 2;
+    } else { // FPS is rising
+        chunks = MIN(g->requested_chunks + g->requested_chunks / 4, MAX_PENDING_CHUNKS);
+    }
+    chunks = chunks < 1 ? 1 : chunks;
+    client_chunk(chunks);
+    g->requested_chunks = chunks;
+    g->pending_chunks += chunks;
 }
 
  void init_chunk(Chunk *chunk, int p, int q, int k) {
@@ -2418,6 +2425,7 @@ void main_connect() {
     client_connect(g->server_addr, g->server_port);
     client_start();
     g->pending_chunks = 0;
+    g->requested_chunks = MAX_PENDING_CHUNKS;
     strcpy(in_hash, g->server_user);
     strcat(in_hash, g->server_pass);
     //hash_password(in_hash, out_hash);

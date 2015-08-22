@@ -21,6 +21,7 @@ void update_fps(FPS *fps) {
     double now = glfwGetTime();
     double elapsed = now - fps->since;
     if (elapsed >= 1) {
+        fps->old_fps = fps->fps;
         fps->fps = round(fps->frames / elapsed);
         fps->frames = 0;
         fps->since = now;

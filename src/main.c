@@ -2039,6 +2039,10 @@ void parse_buffer(Packet packet) {
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 g->inventory_screen = 1;
             }
+            if (sscanf(line, "i,%d,%d", &amount, &id) == 2) {
+                if (DEBUG) printf("Proto[i]: %d %d\n", amount, id);
+                g->mouse_item = id;
+            }
             if (sscanf(line, "G,%d,%d,%d", &pos, &amount, &id) == 3) {
                 if (DEBUG) printf("Proto[G]: %d %d %d\n", pos, amount, id);
                 inventory.items[pos].id = id;
@@ -2461,6 +2465,7 @@ int main(int argc, char **argv) {
     g->server_addr[0] = '\0';
     g->server_user[0] = '\0';
     g->server_pass[0] = '\0';
+    g->mouse_item = -1;
 
     move_item.use = 0;
 
@@ -2623,6 +2628,7 @@ int main(int argc, char **argv) {
             if(g->inventory_screen) {
                 render_ext_inventory_background(&inventory_attrib);
                 render_ext_inventory_text_blocks(&text_attrib, &block_attrib);
+                render_mouse_block(&block_attrib);
             } else {
                 render_belt_background(&inventory_attrib, inventory.selected);
                 render_belt_text_blocks(&text_attrib, &block_attrib);

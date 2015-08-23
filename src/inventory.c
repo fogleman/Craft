@@ -27,7 +27,7 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
     float rx = -PI/4;
     float ry = -PI/10;
     float rz = 0;
-    float dy = 0;
+    float dz = 0;
 
     switch (flag) {
         case 1:
@@ -37,7 +37,13 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
             rx = -PI/8;
             ry = -PI/10;
             rz = -PI/16;
-            dy = -1.0;
+            dz = -1.0;
+            break;
+        case 3:
+            rx = -PI/8;
+            ry = -PI/10;
+            rz = -PI/16;
+            dz = 2.0;
             break;
     }
 
@@ -45,9 +51,9 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
 
     if (is_plant(w)) {
         glDeleteBuffers(1, &buffer);
-        buffer = gen_plant_buffer(0, 0, dy, 0.5, w);
+        buffer = gen_plant_buffer(0, 0, dz, 0.5, w);
     } else {
-        buffer = gen_cube_buffer(0, 0, dy, 0.5, w);
+        buffer = gen_cube_buffer(0, 0, dz, 0.5, w);
     }
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     if (is_plant(w)) {
@@ -56,6 +62,23 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
         draw_cube(attrib, buffer);
     }
     del_buffer(buffer);
+}
+
+// Render a block under the mouse pointer
+void render_mouse_block(Attrib *attrib) {
+
+    // Do not render air, or if the feature is disabled.
+    if (g->mouse_item <= 0) return;
+
+    double xpos, ypos;
+    double size = 32;
+
+    glfwGetCursorPos(g->window, &xpos, &ypos);
+
+    float gl_x = ((xpos - size)/g->width * 2 - 1) * -1;
+    float gl_y = ((ypos - size/2)/g->height * 2 - 1);
+
+    render_inventory_block(attrib, g->mouse_item, 0.58, gl_x, gl_y, 3);
 }
 
 // Render a block in the hand

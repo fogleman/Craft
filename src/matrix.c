@@ -260,7 +260,7 @@ void set_matrix_item_r(float *matrix, int width, int height, float scale,
     mat_multiply(a, b, a);
     mat_rotate(b, 0, 0, 1, rz);
     mat_multiply(a, b, a);
-    mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 2);
+    mat_ortho(b, -box * aspect, box * aspect, -box, box, -3, 2);
     mat_multiply(a, b, a);
     mat_translate(b, -xoffset, -yoffset, 0);
     mat_multiply(a, b, a);

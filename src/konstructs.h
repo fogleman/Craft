@@ -123,6 +123,7 @@ typedef struct {
   FPS fps;
   char text_message[KONSTRUCTS_TEXT_MESSAGE_SIZE];
   char text_prompt[KONSTRUCTS_TEXT_MESSAGE_SIZE];
+  int mouse_item;
 } Model;
 
 typedef struct {

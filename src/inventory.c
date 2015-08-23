@@ -27,7 +27,7 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
     float rx = -PI/4;
     float ry = -PI/10;
     float rz = 0;
-    float dy = 0;
+    float dz = 0;
 
     switch (flag) {
         case 1:
@@ -37,7 +37,7 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
             rx = -PI/8;
             ry = -PI/10;
             rz = -PI/16;
-            dy = -1.0;
+            dz = -1.0;
             break;
     }
 
@@ -45,9 +45,9 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
 
     if (is_plant(w)) {
         glDeleteBuffers(1, &buffer);
-        buffer = gen_plant_buffer(0, 0, dy, 0.5, w);
+        buffer = gen_plant_buffer(0, 0, dz, 0.5, w);
     } else {
-        buffer = gen_cube_buffer(0, 0, dy, 0.5, w);
+        buffer = gen_cube_buffer(0, 0, dz, 0.5, w);
     }
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     if (is_plant(w)) {

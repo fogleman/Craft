@@ -64,11 +64,11 @@ void client_send(char *data) {
     int length = strlen(data);
     int header_size = htonl(length);
     if (client_sendall(sd, (char*)&header_size, sizeof(header_size)) == -1) {
-        perror("client_sendall");
+        SHOWERROR("client_sendall");
         exit(1);
     }
     if (client_sendall(sd, data, length) == -1) {
-        perror("client_sendall");
+        SHOWERROR("client_sendall");
         exit(1);
     }
 }
@@ -233,7 +233,7 @@ size_t recv_all(char* out_buf, size_t size) {
                 #endif
                     continue;
                 }
-                perror("recv");
+                SHOWERROR("recv");
                 exit(1);
             } else {
                 break;
@@ -298,7 +298,7 @@ void client_connect(char *hostname, int port) {
 #ifdef _WIN32
         printf("WSAGetLastError: %d",  WSAGetLastError());
 #endif
-        perror("gethostbyname");
+        SHOWERROR("gethostbyname");
         exit(1);
     }
     memset(&address, 0, sizeof(address));
@@ -306,11 +306,11 @@ void client_connect(char *hostname, int port) {
     address.sin_addr.s_addr = ((struct in_addr *)(host->h_addr_list[0]))->s_addr;
     address.sin_port = htons(port);
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("socket");
+        SHOWERROR("socket");
         exit(1);
     }
     if (connect(sd, (struct sockaddr *)&address, sizeof(address)) == -1) {
-        perror("connect");
+        SHOWERROR("connect");
         exit(1);
     }
 }
@@ -324,7 +324,7 @@ void client_start() {
     packet_buffer_size = 0;
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
-        perror("thrd_create");
+        SHOWERROR("thrd_create");
         exit(1);
     }
 }
@@ -336,7 +336,7 @@ void client_stop() {
     running = 0;
     close(sd);
     // if (thrd_join(recv_thread, NULL) != thrd_success) {
-    //     perror("thrd_join");
+    //     SHOWERROR("thrd_join");
     //     exit(1);
     // }
     // mtx_destroy(&mutex);

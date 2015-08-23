@@ -2,7 +2,7 @@
 #define _konstructs_h_
 
 #define MAX_CHUNKS 8192 * 4
-#define MAX_PENDING_CHUNKS 50
+#define MAX_PENDING_CHUNKS 100
 #define MAX_PLAYERS 128
 #define WORKERS 4
 #define MAX_TEXT_LENGTH 256
@@ -118,6 +118,7 @@ typedef struct {
   int blocks_recv;
   char *chunk_buffer;
   int chunk_buffer_size;
+  int requested_chunks;
   int pending_chunks;
   FPS fps;
   char text_message[KONSTRUCTS_TEXT_MESSAGE_SIZE];

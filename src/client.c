@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "client.h"
 #include "tinycthread.h"
 
@@ -219,25 +220,38 @@ Packet client_recv() {
     return packet;
 }
 
+size_t recv_all(char* out_buf, size_t size) {
+    int t = 0;
+    int length = 0;
+    while(t < size) {
+        if ((length = recv(sd, out_buf + t, size - t, 0)) <= 0) {
+            if (running) {
+                #ifdef _WIN32
+                if(WSAGetLastError() == WSAEINTR) {
+                #else
+                if(errno == EINTR) {
+                #endif
+                    continue;
+                }
+                perror("recv");
+                exit(1);
+            } else {
+                break;
+            }
+        }
+        t += length;
+    }
+    return t;
+}
+
 // recv worker thread
 int recv_worker(void *arg) {
     char *data = malloc(sizeof(char) * RECV_SIZE);
     int size;
+
     while (1) {
-        int t = 0;
-        int length = 0;
-        // get package length
-        while(t < HEADER_SIZE) {
-            if ((length = recv(sd, ((char *)&size) + t, HEADER_SIZE - t, 0)) <= 0) {
-                if (running) {
-                    perror("recv");
-                    exit(1);
-                } else {
-                    break;
-                }
-            }
-            t += length;
-        }
+        // Read header from network
+        recv_all((char*)&size, HEADER_SIZE);
         size = ntohl(size);
 
         if (size > RECV_SIZE) {
@@ -246,19 +260,7 @@ int recv_worker(void *arg) {
         }
 
         // read 'size' bytes from the network
-        t=0;
-        length = 0;
-        while(t < size) {
-            if ((length = recv(sd, data+t, size-t, 0)) <= 0) {
-                if (running) {
-                    perror("recv");
-                    exit(1);
-                } else {
-                    break;
-                }
-            }
-            t += length;
-        }
+        recv_all(data, size);
 
         // move data over to packet_buffer
         while (1) {

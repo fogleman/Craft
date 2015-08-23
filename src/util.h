@@ -20,6 +20,7 @@
 #endif
 
 typedef struct {
+    unsigned int old_fps;
     unsigned int fps;
     unsigned int frames;
     double since;

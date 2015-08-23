@@ -3,6 +3,8 @@
 
 #define DEFAULT_PORT 4080
 
+#define SHOWERROR(ErrMsg) { char aBuf[256]; snprintf(aBuf, 256, "At '%s:%d' in function '%s' occurred error '%s'",__FILE__,__LINE__,__FUNCTION__,ErrMsg); perror(aBuf); };
+
 typedef struct {
     int size;
     char *payload;

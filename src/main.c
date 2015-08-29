@@ -69,17 +69,51 @@ void connect_console_command(char *str) {
         g->typing = 1;
         g->typing_buffer[0] = '\0';
     } else if (g->server_user[0] == '\0') {
-        strncpy(g->server_user, str, 32);
-        snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-                "Enter a password to login/create account");
-        snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Password");
+        char new_str[strlen(str)+1]; // Strip all whitespaces away
+        int j = 0;
+        for(int i = 0; i <= strlen(str); i++) {
+            if(str[i] == ' ') {
+                continue;
+            }
+            if(str[i] == '\0') {
+                new_str[j] = '\0';
+                break;
+            }
+            new_str[j++] = str[i];
+        }
+        if(new_str[0] != '\0') { // Sucess, the string is valid
+            strncpy(g->server_user, str, 32);
+            snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                    "Enter a password to login/create account");
+            snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Password");
+        } else { // Failed, the string is empty or contains only whitespaces
+            snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                    "The username cannot be empty!");
+        }
         g->typing = 1;
         g->typing_buffer[0] = '\0';
     } else if (g->server_pass[0] == '\0') {
-        strncpy(g->server_pass, str, 32);
-        snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-                "Enter server %s as %s", g->server_addr, g->server_user);
-        snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Command");
+        char new_str[strlen(str)+1]; // Strip all whitespaces away
+        int j = 0;
+        for(int i = 0; i <= strlen(str); i++) {
+            if(str[i] == ' ') {
+                continue;
+            }
+            if(str[i] == '\0') {
+                new_str[j] = '\0';
+                break;
+            }
+            new_str[j++] = str[i];
+        }
+        if(new_str[0] != '\0') { // Sucess, the string is valid
+            strncpy(g->server_pass, str, 32);
+            snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                    "Enter server %s as %s", g->server_addr, g->server_user);
+            snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Command");
+        } else { // Failed, the string is empty or contains only whitespaces
+            snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                    "The password cannot be empty!");
+        }
         g->typing = 1;
         g->typing_buffer[0] = '\0';
     }

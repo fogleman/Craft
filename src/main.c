@@ -32,6 +32,7 @@ Model *g = &model;
 MoveItem move_item;
 
 void init_chunk(Chunk *chunk, int p, int q, int k);
+void place_block_global_cords(int x, int y, int z, int w);
 
 int chunked_int(int p) {
     if(p < 0) {
@@ -1499,10 +1500,16 @@ void on_left_click() {
 
 void on_right_click() {
     State *s = &g->players->state;
-    int hx, hy, hz;
+    int hx, hy, hz, w;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hw > 0 && !player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
         click_at(1, hx, hy, hz, 2);
+        if (inventory.selected >= 0) {
+            w = inventory.items[inventory.selected].id;
+            if (w > 0) {
+                place_block_global_cords(hx, hy, hz, w);
+            }
+        }
     } else {
         click_at(0, 0, 0, 0, 2);
     }
@@ -1834,6 +1841,56 @@ void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
     }
 }
 
+void place_block(int bp, int bq, int bx, int by, int bz, int bw) {
+    State *s = &g->players->state;
+    int bk = chunked_int(by);
+    Chunk *chunk = find_chunk(bp, bq, bk, 1);
+    if(chunk) {
+        parse_block(chunk,
+                    bx, by,
+                    bz, bw, s);
+        chunk->dirty = 1;
+        /* Make any chunk that owns an adjacent block dirty as well */
+        int r = 1;
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                for (int dy = -r; dy <= r; dy++) {
+                    int x = bx + dx;
+                    int y = by + dy;
+                    int z = bz + dz;
+                    int np = chunked_int(x);
+                    int nq = chunked_int(z);
+                    int nk = chunked_int(y);
+                    Chunk *c = find_chunk(np, nq, nk, 0);
+                    if (c) {
+                        c->dirty = 1;
+                    }
+                }
+            }
+        }
+        /* If the chunk is close to the player, force a chunk update */
+        if(chunk_near_player(bp, bq, bk, s, 10)) {
+            for (int dp = -r; dp <= r; dp++) {
+                for (int dq = -r; dq <= r; dq++) {
+                    for (int dk = -r; dk <= r; dk++) {
+                        int np = bp + dp;
+                        int nq = bq + dq;
+                        int nk = bk + dk;
+                        Chunk *c = find_chunk(np, nq, nk, 0);
+                        if(c && c->dirty) {
+                            gen_chunk_buffer(chunk);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void place_block_global_cords(int x, int y, int z, int w) {
+    place_block(chunked_int(x), chunked_int(z), x, y, z, w);
+}
+
 void parse_buffer(Packet packet) {
 
     Player *me = g->players;
@@ -1905,6 +1962,7 @@ void parse_buffer(Packet packet) {
             if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
                        &bp, &bq, &bx, &by, &bz, &bw) == 6) {
                 g->blocks_recv = g->blocks_recv + 1;
+                place_block(bp, bq, bx, by, bz, bw);
             }
             float px, py, pz, prx, pry;
             if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",

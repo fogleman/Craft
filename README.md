@@ -1,5 +1,7 @@
 ## Konstructs
 
+[![Join the chat at https://gitter.im/konstructs/client](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/konstructs/client?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://travis-ci.org/konstructs/client.svg?branch=master)](https://travis-ci.org/konstructs/client)
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders).

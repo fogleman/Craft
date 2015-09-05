@@ -26,6 +26,8 @@ upload_client_deb() {
 
   log $FUNCNAME "Publish version $version of $repo/$package"
   curl -X POST $API_AUTH $API_URL/content/konstructs/$repo/$package/$version/publish
+
+  curl -d message="Publish version $version of $repo/$package" https://webhooks.gitter.im/e/$gitter
 }
 
 upload_client() {
@@ -49,6 +51,8 @@ upload_client() {
 
   log $FUNCNAME "Publish version $version of $repo/$package"
   curl -X POST $API_AUTH $API_URL/content/konstructs/$repo/$package/$version/publish
+
+  curl -d message="Publish version $version of $repo/$package" https://webhooks.gitter.im/e/$gitter
 }
 
 # Upload master to bintray

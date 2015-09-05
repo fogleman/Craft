@@ -1513,13 +1513,15 @@ void on_left_click() {
             client_click_inventory(index);
             move_item.use = 0;
             if (DEBUG) printf("Inventory: Move slot %d to %d\n", move_item.index, index);
-            ext_inventory.selected = -1;
         // Select a item, if there is a item in the slot
         } else {
             client_click_inventory(index);
             move_item.index = index;
             move_item.use = 1;
-            ext_inventory.selected = index;
+            if(g->mouse_item == -1) {
+              g->mouse_item = ext_inventory.items[index].id;
+              ext_inventory.items[index].id = 0;
+            }
             if (DEBUG) printf("Inventory: Select slot %d\n", index);
         }
 

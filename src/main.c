@@ -30,10 +30,9 @@
 Model model;
 Model *g = &model;
 MoveItem move_item;
-GhostBlock gb[GHOST_BLOCK_MAX] = {0};
-int ghost_block_num = 0;
 
 void init_chunk(Chunk *chunk, int p, int q, int k);
+void place_block_global_cords(int x, int y, int z, int w);
 
 int chunked_int(int p) {
     if(p < 0) {
@@ -566,71 +565,6 @@ int _hit_test(
     return 0;
 }
 
-int is_ghost_block(struct timeval curtime, GhostBlock gb, int x, int y, int z) {
-    int age = (((curtime.tv_sec - gb.ts.tv_sec) * 1000000)
-        + (curtime.tv_usec - gb.ts.tv_usec))/1000;
-
-    if(age < GHOST_BLOCK_MAX_AGE && x == gb.x && y == gb.y && z == gb.z) {
-        return 1;
-    }
-
-    return 0;
-}
-
-int is_ghost_collide(struct timeval curtime, int x, int y, int z) {
-    for(int i=0; i < GHOST_BLOCK_MAX; i++) {
-        if(is_ghost_block(curtime, gb[i], x, y, z)) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-int _hit_test_ghost(float max_distance, int previous, float x, float y, float z,
-        float vx, float vy, float vz, int *hx, int *hy, int *hz) {
-
-    int m = 32;
-    int px = 0, py = 0, pz = 0;
-    struct timeval curtime;
-    gettimeofday(&curtime, NULL);
-
-    for (int i = 0; i < max_distance * m; i++) {
-
-        // Get block
-        int nx = roundf(x);
-        int ny = roundf(y);
-        int nz = roundf(z);
-
-        // Is this a new block?
-        if (nx != px || ny != py || nz != pz) {
-
-            // Match agains ghost block list
-            for(int i=0; i < GHOST_BLOCK_MAX; i++) {
-                if (is_ghost_block(curtime, gb[i], nx, ny, nz)) {
-
-                    if (previous) {
-                        *hx = px; *hy = py; *hz = pz;
-                    } else {
-                        *hx = nx; *hy = ny; *hz = nz;
-                    }
-
-                    return 1;
-                }
-            }
-
-            // Save blocks in px, py and pz.
-            px = nx; py = ny; pz = nz;
-        }
-
-        x += vx / m;
-        y += vy / m;
-        z += vz / m;
-    }
-
-    return 0;
-}
-
 int hit_test(
     int previous, float x, float y, float z, float rx, float ry,
     int *bx, int *by, int *bz)
@@ -643,7 +577,6 @@ int hit_test(
     float vx, vy, vz;
     get_sight_vector(rx, ry, &vx, &vy, &vz);
 
-    // Hit test agains normal blocks
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
         if (chunk_distance(chunk, p, q, k) > 1) {
@@ -661,13 +594,6 @@ int hit_test(
                 result = hw;
             }
         }
-    }
-
-    // Hit test agains ghost blocks
-    int hx, hy, hz;
-    if (_hit_test_ghost(8, previous, x, y, z, vx, vy, vz, &hx, &hy, &hz) == 1) {
-        *bx = hx; *by = hy; *bz = hz;
-        result = 1;
     }
 
     return result;
@@ -754,29 +680,6 @@ int collide(int height, float *x, float *y, float *z) {
 
     struct timeval curtime;
     gettimeofday(&curtime, NULL);
-
-    for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && is_ghost_collide(curtime, nx - 1, ny - dy, nz)) {
-            *x = nx - pad;
-        }
-        if (px > pad && is_ghost_collide(curtime, nx + 1, ny - dy, nz)) {
-            *x = nx + pad;
-        }
-        if (py < -pad && is_ghost_collide(curtime, nx, ny - dy - 1, nz)) {
-            *y = ny - pad;
-            result = 1;
-        }
-        if (py > pad && is_ghost_collide(curtime, nx, ny - dy + 1, nz)) {
-            *y = ny + pad;
-            result = 1;
-        }
-        if (pz < -pad && is_ghost_collide(curtime, nx, ny - dy, nz - 1)) {
-            *z = nz - pad;
-        }
-        if (pz > pad && is_ghost_collide(curtime, nx, ny - dy, nz + 1)) {
-            *z = nz + pad;
-        }
-    }
 
     return result;
 }
@@ -1508,47 +1411,6 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     draw_triangles_3d(attrib, buffer, 512 * 3);
 }
 
-void render_ghost_block(Attrib *attrib, Player *player, GhostBlock gb) {
-    State *s = &player->state;
-    float matrix[16];
-    set_matrix_3d(matrix, g->width, g->height, s->x, s->y, s->z, s->rx,
-                  s->ry, g->fov, g->ortho, g->render_radius);
-    glUseProgram(attrib->program);
-    glLineWidth(8);
-    glEnable(GL_BLEND);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    glUniform4f(attrib->extra1, 0.0, 0.0, 0.0, 0.6);
-
-    GLuint wireframe_buffer = gen_wireframe_buffer(gb.x, gb.y, gb.z, 0.48);
-    draw_lines(attrib, wireframe_buffer, 3, 24);
-
-    del_buffer(wireframe_buffer);
-    glDisable(GL_BLEND);
-}
-
-void render_ghost_blocks(Attrib *attrib, Player *player) {
-
-    struct timeval curtime;
-    gettimeofday(&curtime, NULL);
-
-    for (int i=0; i < GHOST_BLOCK_MAX; i++) {
-
-        int age = (((curtime.tv_sec - gb[i].ts.tv_sec) * 1000000)
-            + (curtime.tv_usec - gb[i].ts.tv_usec))/1000;
-
-        if(age > GHOST_BLOCK_MAX_AGE || age < GHOST_BLOCK_MIN_AGE) continue;
-
-        render_ghost_block(attrib, player, gb[i]);
-    }
-}
-
-void insert_ghost_block(GhostBlock *gb, int pos, int x, int y, int z) {
-    gb[pos].x = x;
-    gb[pos].y = y;
-    gb[pos].z = z;
-    gettimeofday(&gb[pos].ts, NULL);
-}
-
 void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -1672,14 +1534,16 @@ void on_left_click() {
 
 void on_right_click() {
     State *s = &g->players->state;
-    int hx, hy, hz;
+    int hx, hy, hz, w;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hw > 0 && !player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
         click_at(1, hx, hy, hz, 2);
-
-        insert_ghost_block(gb, ghost_block_num, hx, hy, hz);
-        ghost_block_num++;
-        if (ghost_block_num >= GHOST_BLOCK_MAX) ghost_block_num = 0;
+        if (inventory.selected >= 0) {
+            w = inventory.items[inventory.selected].id;
+            if (w > 0) {
+                place_block_global_cords(hx, hy, hz, w);
+            }
+        }
     } else {
         click_at(0, 0, 0, 0, 2);
     }
@@ -1979,13 +1843,6 @@ void handle_movement(double dt) {
 void parse_block(Chunk * chunk, int x, int y, int z, int w, State *s) {
     chunk_set(chunk, x, y, z, w);
 
-    // Remove ghost block
-    for(int i=0; i < GHOST_BLOCK_MAX; i++) {
-        if (gb[i].x == x && gb[i].y == y && gb[i].z == z) {
-            gb[i].ts.tv_sec = 0;
-        }
-    }
-
     if (player_intersects_block(2, s->x, s->y, s->z, x, y, z)) {
         s->y += 2;
     }
@@ -2016,6 +1873,56 @@ void parse_blocks(int p, int q, int k, char* blocks, int size, State *s) {
             }
         }
     }
+}
+
+void place_block(int bp, int bq, int bx, int by, int bz, int bw) {
+    State *s = &g->players->state;
+    int bk = chunked_int(by);
+    Chunk *chunk = find_chunk(bp, bq, bk, 1);
+    if(chunk) {
+        parse_block(chunk,
+                    bx, by,
+                    bz, bw, s);
+        chunk->dirty = 1;
+        /* Make any chunk that owns an adjacent block dirty as well */
+        int r = 1;
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                for (int dy = -r; dy <= r; dy++) {
+                    int x = bx + dx;
+                    int y = by + dy;
+                    int z = bz + dz;
+                    int np = chunked_int(x);
+                    int nq = chunked_int(z);
+                    int nk = chunked_int(y);
+                    Chunk *c = find_chunk(np, nq, nk, 0);
+                    if (c) {
+                        c->dirty = 1;
+                    }
+                }
+            }
+        }
+        /* If the chunk is close to the player, force a chunk update */
+        if(chunk_near_player(bp, bq, bk, s, 10)) {
+            for (int dp = -r; dp <= r; dp++) {
+                for (int dq = -r; dq <= r; dq++) {
+                    for (int dk = -r; dk <= r; dk++) {
+                        int np = bp + dp;
+                        int nq = bq + dq;
+                        int nk = bk + dk;
+                        Chunk *c = find_chunk(np, nq, nk, 0);
+                        if(c && c->dirty) {
+                            gen_chunk_buffer(chunk);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void place_block_global_cords(int x, int y, int z, int w) {
+    place_block(chunked_int(x), chunked_int(z), x, y, z, w);
 }
 
 void parse_buffer(Packet packet) {
@@ -2089,48 +1996,7 @@ void parse_buffer(Packet packet) {
             if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
                        &bp, &bq, &bx, &by, &bz, &bw) == 6) {
                 g->blocks_recv = g->blocks_recv + 1;
-                int bk = chunked_int(by);
-                Chunk *chunk = find_chunk(bp, bq, bk, 1);
-                if(chunk) {
-                    parse_block(chunk,
-                                bx, by,
-                                bz, bw, s);
-                    chunk->dirty = 1;
-                    /* Make any chunk that owns an adjacent block dirty as well */
-                    int r = 1;
-                    for (int dx = -r; dx <= r; dx++) {
-                        for (int dz = -r; dz <= r; dz++) {
-                            for (int dy = -r; dy <= r; dy++) {
-                                int x = bx + dx;
-                                int y = by + dy;
-                                int z = bz + dz;
-                                int np = chunked_int(x);
-                                int nq = chunked_int(z);
-                                int nk = chunked_int(y);
-                                Chunk *c = find_chunk(np, nq, nk, 0);
-                                if (c) {
-                                    c->dirty = 1;
-                                }
-                            }
-                        }
-                    }
-                    /* If the chunk is close to the player, force a chunk update */
-                    if(chunk_near_player(bp, bq, bk, s, 10)) {
-                        for (int dp = -r; dp <= r; dp++) {
-                            for (int dq = -r; dq <= r; dq++) {
-                                for (int dk = -r; dk <= r; dk++) {
-                                    int np = bp + dp;
-                                    int nq = bq + dq;
-                                    int nk = bk + dk;
-                                    Chunk *c = find_chunk(np, nq, nk, 0);
-                                    if(c && c->dirty) {
-                                        gen_chunk_buffer(chunk);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                place_block(bp, bq, bx, by, bz, bw);
             }
             float px, py, pz, prx, pry;
             if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
@@ -2646,7 +2512,6 @@ int main(int argc, char **argv) {
         int face_count = render_chunks(&block_attrib, player);
         render_players(&block_attrib, player);
         render_wireframe(&line_attrib, player);
-        render_ghost_blocks(&line_attrib, player);
 
         // RENDER HUD //
         if (connected) {

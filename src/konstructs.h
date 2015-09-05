@@ -126,13 +126,6 @@ typedef struct {
   int mouse_item;
 } Model;
 
-typedef struct {
-    struct timeval ts;
-    int x;
-    int y;
-    int z;
-} GhostBlock;
-
 // in main.c
 void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count);
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w);

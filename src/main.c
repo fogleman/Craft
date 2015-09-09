@@ -55,29 +55,29 @@ int is_connected() {
 }
 
 void update_login_prompt() {
-	g->text_message[0] = '\0';
-	g->text_prompt[0] = '\0';
-	if (strlen(g->server_addr) == 0) {
-		// must enter the address
-		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-				"Enter the server address");
-		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Server");
-	} else if (strlen(g->server_addr) > 0 && strlen(g->server_user) == 0) {
-		// must enter the username
-		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-				"Enter your username to login/register");
-		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "User");
-	} else if (strlen(g->server_user) > 0 && strlen(g->server_pass) == 0) {
-		// must enter the password
-		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-				"Enter your password to login/register");
-		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Password");
-	} else {
-		g->typing = 0;
-		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-				"Entering server %s as %s", g->server_addr, g->server_user);
-		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Chat");
-	}
+    g->text_message[0] = '\0';
+    g->text_prompt[0] = '\0';
+    if (strlen(g->server_addr) == 0) {
+        // must enter the address
+        snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                "Enter the server address");
+        snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Server");
+    } else if (strlen(g->server_addr) > 0 && strlen(g->server_user) == 0) {
+        // must enter the username
+        snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                "Enter your username to login/register");
+        snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "User");
+    } else if (strlen(g->server_user) > 0 && strlen(g->server_pass) == 0) {
+        // must enter the password
+        snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                "Enter your password to login/register");
+        snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Password");
+    } else {
+        g->typing = 0;
+        snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+                "Entering server %s as %s", g->server_addr, g->server_user);
+        snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Chat");
+    }
 
 }
 
@@ -2341,11 +2341,11 @@ void main_render_text(Player *me, State *s, Player *player, Attrib text_attrib,
 }
 
 void main_connect() {
-	if (!is_connected()) {
-		return;
-	}
+    if (!is_connected()) {
+        return;
+    }
 
-	char out_hash[41];
+    char out_hash[41];
     char in_hash[128];
 
     glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -2400,21 +2400,21 @@ int main(int argc, char **argv) {
     move_item.use = 0;
 
     if (argc > 1) {
-    	for (int i = 1; i < argc; i++) {
-    		if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
-    			if (check_server(argv[i+1])) {
-    				strncpy(g->server_addr, argv[i+1], MAX_ADDR_LENGTH);
-    			} else {
-    				printf("Failed to resolve %s, ignoring parameter '%s'\n", argv[i+1], argv[i]);
-    			}
-    		}
-    		if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
-    			strncpy(g->server_user, argv[i+1], MAX_NAME_LENGTH);
-    		}
-    		if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
-    			strncpy(g->server_pass, argv[i+1], 64);
-    		}
-    	}
+        for (int i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
+                if (check_server(argv[i+1])) {
+                    strncpy(g->server_addr, argv[i+1], MAX_ADDR_LENGTH);
+                } else {
+                    printf("Failed to resolve %s, ignoring parameter '%s'\n", argv[i+1], argv[i]);
+                }
+            }
+            if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
+                strncpy(g->server_user, argv[i+1], MAX_NAME_LENGTH);
+            }
+            if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
+                strncpy(g->server_pass, argv[i+1], 64);
+            }
+        }
     }
     update_login_prompt();
 
@@ -2490,7 +2490,7 @@ int main(int argc, char **argv) {
             connected = 1;
             main_connect();
         } else if (!is_connected()) {
-        	g->typing = 1;
+            g->typing = 1;
         }
 
         g->scale = get_scale_factor();

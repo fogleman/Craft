@@ -29,7 +29,7 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 - WASD to move forward, left, backward, right.
 - Space to jump.
 - Left Click to destroy a block.
-- Right Click or Ctrl + Left Click to create a block.
+- Right Click or Ctrl* + Left Click to create a block. (\* Use `⌘ Cmd` on Mac instead)
 - Tab to toggle between walking and flying.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
@@ -105,7 +105,7 @@ See http://www.konstructs.org/download/
 
 There are multiple ways to connect to a server. The most common way is to just start the game and follow the on-screen prompts.
 
-A more advanced way is through commandline arguments. The advantage of this is, that commandline arguments can be included in link files (on Windows .lnk, on Linux sometimes calls "Starter") to automatically connect to your favorite server!
+A more advanced way is through commandline arguments. The advantage of this is, that commandline arguments can be included in shortcut files (on Windows `.lnk`, on Linux `.desktop`) to automatically connect to your favorite server!
 
 Possible arguments are:
 ```

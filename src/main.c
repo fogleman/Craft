@@ -54,6 +54,33 @@ int is_connected() {
     return 1;
 }
 
+void update_login_prompt() {
+	g->text_message[0] = '\0';
+	g->text_prompt[0] = '\0';
+	if (strlen(g->server_addr) == 0) {
+		// must enter the address
+		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+				"Enter the server address");
+		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Server");
+	} else if (strlen(g->server_addr) > 0 && strlen(g->server_user) == 0) {
+		// must enter the username
+		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+				"Enter your username to login/register");
+		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "User");
+	} else if (strlen(g->server_user) > 0 && strlen(g->server_pass) == 0) {
+		// must enter the password
+		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+				"Enter your password to login/register");
+		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Password");
+	} else {
+		g->typing = 0;
+		snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
+				"Entering server %s as %s", g->server_addr, g->server_user);
+		snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Chat");
+	}
+
+}
+
 void connect_console_command(char *str) {
     if (g->server_addr[0] == '\0') {
         if (!check_server(str)) {
@@ -62,9 +89,7 @@ void connect_console_command(char *str) {
             return;
         }
         strncpy(g->server_addr, str, MAX_ADDR_LENGTH);
-        snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-                "Select a new/existing username");
-        snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "User");
+        update_login_prompt();
         g->typing = 1;
         g->typing_buffer[0] = '\0';
     } else if (g->server_user[0] == '\0') {
@@ -80,11 +105,9 @@ void connect_console_command(char *str) {
             }
             new_str[j++] = str[i];
         }
-        if(new_str[0] != '\0') { // Sucess, the string is valid
+        if(new_str[0] != '\0') { // Success, the string is valid
             strncpy(g->server_user, str, 32);
-            snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-                    "Enter a password to login/create account");
-            snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Password");
+            update_login_prompt();
         } else { // Failed, the string is empty or contains only whitespaces
             snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
                     "The username cannot be empty!");
@@ -104,16 +127,14 @@ void connect_console_command(char *str) {
             }
             new_str[j++] = str[i];
         }
-        if(new_str[0] != '\0') { // Sucess, the string is valid
-            strncpy(g->server_pass, str, 32);
-            snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
-                    "Enter server %s as %s", g->server_addr, g->server_user);
-            snprintf(g->text_prompt, KONSTRUCTS_TEXT_MESSAGE_SIZE, "Command");
+        if(new_str[0] != '\0') { // Success, the string is valid
+            strncpy(g->server_pass, str, 64);
+            update_login_prompt();
         } else { // Failed, the string is empty or contains only whitespaces
             snprintf(g->text_message, KONSTRUCTS_TEXT_MESSAGE_SIZE,
                     "The password cannot be empty!");
         }
-        g->typing = 1;
+        g->typing = 0;
         g->typing_buffer[0] = '\0';
     }
 }
@@ -1578,7 +1599,7 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         return;
     }
     if (key == GLFW_KEY_ESCAPE) {
-        if (g->typing) {
+        if (g->typing && is_connected()) {
             g->typing = 0;
         }
         else if (exclusive) {
@@ -1595,11 +1616,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
                 }
             }
             else {
-                g->typing = 0;
                 if (!is_connected()) {
                     connect_console_command(g->typing_buffer);
                 } else {
                     client_talk(g->typing_buffer);
+                    g->typing = 0;
                 }
             }
         }
@@ -2138,7 +2159,7 @@ void shader_path(const char *name, char *path, size_t max_len) {
     shtxt_path(name, "shaders", path, max_len);
 }
 
-int load_textures() {
+void load_textures() {
     char txtpth[KONSTRUCTS_PATH_SIZE];
 
     GLuint texture;
@@ -2181,7 +2202,7 @@ int load_textures() {
 
 }
 
-int load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
+void load_shaders(Attrib *block_attrib, Attrib *line_attrib, Attrib *text_attrib,
         Attrib *sky_attrib, Attrib *inventory_attrib) {
     char vertex_path[KONSTRUCTS_PATH_SIZE];
     char fragment_path[KONSTRUCTS_PATH_SIZE];
@@ -2320,7 +2341,11 @@ void main_render_text(Player *me, State *s, Player *player, Attrib text_attrib,
 }
 
 void main_connect() {
-    char out_hash[41];
+	if (!is_connected()) {
+		return;
+	}
+
+	char out_hash[41];
     char in_hash[128];
 
     glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -2367,20 +2392,31 @@ int main(int argc, char **argv) {
     g->server_addr[0] = '\0';
     g->server_user[0] = '\0';
     g->server_pass[0] = '\0';
+    g->text_message[0] = '\0';
+    g->text_prompt[0] = '\0';
+    g->typing_buffer[0] = '\0';
     g->mouse_item = -1;
 
     move_item.use = 0;
 
-    if (argc == 4) {
-        strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
-        strncpy(g->server_user, argv[2], MAX_NAME_LENGTH);
-        strncpy(g->server_pass, argv[3], 64);
-        g->text_message[0] = '\0';
-        g->text_prompt[0] = '\0';
-    } else {
-        sprintf(g->text_message, "Press T to access the console");
-        sprintf(g->text_prompt, "Server");
+    if (argc > 1) {
+    	for (int i = 1; i < argc; i++) {
+    		if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
+    			if (check_server(argv[i+1])) {
+    				strncpy(g->server_addr, argv[i+1], MAX_ADDR_LENGTH);
+    			} else {
+    				printf("Failed to resolve %s, ignoring parameter '%s'\n", argv[i+1], argv[i]);
+    			}
+    		}
+    		if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
+    			strncpy(g->server_user, argv[i+1], MAX_NAME_LENGTH);
+    		}
+    		if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
+    			strncpy(g->server_pass, argv[i+1], 64);
+    		}
+    	}
     }
+    update_login_prompt();
 
     if (glfwInit() == GL_FALSE) {
         printf("Failed to init glfw");
@@ -2399,7 +2435,7 @@ int main(int argc, char **argv) {
     glfwSetCharCallback(g->window, on_char);
 
     if (glewInit() != GLEW_OK) {
-        printf("Failed to init glwe");
+        printf("Failed to init glew");
         return -1;
     }
 
@@ -2453,6 +2489,8 @@ int main(int argc, char **argv) {
         if (is_connected() && !connected) {
             connected = 1;
             main_connect();
+        } else if (!is_connected()) {
+        	g->typing = 1;
         }
 
         g->scale = get_scale_factor();

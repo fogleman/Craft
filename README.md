@@ -12,9 +12,9 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 
 ### Features
 
-* Support normal blocks, plants (grass, flowers, etc.) and transparency (glass).
-* Day / night cycles and a textured sky dome.
-* No height limit (65536 blocks really).
+* Supports normal blocks, plants (grass, flowers, etc.) and transparency (glass).
+* Day / night cycles and a textured skybox.
+* No height limit.
 * Survival type of gameplay (work in progress).
 * Simple player inventory.
 
@@ -29,9 +29,8 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 - WASD to move forward, left, backward, right.
 - Space to jump.
 - Left Click to destroy a block.
-- Right Click or Cmd + Left Click to create a block.
+- Right Click or Ctrl* + Left Click to create a block. (\* Use `⌘ Cmd` on Mac instead)
 - Tab to toggle between walking and flying.
-- ZXCVBN to move in exact directions along the XYZ axes.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.
 - O to observe players in the main view.
@@ -43,21 +42,21 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 
 ### Purpose
 
-The project aims at building a client that can render and interact with a block based world. The goal is to keep the client as simple as possible leavning the game logic to the server.
+The project aims at building a client that can render and interact with a block-based world. The goal is to keep the client as simple as possible leaving the game logic to the server.
 
 We also like the server to support a survival type of game with inventories and crafting. To this extent we are also extending the client to handle this.
 
 ### History
 
-The project is based of [Craft](https://github.com/fogleman/Craft) written by Michael Fogleman. The original project was primaly focused on single player. We forked Craft to focus on simplifying the client for a multiplayer only game. You can still start a local server if you like to run singleplayer.
+The project is based on [Craft](https://github.com/fogleman/Craft) written by Michael Fogleman. The original project was primaly focused on single player. We forked Craft to focus on simplifying the client for a multiplayer-only game. You can still start a local server if you like to play single player.
 
 ### Protocol changes
 
-To let the server manage the world we needed to change the text based protocol to allow binary extensions. This has been done by intruducing a four byte header to all commands. We changed only the `C` (chunk) command to transfer compressed binary data, this reduces the amount of data being sent and greatly improves the speed of the client.
+To let the server manage the world, we needed to change the text based protocol to allow binary extensions. This has been done by introducing a four byte header to all commands. We changed only the `C` (chunk) command to transfer compressed binary data, this reduces the amount of data being sent and greatly improves the speed of the client.
 
 ### Textures
 
-In the long term we want textures to be managed and sent by the server.  It should be up to the server administrator to choose what type of blocks and textures that are avaiable.
+In long term, we want textures to be managed and sent by the server. It should be up to the server administrator to choose what type of blocks and textures are available.
 
 ### Compile and/or Install
 
@@ -102,9 +101,26 @@ See [BUILD.md](BUILD.md)
 
 See http://www.konstructs.org/download/
 
+### Connecting to a Server
+
+There are multiple ways to connect to a server. The most common way is to just start the game and follow the on-screen prompts.
+
+A more advanced way is through commandline arguments. The advantage of this is, that commandline arguments can be included in shortcut files (on Windows `.lnk`, on Linux `.desktop`) to automatically connect to your favorite server!
+
+Possible arguments are:
+```
+./konstructs
+    [(-h/--help)]
+    [(-s/--server) <serveraddress>]
+    [(-u/--user) <username>]
+    [(-p/--password) <password>]
+```
+Every singe argument is optional, so it is possible to choose which arguments you want to supply.
+
 ### Server
 
 You need the [konstructs/server](https://github.com/konstructs/server) to play the game.
-You can download a compiled JAR from [bintray.com/konstructs/jars/server/](https://bintray.com/konstructs/jars/server/view#files).
 
-Start it with `java -jar konstructs-server*.jar` and connect to it with the client, for example: `./konstructs localhost nsg mypassword`.
+You can also download a compiled JAR from [bintray.com/konstructs/jars/server/](https://bintray.com/konstructs/jars/server/view#files), which requires [Java](http://java.com).
+
+Start it with `java -jar konstructs-server*.jar` and connect to it with the client.

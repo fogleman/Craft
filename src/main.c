@@ -2368,6 +2368,16 @@ void main_connect() {
     g->typing = 0;
 }
 
+void print_usage(char **argv)
+{
+    printf("USAGE: %s [options]\n", argv[0]);
+    printf("OPTIONS: -h/--help                  - Show this help\n");
+    printf("         -s/--server   <address>    - Server to enter\n");
+    printf("         -u/--username <username>   - Username to login\n");
+    printf("         -p/--password <password>   - Passworld to login\n\n");
+    exit(0);
+}
+
 int main(int argc, char **argv) {
 
     init_inventory();
@@ -2401,18 +2411,33 @@ int main(int argc, char **argv) {
 
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+                print_usage(argv);
+            }
             if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
-                if (check_server(argv[i+1])) {
-                    strncpy(g->server_addr, argv[i+1], MAX_ADDR_LENGTH);
+                if (!argv[i+1]) {
+                    print_usage(argv);
                 } else {
-                    printf("Failed to resolve %s, ignoring parameter '%s'\n", argv[i+1], argv[i]);
+                    if (check_server(argv[i+1])) {
+                        strncpy(g->server_addr, argv[i+1], MAX_ADDR_LENGTH);
+                    } else {
+                        printf("Failed to resolve '%s', ignoring parameter '%s'\n", argv[i+1], argv[i]);
+                    }
                 }
             }
             if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
-                strncpy(g->server_user, argv[i+1], MAX_NAME_LENGTH);
+                if (!argv[i+1]) {
+                    print_usage(argv);
+                } else {
+                    strncpy(g->server_user, argv[i+1], MAX_NAME_LENGTH);
+                }
             }
             if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
-                strncpy(g->server_pass, argv[i+1], 64);
+                if (!argv[i+1]) {
+                    print_usage(argv);
+                } else {
+                    strncpy(g->server_pass, argv[i+1], 64);
+                }
             }
         }
     }

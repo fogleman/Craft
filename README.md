@@ -14,7 +14,7 @@ Note: Offline mode is removed in this fork, a server is required. You need to st
 
 * Supports normal blocks, plants (grass, flowers, etc.) and transparency (glass).
 * Day / night cycles and a textured skybox.
-* No height limit (technically, just 65536 blocks, but you won't reach this I bet :P).
+* No height limit.
 * Survival type of gameplay (work in progress).
 * Simple player inventory.
 
@@ -110,6 +110,7 @@ A more advanced way is through commandline arguments. The advantage of this is, 
 Possible arguments are:
 ```
 ./konstructs
+    [(-h/--help)]
     [(-s/--server) <serveraddress>]
     [(-u/--user) <username>]
     [(-p/--password) <password>]

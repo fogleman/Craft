@@ -49,14 +49,14 @@ void render_inventory_block(Attrib *attrib, int w, float s, float x, float y, in
 
     set_matrix_item_r(matrix, g->width, g->height, s, x, y, rx, ry, rz);
 
-    if (is_plant(w)) {
+    if (is_plant[w]) {
         glDeleteBuffers(1, &buffer);
         buffer = gen_plant_buffer(0, 0, dz, 0.5, w);
     } else {
         buffer = gen_cube_buffer(0, 0, dz, 0.5, w);
     }
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    if (is_plant(w)) {
+    if (is_plant[w]) {
         draw_plant(attrib, buffer);
     } else {
         draw_cube(attrib, buffer);

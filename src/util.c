@@ -148,6 +148,20 @@ void load_png_texture(const char *file_name) {
     free(data);
 }
 
+void load_png_texture_from_buffer(const char *in, int size) {
+    unsigned int error;
+    unsigned char *data;
+    unsigned int width, height;
+    error = lodepng_decode32(&data, &width, &height, in, size);
+    if (error) {
+        fprintf(stderr, "error %u: %s\n", error, lodepng_error_text(error));
+    }
+    flip_image_vertical(data, width, height);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, data);
+    free(data);
+}
+
 char *tokenize(char *str, const char *delim, char **key) {
     char *result;
     if (str == NULL) {

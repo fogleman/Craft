@@ -30,7 +30,7 @@ void main() {
     df = min(1.0, df + fragment_light);
     float value = min(1.0, daylight + fragment_light);
     vec3 light_color = vec3(value * 0.3 + 0.2);
-    vec3 ambient = vec3(value * 0.3 + 0.2);
+    vec3 ambient = vec3(value * 0.3 + 0.2) + vec3(sin(pi*daylight)/2, sin(pi*daylight)/4, 0.0);
     vec3 light = ambient + light_color * df;
     color = clamp(color * light * ao, vec3(0.0), vec3(1.0));
     vec3 sky_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));

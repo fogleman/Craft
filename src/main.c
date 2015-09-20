@@ -1990,12 +1990,15 @@ void parse_buffer(Packet packet) {
             memcpy(line, payload, size);
             line[size] = '\0';
 
+            if (DEBUG) printf("Proto[Line]: %s\n", line);
+
             {
-                int w, plant, obstacle, transparent, left, right, top, bottom, front, back;
-                if(sscanf(line, "W,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
-                          &w, &plant, &obstacle, &transparent, &left, &right,
+                int w, obstacle, transparent, left, right, top, bottom, front, back;
+                char shape[16];
+                if(sscanf(line, "W,%d,%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
+                          &w, shape, &obstacle, &transparent, &left, &right,
                           &top, &bottom, &front, &back) == 10) {
-                    is_plant[w] = plant;
+                    is_plant[w] = strncmp(shape, "plant", 16) == 0;
                     is_obstacle[w] = obstacle;
                     is_transparent[w] = transparent;
                     blocks[w][0] = left;
@@ -2012,7 +2015,6 @@ void parse_buffer(Packet packet) {
             if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
                        &pid, &ux, &uy, &uz, &urx, &ury) == 6)
             {
-                if (DEBUG) printf("Proto[U]: %d %f %f %f %f %f\n",pid, ux, uy, uz, urx, ury);
                 me->id = pid;
                 s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
                 if (uy == 0) {
@@ -2021,7 +2023,6 @@ void parse_buffer(Packet packet) {
             }
             int pos, amount, id, inv;
             if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
-                if (DEBUG) printf("Proto[I]: %d %d %d\n", pos, amount, id);
                 ext_inventory.items[pos].id = id;
                 ext_inventory.items[pos].num = amount;
                 ext_inventory.items[pos].show = id == -1 ? 0 : 1;
@@ -2029,16 +2030,13 @@ void parse_buffer(Packet packet) {
                 g->inventory_screen = 1;
             }
             if (sscanf(line, "i,%d,%d", &amount, &id) == 2) {
-                if (DEBUG) printf("Proto[i]: %d %d\n", amount, id);
                 g->mouse_item = id;
             }
             if (sscanf(line, "G,%d,%d,%d", &pos, &amount, &id) == 3) {
-                if (DEBUG) printf("Proto[G]: %d %d %d\n", pos, amount, id);
                 inventory.items[pos].id = id;
                 inventory.items[pos].num = amount;
             }
             if (sscanf(line, "A,%d", &id) == 1) {
-                if (DEBUG) printf("Proto[A]: %d\n", id);
                 inventory.selected = id;
             }
             if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
@@ -2065,19 +2063,16 @@ void parse_buffer(Packet packet) {
             }
             if (sscanf(line, "D,%d", &pid) == 1) {
                 delete_player(pid);
-                if (DEBUG) printf("Proto[D]: %d\n", pid);
             }
             double elapsed;
             int day_length;
             if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
-                if (DEBUG) printf("Proto[E]: %lf %d\n", elapsed, day_length);
                 glfwSetTime(fmod(elapsed, day_length));
                 g->day_length = day_length;
                 g->time_changed = 1;
             }
             if (line[0] == 'T' && line[1] == ',') {
                 char *text = line + 2;
-                if (DEBUG) printf("Proto[T]: %s\n", text);
                 add_message(text);
             }
             char format[64];

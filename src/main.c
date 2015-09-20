@@ -1993,11 +1993,12 @@ void parse_buffer(Packet packet) {
             if (DEBUG) printf("Proto[Line]: %s\n", line);
 
             {
-                int w, plant, obstacle, transparent, left, right, top, bottom, front, back;
-                if(sscanf(line, "W,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
-                          &w, &plant, &obstacle, &transparent, &left, &right,
+                int w, obstacle, transparent, left, right, top, bottom, front, back;
+                char shape[16];
+                if(sscanf(line, "W,%d,%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
+                          &w, shape, &obstacle, &transparent, &left, &right,
                           &top, &bottom, &front, &back) == 10) {
-                    is_plant[w] = plant;
+                    is_plant[w] = strncmp(shape, "plant", 16) == 0;
                     is_obstacle[w] = obstacle;
                     is_transparent[w] = transparent;
                     blocks[w][0] = left;

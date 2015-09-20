@@ -623,7 +623,7 @@ int hit_test(
 int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
     State *s = &player->state;
     int w = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, x, y, z);
-    if (is_obstacle(w)) {
+    if (is_obstacle[w]) {
         int hx, hy, hz;
         hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
         int dx = hx - *x;
@@ -674,24 +674,24 @@ int collide(int height, float *x, float *y, float *z) {
                     continue;
                 }
                 for (int dy = 0; dy < height; dy++) {
-                    if (px < -pad && is_obstacle(chunk_get(chunk, nx - 1, ny - dy, nz))) {
+                    if (px < -pad && is_obstacle[chunk_get(chunk, nx - 1, ny - dy, nz)]) {
                         *x = nx - pad;
                     }
-                    if (px > pad && is_obstacle(chunk_get(chunk, nx + 1, ny - dy, nz))) {
+                    if (px > pad && is_obstacle[chunk_get(chunk, nx + 1, ny - dy, nz)]) {
                         *x = nx + pad;
                     }
-                    if (py < -pad && is_obstacle(chunk_get(chunk, nx, ny - dy - 1, nz))) {
+                    if (py < -pad && is_obstacle[chunk_get(chunk, nx, ny - dy - 1, nz)]) {
                         *y = ny - pad;
                         result = 1;
                     }
-                    if (py > pad && is_obstacle(chunk_get(chunk, nx, ny - dy + 1, nz))) {
+                    if (py > pad && is_obstacle[chunk_get(chunk, nx, ny - dy + 1, nz)]) {
                         *y = ny + pad;
                         result = 1;
                     }
-                    if (pz < -pad && is_obstacle(chunk_get(chunk, nx, ny - dy, nz - 1))) {
+                    if (pz < -pad && is_obstacle[chunk_get(chunk, nx, ny - dy, nz - 1)]) {
                         *z = nz - pad;
                     }
-                    if (pz > pad && is_obstacle(chunk_get(chunk, nx, ny - dy, nz + 1))) {
+                    if (pz > pad && is_obstacle[chunk_get(chunk, nx, ny - dy, nz + 1)]) {
                         *z = nz + pad;
                     }
                 }
@@ -783,7 +783,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -797,7 +797,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - CHUNK_SIZE - oy;
         int z = ez - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -813,7 +813,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -826,7 +826,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -839,7 +839,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -852,7 +852,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez - CHUNK_SIZE - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -865,7 +865,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez + CHUNK_SIZE - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -882,7 +882,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -894,7 +894,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -906,7 +906,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez - CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -917,7 +917,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez + CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -932,7 +932,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez - CHUNK_SIZE - oz;
             int w = item->neighbour_blocks[0][0][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -947,7 +947,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez - CHUNK_SIZE - oz;
             int w = item->neighbour_blocks[2][0][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -962,7 +962,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez + CHUNK_SIZE - oz;
             int w = item->neighbour_blocks[0][2][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -977,7 +977,7 @@ void compute_chunk(WorkerItem *item) {
             int y = ey + CHUNK_SIZE - oy;
             int z = ez + CHUNK_SIZE - oz;
             int w = item->neighbour_blocks[2][2][2][ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-            opaque[XYZ(x, y, z)] = !is_transparent(w);
+            opaque[XYZ(x, y, z)] = !is_transparent[w];
             if (opaque[XYZ(x, y, z)]) {
                 highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
             }
@@ -993,7 +993,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez - CHUNK_SIZE - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -1005,7 +1005,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez + CHUNK_SIZE - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -1017,7 +1017,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez - CHUNK_SIZE - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -1029,7 +1029,7 @@ void compute_chunk(WorkerItem *item) {
         int y = ey - oy;
         int z = ez + CHUNK_SIZE - oz;
         int w = ew;
-        opaque[XYZ(x, y, z)] = !is_transparent(w);
+        opaque[XYZ(x, y, z)] = !is_transparent[w];
         if (opaque[XYZ(x, y, z)]) {
             highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
         }
@@ -1055,7 +1055,7 @@ void compute_chunk(WorkerItem *item) {
         if (total == 0) {
             continue;
         }
-        if (is_plant(ew)) {
+        if (is_plant[ew]) {
             total = 4;
         }
         faces += total;
@@ -1104,7 +1104,7 @@ void compute_chunk(WorkerItem *item) {
         float ao[6][4];
         float light[6][4];
         occlusion(neighbors, shades, ao, light);
-        if (is_plant(ew)) {
+        if (is_plant[ew]) {
             total = 4;
             float min_ao = 1;
             float max_light = 0;
@@ -1440,7 +1440,7 @@ void render_wireframe(Attrib *attrib, Player *player) {
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (is_obstacle(hw)) {
+    if (is_obstacle[hw]) {
         glUseProgram(attrib->program);
         glLineWidth(2);
         glEnable(GL_COLOR_LOGIC_OP);
@@ -1975,12 +1975,37 @@ void parse_buffer(Packet packet) {
             if(g->pending_chunks <= 0) {
               request_chunks();
             }
+        } else if(payload[0] == 'M') {
+            GLuint texture;
+            glGenTextures(1, &texture);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            load_png_texture_from_buffer(payload + 1, size - 1);
         } else {
             int bp, bq, bx, by, bz, bw;
 
             char *line = malloc((size + 1) * sizeof(char));
             memcpy(line, payload, size);
             line[size] = '\0';
+
+            {
+                int w, plant, obstacle, transparent, left, right, top, bottom, front, back;
+                if(sscanf(line, "W,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+                          &w, &plant, &obstacle, &transparent, &left, &right,
+                          &top, &bottom, &front, &back) == 10) {
+                    is_plant[w] = plant;
+                    is_obstacle[w] = obstacle;
+                    is_transparent[w] = transparent;
+                    blocks[w][0] = left;
+                    blocks[w][1] = right;
+                    blocks[w][2] = top;
+                    blocks[w][3] = bottom;
+                    blocks[w][4] = front;
+                    blocks[w][5] = back;
+                }
+            }
 
             int pid;
             float ux, uy, uz, urx, ury;
@@ -2161,15 +2186,6 @@ void shader_path(const char *name, char *path, size_t max_len) {
 
 void load_textures() {
     char txtpth[KONSTRUCTS_PATH_SIZE];
-
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    texture_path("texture.png", txtpth, KONSTRUCTS_PATH_SIZE);
-    load_png_texture(txtpth);
 
     GLuint font;
     glGenTextures(1, &font);

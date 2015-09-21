@@ -15,7 +15,7 @@
 #include "client.h"
 #include "tinycthread.h"
 
-#define RECV_SIZE 256*256*256
+#define MAX_RECV_SIZE 4096*1024
 #define HEADER_SIZE 4
 
 static int client_enabled = 0;
@@ -210,8 +210,7 @@ Packet client_recv() {
     }
     mtx_lock(&mutex);
     if (packet_buffer_size > 0) {
-        packet.payload = malloc(sizeof(char) * packet_buffer_size);
-        memcpy(packet.payload, packet_buffer, sizeof(char) * packet_buffer_size);
+        packet.payload = packet_buffer;
         packet.size = packet_buffer_size;
         packet_buffer_size = 0;
     }
@@ -246,7 +245,6 @@ size_t recv_all(char* out_buf, size_t size) {
 
 // recv worker thread
 int recv_worker(void *arg) {
-    char *data = malloc(sizeof(char) * RECV_SIZE);
     int size;
 
     while (1) {
@@ -254,32 +252,30 @@ int recv_worker(void *arg) {
         recv_all((char*)&size, HEADER_SIZE);
         size = ntohl(size);
 
-        if (size > RECV_SIZE) {
+        if (size > MAX_RECV_SIZE) {
             printf("package to large, received %d bytes\n", size);
             exit(1);
         }
 
+        char *data = malloc(sizeof(char) * (size + sizeof(size)));
         // read 'size' bytes from the network
         recv_all(data, size);
-
         // move data over to packet_buffer
         while (1) {
             int done = 0;
             mtx_lock(&mutex);
-            if (packet_buffer_size + size + sizeof(size) < RECV_SIZE) {
-                memcpy(packet_buffer + packet_buffer_size, &size, sizeof(size));
-                memcpy(packet_buffer + packet_buffer_size + sizeof(size), data, sizeof(char) * size);
-                packet_buffer_size += size + sizeof(size);
+            if (packet_buffer_size == 0) {
+                packet_buffer = data;
+                packet_buffer_size = size;
                 done = 1;
             }
             mtx_unlock(&mutex);
             if (done) {
                 break;
             }
-            sleep(0);
+            thrd_yield();
         }
     }
-    free(data);
     return 0;
 }
 
@@ -320,7 +316,7 @@ void client_start() {
         return;
     }
     running = 1;
-    packet_buffer = (char *)calloc(RECV_SIZE, sizeof(char));
+    packet_buffer = NULL;
     packet_buffer_size = 0;
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {

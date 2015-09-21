@@ -118,7 +118,6 @@ typedef struct {
   int blocks_recv;
   char *chunk_buffer;
   int chunk_buffer_size;
-  int requested_chunks;
   int pending_chunks;
   FPS fps;
   char text_message[KONSTRUCTS_TEXT_MESSAGE_SIZE];

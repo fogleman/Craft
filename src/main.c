@@ -1171,20 +1171,6 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
-void request_chunks() {
-    float ratio = (float)g->fps.fps / (float)g->fps.old_fps;
-    int chunks;
-    if(ratio < 1.0) { // FPS is falling
-        chunks = g->requested_chunks / 2;
-    } else { // FPS is rising
-        chunks = MIN(g->requested_chunks + MAX(g->requested_chunks / 4, 1), MAX_PENDING_CHUNKS);
-    }
-    chunks = chunks < 1 ? 1 : chunks;
-    client_chunk(chunks);
-    g->requested_chunks = chunks;
-    g->pending_chunks += chunks;
-}
-
  void init_chunk(Chunk *chunk, int p, int q, int k) {
     chunk->p = p;
     chunk->q = q;
@@ -1969,10 +1955,7 @@ void parse_buffer(Packet packet) {
         pos += sizeof(int);
 
         parse_blocks(bp, bq, bk, pos, size - 1 - sizeof(int)*3, s);
-        g->pending_chunks -= 1;
-        if(g->pending_chunks <= 0) {
-            request_chunks();
-        }
+        client_chunk(1);
     } else if(payload[0] == 'M') {
         GLuint texture;
         glGenTextures(1, &texture);
@@ -2359,14 +2342,13 @@ void main_connect() {
     client_connect(g->server_addr, g->server_port);
     client_start();
     g->pending_chunks = 0;
-    g->requested_chunks = MAX_PENDING_CHUNKS;
     strcpy(in_hash, g->server_user);
     strcat(in_hash, g->server_pass);
     //hash_password(in_hash, out_hash);
     client_version(PROTOCOL_VERSION, g->server_user, in_hash);
 
-    // Ask for the initial chunk
-    request_chunks();
+    // Set the chunk window size
+    client_chunk(MAX_PENDING_CHUNKS);
 
     g->typing = 0;
 }

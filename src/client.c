@@ -337,7 +337,6 @@ void client_stop() {
     // }
     // mtx_destroy(&mutex);
     packet_buffer_size = 0;
-    free(packet_buffer);
     // printf("Bytes Sent: %d, Bytes Received: %d\n",
     //     bytes_sent, bytes_received);
 }

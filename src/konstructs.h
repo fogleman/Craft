@@ -2,7 +2,7 @@
 #define _konstructs_h_
 
 #define MAX_CHUNKS 8192 * 4
-#define MAX_PENDING_CHUNKS 100
+#define MAX_PENDING_CHUNKS 128
 #define MAX_PLAYERS 128
 #define WORKERS 4
 #define MAX_TEXT_LENGTH 256

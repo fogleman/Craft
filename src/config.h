@@ -2,7 +2,7 @@
 #define _config_h_
 
 // app parameters
-#define DEBUG 0
+#define DEBUG 1
 #define FULLSCREEN 0
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768

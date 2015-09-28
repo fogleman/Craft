@@ -17,7 +17,7 @@
 #include "tinycthread.h"
 
 #define MAX_RECV_SIZE 4096*1024
-#define PACKETS MAX_PENDING_CHUNKS * 2
+#define PACKETS (MAX_PENDING_CHUNKS * 2)
 #define HEADER_SIZE 4
 
 static int client_enabled = 0;
@@ -28,6 +28,7 @@ static int bytes_received = 0;
 static thrd_t recv_thread;
 static mtx_t mutex;
 static Packet packets[PACKETS];
+static int last_packet;
 
 void client_enable() {
     client_enabled = 1;
@@ -209,24 +210,23 @@ int client_recv(Packet *r_packets, int r_size) {
         return 0;
     }
     mtx_lock(&mutex);
-    int j;
-    for(j = 0; j < r_size; j++) {
-        int found = 0;
-        for(int i = 0; i < PACKETS; i++) {
-            if (packets[i].size > 0) {
-                r_packets[j] = packets[i];
-                packets[i].size = 0;
-                found = 1;
-                break;
-            }
-        }
-        if(!found) {
-            break;
+    int r_found = 0;
+    int index;
+    for(int i = 0; i < PACKETS; i++) {
+        index = (last_packet + i) % PACKETS;
+        if (packets[index].size > 0) {
+            r_packets[r_found] = packets[index];
+            packets[index].size = 0;
+            r_found++;
+            if(r_found == r_size)
+                 break;
         }
     }
+
+    last_packet = index;
     mtx_unlock(&mutex);
 
-    return j;
+    return r_found;
 }
 
 size_t recv_all(char* out_buf, size_t size) {
@@ -340,6 +340,7 @@ void client_start() {
     }
     running = 1;
     memset(packets, 0, sizeof(Packet)*PACKETS);
+    last_packet = 0;
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
         SHOWERROR("thrd_create");

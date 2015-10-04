@@ -211,9 +211,9 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 }
 
 GLuint gen_crosshair_buffer() {
-    int x = g->width / 2;
-    int y = g->height / 2;
-    int p = 10 * g->scale;
+    float x = g->width / 2;
+    float y = g->height / 2;
+    float p = 10 * g->scale;
     float data[] = {
         x, y - p, x, y + p,
         x - p, y, x + p, y
@@ -513,10 +513,10 @@ int chunk_near_player(int p, int q, int k, State *s, float distance) {
 }
 
 int chunk_visible(float planes[6][4], int p, int q, int k) {
-    int x = p * CHUNK_SIZE - 1;
-    int z = q * CHUNK_SIZE - 1;
-    int y = k * CHUNK_SIZE - 1;
-    int d = CHUNK_SIZE + 1;
+    float x = p * CHUNK_SIZE - 1;
+    float z = q * CHUNK_SIZE - 1;
+    float y = k * CHUNK_SIZE - 1;
+    float d = CHUNK_SIZE + 1;
     float points[8][3] = {
         {x + 0, y + 0, z + 0},
         {x + d, y + 0, z + 0},

@@ -1171,20 +1171,6 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
-void request_chunks() {
-    float ratio = (float)g->fps.fps / (float)g->fps.old_fps;
-    int chunks;
-    if(ratio < 1.0) { // FPS is falling
-        chunks = g->requested_chunks / 2;
-    } else { // FPS is rising
-        chunks = MIN(g->requested_chunks + MAX(g->requested_chunks / 4, 1), MAX_PENDING_CHUNKS);
-    }
-    chunks = chunks < 1 ? 1 : chunks;
-    client_chunk(chunks);
-    g->requested_chunks = chunks;
-    g->pending_chunks += chunks;
-}
-
  void init_chunk(Chunk *chunk, int p, int q, int k) {
     chunk->p = p;
     chunk->q = q;
@@ -1954,130 +1940,142 @@ void parse_buffer(Packet packet) {
     State *s = &g->players->state;
 
     char *payload = packet.payload;
-    int size = *((int*)payload);
-    payload += sizeof(size);
-    while(payload < packet.payload + packet.size) {
-        if (payload[0] == 'C') {
-            int bp, bq, bk;
-            char *pos = payload + 1;
+    int size = packet.size;
+    char type = packet.type;
+    if (type == 'C') {
+        int bp, bq, bk;
+        char *pos = payload;
 
-            bp = ntohl(*((int*)pos));
-            pos += sizeof(int);
+        bp = ntohl(*((int*)pos));
+        pos += sizeof(int);
 
-            bq = ntohl(*((int*)pos));
-            pos += sizeof(int);
+        bq = ntohl(*((int*)pos));
+        pos += sizeof(int);
 
-            bk = ntohl(*((int*)pos));
-            pos += sizeof(int);
+        bk = ntohl(*((int*)pos));
+        pos += sizeof(int);
 
-            parse_blocks(bp, bq, bk, pos, size - 1 - sizeof(int)*3, s);
-            g->pending_chunks -= 1;
-            if(g->pending_chunks <= 0) {
-              request_chunks();
+        parse_blocks(bp, bq, bk, pos, size - sizeof(int)*3, s);
+        client_chunk(1);
+    } else if(type == 'M') {
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        load_png_texture_from_buffer(payload, size);
+    } else {
+        char *line = malloc((size + 1) * sizeof(char));
+        memcpy(line, payload, size);
+        line[size] = '\0';
+
+        if (DEBUG) printf("Proto[Line]: %c%s\n", type, line);
+
+        if(type == 'W') {
+            int w, obstacle, transparent, left, right, top, bottom, front, back;
+            char shape[16];
+            if(sscanf(line, ",%d,%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
+                      &w, shape, &obstacle, &transparent, &left, &right,
+                      &top, &bottom, &front, &back) == 10) {
+                is_plant[w] = strncmp(shape, "plant", 16) == 0;
+                is_obstacle[w] = obstacle;
+                is_transparent[w] = transparent;
+                blocks[w][0] = left;
+                blocks[w][1] = right;
+                blocks[w][2] = top;
+                blocks[w][3] = bottom;
+                blocks[w][4] = front;
+                blocks[w][5] = back;
             }
-        } else if(payload[0] == 'M') {
-            GLuint texture;
-            glGenTextures(1, &texture);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            load_png_texture_from_buffer(payload + 1, size - 1);
-        } else {
-            int bp, bq, bx, by, bz, bw;
+        }
 
-            char *line = malloc((size + 1) * sizeof(char));
-            memcpy(line, payload, size);
-            line[size] = '\0';
-
-            if (DEBUG) printf("Proto[Line]: %s\n", line);
-
-            {
-                int w, obstacle, transparent, left, right, top, bottom, front, back;
-                char shape[16];
-                if(sscanf(line, "W,%d,%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
-                          &w, shape, &obstacle, &transparent, &left, &right,
-                          &top, &bottom, &front, &back) == 10) {
-                    is_plant[w] = strncmp(shape, "plant", 16) == 0;
-                    is_obstacle[w] = obstacle;
-                    is_transparent[w] = transparent;
-                    blocks[w][0] = left;
-                    blocks[w][1] = right;
-                    blocks[w][2] = top;
-                    blocks[w][3] = bottom;
-                    blocks[w][4] = front;
-                    blocks[w][5] = back;
-                }
-            }
-
+        if(type == 'U') {
             int pid;
             float ux, uy, uz, urx, ury;
-            if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
+            if (sscanf(line, ",%d,%f,%f,%f,%f,%f",
                        &pid, &ux, &uy, &uz, &urx, &ury) == 6)
-            {
-                me->id = pid;
-                s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
-                if (uy == 0) {
-                  s->y = 200;
+                {
+                    me->id = pid;
+                    s->x = ux; s->y = uy; s->z = uz; s->rx = urx; s->ry = ury;
+                    if (uy == 0) {
+                        s->y = 200;
+                    }
                 }
-            }
+        }
+        if(type == 'I') {
             int pos, amount, id, inv;
-            if (sscanf(line, "I,%d,%d,%d", &pos, &amount, &id) == 3) {
+            if (sscanf(line, ",%d,%d,%d", &pos, &amount, &id) == 3) {
                 ext_inventory.items[pos].id = id;
                 ext_inventory.items[pos].num = amount;
                 ext_inventory.items[pos].show = id == -1 ? 0 : 1;
                 glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 g->inventory_screen = 1;
             }
-            if (sscanf(line, "i,%d,%d", &amount, &id) == 2) {
+        }
+        if (type == 'i') {
+            int amount, id;
+            if(sscanf(line, ",%d,%d", &amount, &id) == 2) {
                 g->mouse_item = id;
             }
-            if (sscanf(line, "G,%d,%d,%d", &pos, &amount, &id) == 3) {
+        }
+        if (type == 'G') {
+            int pos, id, amount;
+            if(sscanf(line, ",%d,%d,%d", &pos, &amount, &id) == 3) {
                 inventory.items[pos].id = id;
                 inventory.items[pos].num = amount;
             }
-            if (sscanf(line, "A,%d", &id) == 1) {
+        }
+        if (type == 'A') {
+            int id;
+            if(sscanf(line, ",%d", &id) == 1) {
                 inventory.selected = id;
             }
-            if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
-                       &bp, &bq, &bx, &by, &bz, &bw) == 6) {
-                g->blocks_recv = g->blocks_recv + 1;
-                place_block(bp, bq, bx, by, bz, bw);
-            }
+        }
+        if(type == 'P') {
+            int pid;
             float px, py, pz, prx, pry;
-            if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
+            if (sscanf(line, ",%d,%f,%f,%f,%f,%f",
                        &pid, &px, &py, &pz, &prx, &pry) == 6)
-            {
-                Player *player = find_player(pid);
-                if (!player && g->player_count < MAX_PLAYERS) {
-                    player = g->players + g->player_count;
-                    g->player_count++;
-                    player->id = pid;
-                    player->buffer = 0;
-                    snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
-                    update_player(player, px, py, pz, prx, pry, 1); // twice
+                {
+                    Player *player = find_player(pid);
+                    if (!player && g->player_count < MAX_PLAYERS) {
+                        player = g->players + g->player_count;
+                        g->player_count++;
+                        player->id = pid;
+                        player->buffer = 0;
+                        snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
+                        update_player(player, px, py, pz, prx, pry, 1); // twice
+                    }
+                    if (player) {
+                        update_player(player, px, py, pz, prx, pry, 1);
+                    }
                 }
-                if (player) {
-                    update_player(player, px, py, pz, prx, pry, 1);
-                }
-            }
-            if (sscanf(line, "D,%d", &pid) == 1) {
+        }
+        if (type == 'D') {
+            int pid;
+            if(sscanf(line, ",%d", &pid) == 1) {
                 delete_player(pid);
             }
+        }
+        if(type == 'E') {
             double elapsed;
             int day_length;
-            if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
+            if (sscanf(line, ",%lf,%d", &elapsed, &day_length) == 2) {
                 glfwSetTime(fmod(elapsed, day_length));
                 g->day_length = day_length;
                 g->time_changed = 1;
             }
-            if (line[0] == 'T' && line[1] == ',') {
-                char *text = line + 2;
-                add_message(text);
-            }
+        }
+        if (type == 'T' && line[0] == ',') {
+            char *text = line + 1;
+            add_message(text);
+        }
+        if(type == 'N') {
             char format[64];
             snprintf(
-                     format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
+                     format, sizeof(format), ",%%d,%%%ds", MAX_NAME_LENGTH - 1);
+            int pid;
             char name[MAX_NAME_LENGTH];
             if (sscanf(line, format, &pid, name) == 2) {
                 Player *player = find_player(pid);
@@ -2085,13 +2083,8 @@ void parse_buffer(Packet packet) {
                     strncpy(player->name, name, MAX_NAME_LENGTH);
                 }
             }
-            free(line);
         }
-        payload += size;
-        size = *((int*)payload);
-        payload += sizeof(size);
     }
-
 }
 
 void reset_model() {
@@ -2367,14 +2360,13 @@ void main_connect() {
     client_connect(g->server_addr, g->server_port);
     client_start();
     g->pending_chunks = 0;
-    g->requested_chunks = MAX_PENDING_CHUNKS;
     strcpy(in_hash, g->server_user);
     strcat(in_hash, g->server_pass);
     //hash_password(in_hash, out_hash);
     client_version(PROTOCOL_VERSION, g->server_user, in_hash);
 
-    // Ask for the initial chunk
-    request_chunks();
+    // Set the chunk window size
+    client_chunk(MAX_PENDING_CHUNKS);
 
     g->typing = 0;
 }
@@ -2554,10 +2546,15 @@ int main(int argc, char **argv) {
 
         if (connected) {
             // HANDLE DATA FROM SERVER //
-            Packet packet = client_recv();
-            if (packet.size != 0) {
-                parse_buffer(packet);
-                free(packet.payload);
+            Packet packets[MAX_PENDING_CHUNKS / 2];
+            float frame_ratio = (float)g->fps.fps / 60.0f;
+            // Cubic exponential back off
+            float cubed_frame_ratio = frame_ratio * frame_ratio * frame_ratio;
+            int received = client_recv(packets, (int)((float)(MAX_PENDING_CHUNKS / 2) * cubed_frame_ratio));
+
+            for (int i = 0; i < received; i++) {
+                parse_buffer(packets[i]);
+                free(packets[i].payload);
             }
 
             // SEND POSITION TO SERVER //

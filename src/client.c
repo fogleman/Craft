@@ -13,9 +13,11 @@
 #include <string.h>
 #include <errno.h>
 #include "client.h"
+#include "konstructs.h"
 #include "tinycthread.h"
 
-#define RECV_SIZE 256*256*256
+#define MAX_RECV_SIZE 4096*1024
+#define PACKETS (MAX_PENDING_CHUNKS * 2)
 #define HEADER_SIZE 4
 
 static int client_enabled = 0;
@@ -23,10 +25,10 @@ static int running = 0;
 static int sd = 0;
 static int bytes_sent = 0;
 static int bytes_received = 0;
-static char *packet_buffer = 0;
-static int packet_buffer_size = 0;
 static thrd_t recv_thread;
 static mtx_t mutex;
+static Packet packets[PACKETS];
+static int last_packet;
 
 void client_enable() {
     client_enabled = 1;
@@ -203,21 +205,28 @@ void client_talk(const char *text) {
     client_send(buffer);
 }
 
-Packet client_recv() {
-    Packet packet = { 0, 0 };
+int client_recv(Packet *r_packets, int r_size) {
     if (!client_enabled) {
-        return packet;
+        return 0;
     }
     mtx_lock(&mutex);
-    if (packet_buffer_size > 0) {
-        packet.payload = malloc(sizeof(char) * packet_buffer_size);
-        memcpy(packet.payload, packet_buffer, sizeof(char) * packet_buffer_size);
-        packet.size = packet_buffer_size;
-        packet_buffer_size = 0;
+    int r_found = 0;
+    int index;
+    for(int i = 0; i < PACKETS; i++) {
+        index = (last_packet + i) % PACKETS;
+        if (packets[index].size > 0) {
+            r_packets[r_found] = packets[index];
+            packets[index].size = 0;
+            r_found++;
+            if(r_found == r_size)
+                 break;
+        }
     }
+
+    last_packet = index;
     mtx_unlock(&mutex);
 
-    return packet;
+    return r_found;
 }
 
 size_t recv_all(char* out_buf, size_t size) {
@@ -246,7 +255,6 @@ size_t recv_all(char* out_buf, size_t size) {
 
 // recv worker thread
 int recv_worker(void *arg) {
-    char *data = malloc(sizeof(char) * RECV_SIZE);
     int size;
 
     while (1) {
@@ -254,32 +262,43 @@ int recv_worker(void *arg) {
         recv_all((char*)&size, HEADER_SIZE);
         size = ntohl(size);
 
-        if (size > RECV_SIZE) {
+        if (size > MAX_RECV_SIZE) {
             printf("package to large, received %d bytes\n", size);
             exit(1);
         }
 
+        char type;
+        // read 'size' bytes from the network
+        recv_all(&type, sizeof(char));
+
+        // Remove one byte type header'
+        size = size - sizeof(char);
+
+        char *data = malloc(sizeof(char) * (size + sizeof(size)));
         // read 'size' bytes from the network
         recv_all(data, size);
-
         // move data over to packet_buffer
         while (1) {
             int done = 0;
             mtx_lock(&mutex);
-            if (packet_buffer_size + size + sizeof(size) < RECV_SIZE) {
-                memcpy(packet_buffer + packet_buffer_size, &size, sizeof(size));
-                memcpy(packet_buffer + packet_buffer_size + sizeof(size), data, sizeof(char) * size);
-                packet_buffer_size += size + sizeof(size);
-                done = 1;
+            for(int i = 0; i < PACKETS; i++) {
+                Packet packet = packets[i];
+                if (packet.size == 0) {
+                    packet.payload = data;
+                    packet.size = size;
+                    packet.type = type;
+                    packets[i] = packet;
+                    done = 1;
+                    break;
+                }
             }
             mtx_unlock(&mutex);
             if (done) {
                 break;
             }
-            sleep(0);
+            thrd_yield();
         }
     }
-    free(data);
     return 0;
 }
 
@@ -320,8 +339,8 @@ void client_start() {
         return;
     }
     running = 1;
-    packet_buffer = (char *)calloc(RECV_SIZE, sizeof(char));
-    packet_buffer_size = 0;
+    memset(packets, 0, sizeof(Packet)*PACKETS);
+    last_packet = 0;
     mtx_init(&mutex, mtx_plain);
     if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
         SHOWERROR("thrd_create");
@@ -340,8 +359,7 @@ void client_stop() {
     //     exit(1);
     // }
     // mtx_destroy(&mutex);
-    packet_buffer_size = 0;
-    free(packet_buffer);
+    memset(packets, 0, sizeof(Packet)*PACKETS);
     // printf("Bytes Sent: %d, Bytes Received: %d\n",
     //     bytes_sent, bytes_received);
 }

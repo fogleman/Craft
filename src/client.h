@@ -7,6 +7,7 @@
 
 typedef struct {
     int size;
+    int type;
     char *payload;
 } Packet;
 
@@ -18,7 +19,7 @@ void client_connect(char *hostname, int port);
 void client_start();
 void client_stop();
 void client_send(char *data);
-Packet client_recv();
+int client_recv(Packet *r_packets, int r_size);
 void client_version(int version, char *nick, char *hash);
 void client_login(const char *username, const char *identity_token);
 void client_position(float x, float y, float z, float rx, float ry);

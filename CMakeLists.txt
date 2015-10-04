@@ -43,7 +43,7 @@ include(${CPM_DIR}/CPM.cmake)
 
 CPM_AddModule("cpm-glfw"
 	GIT_REPOSITORY "https://github.com/nsg/cpm-glfw.git"
-	GIT_TAG "27d3dd4a8fd34f50f2e4cf1583484e1c4ac4bcec")
+	GIT_TAG "3.0.4")
 
 CPM_AddModule("cpm-glew"
 	GIT_REPOSITORY "https://github.com/iauns/cpm-glew.git"
@@ -51,7 +51,7 @@ CPM_AddModule("cpm-glew"
 
 CPM_AddModule("cpm-lodepng"
 	GIT_REPOSITORY "https://github.com/nsg/cpm-lodepng.git"
-	GIT_TAG "9879d938ce3f110ccca020979d282ea2e4713398")
+	GIT_TAG "20150912")
 
 CPM_Finish()
 

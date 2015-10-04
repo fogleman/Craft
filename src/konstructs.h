@@ -18,7 +18,7 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
-#include "tinycthread.h"
+#include "tinycthread/tinycthread.h"
 #include "util.h"
 #include "matrix.h"
 #include "item.h"

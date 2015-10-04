@@ -1,43 +1,77 @@
-cmake_minimum_required(VERSION 2.8)
-
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(konstructs)
 
-FILE(GLOB SOURCE_FILES src/*.c)
+#-----------------------------------------------------------------------
+# Check for C++11 enabled compiler
+#-----------------------------------------------------------------------
 
-add_executable(
-    konstructs
-    ${SOURCE_FILES}
-    deps/glew/src/glew.c
-    deps/lodepng/lodepng.c
-    deps/noise/noise.c
-    deps/tinycthread/tinycthread.c)
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
 
-add_definitions(-std=c99 -O3)
+#-----------------------------------------------------------------------
+# CPM configuration
+#-----------------------------------------------------------------------
 
-add_subdirectory(deps/glfw)
-include_directories(deps/glew/include)
-include_directories(deps/glfw/include)
-include_directories(deps/lodepng)
-include_directories(deps/noise)
-include_directories(deps/tinycthread)
+set(CPM_DIR "${CMAKE_CURRENT_BINARY_DIR}/cpm_packages" CACHE TYPE STRING)
+find_package(Git)
+if(NOT GIT_FOUND)
+message(FATAL_ERROR "CPM requires Git.")
+endif()
+if (NOT EXISTS ${CPM_DIR}/CPM.cmake)
+message(STATUS "Cloning repo (https://github.com/iauns/cpm)")
+execute_process(
+	COMMAND "${GIT_EXECUTABLE}" clone https://github.com/iauns/cpm ${CPM_DIR}
+	RESULT_VARIABLE error_code
+	OUTPUT_QUIET ERROR_QUIET)
+if(error_code)
+	message(FATAL_ERROR "CPM failed to get the hash for HEAD")
+endif()
+endif()
+include(${CPM_DIR}/CPM.cmake)
+
+#------------------------------------------------------------------------------
+# CPM Modules
+#------------------------------------------------------------------------------
+
+CPM_AddModule("cpm-glfw"
+	GIT_REPOSITORY "https://github.com/nsg/cpm-glfw.git"
+	GIT_TAG "3.0.4")
+
+CPM_AddModule("cpm-glew"
+	GIT_REPOSITORY "https://github.com/iauns/cpm-glew.git"
+	GIT_TAG "1.0.1")
+
+CPM_AddModule("cpm-lodepng"
+	GIT_REPOSITORY "https://github.com/nsg/cpm-lodepng.git"
+	GIT_TAG "20150912")
+
+CPM_Finish()
+
+#-----------------------------------------------------------------------
+# Misc
+#-----------------------------------------------------------------------
 
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(ZLIB REQUIRED)
-
 include_directories(${ZLIB_INCLUDE_DIRS})
 
-if(APPLE)
-    target_link_libraries(konstructs glfw
-        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
-endif()
-
-if(UNIX)
-    target_link_libraries(konstructs dl glfw
-        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
-endif()
+FILE(GLOB SOURCE_FILES src/*.cpp src/noise/*.cpp src/tinycthread/*.cpp)
+add_executable(konstructs ${SOURCE_FILES})
 
 if(MINGW)
-    target_link_libraries(konstructs ws2_32.lib glfw
-        ${GLFW_LIBRARIES} ${ZLIB_LIBRARIES})
+  target_link_libraries(konstructs ws2_32.lib
+    ${CPM_LIBRARIES} ${ZLIB_LIBRARIES})
+else()
+  target_link_libraries(konstructs
+    ${CPM_LIBRARIES} ${ZLIB_LIBRARIES})
 endif()
+

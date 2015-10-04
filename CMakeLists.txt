@@ -66,4 +66,12 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 
 FILE(GLOB SOURCE_FILES src/*.cpp src/noise/*.cpp src/tinycthread/*.cpp)
 add_executable(konstructs ${SOURCE_FILES})
-target_link_libraries(konstructs ${CPM_LIBRARIES} ${ZLIB_LIBRARIES})
+
+if(MINGW)
+  target_link_libraries(konstructs ws2_32.lib
+    ${CPM_LIBRARIES} ${ZLIB_LIBRARIES})
+else()
+  target_link_libraries(konstructs
+    ${CPM_LIBRARIES} ${ZLIB_LIBRARIES})
+endif()
+

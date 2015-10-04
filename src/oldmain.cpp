@@ -19,8 +19,8 @@
 #include "cube.h"
 #include "item.h"
 #include "matrix.h"
-#include "noise.h"
-#include "tinycthread.h"
+#include "noise/noise.h"
+#include "tinycthread/tinycthread.h"
 #include "util.h"
 #include "inventory.h"
 #include "compress.h"
@@ -1189,18 +1189,18 @@ void delete_chunks() {
     State *states[3] = {s1, s2, s3};
     for (int i = 0; i < count; i++) {
         Chunk *chunk = g->chunks + i;
-        int delete = 1;
+        int _delete = 1;
         for (int j = 0; j < 3; j++) {
             State *s = states[j];
             int p = chunked(s->x);
             int q = chunked(s->z);
             int k = chunked(s->y);
             if (chunk_distance(chunk, p, q, k) < g->delete_radius) {
-                delete = 0;
+                _delete = 0;
                 break;
             }
         }
-        if (delete) {
+        if (_delete) {
             del_buffer(chunk->buffer);
             Chunk *other = g->chunks + (--count);
             memcpy(chunk, other, sizeof(Chunk));
@@ -1966,7 +1966,7 @@ void parse_buffer(Packet packet) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         load_png_texture_from_buffer(payload, size);
     } else {
-        char *line = malloc((size + 1) * sizeof(char));
+        char *line = (char*)malloc((size + 1) * sizeof(char));
         memcpy(line, payload, size);
         line[size] = '\0';
 
@@ -2132,7 +2132,7 @@ int init_winsock() { return 0; }
 int init_inventory() {
 
     // player inventory/belt
-    inventory.items = calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
+    inventory.items = (Item*)calloc(INVENTORY_SLOTS * INVENTORY_ROWS, sizeof(Item));
     for (int item = 0; item < INVENTORY_SLOTS * INVENTORY_ROWS; item ++) {
         inventory.items[item].id = 0;
         inventory.items[item].num = 0;
@@ -2141,7 +2141,7 @@ int init_inventory() {
     inventory.selected = 0;
 
     // external inventory
-    ext_inventory.items = calloc(EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS, sizeof(Item));
+    ext_inventory.items = (Item*)calloc(EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS, sizeof(Item));
     for (int item = 0; item < EXT_INVENTORY_COLS * EXT_INVENTORY_ROWS; item ++) {
         ext_inventory.items[item].id = 0;
         ext_inventory.items[item].num = 0;
@@ -2381,7 +2381,7 @@ void print_usage(char **argv)
     exit(0);
 }
 
-int main(int argc, char **argv) {
+int old_main(int argc, char **argv) {
 
     init_inventory();
 
@@ -2397,7 +2397,7 @@ int main(int argc, char **argv) {
     g->debug_screen = 0;
     g->inventory_screen = 0;
     g->chunk_buffer_size = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
-    g->chunk_buffer = malloc(sizeof(char)*g->chunk_buffer_size);
+    g->chunk_buffer = (char*)malloc(sizeof(char)*g->chunk_buffer_size);
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
     g->delete_radius = DELETE_CHUNK_RADIUS;

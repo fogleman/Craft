@@ -8,7 +8,7 @@
 
 Inventory inventory;
 Inventory ext_inventory;
-Model *g;
+extern Model *g;
 
 // Render a cube with ID w at x, y. This function is used to render the inventory
 // blocks, like the belt and the inventory screen.

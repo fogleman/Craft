@@ -10,9 +10,9 @@ int inflate_data(char *in, int in_size, char *out, int out_size) {
     strm.opaque = Z_NULL;
 
     strm.avail_in = in_size;
-    strm.next_in = in;
+    strm.next_in = (Bytef*)in;
     strm.avail_out = out_size;
-    strm.next_out = out;
+    strm.next_out = (Bytef*)out;
 
     inflateInit(&strm);
     int ret;

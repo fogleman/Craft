@@ -14,7 +14,7 @@
 #include <errno.h>
 #include "client.h"
 #include "konstructs.h"
-#include "tinycthread.h"
+#include "tinycthread/tinycthread.h"
 
 #define MAX_RECV_SIZE 4096*1024
 #define PACKETS (MAX_PENDING_CHUNKS * 2)
@@ -274,7 +274,7 @@ int recv_worker(void *arg) {
         // Remove one byte type header'
         size = size - sizeof(char);
 
-        char *data = malloc(sizeof(char) * (size + sizeof(size)));
+        char *data = (char*)malloc(sizeof(char) * (size + sizeof(size)));
         // read 'size' bytes from the network
         recv_all(data, size);
         // move data over to packet_buffer

@@ -1,4 +1,13 @@
+---
+
+os:
+  - linux
+  - osx
+
+sudo: required
 language: cpp
+services:
+  - docker
 
 notifications:
   webhooks:
@@ -8,25 +17,8 @@ notifications:
     on_failure: always  # options: [always|never|change] default: always
     on_start: always    # options: [always|never|change] default: always
 
-install:
- - sudo apt-get update
- - sudo apt-get install build-essential cmake libglew-dev xorg-dev python-pip
- - sudo apt-get build-dep glfw
- - sudo apt-get install binutils-mingw-w64-i686 gcc-mingw-w64-i686 g++-mingw-w64-i686
-
- # Ubuntu 12.04 doesn't have a FindGLEW CMake module
- - sudo mv build/FindGLEW.cmake /usr/share/cmake-2.8/Modules/FindGLEW.cmake
+env:
+  - CONTAINER=nsgb/konstructs-build-image
 
 script:
-
- # Build for Linux (our dev platform)
- - ./package/compile-linux
-
- # Make installation packages for Linux
- - ./package/make-packages
-
- # Cross compile for Windows
- - ./package/cross-compile-windows
-
- # Upload packages to bintray
- - ./package/bintray
+  - ./package/travis-init

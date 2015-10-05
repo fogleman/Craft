@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+##
+# Linux
+##
+if [[ $TRAVIS_OS_NAME == linux ]]; then
+
+  echo "Build in container $CONTAINER"
+  docker run -ti -v $PWD:/build -e TRAVIS_BUILD_NUMBER $CONTAINER ./package/docker-build
+  echo "Trigger bintray script"
+  ./package/bintray
+
+
+##
+# OSX
+##
+elif [[ $TRAVIS_OS_NAME == osx ]]; then
+
+  uname
+
+fi

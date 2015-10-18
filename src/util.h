@@ -1,11 +1,7 @@
 #ifndef _util_h_
 #define _util_h_
-
-#define GL_GLEXT_PROTOTYPES 1
-#define GL3_PROTOTYPES 1
-
-#include <GL/gl.h>
-#include <GLFW/glfw3.h>
+#include<nanogui/opengl.h>
+#include<nanogui/nanogui.h>
 #include "config.h"
 
 #define PI 3.14159265359

@@ -1,9 +1,4 @@
-#define GL_GLEXT_PROTOTYPES 1
-#define GL3_PROTOTYPES 1
-
-#include <GL/gl.h>
-#include <GLFW/glfw3.h>
-
+#include<nanogui/nanogui.h>
 #ifdef _WIN32
   #include <winsock2.h>
   #include <windows.h>

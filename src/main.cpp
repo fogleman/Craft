@@ -12,6 +12,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <iostream>
 #include "client.h"
 #include "config.h"
 #include "cube.h"
@@ -2379,102 +2380,7 @@ void print_usage(char **argv)
     exit(0);
 }
 
-int old_main(int argc, char **argv) {
-
-    init_inventory();
-
-    if (init_winsock()) {
-        printf("Failed to load winsock");
-        return 1;
-    }
-
-    srand(time(NULL));
-    rand();
-
-    g->blocks_recv = 0;
-    g->debug_screen = 0;
-    g->inventory_screen = 0;
-    g->chunk_buffer_size = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
-    g->chunk_buffer = (char*)malloc(sizeof(char)*g->chunk_buffer_size);
-    g->create_radius = CREATE_CHUNK_RADIUS;
-    g->render_radius = RENDER_CHUNK_RADIUS;
-    g->delete_radius = DELETE_CHUNK_RADIUS;
-    g->server_port = DEFAULT_PORT;
-    g->server_addr[0] = '\0';
-    g->server_user[0] = '\0';
-    g->server_pass[0] = '\0';
-    g->text_message[0] = '\0';
-    g->text_prompt[0] = '\0';
-    g->typing_buffer[0] = '\0';
-    g->mouse_item = -1;
-
-    move_item.use = 0;
-
-    if (argc > 1) {
-        for (int i = 1; i < argc; i++) {
-            if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-                print_usage(argv);
-            }
-            if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
-                if (!argv[i+1]) {
-                    print_usage(argv);
-                } else {
-                    if (check_server(argv[i+1])) {
-                        strncpy(g->server_addr, argv[i+1], MAX_ADDR_LENGTH);
-                    } else {
-                        printf("Failed to resolve '%s', ignoring parameter '%s'\n", argv[i+1], argv[i]);
-                    }
-                }
-            }
-            if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
-                if (!argv[i+1]) {
-                    print_usage(argv);
-                } else {
-                    strncpy(g->server_user, argv[i+1], MAX_NAME_LENGTH);
-                }
-            }
-            if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
-                if (!argv[i+1]) {
-                    print_usage(argv);
-                } else {
-                    strncpy(g->server_pass, argv[i+1], 64);
-                }
-            }
-        }
-    }
-    update_login_prompt();
-
-    if (glfwInit() == GL_FALSE) {
-        printf("Failed to init glfw");
-        return -1;
-    }
-    create_window();
-    if (!g->window) {
-        printf("Failed to init window.");
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(g->window);
-    glfwSwapInterval(VSYNC);
-    glfwSetKeyCallback(g->window, on_key);
-    glfwSetCharCallback(g->window, on_char);
-
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    glLogicOp(GL_INVERT);
-    glClearColor(0, 0, 0, 1);
-
-    load_textures();
-
-    Attrib block_attrib = {0};
-    Attrib line_attrib = {0};
-    Attrib text_attrib = {0};
-    Attrib sky_attrib = {0};
-    Attrib inventory_attrib = {0};
-
-    load_shaders(&block_attrib, &line_attrib, &text_attrib, &sky_attrib, &inventory_attrib);
-
+int init_main() {
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
         worker->index = i;
@@ -2484,29 +2390,91 @@ int old_main(int argc, char **argv) {
         thrd_create(&worker->thrd, worker_run, worker);
     }
 
-    // global variables
-    memset(&g->fps, 0, sizeof(g->fps));
+    //update_login_prompt();
+
 
     // LOCAL VARIABLES //
-    reset_model();
-    double last_update = glfwGetTime();
-    GLuint sky_buffer = gen_sky_buffer();
-    int connected = 0;
 
-    Player *me = g->players;
-    State *s = &g->players->state;
-    s->y = 250;
-    me->id = 0;
-    me->name[0] = '\0';
-    me->buffer = 0;
-    g->player_count = 1;
+    return 0;
+}
 
-    // BEGIN MAIN LOOP //
-    double previous = glfwGetTime();
-    int blocks_recv = g->blocks_recv;
 
-    while (1) {
 
+class Konstructs : public nanogui::Screen {
+public:
+    Konstructs() : nanogui::Screen(Eigen::Vector2i(1024, 768), "Konstructs") {
+        using namespace nanogui;
+
+        init_inventory();
+        load_textures();
+        reset_model();
+
+        if (init_winsock()) {
+            printf("Failed to load winsock");
+        }
+
+        srand(time(NULL));
+        rand();
+
+        // Set global variables
+        memset(&g->fps, 0, sizeof(g->fps));
+        g->blocks_recv = 0;
+        g->debug_screen = 0;
+        g->inventory_screen = 0;
+        g->chunk_buffer_size = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
+        g->chunk_buffer = (char*)malloc(sizeof(char)*g->chunk_buffer_size);
+        g->create_radius = CREATE_CHUNK_RADIUS;
+        g->render_radius = RENDER_CHUNK_RADIUS;
+        g->delete_radius = DELETE_CHUNK_RADIUS;
+        g->server_port = DEFAULT_PORT;
+        g->server_addr[0] = '\0';
+        g->server_user[0] = '\0';
+        g->server_pass[0] = '\0';
+        g->text_message[0] = '\0';
+        g->text_prompt[0] = '\0';
+        g->typing_buffer[0] = '\0';
+        g->mouse_item = -1;
+        move_item.use = 0;
+        g->player_count = 1;
+
+        // Set private class variables
+        last_update = glfwGetTime();
+        connected = 0;
+        me = g->players;
+        s = &g->players->state;
+        previous = glfwGetTime();
+        blocks_recv = g->blocks_recv;
+        s->y = 250;
+        me->id = 0;
+        me->name[0] = '\0';
+        me->buffer = 0;
+        sky_buffer = gen_sky_buffer();
+        load_shaders(&block_attrib, &line_attrib, &text_attrib, &sky_attrib, &inventory_attrib);
+
+        // misc
+        update_login_prompt();
+    }
+
+    ~Konstructs() {
+        client_stop();
+        client_disable();
+        del_buffer(sky_buffer);
+        delete_all_chunks();
+        delete_all_players();
+
+        free(g->chunk_buffer);
+        free(inventory.items);
+#ifdef _WIN32
+        WSACleanup();
+#endif
+    }
+
+    virtual void drawContents() {
+        using namespace nanogui;
+        std::cout << "hello" << std::endl;
+    }
+
+    int draw_frame() {
         if (is_connected() && !connected) {
             connected = 1;
             main_connect();
@@ -2516,14 +2484,13 @@ int old_main(int argc, char **argv) {
 
         g->scale = get_scale_factor();
         g->fov = 65;
-        glfwGetFramebufferSize(g->window, &g->width, &g->height);
-        glViewport(0, 0, g->width, g->height);
 
         if (g->time_changed) {
             g->time_changed = 0;
             last_update = glfwGetTime();
             memset(&g->fps, 0, sizeof(g->fps));
         }
+
         update_fps(&g->fps);
         double now = glfwGetTime();
         double dt = now - previous;
@@ -2600,27 +2567,33 @@ int old_main(int argc, char **argv) {
                 render_hand_blocks(&block_attrib);
             }
         }
-
-        // SWAP AND POLL //
-        glfwSwapBuffers(g->window);
-        glfwPollEvents();
-        if (glfwWindowShouldClose(g->window)) {
-            break;
-        }
     }
 
-    // SHUTDOWN //
-    client_stop();
-    client_disable();
-    del_buffer(sky_buffer);
-    delete_all_chunks();
-    delete_all_players();
+private:
+    Attrib block_attrib = {0};
+    Attrib line_attrib = {0};
+    Attrib text_attrib = {0};
+    Attrib sky_attrib = {0};
+    Attrib inventory_attrib = {0};
+    GLuint sky_buffer;
+    double last_update;
+    double previous;
+    int connected;
+    int blocks_recv;
+    Player *me;
+    State *s;
+};
 
-    glfwTerminate();
-    free(g->chunk_buffer);
-    free(inventory.items);
-#ifdef _WIN32
-    WSACleanup();
-#endif
+int main(int argc, char **argv) {
+    nanogui::init();
+
+    {
+        nanogui::ref<Konstructs> app = new Konstructs();
+        app->drawAll();
+        app->setVisible(true);
+        nanogui::mainloop();
+    }
+
+    nanogui::shutdown();
     return 0;
 }

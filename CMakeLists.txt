@@ -19,11 +19,9 @@ endif()
 #-----------------------------------------------------------------------
 # Nano GUI
 #-----------------------------------------------------------------------
-set(NANOGUI_BUILD_PYTHON OFF)
-
+option(NANOGUI_BUILD_PYTHON OFF)
+option(NANOGUI_BUILD_EXAMPLE OFF)
 add_subdirectory(dependencies/nanogui)
-
-
 
 #-----------------------------------------------------------------------
 # Misc

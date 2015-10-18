@@ -13,47 +13,17 @@ if(COMPILER_SUPPORTS_CXX11)
 elseif(COMPILER_SUPPORTS_CXX0X)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
-        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
 #-----------------------------------------------------------------------
-# CPM configuration
+# Nano GUI
 #-----------------------------------------------------------------------
+set(NANOGUI_BUILD_PYTHON OFF)
 
-set(CPM_DIR "${CMAKE_CURRENT_BINARY_DIR}/cpm_packages" CACHE TYPE STRING)
-find_package(Git)
-if(NOT GIT_FOUND)
-message(FATAL_ERROR "CPM requires Git.")
-endif()
-if (NOT EXISTS ${CPM_DIR}/CPM.cmake)
-message(STATUS "Cloning repo (https://github.com/iauns/cpm)")
-execute_process(
-	COMMAND "${GIT_EXECUTABLE}" clone https://github.com/iauns/cpm ${CPM_DIR}
-	RESULT_VARIABLE error_code
-	OUTPUT_QUIET ERROR_QUIET)
-if(error_code)
-	message(FATAL_ERROR "CPM failed to get the hash for HEAD")
-endif()
-endif()
-include(${CPM_DIR}/CPM.cmake)
+add_subdirectory(dependencies/nanogui)
 
-#------------------------------------------------------------------------------
-# CPM Modules
-#------------------------------------------------------------------------------
 
-CPM_AddModule("cpm-glfw"
-	GIT_REPOSITORY "https://github.com/nsg/cpm-glfw.git"
-	GIT_TAG "3.0.4")
-
-CPM_AddModule("cpm-glew"
-	GIT_REPOSITORY "https://github.com/iauns/cpm-glew.git"
-	GIT_TAG "1.0.1")
-
-CPM_AddModule("cpm-lodepng"
-	GIT_REPOSITORY "https://github.com/nsg/cpm-lodepng.git"
-	GIT_TAG "20150912")
-
-CPM_Finish()
 
 #-----------------------------------------------------------------------
 # Misc
@@ -62,16 +32,15 @@ CPM_Finish()
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIRS})
+include_directories(${ZLIB_INCLUDE_DIRS} dependencies/nanogui/include/ dependencies/nanogui/ext/glfw/include dependencies/lodepng)
 
-FILE(GLOB SOURCE_FILES src/*.cpp src/noise/*.cpp src/tinycthread/*.cpp)
+FILE(GLOB SOURCE_FILES src/*.cpp dependencies/lodepng/lodepng.cpp src/noise/*.cpp src/tinycthread/*.cpp)
 add_executable(konstructs ${SOURCE_FILES})
 
 if(MINGW)
   target_link_libraries(konstructs ws2_32.lib
-    ${CPM_LIBRARIES} ${ZLIB_LIBRARIES})
+    ${ZLIB_LIBRARIES} nanogui)
 else()
   target_link_libraries(konstructs
-    ${CPM_LIBRARIES} ${ZLIB_LIBRARIES})
+    ${ZLIB_LIBRARIES} nanogui glfw)
 endif()
-

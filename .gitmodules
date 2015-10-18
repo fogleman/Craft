@@ -1,0 +1,6 @@
+[submodule "dependencies/nanogui"]
+	path = dependencies/nanogui
+	url = https://github.com/wjakob/nanogui.git
+[submodule "dependencies/lodepng"]
+	path = dependencies/lodepng
+	url = https://github.com/lvandeve/lodepng.git

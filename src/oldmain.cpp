@@ -1,4 +1,7 @@
-#include <GL/glew.h>
+#define GL_GLEXT_PROTOTYPES 1
+#define GL3_PROTOTYPES 1
+
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
 #ifdef _WIN32
@@ -2461,11 +2464,6 @@ int old_main(int argc, char **argv) {
     glfwSwapInterval(VSYNC);
     glfwSetKeyCallback(g->window, on_key);
     glfwSetCharCallback(g->window, on_char);
-
-    if (glewInit() != GLEW_OK) {
-        printf("Failed to init glew");
-        return -1;
-    }
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);

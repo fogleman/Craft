@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <lodepng/lodepng.h>
+#include <lodepng.h>
 #include "matrix.h"
 #include "util.h"
 

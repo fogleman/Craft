@@ -1,6 +1,6 @@
 [submodule "dependencies/nanogui"]
 	path = dependencies/nanogui
-	url = https://github.com/wjakob/nanogui.git
+	url = https://github.com/konstructs/nanogui.git
 [submodule "dependencies/lodepng"]
 	path = dependencies/lodepng
 	url = https://github.com/lvandeve/lodepng.git

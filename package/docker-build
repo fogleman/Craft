@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+cd /build
+
+./package/compile-linux
+./package/make-packages
+./package/cross-compile-windows

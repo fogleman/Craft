@@ -1,17 +1,13 @@
 #/bin/bash
 set -x
 
-# Install packages
-sudo apt-get -y install ruby-dev rubygems rpm
-sudo gem install fpm -v 1.3.3 --no-ri --no-rdoc
-
 # Install
-sudo mv konstructs /usr/local/bin/konstructs-client
-sudo mkdir -p /usr/local/share/konstructs-client/{textures,shaders}
-sudo mkdir -p /usr/share/applications/
-sudo cp -r textures/* /usr/local/share/konstructs-client/textures
-sudo cp -r shaders/* /usr/local/share/konstructs-client/shaders
-sudo cp package/konstructs-client.desktop /usr/share/applications/konstructs-client.desktop
+mv konstructs /usr/local/bin/konstructs-client
+mkdir -p /usr/local/share/konstructs-client/{textures,shaders}
+mkdir -p /usr/share/applications/
+cp -r textures/* /usr/local/share/konstructs-client/textures
+cp -r shaders/* /usr/local/share/konstructs-client/shaders
+cp package/konstructs-client.desktop /usr/share/applications/konstructs-client.desktop
 
 # Fetch the remote tags
 git fetch --tags
@@ -20,7 +16,7 @@ git fetch --tags
 git fetch --unshallow
 
 # Make deb package
-sudo fpm -s dir -t deb \
+fpm -s dir -t deb \
   -v $(git describe --abbrev=0 --tags | tr -d v) \
   --iteration ${TRAVIS_BUILD_NUMBER} \
   --license MIT \
@@ -35,7 +31,7 @@ sudo fpm -s dir -t deb \
   /usr/share/applications/konstructs-client.desktop
 
 # Make rpm package
-sudo fpm -s dir -t rpm \
+fpm -s dir -t rpm \
   -v $(git describe --abbrev=0 --tags | tr -d v) \
   --iteration ${TRAVIS_BUILD_NUMBER} \
   --license MIT \

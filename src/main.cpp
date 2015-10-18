@@ -2436,6 +2436,8 @@ public:
         g->mouse_item = -1;
         move_item.use = 0;
         g->player_count = 1;
+        g->window = glfwWindow();
+        glfwGetFramebufferSize(g->window, &g->width, &g->height);
 
         // Set private class variables
         last_update = glfwGetTime();
@@ -2471,7 +2473,7 @@ public:
 
     virtual void drawContents() {
         using namespace nanogui;
-        std::cout << "hello" << std::endl;
+        draw_frame();
     }
 
     int draw_frame() {

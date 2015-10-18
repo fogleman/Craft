@@ -18,7 +18,6 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
-#include "tinycthread/tinycthread.h"
 #include "util.h"
 #include "matrix.h"
 #include "item.h"
@@ -37,9 +36,9 @@ typedef struct {
 typedef struct {
   int index;
   int state;
-  thrd_t thrd;
-  mtx_t mtx;
-  cnd_t cnd;
+  //thrd_t thrd;
+  //mtx_t mtx;
+  //cnd_t cnd;
   WorkerItem item;
 } Worker;
 

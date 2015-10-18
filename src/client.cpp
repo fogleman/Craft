@@ -12,9 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <thread>
+#include <mutex>
 #include "client.h"
 #include "konstructs.h"
-#include "tinycthread/tinycthread.h"
 
 #define MAX_RECV_SIZE 4096*1024
 #define PACKETS (MAX_PENDING_CHUNKS * 2)
@@ -25,8 +26,7 @@ static int running = 0;
 static int sd = 0;
 static int bytes_sent = 0;
 static int bytes_received = 0;
-static thrd_t recv_thread;
-static mtx_t mutex;
+static std::mutex mutex;
 static Packet packets[PACKETS];
 static int last_packet;
 
@@ -79,8 +79,8 @@ void client_version(int version, char *nick, char *hash) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "V,%d,%s,%s", version, nick, hash);
+    char buffer[128];
+    snprintf(buffer, 128, "V,%d,%s,%s", version, nick, hash);
     client_send(buffer);
 }
 
@@ -88,8 +88,8 @@ void client_login(const char *username, const char *identity_token) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "A,%s,%s", username, identity_token);
+    char buffer[128];
+    snprintf(buffer, 128, "A,%s,%s", username, identity_token);
     client_send(buffer);
 }
 
@@ -108,8 +108,8 @@ void client_position(float x, float y, float z, float rx, float ry) {
         return;
     }
     px = x; py = y; pz = z; prx = rx; pry = ry;
-    char buffer[1024];
-    snprintf(buffer, 1024, "P,%.2f,%.2f,%.2f,%.2f,%.2f", x, y, z, rx, ry);
+    char buffer[128];
+    snprintf(buffer, 128, "P,%.2f,%.2f,%.2f,%.2f,%.2f", x, y, z, rx, ry);
     client_send(buffer);
 }
 
@@ -144,8 +144,8 @@ void client_block(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "B,%d,%d,%d,%d", x, y, z, w);
+    char buffer[128];
+    snprintf(buffer, 128, "B,%d,%d,%d,%d", x, y, z, w);
     client_send(buffer);
 }
 
@@ -179,8 +179,8 @@ void client_light(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "L,%d,%d,%d,%d", x, y, z, w);
+    char buffer[128];
+    snprintf(buffer, 128, "L,%d,%d,%d,%d", x, y, z, w);
     client_send(buffer);
 }
 
@@ -188,8 +188,8 @@ void client_sign(int x, int y, int z, int face, const char *text) {
     if (!client_enabled) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "S,%d,%d,%d,%d,%s", x, y, z, face, text);
+    char buffer[128];
+    snprintf(buffer, 128, "S,%d,%d,%d,%d,%s", x, y, z, face, text);
     client_send(buffer);
 }
 
@@ -200,8 +200,8 @@ void client_talk(const char *text) {
     if (strlen(text) == 0) {
         return;
     }
-    char buffer[1024];
-    snprintf(buffer, 1024, "T,%s", text);
+    char buffer[512];
+    snprintf(buffer, 512, "T,%s", text);
     client_send(buffer);
 }
 
@@ -209,7 +209,7 @@ int client_recv(Packet *r_packets, int r_size) {
     if (!client_enabled) {
         return 0;
     }
-    mtx_lock(&mutex);
+    mutex.lock();
     int r_found = 0;
     int index;
     for(int i = 0; i < PACKETS; i++) {
@@ -224,7 +224,7 @@ int client_recv(Packet *r_packets, int r_size) {
     }
 
     last_packet = index;
-    mtx_unlock(&mutex);
+    mutex.unlock();
 
     return r_found;
 }
@@ -254,7 +254,7 @@ size_t recv_all(char* out_buf, size_t size) {
 }
 
 // recv worker thread
-int recv_worker(void *arg) {
+void recv_worker() {
     int size;
 
     while (1) {
@@ -280,7 +280,7 @@ int recv_worker(void *arg) {
         // move data over to packet_buffer
         while (1) {
             int done = 0;
-            mtx_lock(&mutex);
+            mutex.lock();
             for(int i = 0; i < PACKETS; i++) {
                 Packet packet = packets[i];
                 if (packet.size == 0) {
@@ -292,14 +292,13 @@ int recv_worker(void *arg) {
                     break;
                 }
             }
-            mtx_unlock(&mutex);
+            mutex.unlock();
             if (done) {
                 break;
             }
-            thrd_yield();
+            std::this_thread::yield();
         }
     }
-    return 0;
 }
 
 int check_server(char *server) {
@@ -341,11 +340,7 @@ void client_start() {
     running = 1;
     memset(packets, 0, sizeof(Packet)*PACKETS);
     last_packet = 0;
-    mtx_init(&mutex, mtx_plain);
-    if (thrd_create(&recv_thread, recv_worker, NULL) != thrd_success) {
-        SHOWERROR("thrd_create");
-        exit(1);
-    }
+    new std::thread(recv_worker);
 }
 
 void client_stop() {

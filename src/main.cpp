@@ -19,7 +19,6 @@
 #include "item.h"
 #include "matrix.h"
 #include "noise/noise.h"
-#include "tinycthread/tinycthread.h"
 #include "util.h"
 #include "inventory.h"
 #include "compress.h"
@@ -1219,7 +1218,7 @@ void delete_all_chunks() {
 void check_workers() {
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
-        mtx_lock(&worker->mtx);
+        //mtx_lock(&worker->mtx);
         if (worker->state == WORKER_DONE) {
             WorkerItem *item = &worker->item;
             Chunk *chunk = find_chunk(item->p, item->q, item->k, 0);
@@ -1228,7 +1227,7 @@ void check_workers() {
             }
             worker->state = WORKER_IDLE;
         }
-        mtx_unlock(&worker->mtx);
+        //mtx_unlock(&worker->mtx);
     }
 }
 
@@ -1298,18 +1297,18 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     }
     chunk->dirty = 0;
     worker->state = WORKER_BUSY;
-    cnd_signal(&worker->cnd);
+    //cnd_signal(&worker->cnd);
 }
 
 void ensure_chunks(Player *player) {
     check_workers();
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
-        mtx_lock(&worker->mtx);
+        //mtx_lock(&worker->mtx);
         if (worker->state == WORKER_IDLE) {
             ensure_chunks_worker(player, worker);
         }
-        mtx_unlock(&worker->mtx);
+        //mtx_unlock(&worker->mtx);
     }
 }
 
@@ -1317,16 +1316,16 @@ int worker_run(void *arg) {
     Worker *worker = (Worker *)arg;
     int running = 1;
     while (running) {
-        mtx_lock(&worker->mtx);
+        //mtx_lock(&worker->mtx);
         while (worker->state != WORKER_BUSY) {
-            cnd_wait(&worker->cnd, &worker->mtx);
+            //cnd_wait(&worker->cnd, &worker->mtx);
         }
-        mtx_unlock(&worker->mtx);
+        //mtx_unlock(&worker->mtx);
         WorkerItem *item = &worker->item;
         compute_chunk(item);
-        mtx_lock(&worker->mtx);
+        //mtx_lock(&worker->mtx);
         worker->state = WORKER_DONE;
-        mtx_unlock(&worker->mtx);
+        //mtx_unlock(&worker->mtx);
     }
     return 0;
 }
@@ -1942,20 +1941,20 @@ void parse_buffer(Packet packet) {
     int size = packet.size;
     char type = packet.type;
     if (type == 'C') {
-        int bp, bq, bk;
-        char *pos = payload;
+    //    int bp, bq, bk;
+    //    char *pos = payload;
 
-        bp = ntohl(*((int*)pos));
-        pos += sizeof(int);
+    //    bp = ntohl(*((int*)pos));
+    //    pos += sizeof(int);
 
-        bq = ntohl(*((int*)pos));
-        pos += sizeof(int);
+    //    bq = ntohl(*((int*)pos));
+    //    pos += sizeof(int);
 
-        bk = ntohl(*((int*)pos));
-        pos += sizeof(int);
+    //    bk = ntohl(*((int*)pos));
+    //    pos += sizeof(int);
 
-        parse_blocks(bp, bq, bk, pos, size - sizeof(int)*3, s);
-        client_chunk(1);
+    //    parse_blocks(bp, bq, bk, pos, size - sizeof(int)*3, s);
+    //    client_chunk(1);
     } else if(type == 'M') {
         GLuint texture;
         glGenTextures(1, &texture);
@@ -2031,7 +2030,7 @@ void parse_buffer(Packet packet) {
                 inventory.selected = id;
             }
         }
-        if(type == 'P') {
+        if(false && type == 'P') {
             int pid;
             float px, py, pz, prx, pry;
             if (sscanf(line, ",%d,%f,%f,%f,%f,%f",
@@ -2070,7 +2069,7 @@ void parse_buffer(Packet packet) {
             char *text = line + 1;
             add_message(text);
         }
-        if(type == 'N') {
+        if(false && type == 'N') {
             char format[64];
             snprintf(
                      format, sizeof(format), ",%%d,%%%ds", MAX_NAME_LENGTH - 1);
@@ -2380,25 +2379,17 @@ void print_usage(char **argv)
     exit(0);
 }
 
-int init_main() {
+int init_workers() {
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
         worker->index = i;
         worker->state = WORKER_IDLE;
-        mtx_init(&worker->mtx, mtx_plain);
-        cnd_init(&worker->cnd);
-        thrd_create(&worker->thrd, worker_run, worker);
+        //mtx_init(&worker->mtx, mtx_plain);
+        //cnd_init(&worker->cnd);
+        //thrd_create(&worker->thrd, worker_run, worker);
     }
-
-    //update_login_prompt();
-
-
-    // LOCAL VARIABLES //
-
     return 0;
 }
-
-
 
 class Konstructs : public nanogui::Screen {
 public:
@@ -2455,6 +2446,8 @@ public:
 
         // misc
         update_login_prompt();
+
+        std::cout << "Constructor finished" << std::endl;
     }
 
     ~Konstructs() {
@@ -2469,6 +2462,7 @@ public:
 #ifdef _WIN32
         WSACleanup();
 #endif
+        std::cout << "deconstruction finished" << std::endl;
     }
 
     virtual void drawContents() {
@@ -2515,7 +2509,7 @@ public:
             int received = client_recv(packets, (int)((float)(MAX_PENDING_CHUNKS / 2) * cubed_frame_ratio));
 
             for (int i = 0; i < received; i++) {
-                parse_buffer(packets[i]);
+                //parse_buffer(packets[i]);
                 free(packets[i].payload);
             }
 
@@ -2523,6 +2517,7 @@ public:
             if (now - last_update > 0.1) {
                 last_update = now;
                 client_position(s->x, s->y, s->z, s->rx, s->ry);
+                std::cout << 1;
             }
 
             // PREPARE TO RENDER //
@@ -2540,13 +2535,13 @@ public:
         Player *player = g->players + g->observe1;
 
         // RENDER 3-D SCENE //
-        glClear(GL_COLOR_BUFFER_BIT);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        render_sky(&sky_attrib, player, sky_buffer);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        int face_count = render_chunks(&block_attrib, player);
-        render_players(&block_attrib, player);
-        render_wireframe(&line_attrib, player);
+        //glClear(GL_COLOR_BUFFER_BIT);
+        //glClear(GL_DEPTH_BUFFER_BIT);
+        //render_sky(&sky_attrib, player, sky_buffer);
+        //glClear(GL_DEPTH_BUFFER_BIT);
+        int face_count = 0; //render_chunks(&block_attrib, player);
+        //render_players(&block_attrib, player);
+        //render_wireframe(&line_attrib, player);
 
         // RENDER HUD //
         if (connected) {
@@ -2556,17 +2551,17 @@ public:
             }
         }
 
-        main_render_text(me, s, player, text_attrib, blocks_recv, face_count);
+        //main_render_text(me, s, player, text_attrib, blocks_recv, face_count);
 
         if (is_connected()) {
             if(g->inventory_screen) {
-                render_ext_inventory_background(&inventory_attrib);
-                render_ext_inventory_text_blocks(&text_attrib, &block_attrib);
-                render_mouse_block(&block_attrib);
+                //render_ext_inventory_background(&inventory_attrib);
+                //render_ext_inventory_text_blocks(&text_attrib, &block_attrib);
+                //render_mouse_block(&block_attrib);
             } else {
-                render_belt_background(&inventory_attrib, inventory.selected);
-                render_belt_text_blocks(&text_attrib, &block_attrib);
-                render_hand_blocks(&block_attrib);
+                //render_belt_background(&inventory_attrib, inventory.selected);
+                //render_belt_text_blocks(&text_attrib, &block_attrib);
+                //render_hand_blocks(&block_attrib);
             }
         }
     }
@@ -2593,6 +2588,40 @@ int main(int argc, char **argv) {
         nanogui::ref<Konstructs> app = new Konstructs();
         app->drawAll();
         app->setVisible(true);
+
+        if (argc > 1) {
+            for (int i = 1; i < argc; i++) {
+                if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+                    print_usage(argv);
+                }
+                if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
+                    if (!argv[i+1]) {
+                        print_usage(argv);
+                    } else {
+                        if (check_server(argv[i+1])) {
+                            strncpy(g->server_addr, argv[i+1], MAX_ADDR_LENGTH);
+                        } else {
+                            printf("Failed to resolve '%s', ignoring parameter '%s'\n", argv[i+1], argv[i]);
+                        }
+                    }
+                }
+                if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
+                    if (!argv[i+1]) {
+                        print_usage(argv);
+                    } else {
+                        strncpy(g->server_user, argv[i+1], MAX_NAME_LENGTH);
+                    }
+                }
+                if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
+                    if (!argv[i+1]) {
+                        print_usage(argv);
+                    } else {
+                        strncpy(g->server_pass, argv[i+1], 64);
+                    }
+                }
+            }
+        }
+
         nanogui::mainloop();
     }
 

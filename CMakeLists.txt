@@ -30,7 +30,13 @@ add_subdirectory(dependencies/nanogui)
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIRS} dependencies/nanogui/include/ dependencies/nanogui/ext/glfw/include dependencies/lodepng)
+include_directories(
+  ${ZLIB_INCLUDE_DIRS}
+  dependencies/nanogui/include
+  dependencies/nanogui/ext/glfw/include
+  dependencies/nanogui/ext/eigen
+  dependencies/nanogui/ext/nanovg/src
+  dependencies/lodepng)
 
 FILE(GLOB SOURCE_FILES src/*.cpp dependencies/lodepng/lodepng.cpp src/noise/*.cpp src/tinycthread/*.cpp)
 add_executable(konstructs ${SOURCE_FILES})

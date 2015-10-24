@@ -2391,9 +2391,9 @@ int init_workers() {
     return 0;
 }
 
-class Konstructs : public nanogui::Screen {
+class Konstructs2 : public nanogui::Screen {
 public:
-    Konstructs() : nanogui::Screen(Eigen::Vector2i(1024, 768), "Konstructs") {
+    Konstructs2() : nanogui::Screen(Eigen::Vector2i(1024, 768), "Konstructs") {
         using namespace nanogui;
 
         init_inventory();
@@ -2450,7 +2450,7 @@ public:
         std::cout << "Constructor finished" << std::endl;
     }
 
-    ~Konstructs() {
+    ~Konstructs2() {
         client_stop();
         client_disable();
         del_buffer(sky_buffer);
@@ -2581,11 +2581,11 @@ private:
     State *s;
 };
 
-int main(int argc, char **argv) {
+int _main(int argc, char **argv) {
     nanogui::init();
 
     {
-        nanogui::ref<Konstructs> app = new Konstructs();
+        nanogui::ref<Konstructs2> app = new Konstructs2();
         app->drawAll();
         app->setVisible(true);
 

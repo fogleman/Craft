@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 log() {
   echo
@@ -15,7 +16,7 @@ cd build
 rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake konstructs Makefile
 
 cmake ..
-VERBOSE=1 make
+make
 
 log "Package a Linux build"
 

@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -e
 
 cd /build
 

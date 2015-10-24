@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 docker run -ti \
     -v $PWD:/build \

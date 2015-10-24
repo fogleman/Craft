@@ -16,6 +16,10 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+if(MINGW)
+  add_definitions(-DWIN32)
+endif()
+
 #-----------------------------------------------------------------------
 # Nano GUI
 #-----------------------------------------------------------------------

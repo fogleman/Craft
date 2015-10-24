@@ -1,12 +1,4 @@
-Makefile
-CMakeCache.txt
-CMakeFiles
-cmake_install.cmake
-cpm-bin
-cpm_packages
-konstructs
-env
-log.txt
+/build
 *.o
 *.exe
 *.dll

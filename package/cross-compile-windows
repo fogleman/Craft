@@ -22,6 +22,9 @@ fi
 
 log "Make Windows (32-bit) build"
 
+mkdir -p build
+cd build
+
 mkdir -p _path && cp dependencies/nanogui/bin2c _path/bin2c
 PATH="$PATH:${PWD}/_path"
 rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake konstructs Makefile
@@ -33,7 +36,7 @@ export CPP=$PREFIX-cpp
 export RANLIB=$PREFIX-ranlib
 export PATH="/usr/$PREFIX/bin:$PATH"
 
-cmake -DCMAKE_TOOLCHAIN_FILE=./Toolchain-mingw32.cmake .
+cmake -DCMAKE_TOOLCHAIN_FILE=./Toolchain-mingw32.cmake ..
 make
 [ -d _path ] && rm -rf _path
 
@@ -52,5 +55,5 @@ log "Package a Windows build"
 mkdir -p konstructs-client && cd konstructs-client
 cp ../konstructs.exe konstructs-client.exe
 cp /tmp/build-deps/zlib-bin/bin/zlib1.dll .
-cp -r ../shaders ../textures .
+cp -r ../../shaders ../../textures .
 cd .. && zip -r konstructs-client.zip konstructs-client

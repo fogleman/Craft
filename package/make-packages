@@ -5,9 +5,9 @@ set -x
 mv konstructs /usr/local/bin/konstructs-client
 mkdir -p /usr/local/share/konstructs-client/{textures,shaders}
 mkdir -p /usr/share/applications/
-cp -r textures/* /usr/local/share/konstructs-client/textures
-cp -r shaders/* /usr/local/share/konstructs-client/shaders
-cp package/konstructs-client.desktop /usr/share/applications/konstructs-client.desktop
+cp -r ../textures/* /usr/local/share/konstructs-client/textures
+cp -r ../shaders/* /usr/local/share/konstructs-client/shaders
+cp ../package/konstructs-client.desktop /usr/share/applications/konstructs-client.desktop
 
 # Fetch the remote tags
 git fetch --tags

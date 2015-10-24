@@ -18,6 +18,7 @@ endif()
 
 if(MINGW)
   add_definitions(-DWIN32)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 endif()
 
 #-----------------------------------------------------------------------
@@ -47,7 +48,6 @@ FILE(GLOB SOURCE_FILES src/*.cpp dependencies/lodepng/lodepng.cpp src/noise/*.cp
 add_executable(konstructs ${SOURCE_FILES})
 
 if(MINGW)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
   target_link_libraries(konstructs ws2_32.lib
     ${ZLIB_LIBRARIES} nanogui)
 else()

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+docker run -ti \
+    -v $PWD:/build \
+    -e TRAVIS_BUILD_NUMBER=1 \
+    $(awk -F= '/CONTAINER/{print $2}' .travis.yml) \
+    ./package/docker-build

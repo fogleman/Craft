@@ -18,31 +18,35 @@ git fetch --tags
 git fetch --unshallow
 
 # Make deb package
-fpm -s dir -t deb \
-  -v $(git describe --abbrev=0 --tags | tr -d v) \
-  --iteration ${TRAVIS_BUILD_NUMBER} \
-  --license MIT \
-  --depends libglfw2 \
-  --depends zlib1g \
-  --maintainer "Stefan Berggren <nsg@nsg.cc>" \
-  --url https://github.com/konstructs/client \
-  -n konstructs-client \
-  /usr/local/bin/konstructs-client \
-  /usr/local/share/konstructs-client/textures \
-  /usr/local/share/konstructs-client/shaders \
-  /usr/share/applications/konstructs-client.desktop
+if [[ $MAKE_DEB == true ]]; then
+  fpm -s dir -t deb \
+    -v $(git describe --abbrev=0 --tags | tr -d v) \
+    --iteration ${TRAVIS_BUILD_NUMBER} \
+    --license MIT \
+    --depends libglfw2 \
+    --depends zlib1g \
+    --maintainer "Stefan Berggren <nsg@nsg.cc>" \
+    --url https://github.com/konstructs/client \
+    -n konstructs-client \
+    /usr/local/bin/konstructs-client \
+    /usr/local/share/konstructs-client/textures \
+    /usr/local/share/konstructs-client/shaders \
+    /usr/share/applications/konstructs-client.desktop
+fi
 
 # Make rpm package
-fpm -s dir -t rpm \
-  -v $(git describe --abbrev=0 --tags | tr -d v) \
-  --iteration ${TRAVIS_BUILD_NUMBER} \
-  --license MIT \
-  --depends libglfw2 \
-  --depends zlib1g \
-  --maintainer "Stefan Berggren <nsg@nsg.cc>" \
-  --url https://github.com/konstructs/client \
-  -n konstructs-client \
-  /usr/local/bin/konstructs-client \
-  /usr/local/share/konstructs-client/textures \
-  /usr/local/share/konstructs-client/shaders \
-  /usr/share/applications/konstructs-client.desktop
+if [[ $MAKE_RPM == true ]]; then
+  fpm -s dir -t rpm \
+    -v $(git describe --abbrev=0 --tags | tr -d v) \
+    --iteration ${TRAVIS_BUILD_NUMBER} \
+    --license MIT \
+    --depends libglfw2 \
+    --depends zlib1g \
+    --maintainer "Stefan Berggren <nsg@nsg.cc>" \
+    --url https://github.com/konstructs/client \
+    -n konstructs-client \
+    /usr/local/bin/konstructs-client \
+    /usr/local/share/konstructs-client/textures \
+    /usr/local/share/konstructs-client/shaders \
+    /usr/share/applications/konstructs-client.desktop
+fi

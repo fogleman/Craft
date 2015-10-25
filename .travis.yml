@@ -11,11 +11,18 @@ git:
 matrix:
   include:
     - os: osx
-      env: CONTAINER=none
     - os: linux
-      env: CONTAINER=nsgb/konstructs-build-image-linux
+      env:
+        - CONTAINER=nsgb/konstructs-build-image-linux
+        - CROSS_COMPILE=false
+        - MAKE_DEB=true
+        - MAKE_RPM=true
+        - MAKE_TAR=true
     - os: linux
-      env: CONTAINER=nsgb/konstructs-build-image-windows
+      env:
+        - CONTAINER=nsgb/konstructs-build-image-windows
+        - CROSS_COMPILE=true
+        - MAKE_ZIP=true
 
 before_install:
   - git submodule update --init --recursive

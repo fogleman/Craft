@@ -18,9 +18,11 @@ rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake konstructs Makefile
 cmake ..
 make
 
-log "Package a Linux build"
+if [[ $MAKE_TAR == true ]]; then
+  log "Package a Linux build"
 
-mkdir -p konstructs-client-linux && cd konstructs-client-linux
-cp ../konstructs konstructs-client
-cp -r ../../shaders ../../textures .
-cd .. && tar cfj konstructs-client.tar.bz2 konstructs-client-linux
+  mkdir -p konstructs-client-linux && cd konstructs-client-linux
+  cp ../konstructs konstructs-client
+  cp -r ../../shaders ../../textures .
+  cd .. && tar cfj konstructs-client.tar.bz2 konstructs-client-linux
+fi

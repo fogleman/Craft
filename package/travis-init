@@ -6,7 +6,14 @@
 if [[ $TRAVIS_OS_NAME == linux ]]; then
 
   echo "Build in container $CONTAINER"
-  docker run -ti -v $PWD:/build -e TRAVIS_BUILD_NUMBER $CONTAINER ./package/docker-build
+  docker run -ti -v $PWD:/build \
+	  -e TRAVIS_BUILD_NUMBER \
+	  -e CROSS_COMPILE \
+	  -e MAKE_DEB \
+	  -e MAKE_RPM \
+	  -e MAKE_TAR \
+	  -e MAKE_ZIP \
+	  $CONTAINER ./package/docker-build
   echo "Trigger bintray script"
   ./package/bintray
 

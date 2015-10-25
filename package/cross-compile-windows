@@ -49,10 +49,12 @@ if [ ! -d /tmp/build-deps/zlib-bin ]; then
   (cd /tmp/build-deps/zlib-bin && unzip ../zlib*bin.zip)
 fi
 
-log "Package a Windows build"
+if [[ $MAKE_ZIP == true ]]; then
+  log "Package a Windows build"
 
-mkdir -p konstructs-client && cd konstructs-client
-cp ../konstructs.exe konstructs-client.exe
-cp /tmp/build-deps/zlib-bin/bin/zlib1.dll .
-cp -r ../../shaders ../../textures .
-cd .. && zip -r konstructs-client.zip konstructs-client
+  mkdir -p konstructs-client && cd konstructs-client
+  cp ../konstructs.exe konstructs-client.exe
+  cp /tmp/build-deps/zlib-bin/bin/zlib1.dll .
+  cp -r ../../shaders ../../textures .
+  cd .. && zip -r konstructs-client.zip konstructs-client
+fi

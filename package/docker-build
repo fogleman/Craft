@@ -4,5 +4,11 @@ set -e
 cd /build
 
 ./package/compile-linux
-./package/make-packages
-./package/cross-compile-windows
+
+if [[ $MAKE_DEB == true ]] || [[ $MAKE_RPM == true ]]; then
+  ./package/make-packages
+fi
+
+if [[ $CROSS_COMPILE == true ]]; then
+  ./package/cross-compile-windows
+fi

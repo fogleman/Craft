@@ -1,9 +1,5 @@
 ---
 
-os:
-  - linux
-  - osx
-
 sudo: required
 language: cpp
 services:
@@ -12,9 +8,17 @@ services:
 git:
   submodules: false
 
+matrix:
+  include:
+    - os: osx
+      env: CONTAINER=none
+    - os: linux
+      env: CONTAINER=nsgb/konstructs-build-image-linux
+    - os: linux
+      env: CONTAINER=nsgb/konstructs-build-image-windows
+
 before_install:
   - git submodule update --init --recursive
-
 
 notifications:
   webhooks:
@@ -23,9 +27,6 @@ notifications:
     on_success: always  # options: [always|never|change] default: always
     on_failure: always  # options: [always|never|change] default: always
     on_start: always    # options: [always|never|change] default: always
-
-env:
-  - CONTAINER=nsgb/konstructs-build-image
 
 script:
   - ./package/travis-init

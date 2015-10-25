@@ -10,36 +10,6 @@ namespace konstructs {
     using namespace Eigen;
 
     GLuint creater_shader(const GLint type, const std::string &shader);
-    GLint attrib(const std::string &name);
-
-    class Uniform {
-    public:
-        Uniform(const GLuint _name):
-            name(_name) {}
-        const GLuint name;
-        virtual void set() const {}
-    };
-
-    class Uniform1f : public Uniform {
-    public:
-        Uniform1f(const GLuint _name, const float _value) :
-            Uniform(_name),
-            value(_value) {}
-        void set() const;
-    private:
-        const float value;
-    };
-
-    class  UniformMatrix4fv : public Uniform {
-    public:
-        UniformMatrix4fv(const GLuint _name, const Matrix4f &_value) :
-            Uniform(_name),
-            value(_value) {}
-        void set() const;
-    private:
-        const Matrix4f value;
-    };
-
 
     class Attribute {
     public:
@@ -58,6 +28,10 @@ namespace konstructs {
             glBufferData(GL_ARRAY_BUFFER, m.size() * compSize, m.data(), GL_STATIC_DRAW);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
+        ~Attribute() {
+            std::cout<<"Delete attribute!"<<std::endl;
+            glDeleteBuffers(1, &mBuffer);
+        }
         const GLuint name;
         const GLuint type;
         const bool integral;
@@ -70,22 +44,18 @@ namespace konstructs {
         GLuint mBuffer;
     };
 
-    class ShaderData {
+    class Context {
     public:
-        ShaderData(const std::vector<std::shared_ptr<Uniform>> _uniforms,
-                   const std::vector<std::shared_ptr<Attribute>> _attributes,
-                   const GLuint _size):
-            uniforms(_uniforms),
-            attributes(_attributes),
-            size(_size) {
-            for(auto attribute : attributes) {
-                if(attribute->size != size)
-                    throw std::invalid_argument("Invalid attribute size");
-            }
-        }
-        const std::vector<std::shared_ptr<Uniform>> uniforms;
-        const std::vector<std::shared_ptr<Attribute>> attributes;
-        const GLuint size;
+        void render(std::shared_ptr<Attribute> attribute,
+                    const GLuint offset, const GLuint size);
+        void render(const std::vector<std::shared_ptr<Attribute>> &attributes,
+                    const GLuint offset, const GLuint size);
+        void set(const GLuint name, const float value);
+        void set(const GLuint name, const Matrix4f &value);
+        void set(const GLuint name, const int value);
+        void set(const GLuint name, const Vector2f &v);
+        void set(const GLuint name, const Vector3f &v);
+        void set(const GLuint name, const Vector4f &v);
     };
 
     class ShaderProgram {
@@ -111,11 +81,18 @@ namespace konstructs {
             glGenVertexArrays(1, &vao);
             glUseProgram(program);
         }
+        ~ShaderProgram() {
+            std::cout<<"Delete program!"<<std::endl;
+            glDeleteVertexArrays(1, &vao);
+            glDeleteShader(vertex);
+            glDeleteShader(fragment);
+            glDeleteProgram(program);
+        }
         const std::string &name;
         const GLuint vertex;
         const GLuint fragment;
         const GLuint program;
-        void render(ShaderData &data, std::vector<std::shared_ptr<Uniform>> uniforms);
+        void bind(std::function<void(Context context)> f);
     protected:
         GLuint uniformId(const std::string &uName);
         GLuint attributeId(const std::string &aName);

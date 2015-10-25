@@ -49,53 +49,51 @@ namespace konstructs {
         return id;
     }
 
-    void ShaderProgram::render(ShaderData &data,
-                               std::vector<std::shared_ptr<Uniform>> uniforms) {
+    void ShaderProgram::bind(std::function<void(Context context)> f) {
         glUseProgram(program);
         glBindVertexArray(vao);
-        for(auto &uniform : uniforms) {
-            uniform->set();
-        }
-        for(auto &uniform : data.uniforms) {
-            uniform->set();
-        }
-        for(auto &attribute : data.attributes) {
+        Context c;
+        f(c);
+    }
+
+    void Context::render(std::shared_ptr<Attribute> attribute,
+                         const GLuint offset, const GLuint size) {
+        std::vector<std::shared_ptr<Attribute>> attributes = { attribute };
+        render(attributes, offset, size);
+    }
+    void Context::render(const std::vector<std::shared_ptr<Attribute>> &attributes,
+                         const GLuint offset, const GLuint size) {
+        for(auto attribute : attributes) {
             glBindBuffer(GL_ARRAY_BUFFER, attribute->buffer());
             glEnableVertexAttribArray(attribute->name);
             glVertexAttribPointer(attribute->name, attribute->dim,
                                   attribute->type, attribute->integral, 0, 0);
         }
-        glDrawArrays(GL_TRIANGLES, 0, data.size);
+        glDrawArrays(GL_TRIANGLES, offset, size);
     }
 
-    void Uniform1f::set() const {
+    void Context::set(const GLuint name, const float value) {
         glUniform1f(name, value);
     }
 
-    void UniformMatrix4fv::set() const {
+    void Context::set(const GLuint name, const Matrix4f &value) {
         glUniformMatrix4fv(name, 1, GL_FALSE, value.data());
     }
 
+    void Context::set(const GLuint name, const int value) {
+        glUniform1i(name, value);
+    }
 
+    void Context::set(const GLuint name, const Vector2f &v) {
+        glUniform2f(name, v.x(), v.y());
+    }
 
-    // /// Initialize a uniform parameter with an integer value
-    // void UniformSetter::set(int value) const {
-    //     glUniform1i(name, value);
-    // }
+    void Context::set(const GLuint name, const Vector3f &v) {
+        glUniform3f(name, v.x(), v.y(), v.z());
+    }
 
-    // /// Initialize a uniform parameter with a 2D vector
-    // void UniformSetter::set(const Vector2f &v) const {
-    //     glUniform2f(name, v.x(), v.y());
-    // }
-
-    // /// Initialize a uniform parameter with a 3D vector
-    // void UniformSetter::set(const Vector3f &v) const {
-    //     glUniform3f(name, v.x(), v.y(), v.z());
-    // }
-
-    // /// Initialize a uniform parameter with a 4D vector
-    // void UniformSetter::set(const Vector4f &v) const {
-    //     glUniform4f(name, v.x(), v.y(), v.z(), v.w());
-    // }
+    void Context::set(const GLuint name, const Vector4f &v) {
+        glUniform4f(name, v.x(), v.y(), v.z(), v.w());
+    }
 
 };

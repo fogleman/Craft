@@ -42,6 +42,18 @@ public:
     const GLuint intensity;
 };
 
+class CubeData {
+public:
+    CubeData(GLuint name, MatrixXf m, float i) :
+        data(std::make_shared<Attribute>(name, m)),
+        intensity(i),
+        size(m.cols())
+    {}
+    const std::shared_ptr<Attribute> data;
+    const float intensity;
+    const GLuint size;
+};
+
 class Konstructs: public nanogui::Screen {
 public:
     Konstructs() : nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE)
@@ -50,24 +62,20 @@ public:
 
         MatrixXf positions(3, 6);
         positions.col(0) << 0, -2, 0;
-        positions.col(1) <<  1, -2, 0;
-        positions.col(2) <<  1,  1, 0;
-        positions.col(3) <<  1,  1, 0;
+        positions.col(1) << 1, -2, 0;
+        positions.col(2) << 1,  1, 0;
+        positions.col(3) << 1,  1, 0;
         positions.col(4) << 0,  1, 0;
         positions.col(5) << 0, -2, 0;
 
-        data.push_back(ShaderData({ std::make_shared<Uniform1f>(cube.intensity, 0.5f) },
-                                  { std::make_shared<Attribute>(cube.position, positions) },
-                                  6));
+        cubes.push_back(CubeData(cube.position, positions, 0.5f));
 
         MatrixXf positions2(3, 3);
         positions2.col(0) << 1, -2, 0;
         positions2.col(1) <<  2, -3, 0;
         positions2.col(2) <<  2,  1, 0;
 
-        data.push_back(ShaderData({ std::make_shared<Uniform1f>(cube.intensity, 0.7f) },
-                                  { std::make_shared<Attribute>(cube.position, positions2) },
-                                  3));
+        cubes.push_back(CubeData(cube.position, positions2, 0.7f));
 
         performLayout(mNVGContext);
     }
@@ -99,12 +107,14 @@ public:
         mvp.topLeftCorner<3,3>() = Matrix3f(Eigen::AngleAxisf((float) glfwGetTime(),  Vector3f::UnitZ())) * 0.25f;
 
         mvp.row(0) *= (float) mSize.y() / (float) mSize.x();
-        std::vector<std::shared_ptr<Uniform>> uniforms = {
-            std::make_shared<UniformMatrix4fv>(cube.modelViewProj, mvp)
-        };
-        for(auto d : data) {
-            cube.render(d, uniforms);
-        }
+
+        cube.bind([&](Context c) {
+                c.set(cube.modelViewProj, mvp);
+                for(auto d : cubes) {
+                    c.set(cube.intensity, d.intensity);
+                    c.render(d.data, 0, d.size);
+                }
+            });
     }
 
 private:
@@ -118,7 +128,7 @@ private:
     }
 
     Cube cube;
-    std::vector<ShaderData> data;
+    std::vector<CubeData> cubes;
 };
 
 int main(int /* argc */, char ** /* argv */) {

@@ -52,7 +52,7 @@ namespace konstructs {
     void ShaderProgram::bind(std::function<void(Context context)> f) {
         glUseProgram(program);
         glBindVertexArray(vao);
-        Context c;
+        Context c(draw_mode);
         f(c);
     }
 
@@ -69,7 +69,7 @@ namespace konstructs {
             glVertexAttribPointer(attribute->name, attribute->dim,
                                   attribute->type, attribute->integral, 0, 0);
         }
-        glDrawArrays(GL_TRIANGLES, offset, size);
+        glDrawArrays(draw_mode, offset, size);
     }
 
     void Context::set(const GLuint name, const float value) {

@@ -29,7 +29,6 @@ namespace konstructs {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         ~Attribute() {
-            std::cout<<"Delete attribute!"<<std::endl;
             glDeleteBuffers(1, &mBuffer);
         }
         const GLuint name;
@@ -46,6 +45,8 @@ namespace konstructs {
 
     class Context {
     public:
+        Context(const GLenum _draw_mode) :
+            draw_mode(_draw_mode) {}
         void render(std::shared_ptr<Attribute> attribute,
                     const GLuint offset, const GLuint size);
         void render(const std::vector<std::shared_ptr<Attribute>> &attributes,
@@ -56,17 +57,21 @@ namespace konstructs {
         void set(const GLuint name, const Vector2f &v);
         void set(const GLuint name, const Vector3f &v);
         void set(const GLuint name, const Vector4f &v);
+    private:
+        const GLenum draw_mode;
     };
 
     class ShaderProgram {
     public:
         ShaderProgram(const std::string &shader_name,
                       const std::string &vertex_shader,
-                      const std::string &fragment_shader):
+                      const std::string &fragment_shader,
+                      const GLenum _draw_mode = GL_TRIANGLES):
             name(shader_name),
             vertex(creater_shader(GL_VERTEX_SHADER, vertex_shader)),
             fragment(creater_shader(GL_FRAGMENT_SHADER, fragment_shader)),
-            program(glCreateProgram()) {
+            program(glCreateProgram()),
+            draw_mode(_draw_mode) {
             glAttachShader(program, vertex);
             glAttachShader(program, fragment);
             glLinkProgram(program);
@@ -82,7 +87,6 @@ namespace konstructs {
             glUseProgram(program);
         }
         ~ShaderProgram() {
-            std::cout<<"Delete program!"<<std::endl;
             glDeleteVertexArrays(1, &vao);
             glDeleteShader(vertex);
             glDeleteShader(fragment);
@@ -92,6 +96,7 @@ namespace konstructs {
         const GLuint vertex;
         const GLuint fragment;
         const GLuint program;
+        const GLenum draw_mode;
         void bind(std::function<void(Context context)> f);
     protected:
         GLuint uniformId(const std::string &uName);

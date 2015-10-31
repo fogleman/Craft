@@ -1,5 +1,13 @@
 #ifndef _matrix_h_
 #define _matrix_h_
+#include <Eigen/Geometry>
+
+namespace konstructs {
+    namespace matrix {
+        using namespace Eigen;
+        Matrix4f projection_2d(const int width, const int height);
+    };
+};
 
 void normalize(float *x, float *y, float *z);
 void mat_identity(float *matrix);

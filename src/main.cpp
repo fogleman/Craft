@@ -7,7 +7,10 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include "matrix.h"
 #include "shader.h"
+#include "crosshair.h"
+
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 1024
 #define KONSTRUCTS_APP_HEIGHT 768
@@ -16,6 +19,18 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using namespace konstructs;
+
+class CubeData {
+public:
+    CubeData(GLuint name, MatrixXf m, float i) :
+        data(std::make_shared<Attribute>(name, m)),
+        intensity(i),
+        size(m.cols())
+    {}
+    const std::shared_ptr<Attribute> data;
+    const float intensity;
+    const GLuint size;
+};
 
 class Cube : public ShaderProgram {
 public:
@@ -40,24 +55,25 @@ public:
     const GLuint position;
     const GLuint modelViewProj;
     const GLuint intensity;
-};
 
-class CubeData {
-public:
-    CubeData(GLuint name, MatrixXf m, float i) :
-        data(std::make_shared<Attribute>(name, m)),
-        intensity(i),
-        size(m.cols())
-    {}
-    const std::shared_ptr<Attribute> data;
-    const float intensity;
-    const GLuint size;
+    void render(std::vector<CubeData> &cubes, int width, int height) {
+        Matrix4f mvp = matrix::projection_2d(width, height);
+
+        bind([&](Context c) {
+                c.set(modelViewProj, mvp);
+                for(auto d : cubes) {
+                    c.set(intensity, d.intensity);
+                    c.render(d.data, 0, d.size);
+                }
+            });
+    }
 };
 
 class Konstructs: public nanogui::Screen {
 public:
-    Konstructs() : nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE)
-    {
+    Konstructs() :
+        nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
+        crosshair(mSize.y(), mSize.x()) {
         using namespace nanogui;
 
         MatrixXf positions(3, 6);
@@ -67,6 +83,7 @@ public:
         positions.col(3) << 1,  1, 0;
         positions.col(4) << 0,  1, 0;
         positions.col(5) << 0, -2, 0;
+        positions *= 0.25f;
 
         cubes.push_back(CubeData(cube.position, positions, 0.5f));
 
@@ -75,6 +92,7 @@ public:
         positions2.col(1) <<  2, -3, 0;
         positions2.col(2) <<  2,  1, 0;
 
+        positions2 *= 0.25f;
         cubes.push_back(CubeData(cube.position, positions2, 0.7f));
 
         performLayout(mNVGContext);
@@ -102,19 +120,10 @@ public:
 
     virtual void drawContents() {
         using namespace nanogui;
-        Matrix4f mvp;
-        mvp.setIdentity();
-        mvp.topLeftCorner<3,3>() = Matrix3f(Eigen::AngleAxisf((float) glfwGetTime(),  Vector3f::UnitZ())) * 0.25f;
 
-        mvp.row(0) *= (float) mSize.y() / (float) mSize.x();
+        cube.render(cubes, mSize.y(), mSize.x());
 
-        cube.bind([&](Context c) {
-                c.set(cube.modelViewProj, mvp);
-                for(auto d : cubes) {
-                    c.set(cube.intensity, d.intensity);
-                    c.render(d.data, 0, d.size);
-                }
-            });
+        crosshair.render();
     }
 
 private:
@@ -128,6 +137,7 @@ private:
     }
 
     Cube cube;
+    Crosshair crosshair;
     std::vector<CubeData> cubes;
 };
 

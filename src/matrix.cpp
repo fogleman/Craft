@@ -4,6 +4,42 @@
 #include "matrix.h"
 #include "util.h"
 
+namespace konstructs {
+    namespace matrix {
+        using namespace Eigen;
+        Matrix4f projection_2d(const int width, const int height) {
+            Matrix4f mvp;
+            mvp.setIdentity();
+            mvp.row(0) *= (float) height / (float) width;
+            return mvp;
+        }
+
+        Matrix4f projection_frustum(float left, float right, float bottom,
+                                    float top, float znear, float zfar) {
+            float temp, temp2, temp3, temp4;
+            temp = 2.0 * znear;
+            temp2 = right - left;
+            temp3 = top - bottom;
+            temp4 = zfar - znear;
+            Matrix4f m;
+            m <<
+                temp / temp2, 0.0, 0.0, 0.0,
+                0.0, temp / temp3,0.0, 0.0,
+                (right + left) / temp2,(top + bottom) / temp3, (-zfar - znear) / temp4,-1.0,
+                0.0, 0.0, (-temp * zfar) / temp4,0.0;
+            return m;
+        }
+
+        Matrix4f projection_perspective(float fov, float aspect,
+                                        float znear, float zfar) {
+            float ymax, xmax;
+            ymax = znear * tanf(fov * PI / 360.0);
+            xmax = ymax * aspect;
+            return projection_frustum(-xmax, xmax, -ymax, ymax, znear, zfar);
+        }
+    };
+};
+
 void normalize(float *x, float *y, float *z) {
     float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
     *x /= d; *y /= d; *z /= d;

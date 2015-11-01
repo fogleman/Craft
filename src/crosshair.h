@@ -33,7 +33,7 @@ namespace konstructs {
             segments.col(1) <<  0,  p;
             segments.col(2) << -p,  0;
             segments.col(3) <<  p,  0;
-            data = std::make_shared<Attribute>(position, segments);
+            data = std::make_shared<EigenAttribute>(position, segments);
         }
         void render();
 

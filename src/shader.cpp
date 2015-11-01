@@ -1,5 +1,4 @@
 #include <string>
-#include <iostream>
 #include "shader.h"
 
 namespace konstructs {
@@ -29,6 +28,36 @@ namespace konstructs {
         }
 
         return id;
+    }
+
+    ShaderProgram::ShaderProgram(const std::string &shader_name,
+                                 const std::string &vertex_shader,
+                                 const std::string &fragment_shader,
+                                 const GLenum _draw_mode):
+        name(shader_name),
+        vertex(creater_shader(GL_VERTEX_SHADER, vertex_shader)),
+        fragment(creater_shader(GL_FRAGMENT_SHADER, fragment_shader)),
+        program(glCreateProgram()),
+        draw_mode(_draw_mode) {
+        glAttachShader(program, vertex);
+        glAttachShader(program, fragment);
+        glLinkProgram(program);
+        GLint status;
+        glGetProgramiv(program, GL_LINK_STATUS, &status);
+        if (status != GL_TRUE) {
+            char buffer[512];
+            glGetProgramInfoLog(program, 512, nullptr, buffer);
+            std::cerr << "Linker error: " << std::endl << buffer << std::endl;
+            throw std::runtime_error("Shader linking failed!");
+        }
+        glGenVertexArrays(1, &vao);
+        glUseProgram(program);
+    }
+    ShaderProgram::~ShaderProgram() {
+        glDeleteVertexArrays(1, &vao);
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+        glDeleteProgram(program);
     }
 
     GLuint ShaderProgram::uniformId(const std::string &uName) {
@@ -64,10 +93,7 @@ namespace konstructs {
     void Context::render(const std::vector<std::shared_ptr<Attribute>> &attributes,
                          const GLuint offset, const GLuint size) {
         for(auto attribute : attributes) {
-            glBindBuffer(GL_ARRAY_BUFFER, attribute->buffer());
-            glEnableVertexAttribArray(attribute->name);
-            glVertexAttribPointer(attribute->name, attribute->dim,
-                                  attribute->type, attribute->integral, 0, 0);
+            attribute->bind();
         }
         glDrawArrays(draw_mode, offset, size);
     }
@@ -96,4 +122,14 @@ namespace konstructs {
         glUniform4f(name, v.x(), v.y(), v.z(), v.w());
     }
 
+    EigenAttribute::~EigenAttribute() {
+        glDeleteBuffers(1, &buffer);
+    }
+
+    void EigenAttribute::bind() {
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glEnableVertexAttribArray(name);
+        glVertexAttribPointer(name, dim,
+                              type, integral, 0, 0);
+    }
 };

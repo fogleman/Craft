@@ -1,7 +1,10 @@
 #ifndef _chunk_h_
 #define _chunk_h_
 
-#include <GLFW/glfw3.h>
+#include <memory>
+
+#include "shader.h"
+#include "player.h"
 
 #define CHUNK_SIZE 32
 
@@ -72,6 +75,42 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w);
 #define END_CHUNK_FOR_EACH_1D \
   }
 
+namespace konstructs {
 
+    class ChunkData : public Attribute {
+    public:
+        ChunkData(Vector3f _position, GLuint _position_attr,
+                  GLuint _normal_attr, GLuint _uv_attr);
+        Matrix4f translation();
+        virtual void bind();
+    private:
+        const GLuint position_attr;
+        const GLuint normal_attr;
+        const GLuint uv_attr;
+        GLuint buffer;
+        Vector3f position;
+    };
+
+    class ChunkShader : public ShaderProgram {
+    public:
+        ChunkShader();
+        void render(const std::vector<std::shared_ptr<ChunkData>> &data, const Player &p,
+                    int width, int height);
+        const GLuint position_attr;
+        const GLuint normal_attr;
+        const GLuint uv_attr;
+        const GLuint matrix;
+        const GLuint translation;
+        const GLuint view;
+    };
+
+    /*
+        const GLuint camera;
+        const GLuint fog_distance;
+        const GLuint translation;
+        const GLuint timer;
+        const GLuint daylight;
+*/
+};
 
 #endif

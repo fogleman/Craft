@@ -4,9 +4,28 @@
 #include "matrix.h"
 #include "util.h"
 
+#define FAR_PLANE 1000
+#define NEAR_PLANE 0
+#define FOV 70
+
 namespace konstructs {
     namespace matrix {
         using namespace Eigen;
+        Matrix4f projection(int width, int height) {
+            float aspect_ratio = (float)width / (float)height;
+            float y_scale = (1.0f / tanf((FOV / 2.0f) * PI / 360.0)) * aspect_ratio;
+            float x_scale = y_scale / aspect_ratio;
+            float frustrum_length = FAR_PLANE - NEAR_PLANE;
+
+            Matrix4f m;
+            m <<
+                x_scale, 0.0, 0.0, 0.0,
+                0.0, y_scale, 0.0, 0.0,
+                0.0, 0.0, -((FAR_PLANE + NEAR_PLANE) / frustrum_length), -((2 * NEAR_PLANE * FAR_PLANE) / frustrum_length),
+                0.0, 0.0, -1.0, 0.0;
+            return m;
+        }
+
         Matrix4f projection_2d(const int width, const int height) {
             Matrix4f mvp;
             mvp.setIdentity();
@@ -22,11 +41,12 @@ namespace konstructs {
             temp3 = top - bottom;
             temp4 = zfar - znear;
             Matrix4f m;
+
             m <<
-                temp / temp2, 0.0, 0.0, 0.0,
-                0.0, temp / temp3,0.0, 0.0,
-                (right + left) / temp2,(top + bottom) / temp3, (-zfar - znear) / temp4,-1.0,
-                0.0, 0.0, (-temp * zfar) / temp4,0.0;
+                temp / temp2, 0.0, (right + left) / temp2, 0.0,
+                0.0, temp / temp3, (top + bottom) / temp3, 0.0,
+                0.0, 0.0, (-zfar - znear) / temp4, (-temp * zfar) / temp4,
+                0.0, 0.0, -1.0, 0.0;
             return m;
         }
 

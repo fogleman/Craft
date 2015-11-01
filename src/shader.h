@@ -2,6 +2,7 @@
 #define __SHADER_H__
 #include <string>
 #include <memory>
+#include <iostream>
 #include <nanogui/opengl.h>
 #include <nanogui/glutil.h>
 #include <Eigen/Geometry>
@@ -13,34 +14,35 @@ namespace konstructs {
 
     class Attribute {
     public:
-        template <typename Matrix> Attribute(const GLuint _name,
-                                             const Matrix &m):
+        virtual void bind() {}
+    };
+
+    class EigenAttribute : public Attribute {
+    public:
+        template <typename Matrix> EigenAttribute(const GLuint _name,
+                                                  const Matrix &m):
             name(_name),
-            type((GLuint) nanogui::type_traits<typename Matrix::Scalar>::type),
+            type((GLuint) nanogui::type_traits <typename Matrix::Scalar>::type),
             integral((bool) nanogui::type_traits<typename Matrix::Scalar>::integral),
             dim(m.rows()),
             size(m.cols()) {
             uint32_t compSize = sizeof(typename Matrix::Scalar);
             GLuint glType = (GLuint) nanogui::type_traits<typename Matrix::Scalar>::type;
 
-            glGenBuffers(1, &mBuffer);
-            glBindBuffer(GL_ARRAY_BUFFER, mBuffer);
+            glGenBuffers(1, &buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer);
             glBufferData(GL_ARRAY_BUFFER, m.size() * compSize, m.data(), GL_STATIC_DRAW);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
-        ~Attribute() {
-            glDeleteBuffers(1, &mBuffer);
-        }
+        ~EigenAttribute();
+        virtual void bind();
         const GLuint name;
+    private:
         const GLuint type;
         const bool integral;
         const GLuint dim;
         const GLuint size;
-        const GLuint buffer() const {
-            return mBuffer;
-        }
-    private:
-        GLuint mBuffer;
+        GLuint buffer;
     };
 
     class Context {
@@ -66,32 +68,9 @@ namespace konstructs {
         ShaderProgram(const std::string &shader_name,
                       const std::string &vertex_shader,
                       const std::string &fragment_shader,
-                      const GLenum _draw_mode = GL_TRIANGLES):
-            name(shader_name),
-            vertex(creater_shader(GL_VERTEX_SHADER, vertex_shader)),
-            fragment(creater_shader(GL_FRAGMENT_SHADER, fragment_shader)),
-            program(glCreateProgram()),
-            draw_mode(_draw_mode) {
-            glAttachShader(program, vertex);
-            glAttachShader(program, fragment);
-            glLinkProgram(program);
-            GLint status;
-            glGetProgramiv(program, GL_LINK_STATUS, &status);
-            if (status != GL_TRUE) {
-                char buffer[512];
-                glGetProgramInfoLog(program, 512, nullptr, buffer);
-                std::cerr << "Linker error: " << std::endl << buffer << std::endl;
-                throw std::runtime_error("Shader linking failed!");
-            }
-            glGenVertexArrays(1, &vao);
-            glUseProgram(program);
-        }
-        ~ShaderProgram() {
-            glDeleteVertexArrays(1, &vao);
-            glDeleteShader(vertex);
-            glDeleteShader(fragment);
-            glDeleteProgram(program);
-        }
+                      const GLenum _draw_mode = GL_TRIANGLES);
+        ~ShaderProgram();
+
         const std::string &name;
         const GLuint vertex;
         const GLuint fragment;

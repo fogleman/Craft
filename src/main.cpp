@@ -10,6 +10,7 @@
 #include "matrix.h"
 #include "shader.h"
 #include "crosshair.h"
+#include "chunk.h"
 
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 1024
@@ -23,11 +24,11 @@ using namespace konstructs;
 class CubeData {
 public:
     CubeData(GLuint name, MatrixXf m, float i) :
-        data(std::make_shared<Attribute>(name, m)),
+        data(std::make_shared<EigenAttribute>(name, m)),
         intensity(i),
         size(m.cols())
     {}
-    const std::shared_ptr<Attribute> data;
+    const std::shared_ptr<EigenAttribute> data;
     const float intensity;
     const GLuint size;
 };
@@ -73,27 +74,20 @@ class Konstructs: public nanogui::Screen {
 public:
     Konstructs() :
         nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
-        crosshair(mSize.y(), mSize.x()) {
+        crosshair(mSize.y(), mSize.x()),
+        p({Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.0f})
+    {
         using namespace nanogui;
 
-        MatrixXf positions(3, 6);
-        positions.col(0) << 0, -2, 0;
-        positions.col(1) << 1, -2, 0;
-        positions.col(2) << 1,  1, 0;
-        positions.col(3) << 1,  1, 0;
-        positions.col(4) << 0,  1, 0;
-        positions.col(5) << 0, -2, 0;
-        positions *= 0.25f;
+        chunks.push_back(std::make_shared<ChunkData>(Vector3f(3.0f, 0.0f, -15.0f),
+                                                     chunk.position_attr,
+                                                     chunk.normal_attr,
+                                                     chunk.uv_attr));
 
-        cubes.push_back(CubeData(cube.position, positions, 0.5f));
-
-        MatrixXf positions2(3, 3);
-        positions2.col(0) << 1, -2, 0;
-        positions2.col(1) <<  2, -3, 0;
-        positions2.col(2) <<  2,  1, 0;
-
-        positions2 *= 0.25f;
-        cubes.push_back(CubeData(cube.position, positions2, 0.7f));
+        chunks.push_back(std::make_shared<ChunkData>(Vector3f(0.0f, 0.0f, -100.0f),
+                                                     chunk.position_attr,
+                                                     chunk.normal_attr,
+                                                     chunk.uv_attr));
 
         performLayout(mNVGContext);
     }
@@ -121,8 +115,8 @@ public:
     virtual void drawContents() {
         using namespace nanogui;
 
-        cube.render(cubes, mSize.y(), mSize.x());
-
+        // cube.render(cubes, mSize.y(), mSize.x());
+        chunk.render(chunks, p, mSize.y(), mSize.x());
         crosshair.render();
     }
 
@@ -138,7 +132,10 @@ private:
 
     Cube cube;
     Crosshair crosshair;
+    ChunkShader chunk;
+    Player p;
     std::vector<CubeData> cubes;
+    std::vector<std::shared_ptr<ChunkData>> chunks;
 };
 
 int main(int /* argc */, char ** /* argv */) {

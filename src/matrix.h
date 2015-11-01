@@ -5,7 +5,12 @@
 namespace konstructs {
     namespace matrix {
         using namespace Eigen;
+        Matrix4f projection(int width, int height);
         Matrix4f projection_2d(const int width, const int height);
+        Matrix4f projection_frustum(float left, float right, float bottom,
+                                    float top, float znear, float zfar);
+        Matrix4f projection_perspective(float fov, float aspect,
+                                        float znear, float zfar);
     };
 };
 

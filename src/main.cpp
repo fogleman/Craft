@@ -75,8 +75,8 @@ public:
     Konstructs() :
         nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
         crosshair(mSize.y(), mSize.x()),
-        p({Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.0f})
-    {
+        p(Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.0f),
+        px(0), py(0) {
         using namespace nanogui;
 
         chunks.push_back(std::make_shared<ChunkData>(Vector3f(3.0f, 0.0f, -15.0f),
@@ -90,6 +90,7 @@ public:
                                                      chunk.uv_attr));
 
         performLayout(mNVGContext);
+        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 
     ~Konstructs() {
@@ -115,12 +116,54 @@ public:
     virtual void drawContents() {
         using namespace nanogui;
 
+        handle_keys();
+        handle_mouse();
         // cube.render(cubes, mSize.y(), mSize.x());
         chunk.render(chunks, p, mSize.y(), mSize.x());
         crosshair.render();
     }
 
 private:
+
+    void handle_mouse() {
+        int exclusive =
+             glfwGetInputMode(mGLFWWindow, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
+        if (exclusive && (px || py)) {
+            double mx, my;
+            glfwGetCursorPos(mGLFWWindow, &mx, &my);
+            float m = 0.0025;
+            float drx = (mx - px) * m;
+            float dry = (my - py) * m;
+
+            p.rotate_x(dry);
+            p.rotate_y(drx);
+            px = mx;
+            py = my;
+        }
+        else {
+            glfwGetCursorPos(mGLFWWindow, &px, &py);
+        }
+    }
+
+    void handle_keys() {
+        int sx = 0;
+        int sz = 0;
+
+        if(glfwGetKey(mGLFWWindow, GLFW_KEY_W)) {
+            sz--;
+        }
+        if(glfwGetKey(mGLFWWindow, GLFW_KEY_S)) {
+            sz++;
+        }
+        if(glfwGetKey(mGLFWWindow, GLFW_KEY_A)) {
+            sx--;
+        }
+        if(glfwGetKey(mGLFWWindow, GLFW_KEY_D)) {
+            sx++;
+        }
+        p.update_position(sz, sx);
+
+    }
 
     void init_menu() {
         using namespace nanogui;
@@ -134,6 +177,8 @@ private:
     Crosshair crosshair;
     ChunkShader chunk;
     Player p;
+    double px;
+    double py;
     std::vector<CubeData> cubes;
     std::vector<std::shared_ptr<ChunkData>> chunks;
 };

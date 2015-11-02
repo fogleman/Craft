@@ -6,22 +6,18 @@ namespace konstructs {
 
     using namespace Eigen;
 
-    class State {
-    public:
-        State(const Vector3f _position, const float _rx, const float _ry, const float _t):
-            position(_position), rx(_rx), ry(_ry), t(_t) {}
-        const Vector3f position;
-        const float rx;
-        const float ry;
-        const float t;
-    };
-
     class Player {
     public:
-        Player(State _state);
+        Player(const Vector3f _position, const float _rx, const float _ry, const float _t);
         Matrix4f view() const;
+        void update_position(int sz, int sx);
+        void rotate_x(float speed);
+        void rotate_y(float speed);
     private:
-        State state;
+        Vector3f position;
+        float rx;
+        float ry;
+        float t;
     };
 
 };

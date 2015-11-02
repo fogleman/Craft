@@ -11,6 +11,7 @@
 #include "shader.h"
 #include "crosshair.h"
 #include "chunk.h"
+#include "client.h"
 
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 1024
@@ -76,7 +77,8 @@ public:
         nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
         crosshair(mSize.y(), mSize.x()),
         p(Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.0f),
-        px(0), py(0) {
+        px(0), py(0),
+        client("tetestte", "123456789", "dev.konstructs.org") {
         using namespace nanogui;
 
         float *data =new float[10 * 3];
@@ -202,6 +204,7 @@ private:
     Cube cube;
     Crosshair crosshair;
     ChunkShader chunk;
+    Client client;
     Player p;
     double px;
     double py;

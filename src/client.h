@@ -1,9 +1,50 @@
 #ifndef _client_h_
 #define _client_h_
 
+#include <mutex>
+#include <string>
+#include <memory>
+#include <queue>
+#include <thread>
+#include <Eigen/Geometry>
+
 #define DEFAULT_PORT 4080
 
+namespace konstructs {
+    using namespace std;
+    using namespace Eigen;
+
+    class Client {
+    public:
+        Client(const string &nick, const string &hash,
+               const string &hostname, const int port = DEFAULT_PORT);
+        void version(const int version, const string &nick, const string &hash);
+        void position(const Vector3f position,
+                      const float rx, const float ry);
+        void chunk(const int amount);
+        void konstruct();
+        void click_inventory(const int item);
+        void close_inventory();
+        void talk(const string &text);
+        void inventory_select(const int pos);
+        void click_at(const int hit, const int button, const int x, const int y, const int z);
+        vector<shared_ptr<char>> receive(const int max);
+    private:
+        int send_all(const char *data, const int length);
+        void send_string(const string &str);
+        size_t recv_all(char* out_buf, const size_t size);
+        void recv_worker();
+        int bytes_sent;
+        int sock;
+        std::mutex packets_mutex;
+        std::thread *worker_thread;
+        std::queue<shared_ptr<char>> packets;
+    };
+};
+
+
 #define SHOWERROR(ErrMsg) { char aBuf[256]; snprintf(aBuf, 256, "At '%s:%d' in function '%s' occurred error '%s'",__FILE__,__LINE__,__FUNCTION__,ErrMsg); perror(aBuf); };
+
 
 typedef struct {
     int size;

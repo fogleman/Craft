@@ -77,12 +77,13 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w);
 
 namespace konstructs {
 
-    class ChunkData : public Attribute {
+    class ChunkModel : public Attribute {
     public:
-        ChunkData(Vector3f _position, GLuint _position_attr,
-                  GLuint _normal_attr, GLuint _uv_attr);
+        ChunkModel(Vector3f _position, float *data, size_t size,
+                   GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);
         Matrix4f translation();
         virtual void bind();
+        const size_t size;
     private:
         const GLuint position_attr;
         const GLuint normal_attr;
@@ -94,14 +95,16 @@ namespace konstructs {
     class ChunkShader : public ShaderProgram {
     public:
         ChunkShader();
-        void render(const std::vector<std::shared_ptr<ChunkData>> &data, const Player &p,
-                    int width, int height);
+        void add(Vector3f position, float *data, size_t size);
+        void render(const Player &p, int width, int height);
         const GLuint position_attr;
         const GLuint normal_attr;
         const GLuint uv_attr;
         const GLuint matrix;
         const GLuint translation;
         const GLuint view;
+    private:
+        std::vector<ChunkModel *> models;
     };
 
     /*

@@ -7,7 +7,6 @@
 namespace konstructs {
 
     using namespace Eigen;
-    using namespace matrix;
 
     Player::Player(const Vector3f _position, const float _rx,
                    const float _ry, const float _t):
@@ -19,12 +18,13 @@ namespace konstructs {
                 Affine3f(Translation3f(-position))).matrix();
     }
 
-    void Player::update_position(int sz, int sx) {
+    Vector3f Player::update_position(int sz, int sx) {
         if (!sz && !sx) {
-            return;
+            return position;
         }
         float strafe = atan2f(sz, sx);
         position += Vector3f(cosf(ry + strafe) * 0.1, 0.0f, sinf(ry + strafe) * 0.1);
+        return position;
     }
 
     void Player::rotate_x(float speed) {

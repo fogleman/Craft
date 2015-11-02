@@ -29,51 +29,19 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w) {
 
 namespace konstructs {
 
-    ChunkData::ChunkData(Vector3f _position, GLuint _position_attr,
-                         GLuint _normal_attr, GLuint _uv_attr) :
+    ChunkModel::ChunkModel(Vector3f _position, float *data, size_t size,
+                           GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr) :
         position(_position),
+        size(size),
         position_attr(_position_attr),
         normal_attr(_normal_attr),
         uv_attr(_uv_attr) {
-        float *data =new float[10 * 3];
-        float *d = data;
-        *(d++) = 0.0f - 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 1.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.5f;
-        *(d++) = 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 1.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.5f;
-        *(d++) = 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f - 0.5f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 1.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.5f;
-        *(d++) = 0.5f;
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glBufferData(GL_ARRAY_BUFFER, 10 * 3 * sizeof(GLfloat), data, GL_STATIC_DRAW);
-        delete[] data;
+        glBufferData(GL_ARRAY_BUFFER, size * 10  * sizeof(GLfloat), data, GL_STATIC_DRAW);
     }
 
-    void ChunkData::bind() {
+    void ChunkModel::bind() {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
         glEnableVertexAttribArray(position_attr);
         glEnableVertexAttribArray(normal_attr);
@@ -86,8 +54,13 @@ namespace konstructs {
                               sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
     }
 
-    Matrix4f ChunkData::translation() {
+    Matrix4f ChunkModel::translation() {
         return Affine3f(Translation3f(position)).matrix();
+    }
+
+    void ChunkShader::add(Vector3f position, float *data, size_t size) {
+        models.push_back(new ChunkModel(position, data, size, position_attr,
+                                     normal_attr, uv_attr));
     }
 
     ChunkShader::ChunkShader() :
@@ -119,14 +92,13 @@ namespace konstructs {
         view(uniformId("view"))
     {}
 
-    void ChunkShader::render(const std::vector<std::shared_ptr<ChunkData>> &data,
-                             const Player &p, const int width, const int height) {
+    void ChunkShader::render(const Player &p, const int width, const int height) {
         bind([&](Context c) {
                 c.set(matrix, matrix::projection(width, height));
                 c.set(view, p.view());
-                for(auto d : data) {
-                    c.set(translation, d->translation());
-                    c.render(d, 0, 3);
+                for(auto m : models) {
+                    c.set(translation, m->translation());
+                    c.render(m, 0, m->size);
                 }
             });
     }

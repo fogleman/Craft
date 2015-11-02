@@ -79,16 +79,42 @@ public:
         px(0), py(0) {
         using namespace nanogui;
 
-        chunks.push_back(std::make_shared<ChunkData>(Vector3f(3.0f, 0.0f, -15.0f),
-                                                     chunk.position_attr,
-                                                     chunk.normal_attr,
-                                                     chunk.uv_attr));
+        float *data =new float[10 * 3];
+        float *d = data;
+        *(d++) = 0.0f - 0.5f;
+        *(d++) = 0.0f + 0.5f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 1.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.5f;
+        *(d++) = 0.5f;
+        *(d++) = 0.0f + 0.5f;
+        *(d++) = 0.0f + 0.5f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 1.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.5f;
+        *(d++) = 0.5f;
+        *(d++) = 0.0f + 0.5f;
+        *(d++) = 0.0f - 0.5f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 1.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.0f;
+        *(d++) = 0.5f;
+        *(d++) = 0.5f;
 
-        chunks.push_back(std::make_shared<ChunkData>(Vector3f(0.0f, 0.0f, -100.0f),
-                                                     chunk.position_attr,
-                                                     chunk.normal_attr,
-                                                     chunk.uv_attr));
-
+        chunk.add(Vector3f(3.0f, 0.0f, -15.0f), data, 3);
+        chunk.add(Vector3f(0.0f, 0.0f, -100.0f), data, 3);
+        delete[] data;
         performLayout(mNVGContext);
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
@@ -119,7 +145,7 @@ public:
         handle_keys();
         handle_mouse();
         // cube.render(cubes, mSize.y(), mSize.x());
-        chunk.render(chunks, p, mSize.y(), mSize.x());
+        chunk.render(p, mSize.y(), mSize.x());
         crosshair.render();
     }
 
@@ -180,7 +206,6 @@ private:
     double px;
     double py;
     std::vector<CubeData> cubes;
-    std::vector<std::shared_ptr<ChunkData>> chunks;
 };
 
 int main(int /* argc */, char ** /* argv */) {

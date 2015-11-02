@@ -10,7 +10,7 @@ namespace konstructs {
     public:
         Player(const Vector3f _position, const float _rx, const float _ry, const float _t);
         Matrix4f view() const;
-        void update_position(int sz, int sx);
+        Vector3f update_position(int sz, int sx);
         void rotate_x(float speed);
         void rotate_y(float speed);
     private:

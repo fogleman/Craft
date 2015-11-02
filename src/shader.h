@@ -49,6 +49,8 @@ namespace konstructs {
     public:
         Context(const GLenum _draw_mode) :
             draw_mode(_draw_mode) {}
+        void render(Attribute *attribute,
+                    const GLuint offset, const GLuint size);
         void render(std::shared_ptr<Attribute> attribute,
                     const GLuint offset, const GLuint size);
         void render(const std::vector<std::shared_ptr<Attribute>> &attributes,

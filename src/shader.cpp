@@ -85,11 +85,18 @@ namespace konstructs {
         f(c);
     }
 
+    void Context::render(Attribute *attribute,
+                         const GLuint offset, const GLuint size) {
+        attribute->bind();
+        glDrawArrays(draw_mode, offset, size);
+    }
+
     void Context::render(std::shared_ptr<Attribute> attribute,
                          const GLuint offset, const GLuint size) {
         std::vector<std::shared_ptr<Attribute>> attributes = { attribute };
         render(attributes, offset, size);
     }
+
     void Context::render(const std::vector<std::shared_ptr<Attribute>> &attributes,
                          const GLuint offset, const GLuint size) {
         for(auto attribute : attributes) {

@@ -8,9 +8,9 @@ namespace konstructs {
 
     using namespace Eigen;
 
-    Player::Player(const Vector3f _position, const float _rx,
-                   const float _ry, const float _t):
-        position(_position), rx(_rx), ry(_ry), t(_t) {}
+    Player::Player(const int _id, const Vector3f _position, const float _rx,
+                   const float _ry):
+        id(_id), position(_position), rx(_rx), ry(_ry) {}
 
     Matrix4f Player::view() const {
         return (Affine3f(AngleAxisf(rx, Vector3f::UnitX())) *

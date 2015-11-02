@@ -1,6 +1,6 @@
 #ifndef _client_h_
 #define _client_h_
-
+#include <iostream>
 #include <mutex>
 #include <string>
 #include <memory>
@@ -26,6 +26,11 @@ namespace konstructs {
         const char type;
         const size_t size;
         char* buffer() { return mBuffer; }
+        string to_string() {
+            string str(mBuffer, size);
+            std::cout << str << std::endl;
+            return str;
+        }
     private:
         char *mBuffer;
     };

@@ -88,14 +88,11 @@ namespace konstructs {
             // read 'size' bytes from the network
             recv_all(&type, sizeof(char));
 
-            std::cout << "TYPE: "<< type << " SIZE:" << size << std::endl;
-
             // Remove one byte type header'
             size = size - 1;
             auto packet = make_shared<Packet>(type,size);
             // read 'size' bytes from the network
             int r = recv_all(packet->buffer(), packet->size);
-            std::cout << "RECEIVED: " << r << std::endl;
             // move data over to packet_buffer
             packets_mutex.lock();
             packets.push(packet);

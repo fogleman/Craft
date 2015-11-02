@@ -76,7 +76,7 @@ public:
     Konstructs() :
         nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
         crosshair(mSize.y(), mSize.x()),
-        p(Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 0.0f),
+        player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         client("tetestte", "123456789", "dev.konstructs.org") {
         using namespace nanogui;
@@ -143,11 +143,11 @@ public:
 
     virtual void drawContents() {
         using namespace nanogui;
-
+        handle_network();
         handle_keys();
         handle_mouse();
         // cube.render(cubes, mSize.y(), mSize.x());
-        chunk.render(p, mSize.y(), mSize.x());
+        chunk.render(player, mSize.y(), mSize.x());
         crosshair.render();
     }
 
@@ -163,8 +163,8 @@ private:
             float drx = (mx - px) * m;
             float dry = (my - py) * m;
 
-            p.rotate_x(dry);
-            p.rotate_y(drx);
+            player.rotate_x(dry);
+            player.rotate_y(drx);
             px = mx;
             py = my;
         }
@@ -189,8 +189,57 @@ private:
         if(glfwGetKey(mGLFWWindow, GLFW_KEY_D)) {
             sx++;
         }
-        p.update_position(sz, sx);
+        player.update_position(sz, sx);
 
+    }
+
+    void handle_network() {
+        for(auto packet : client.receive(10)) {
+            handle_packet(packet);
+        }
+    }
+
+    void handle_packet(shared_ptr<konstructs::Packet> packet) {
+        cout << packet->type;
+        switch(packet->type) {
+        case 'U':
+            handle_player_packet(packet->to_string());
+            break;
+        case 'W':
+            handle_block_type(packet->to_string());
+            break;
+        default:
+            cout << "UNKNOWN: " << packet->type << endl;
+            break;
+        }
+    }
+
+    void handle_player_packet(const string &str) {
+        int pid;
+        float x, y, z, rx, ry;
+
+        if(sscanf(str.c_str(), ",%d,%f,%f,%f,%f,%f",
+                  &pid, &x, &y, &z, &rx, &ry) != 6)
+            throw std::runtime_error(str);
+        player = Player(pid, Vector3f(x, y, z), rx, ry);
+    }
+
+    void handle_block_type(const string &str) {
+        int w, obstacle, transparent, left, right, top, bottom, front, back;
+        char shape[16];
+        if(sscanf(str.c_str(), ",%d,%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
+                  &w, shape, &obstacle, &transparent, &left, &right,
+                  &top, &bottom, &front, &back) != 10)
+            throw std::runtime_error(str);
+        is_plant[w] = strncmp(shape, "plant", 16) == 0;
+        is_obstacle[w] = obstacle;
+        is_transparent[w] = transparent;
+        blocks[w][0] = left;
+        blocks[w][1] = right;
+        blocks[w][2] = top;
+        blocks[w][3] = bottom;
+        blocks[w][4] = front;
+        blocks[w][5] = back;
     }
 
     void init_menu() {
@@ -205,10 +254,14 @@ private:
     Crosshair crosshair;
     ChunkShader chunk;
     Client client;
-    Player p;
+    Player player;
     double px;
     double py;
     std::vector<CubeData> cubes;
+    int blocks[256][6];
+    char is_plant[256];
+    char is_obstacle[256];
+    char is_transparent[256];
 };
 
 int main(int /* argc */, char ** /* argv */) {

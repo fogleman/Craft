@@ -92,21 +92,19 @@ namespace konstructs {
 
             // Remove one byte type header'
             size = size - 1;
-            std::shared_ptr<char> data(new char[size],
-                                       std::default_delete<char[]>());
+            auto packet = make_shared<Packet>(type,size);
             // read 'size' bytes from the network
-            int r = recv_all(data.get(), size);
+            int r = recv_all(packet->buffer(), packet->size);
             std::cout << "RECEIVED: " << r << std::endl;
             // move data over to packet_buffer
             packets_mutex.lock();
-            packets.push(data);
+            packets.push(packet);
             packets_mutex.unlock();
-            std::this_thread::yield();
         }
     }
 
-    vector<shared_ptr<char>> Client::receive(const int max) {
-        vector<shared_ptr<char>> head;
+    vector<shared_ptr<Packet>> Client::receive(const int max) {
+        vector<shared_ptr<Packet>> head;
         packets_mutex.lock();
         for(int i=0; i < max; i++) {
             if(packets.empty()) break;

@@ -14,6 +14,22 @@ namespace konstructs {
     using namespace std;
     using namespace Eigen;
 
+    class Packet {
+    public:
+        Packet(const char _type, const size_t _size):
+            type(_type), size(_size) {
+            mBuffer = new char[size];
+        }
+        ~Packet() {
+            delete[] mBuffer;
+        }
+        const char type;
+        const size_t size;
+        char* buffer() { return mBuffer; }
+    private:
+        char *mBuffer;
+    };
+
     class Client {
     public:
         Client(const string &nick, const string &hash,
@@ -28,7 +44,7 @@ namespace konstructs {
         void talk(const string &text);
         void inventory_select(const int pos);
         void click_at(const int hit, const int button, const int x, const int y, const int z);
-        vector<shared_ptr<char>> receive(const int max);
+        vector<shared_ptr<Packet>> receive(const int max);
     private:
         int send_all(const char *data, const int length);
         void send_string(const string &str);
@@ -38,7 +54,7 @@ namespace konstructs {
         int sock;
         std::mutex packets_mutex;
         std::thread *worker_thread;
-        std::queue<shared_ptr<char>> packets;
+        std::queue<shared_ptr<Packet>> packets;
     };
 };
 

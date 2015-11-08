@@ -1,12 +1,22 @@
 #ifndef _chunk_h_
 #define _chunk_h_
 
-#include <memory>
+#include "shader.h" //TODO: remove
 
-#include "shader.h"
-#include "player.h"
+#include <Eigen/Geometry>
 
 #define CHUNK_SIZE 32
+
+namespace konstructs {
+    using namespace Eigen;
+    class ChunkData {
+    public:
+        ChunkData(const Vector3i _position, char *compressed, const int size);
+        const Vector3i position;
+    private:
+        char *blocks;
+    };
+};
 
 typedef struct {
   char blocks[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
@@ -74,46 +84,5 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w);
 
 #define END_CHUNK_FOR_EACH_1D \
   }
-
-namespace konstructs {
-
-    class ChunkModel : public Attribute {
-    public:
-        ChunkModel(Vector3f _position, float *data, size_t size,
-                   GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);
-        Matrix4f translation();
-        virtual void bind();
-        const size_t size;
-    private:
-        const GLuint position_attr;
-        const GLuint normal_attr;
-        const GLuint uv_attr;
-        GLuint buffer;
-        Vector3f position;
-    };
-
-    class ChunkShader : public ShaderProgram {
-    public:
-        ChunkShader();
-        void add(Vector3f position, float *data, size_t size);
-        void render(const Player &p, int width, int height);
-        const GLuint position_attr;
-        const GLuint normal_attr;
-        const GLuint uv_attr;
-        const GLuint matrix;
-        const GLuint translation;
-        const GLuint view;
-    private:
-        std::vector<ChunkModel *> models;
-    };
-
-    /*
-        const GLuint camera;
-        const GLuint fog_distance;
-        const GLuint translation;
-        const GLuint timer;
-        const GLuint daylight;
-*/
-};
 
 #endif

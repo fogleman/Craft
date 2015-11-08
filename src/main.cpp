@@ -2,6 +2,9 @@
 #include <nanogui/nanogui.h>
 #if defined(WIN32)
 #include <windows.h>
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
 #endif
 #include <nanogui/glutil.h>
 #include <iostream>
@@ -10,12 +13,15 @@
 #include "matrix.h"
 #include "shader.h"
 #include "crosshair.h"
+#include "block.h"
 #include "chunk.h"
+#include "chunk_shader.h"
 #include "client.h"
 
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 1024
 #define KONSTRUCTS_APP_HEIGHT 768
+#define MAX_PENDING_CHUNKS 128
 
 using std::cout;
 using std::cerr;
@@ -78,7 +84,8 @@ public:
         crosshair(mSize.y(), mSize.x()),
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
-        client("tetestte", "123456789", "dev.konstructs.org") {
+        client("tetestte", "123456789", "localhost") {
+        client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
 
         float *data =new float[10 * 3];
@@ -144,6 +151,7 @@ public:
     virtual void drawContents() {
         using namespace nanogui;
         handle_network();
+        cout << "CHUNKS LOADED: " << chunks.size() << endl;
         handle_keys();
         handle_mouse();
         // cube.render(cubes, mSize.y(), mSize.x());
@@ -189,7 +197,7 @@ private:
         if(glfwGetKey(mGLFWWindow, GLFW_KEY_D)) {
             sx++;
         }
-        player.update_position(sz, sx);
+        client.position(player.update_position(sz, sx), player.rx(), player.ry());
 
     }
 
@@ -207,6 +215,9 @@ private:
             break;
         case 'W':
             handle_block_type(packet->to_string());
+            break;
+        case 'C':
+            handle_chunk(packet);
             break;
         default:
             cout << "UNKNOWN: " << packet->type << endl;
@@ -231,15 +242,37 @@ private:
                   &w, shape, &obstacle, &transparent, &left, &right,
                   &top, &bottom, &front, &back) != 10)
             throw std::runtime_error(str);
-        is_plant[w] = strncmp(shape, "plant", 16) == 0;
-        is_obstacle[w] = obstacle;
-        is_transparent[w] = transparent;
-        blocks[w][0] = left;
-        blocks[w][1] = right;
-        blocks[w][2] = top;
-        blocks[w][3] = bottom;
-        blocks[w][4] = front;
-        blocks[w][5] = back;
+        blocks.is_plant[w] = strncmp(shape, "plant", 16) == 0;
+        blocks.is_obstacle[w] = obstacle;
+        blocks.is_transparent[w] = transparent;
+        blocks.blocks[w][0] = left;
+        blocks.blocks[w][1] = right;
+        blocks.blocks[w][2] = top;
+        blocks.blocks[w][3] = bottom;
+        blocks.blocks[w][4] = front;
+        blocks.blocks[w][5] = back;
+    }
+
+
+    void handle_chunk(shared_ptr<konstructs::Packet> packet) {
+        int p, q, k;
+        char *pos = packet->buffer();
+
+        p = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        q = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        k = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        Vector3i position(p, q, k);
+        const int blocks_size = packet->size - 3 * sizeof(int);
+        auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
+        chunks.insert({position, chunk});
+        model_factory.create_model(chunk);
+        client.chunk(1);
     }
 
     void init_menu() {
@@ -253,15 +286,14 @@ private:
     Cube cube;
     Crosshair crosshair;
     ChunkShader chunk;
+    ChunkModelFactory model_factory;
     Client client;
     Player player;
     double px;
     double py;
     std::vector<CubeData> cubes;
-    int blocks[256][6];
-    char is_plant[256];
-    char is_obstacle[256];
-    char is_transparent[256];
+    std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> chunks;
+    BlockData blocks;
 };
 
 int main(int /* argc */, char ** /* argv */) {

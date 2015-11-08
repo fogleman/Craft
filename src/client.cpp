@@ -127,6 +127,7 @@ namespace konstructs {
     }
 
     void Client::send_string(const string &str) {
+        std::cout << "SEND: " << str << endl;
         int header_size = htonl(str.size());
         if (send_all((char*)&header_size, sizeof(header_size)) == -1) {
             SHOWERROR("client_sendall");
@@ -145,7 +146,7 @@ namespace konstructs {
     }
 
     void Client::position(const Vector3f position,
-                                 const float rx, const float ry) {
+                          const float rx, const float ry) {
         std::stringstream ss;
         ss << "P," << position[0] << "," << position[1] << "," << position[2] << "," << rx << "," << ry;
         send_string(ss.str());

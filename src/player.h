@@ -15,10 +15,12 @@ namespace konstructs {
         void rotate_x(float speed);
         void rotate_y(float speed);
         int id;
+        float rx();
+        float ry();
     private:
         Vector3f position;
-        float rx;
-        float ry;
+        float mrx;
+        float mry;
     };
 
 };

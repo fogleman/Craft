@@ -10,11 +10,11 @@ namespace konstructs {
 
     Player::Player(const int _id, const Vector3f _position, const float _rx,
                    const float _ry):
-        id(_id), position(_position), rx(_rx), ry(_ry) {}
+        id(_id), position(_position), mrx(_rx), mry(_ry) {}
 
     Matrix4f Player::view() const {
-        return (Affine3f(AngleAxisf(rx, Vector3f::UnitX())) *
-                Affine3f(AngleAxisf(ry, Vector3f::UnitY())) *
+        return (Affine3f(AngleAxisf(mrx, Vector3f::UnitX())) *
+                Affine3f(AngleAxisf(mry, Vector3f::UnitY())) *
                 Affine3f(Translation3f(-position))).matrix();
     }
 
@@ -23,24 +23,32 @@ namespace konstructs {
             return position;
         }
         float strafe = atan2f(sz, sx);
-        position += Vector3f(cosf(ry + strafe) * 0.1, 0.0f, sinf(ry + strafe) * 0.1);
+        position += Vector3f(cosf(mry + strafe) * 0.1, 0.0f, sinf(mry + strafe) * 0.1);
         return position;
     }
 
     void Player::rotate_x(float speed) {
-        rx += speed;
-        rx = std::max(rx, -((float)M_PI / 2.0f));
-        rx = std::min(rx, ((float)M_PI / 2.0f));
+        mrx += speed;
+        mrx = std::max(mrx, -((float)M_PI / 2.0f));
+        mrx = std::min(mrx, ((float)M_PI / 2.0f));
     }
 
     void Player::rotate_y(float speed) {
-        ry += speed;
-        if (ry < 0) {
-            ry += (M_PI * 2);
+        mry += speed;
+        if (mry < 0) {
+            mry += (M_PI * 2);
         }
-        if (ry >= (M_PI * 2)){
-            ry -= (M_PI * 2);
+        if (mry >= (M_PI * 2)){
+            mry -= (M_PI * 2);
         }
+    }
+
+    float Player::rx() {
+        return mrx;
+    }
+
+    float Player::ry() {
+        return mry;
     }
 
 };

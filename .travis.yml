@@ -23,6 +23,10 @@ matrix:
         - CONTAINER=nsgb/konstructs-build-image-windows
         - CROSS_COMPILE=true
         - MAKE_ZIP=true
+    - os: linux
+      env:
+        - CONTAINER=nsgb/konstructs-build-image-docs
+        - MAKE_DOCS=true
 
 before_install:
   - git submodule update --init --recursive

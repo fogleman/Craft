@@ -3,7 +3,11 @@ set -e
 
 cd /build
 
-./package/compile-linux
+if [[ $MAKE_DOCS == true ]]; then
+  doxygen Doxyfile
+else
+  ./package/compile-linux
+fi
 
 if [[ $MAKE_DEB == true ]] || [[ $MAKE_RPM == true ]]; then
   ./package/make-packages

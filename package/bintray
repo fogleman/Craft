@@ -55,7 +55,7 @@ upload_client() {
   curl -d message="Publish version $version of $repo/$package" https://webhooks.gitter.im/e/$gitter
 }
 
-cd build
+[ -d build ] && cd build
 
 # Upload master to bintray
 if [ "x$TRAVIS_BRANCH" == "xmaster" ] && [ "x$TRAVIS_PULL_REQUEST" == "xfalse" ]; then

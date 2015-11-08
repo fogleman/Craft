@@ -9,6 +9,7 @@ if [[ $TRAVIS_OS_NAME == linux ]]; then
   docker run -ti -v $PWD:/build \
 	  -e TRAVIS_BUILD_NUMBER \
 	  -e CROSS_COMPILE \
+	  -e MAKE_DOCS \
 	  -e MAKE_DEB \
 	  -e MAKE_RPM \
 	  -e MAKE_TAR \
@@ -16,7 +17,7 @@ if [[ $TRAVIS_OS_NAME == linux ]]; then
 	  $CONTAINER ./package/docker-build
   echo "Trigger bintray script"
   ./package/bintray
-
+  ./package/upload-docs
 
 ##
 # OSX

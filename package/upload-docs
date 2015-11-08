@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+echo hello there
+
+if [[ true == $MAKE_DOCS ]]; then
+  echo make docs
+else
+  echo no make docs!
+fi

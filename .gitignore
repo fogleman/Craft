@@ -1,4 +1,5 @@
 /build
+/docs
 *.o
 *.exe
 *.dll

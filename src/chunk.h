@@ -1,9 +1,9 @@
 #ifndef _chunk_h_
 #define _chunk_h_
 
-#include "shader.h" //TODO: remove
-
 #include <Eigen/Geometry>
+#include "shader.h" //TODO: remove
+#include "block.h"
 
 #define CHUNK_SIZE 32
 
@@ -12,9 +12,12 @@ namespace konstructs {
     class ChunkData {
     public:
         ChunkData(const Vector3i _position, char *compressed, const int size);
+        ChunkData();
+        ~ChunkData();
         const Vector3i position;
+        const char * const blocks();
     private:
-        char *blocks;
+        char *mBlocks;
     };
 };
 

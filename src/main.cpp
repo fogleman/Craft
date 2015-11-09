@@ -28,55 +28,6 @@ using std::cerr;
 using std::endl;
 using namespace konstructs;
 
-class CubeData {
-public:
-    CubeData(GLuint name, MatrixXf m, float i) :
-        data(std::make_shared<EigenAttribute>(name, m)),
-        intensity(i),
-        size(m.cols())
-    {}
-    const std::shared_ptr<EigenAttribute> data;
-    const float intensity;
-    const GLuint size;
-};
-
-class Cube : public ShaderProgram {
-public:
-    Cube() :
-        ShaderProgram(
-            "cube",
-            "#version 330\n"
-            "uniform mat4 modelViewProj;\n"
-            "in vec3 position;\n"
-            "void main() {\n"
-            "    gl_Position = modelViewProj * vec4(position, 1.0);\n"
-            "}",
-            "#version 330\n"
-            "out vec4 color;\n"
-            "uniform float intensity;\n"
-            "void main() {\n"
-            "    color = vec4(vec3(intensity), 1.0);\n"
-            "}"),
-        position(attributeId("position")),
-        modelViewProj(uniformId("modelViewProj")),
-        intensity(uniformId("intensity")) {}
-    const GLuint position;
-    const GLuint modelViewProj;
-    const GLuint intensity;
-
-    void render(std::vector<CubeData> &cubes, int width, int height) {
-        Matrix4f mvp = matrix::projection_2d(width, height);
-
-        bind([&](Context c) {
-                c.set(modelViewProj, mvp);
-                for(auto d : cubes) {
-                    c.set(intensity, d.intensity);
-                    c.render(d.data, 0, d.size);
-                }
-            });
-    }
-};
-
 class Konstructs: public nanogui::Screen {
 public:
     Konstructs() :
@@ -84,46 +35,10 @@ public:
         crosshair(mSize.y(), mSize.x()),
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
+        model_factory(blocks),
         client("tetestte", "123456789", "localhost") {
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
-
-        float *data =new float[10 * 3];
-        float *d = data;
-        *(d++) = 0.0f - 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 1.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.5f;
-        *(d++) = 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 1.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.5f;
-        *(d++) = 0.5f;
-        *(d++) = 0.0f + 0.5f;
-        *(d++) = 0.0f - 0.5f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 1.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.0f;
-        *(d++) = 0.5f;
-        *(d++) = 0.5f;
-
-        chunk.add(Vector3f(3.0f, 0.0f, -15.0f), data, 3);
-        chunk.add(Vector3f(0.0f, 0.0f, -100.0f), data, 3);
-        delete[] data;
         performLayout(mNVGContext);
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
@@ -151,10 +66,11 @@ public:
     virtual void drawContents() {
         using namespace nanogui;
         handle_network();
-        cout << "CHUNKS LOADED: " << chunks.size() << endl;
         handle_keys();
         handle_mouse();
-        // cube.render(cubes, mSize.y(), mSize.x());
+        for(auto model : model_factory.fetch_models()) {
+            chunk.add(model);
+        }
         chunk.render(player, mSize.y(), mSize.x());
         crosshair.render();
     }
@@ -208,7 +124,6 @@ private:
     }
 
     void handle_packet(shared_ptr<konstructs::Packet> packet) {
-        cout << packet->type;
         switch(packet->type) {
         case 'U':
             handle_player_packet(packet->to_string());
@@ -232,7 +147,7 @@ private:
         if(sscanf(str.c_str(), ",%d,%f,%f,%f,%f,%f",
                   &pid, &x, &y, &z, &rx, &ry) != 6)
             throw std::runtime_error(str);
-        player = Player(pid, Vector3f(x, y, z), rx, ry);
+        player = Player(pid, Vector3f(x, 250.0, z), rx, ry);
     }
 
     void handle_block_type(const string &str) {
@@ -271,7 +186,7 @@ private:
         const int blocks_size = packet->size - 3 * sizeof(int);
         auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
         chunks.insert({position, chunk});
-        model_factory.create_model(chunk);
+        model_factory.create_model(position, chunks);
         client.chunk(1);
     }
 
@@ -283,7 +198,7 @@ private:
         window->setLayout(new GroupLayout());
     }
 
-    Cube cube;
+    BlockData blocks;
     Crosshair crosshair;
     ChunkShader chunk;
     ChunkModelFactory model_factory;
@@ -291,9 +206,7 @@ private:
     Player player;
     double px;
     double py;
-    std::vector<CubeData> cubes;
     std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> chunks;
-    BlockData blocks;
 };
 
 int main(int /* argc */, char ** /* argv */) {

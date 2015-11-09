@@ -127,7 +127,6 @@ namespace konstructs {
     }
 
     void Client::send_string(const string &str) {
-        std::cout << "SEND: " << str << endl;
         int header_size = htonl(str.size());
         if (send_all((char*)&header_size, sizeof(header_size)) == -1) {
             SHOWERROR("client_sendall");

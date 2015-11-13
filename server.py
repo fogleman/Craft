@@ -22,6 +22,9 @@ CHUNK_SIZE = 32
 BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
+AUTH_REQUIRED = True
+AUTH_URL = 'https://craft.michaelfogleman.com/api/1/access'
+
 DAY_LENGTH = 600
 SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
@@ -179,6 +182,7 @@ class Model(object):
             VERSION: self.on_version,
         }
         self.patterns = [
+            (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
             (re.compile(r'^/spawn$'), self.on_spawn),
             (re.compile(r'^/goto(?:\s+(\S+))?$'), self.on_goto),
             (re.compile(r'^/pq\s+(-?[0-9]+)\s*,?\s*(-?[0-9]+)$'), self.on_pq),
@@ -316,12 +320,11 @@ class Model(object):
     def on_authenticate(self, client, username, access_token):
         user_id = None
         if username and access_token:
-            url = 'https://craft.michaelfogleman.com/api/1/access'
             payload = {
                 'username': username,
                 'access_token': access_token,
             }
-            response = requests.post(url, data=payload)
+            response = requests.post(AUTH_URL, data=payload)
             if response.status_code == 200 and response.text.isdigit():
                 user_id = int(response.text)
         client.user_id = user_id
@@ -376,7 +379,7 @@ class Model(object):
         p, q = chunked(x), chunked(z)
         previous = self.get_block(x, y, z)
         message = None
-        if client.user_id is None:
+        if AUTH_REQUIRED and client.user_id is None:
             message = 'Only logged in users are allowed to build.'
         elif y <= 0 or y > 255:
             message = 'Invalid block coordinates.'
@@ -433,7 +436,7 @@ class Model(object):
         p, q = chunked(x), chunked(z)
         block = self.get_block(x, y, z)
         message = None
-        if client.user_id is None:
+        if AUTH_REQUIRED and client.user_id is None:
             message = 'Only logged in users are allowed to build.'
         elif block == 0:
             message = 'Lights must be placed on a block.'
@@ -451,7 +454,7 @@ class Model(object):
         self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
         self.send_light(client, p, q, x, y, z, w)
     def on_sign(self, client, x, y, z, face, *args):
-        if client.user_id is None:
+        if AUTH_REQUIRED and client.user_id is None:
             client.send(TALK, 'Only logged in users are allowed to build.')
             return
         text = ','.join(args)
@@ -502,6 +505,16 @@ class Model(object):
                 client.send(TALK, 'Unrecognized nick: "%s"' % nick)
         else:
             self.send_talk('%s> %s' % (client.nick, text))
+    def on_nick(self, client, nick=None):
+        if AUTH_REQUIRED:
+            client.send(TALK, 'You cannot change your nick on this server.')
+            return
+        if nick is None:
+            client.send(TALK, 'Your nickname is %s' % client.nick)
+        else:
+            self.send_talk('%s is now known as %s' % (client.nick, nick))
+            client.nick = nick
+            self.send_nick(client)
     def on_spawn(self, client):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
@@ -527,7 +540,7 @@ class Model(object):
     def on_help(self, client, topic=None):
         if topic is None:
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
-            client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout')
+            client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /nick')
             client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn, /view N')
             return
         topic = topic.lower().strip()
@@ -553,6 +566,9 @@ class Model(object):
         elif topic == 'online':
             client.send(TALK, 'Help: /online HOST [PORT]')
             client.send(TALK, 'Connect to the specified server.')
+        elif topic == 'nick':
+            client.send(TALK, 'Help: /nick [NICK]')
+            client.send(TALK, 'Get or set your nickname.')
         elif topic == 'pq':
             client.send(TALK, 'Help: /pq P Q')
             client.send(TALK, 'Teleport to the specified chunk.')

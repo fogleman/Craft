@@ -28,6 +28,7 @@ namespace konstructs {
                                     float top, float znear, float zfar);
         Matrix4f projection_perspective(float fov, float aspect,
                                         float znear, float zfar);
+        void ext_frustum_planes(float planes[6][4], int radius, const Matrix4f &m);
     };
 };
 

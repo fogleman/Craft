@@ -17,6 +17,7 @@
 #include "chunk.h"
 #include "chunk_shader.h"
 #include "client.h"
+#include "util.h"
 
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 1024
@@ -71,7 +72,8 @@ public:
         for(auto model : model_factory.fetch_models()) {
             chunk.add(model);
         }
-        chunk.render(player, mSize.y(), mSize.x());
+        int vertices = chunk.render(player, mSize.y(), mSize.x());
+        cout << "Vertices: " << vertices << endl;
         crosshair.render();
     }
 
@@ -134,6 +136,9 @@ private:
         case 'C':
             handle_chunk(packet);
             break;
+        case 'M':
+            handle_texture(packet);
+            break;
         default:
             cout << "UNKNOWN: " << packet->type << endl;
             break;
@@ -147,7 +152,7 @@ private:
         if(sscanf(str.c_str(), ",%d,%f,%f,%f,%f,%f",
                   &pid, &x, &y, &z, &rx, &ry) != 6)
             throw std::runtime_error(str);
-        player = Player(pid, Vector3f(x, 250.0, z), rx, ry);
+        player = Player(pid, Vector3f(x, 150.0, z), rx, ry);
     }
 
     void handle_block_type(const string &str) {
@@ -188,6 +193,16 @@ private:
         chunks.insert({position, chunk});
         model_factory.create_model(position, chunks);
         client.chunk(1);
+    }
+
+    void handle_texture(shared_ptr<konstructs::Packet> packet) {
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        load_png_texture_from_buffer(packet->buffer(), packet->size);
     }
 
     void init_menu() {

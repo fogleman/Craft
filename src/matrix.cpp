@@ -1,16 +1,19 @@
 #include <math.h>
 #include <stdio.h>
+#include <nanogui/glutil.h>
 #include "config.h"
 #include "matrix.h"
 #include "util.h"
 
 #define FAR_PLANE 1000
-#define NEAR_PLANE 0
-#define FOV 70
+#define NEAR_PLANE 0.25
+#define FOV 60
 
 namespace konstructs {
     namespace matrix {
         using namespace Eigen;
+        using namespace nanogui;
+
         Matrix4f projection(int width, int height) {
             float aspect_ratio = (float)width / (float)height;
             float y_scale = (1.0f / tanf((FOV / 2.0f) * PI / 360.0)) * aspect_ratio;
@@ -55,7 +58,36 @@ namespace konstructs {
             float ymax, xmax;
             ymax = znear * tanf(fov * PI / 360.0);
             xmax = ymax * aspect;
-            return projection_frustum(-xmax, xmax, -ymax, ymax, znear, zfar);
+            return frustum(-xmax, xmax, -ymax, ymax, znear, zfar);
+        }
+
+        void ext_frustum_planes(float planes[6][4], int radius, const Matrix4f &m) {
+            float znear = 0.125;
+            float zfar = radius * 32 + 64;
+            planes[0][0] = m(3) + m(0);
+            planes[0][1] = m(7) + m(4);
+            planes[0][2] = m(11) + m(8);
+            planes[0][3] = m(15) + m(12);
+            planes[1][0] = m(3) - m(0);
+            planes[1][1] = m(7) - m(4);
+            planes[1][2] = m(11) - m(8);
+            planes[1][3] = m(15) - m(12);
+            planes[2][0] = m(3) + m(1);
+            planes[2][1] = m(7) + m(5);
+            planes[2][2] = m(11) + m(9);
+            planes[2][3] = m(15) + m(13);
+            planes[3][0] = m(3) - m(1);
+            planes[3][1] = m(7) - m(5);
+            planes[3][2] = m(11) - m(9);
+            planes[3][3] = m(15) - m(13);
+            planes[4][0] = znear * m(3) + m(2);
+            planes[4][1] = znear * m(7) + m(6);
+            planes[4][2] = znear * m(11) + m(10);
+            planes[4][3] = znear * m(15) + m(14);
+            planes[5][0] = zfar * m(3) - m(2);
+            planes[5][1] = zfar * m(7) - m(6);
+            planes[5][2] = zfar * m(11) - m(10);
+            planes[5][3] = zfar * m(15) - m(14);
         }
     };
 };

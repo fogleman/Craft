@@ -58,6 +58,7 @@ namespace konstructs {
                    GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);
         Matrix4f translation();
         virtual void bind();
+        Vector3i pos();
         const size_t size;
     private:
         const GLuint position_attr;
@@ -71,24 +72,21 @@ namespace konstructs {
     public:
         ChunkShader();
         void add(const shared_ptr<ChunkModelResult> data);
-        void render(const Player &p, int width, int height);
+        int render(const Player &p, int width, int height);
         const GLuint position_attr;
         const GLuint normal_attr;
         const GLuint uv_attr;
         const GLuint matrix;
         const GLuint translation;
-        const GLuint view;
+        const GLuint camera;
+        const GLuint fog_distance;
+        const GLuint sampler;
+        const GLuint sky_sampler;
+        const GLuint timer;
+        const GLuint daylight;
     private:
         std::vector<ChunkModel *> models;
     };
-
-    /*
-        const GLuint camera;
-        const GLuint fog_distance;
-        const GLuint translation;
-        const GLuint timer;
-        const GLuint daylight;
-*/
 
     class ChunkModelFactory {
     public:
@@ -126,6 +124,7 @@ namespace konstructs {
         const BlockData &block_data;
     };
     shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data, const BlockData &block_data);
+    int chunk_visible(float planes[6][4], int p, int q, int k);
 };
 
 #endif

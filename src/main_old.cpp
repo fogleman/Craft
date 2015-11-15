@@ -242,7 +242,7 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
         {0.5, 0.5, 0.5, 0.5},
         {0.5, 0.5, 0.5, 0.5}
     };
-    make_cube(data, ao, light, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
+    make_cube(data, ao, light, 1, 1, 1, 1, 1, 1, x, y, z, n, w, blocks);
     return gen_faces(10, 6, data);
 }
 
@@ -250,7 +250,7 @@ GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 4);
     float ao = 0;
     float light = 1;
-    make_plant(data, ao, light, x, y, z, n, w, 45);
+    make_plant(data, ao, light, x, y, z, n, w, 45, blocks);
     return gen_faces(10, 4, data);
 }
 
@@ -774,9 +774,9 @@ void compute_chunk(WorkerItem *item) {
 
 
     /* Populate the opaque array with the chunk itself */
-    char *blocks = item->neighbour_blocks[1][1][1];
+    char *blockss = item->neighbour_blocks[1][1][1];
 
-    CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+    CHUNK_FOR_EACH(blockss, ex, ey, ez, ew) {
         int x = ex - ox;
         int y = ey - oy;
         int z = ez - oz;
@@ -1036,7 +1036,7 @@ void compute_chunk(WorkerItem *item) {
 
     // count exposed faces
     int faces = 0;
-    CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+    CHUNK_FOR_EACH(blockss, ex, ey, ez, ew) {
         if (ew <= 0) {
             continue;
         }
@@ -1062,7 +1062,7 @@ void compute_chunk(WorkerItem *item) {
     // generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
-    CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+    CHUNK_FOR_EACH(blockss, ex, ey, ez, ew) {
         if (ew <= 0) {
             continue;
         }
@@ -1114,13 +1114,13 @@ void compute_chunk(WorkerItem *item) {
             float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
             make_plant(
                 data + offset, min_ao, 0,
-                ex, ey, ez, 0.5, ew, rotation);
+                ex, ey, ez, 0.5, ew, rotation, blocks);
         }
         else {
             make_cube(
                 data + offset, ao, light,
                 f1, f2, f3, f4, f5, f6,
-                ex, ey, ez, 0.5, ew);
+                ex, ey, ez, 0.5, ew, blocks);
         }
         offset += total * 60;
     } END_CHUNK_FOR_EACH;

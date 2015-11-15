@@ -18,6 +18,10 @@ namespace konstructs {
                 Affine3f(Translation3f(-position))).matrix();
     }
 
+    Vector3f Player::camera() const {
+        return position;
+    }
+
     Vector3f Player::update_position(int sz, int sx) {
         if (!sz && !sx) {
             return position;

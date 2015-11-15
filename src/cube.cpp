@@ -82,7 +82,7 @@ void make_cube_faces(
 void make_cube(
     float *data, float ao[6][4], float light[6][4],
     int left, int right, int top, int bottom, int front, int back,
-    float x, float y, float z, float n, int w)
+    float x, float y, float z, float n, int w, const int blocks[256][6])
 {
     int wleft = blocks[w][0];
     int wright = blocks[w][1];
@@ -99,7 +99,7 @@ void make_cube(
 
 void make_plant(
     float *data, float ao, float light,
-    float px, float py, float pz, float n, int w, float rotation)
+    float px, float py, float pz, float n, int w, float rotation, const int blocks[256][6])
 {
     static const float positions[4][4][3] = {
         {{ 0, -1, -1}, { 0, -1, +1}, { 0, +1, -1}, { 0, +1, +1}},

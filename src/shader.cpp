@@ -85,20 +85,20 @@ namespace konstructs {
         f(c);
     }
 
-    void Context::render(Attribute *attribute,
-                         const GLuint offset, const GLuint size) {
+    void Context::draw(Attribute *attribute,
+                       const GLuint offset, const GLuint size) {
         attribute->bind();
         glDrawArrays(draw_mode, offset, size);
     }
 
-    void Context::render(std::shared_ptr<Attribute> attribute,
-                         const GLuint offset, const GLuint size) {
+    void Context::draw(std::shared_ptr<Attribute> attribute,
+                       const GLuint offset, const GLuint size) {
         std::vector<std::shared_ptr<Attribute>> attributes = { attribute };
-        render(attributes, offset, size);
+        draw(attributes, offset, size);
     }
 
-    void Context::render(const std::vector<std::shared_ptr<Attribute>> &attributes,
-                         const GLuint offset, const GLuint size) {
+    void Context::draw(const std::vector<std::shared_ptr<Attribute>> &attributes,
+                       const GLuint offset, const GLuint size) {
         for(auto attribute : attributes) {
             attribute->bind();
         }
@@ -127,6 +127,14 @@ namespace konstructs {
 
     void Context::set(const GLuint name, const Vector4f &v) {
         glUniform4f(name, v.x(), v.y(), v.z(), v.w());
+    }
+
+    void Context::enable(const GLenum cap) {
+        glEnable(cap);
+    }
+
+    void Context::disable(const GLenum cap) {
+        glDisable(cap);
     }
 
     EigenAttribute::~EigenAttribute() {

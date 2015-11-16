@@ -183,7 +183,7 @@ namespace konstructs {
     int ChunkShader::render(const Player &p, const int width, const int height) {
         int vertices = 0;
         bind([&](Context c) {
-                glEnable(GL_DEPTH_TEST);
+                c.enable(GL_DEPTH_TEST);
                 float aspect_ratio = (float)width / (float)height;
                 Matrix4f m = matrix::projection_perspective(60.0f, aspect_ratio, 0.025, 500.0) * p.view();
                 c.set(matrix, m);
@@ -198,10 +198,10 @@ namespace konstructs {
                     if(!chunk_visible(planes, pos(0), pos(1), pos(2)))
                         continue;
                     c.set(translation, m->translation());
-                    c.render(m, 0, m->size);
+                    c.draw(m, 0, m->size);
                     vertices += m->size;
                 }
-                glDisable(GL_DEPTH_TEST);
+                c.disable(GL_DEPTH_TEST);
             });
         return vertices;
     }

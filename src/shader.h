@@ -49,18 +49,20 @@ namespace konstructs {
     public:
         Context(const GLenum _draw_mode) :
             draw_mode(_draw_mode) {}
-        void render(Attribute *attribute,
-                    const GLuint offset, const GLuint size);
-        void render(std::shared_ptr<Attribute> attribute,
-                    const GLuint offset, const GLuint size);
-        void render(const std::vector<std::shared_ptr<Attribute>> &attributes,
-                    const GLuint offset, const GLuint size);
+        void draw(Attribute *attribute,
+                  const GLuint offset, const GLuint size);
+        void draw(std::shared_ptr<Attribute> attribute,
+                  const GLuint offset, const GLuint size);
+        void draw(const std::vector<std::shared_ptr<Attribute>> &attributes,
+                  const GLuint offset, const GLuint size);
         void set(const GLuint name, const float value);
         void set(const GLuint name, const Matrix4f &value);
         void set(const GLuint name, const int value);
         void set(const GLuint name, const Vector2f &v);
         void set(const GLuint name, const Vector3f &v);
         void set(const GLuint name, const Vector4f &v);
+        void enable(const GLenum cap);
+        void disable(const GLenum cap);
     private:
         const GLenum draw_mode;
     };

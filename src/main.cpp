@@ -45,6 +45,7 @@ public:
         blocks.is_plant[SOLID_BLOCK] = 0;
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
+        memset(&fps, 0, sizeof(fps));
     }
 
     ~Konstructs() {
@@ -69,6 +70,7 @@ public:
 
     virtual void drawContents() {
         using namespace nanogui;
+        update_fps(&fps);
         handle_network();
         handle_keys();
         handle_mouse();
@@ -76,7 +78,7 @@ public:
             chunk.add(model);
         }
         int vertices = chunk.render(player, mSize.x(), mSize.y());
-        cout << "Vertices: " << vertices << endl;
+        cout << "Vertices: " << vertices << "FPS: " << fps.fps << endl;
         crosshair.render();
     }
 
@@ -225,6 +227,7 @@ private:
     double px;
     double py;
     std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> chunks;
+    FPS fps;
 };
 
 int main(int /* argc */, char ** /* argv */) {

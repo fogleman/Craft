@@ -193,6 +193,7 @@ namespace konstructs {
         int vertices = 0;
         bind([&](Context c) {
                 c.enable(GL_DEPTH_TEST);
+                c.enable(GL_CULL_FACE);
                 float aspect_ratio = (float)width / (float)height;
                 Matrix4f m = matrix::projection_perspective(60.0f, aspect_ratio, 0.025, 500.0) * p.view();
                 c.set(matrix, m);
@@ -211,6 +212,7 @@ namespace konstructs {
                     c.draw(m, 0, m->size);
                     vertices += m->size;
                 }
+                c.disable(GL_CULL_FACE);
                 c.disable(GL_DEPTH_TEST);
             });
         return vertices;

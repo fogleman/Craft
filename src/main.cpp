@@ -22,7 +22,7 @@
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 1024
 #define KONSTRUCTS_APP_HEIGHT 768
-#define MAX_PENDING_CHUNKS 512
+#define MAX_PENDING_CHUNKS 256
 
 using std::cout;
 using std::cerr;

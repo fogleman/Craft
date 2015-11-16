@@ -22,7 +22,7 @@
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 1024
 #define KONSTRUCTS_APP_HEIGHT 768
-#define MAX_PENDING_CHUNKS 128
+#define MAX_PENDING_CHUNKS 512
 
 using std::cout;
 using std::cerr;
@@ -152,7 +152,7 @@ private:
         if(sscanf(str.c_str(), ",%d,%f,%f,%f,%f,%f",
                   &pid, &x, &y, &z, &rx, &ry) != 6)
             throw std::runtime_error(str);
-        player = Player(pid, Vector3f(x, 150.0, z), rx, ry);
+        player = Player(pid, Vector3f(x, 50.0, z), rx, ry);
     }
 
     void handle_block_type(const string &str) {

@@ -57,6 +57,8 @@ namespace konstructs {
         void worker();
         const std::shared_ptr<ChunkData> get_chunk(const Vector3i &position,
                                                    const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunks);
+        const ChunkModelData create_model_data(const Vector3i &position,
+                               const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunks);
         std::mutex mutex;
         std::condition_variable chunks_condition;
         std::queue<ChunkModelData> chunks;
@@ -79,7 +81,7 @@ namespace konstructs {
         const Vector3i RIGHT_FRONT;
         const Vector3i LEFT_BACK;
         const Vector3i RIGHT_BACK;
-        const shared_ptr<ChunkData> EMPTY_CHUNK;
+        const shared_ptr<ChunkData> SOLID_CHUNK;
         const BlockData &block_data;
     };
     shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data, const BlockData &block_data);

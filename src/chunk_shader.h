@@ -2,7 +2,7 @@
 #define __CHUNK_SHADER_H__
 
 #include <memory>
-
+#include <unordered_map>
 #include "shader.h"
 #include "player.h"
 #include "chunk.h"
@@ -18,7 +18,7 @@ namespace konstructs {
                    GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);
         Matrix4f translation();
         virtual void bind();
-        Vector3i pos();
+        const Vector3i pos() const;
         const size_t size;
     private:
         const GLuint position_attr;
@@ -45,7 +45,7 @@ namespace konstructs {
         const GLuint timer;
         const GLuint daylight;
     private:
-        std::vector<ChunkModel *> models;
+        std::unordered_map<Vector3i, ChunkModel *, matrix_hash<Vector3i>> models;
     };
 
     int chunk_visible(float planes[6][4], int p, int q, int k);

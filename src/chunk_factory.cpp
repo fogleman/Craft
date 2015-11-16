@@ -42,7 +42,7 @@ namespace konstructs {
         RIGHT_FRONT(1, -1, 0),
         LEFT_BACK(-1, 1, 0),
         RIGHT_BACK(1, 1, 0),
-        EMPTY_CHUNK(std::make_shared<ChunkData>()) {
+        SOLID_CHUNK(std::make_shared<ChunkData>()) {
         for(int i = 0; i < WORKERS; i++) {
             new std::thread(&ChunkModelFactory::worker, this);
         }
@@ -56,13 +56,34 @@ namespace konstructs {
         try {
             return chunks.at(position);
         } catch(std::out_of_range e) {
-            return EMPTY_CHUNK;
+            return SOLID_CHUNK;
         }
     }
 
     void ChunkModelFactory::create_model(const Vector3i &position,
                                          const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunk_data) {
-        ChunkModelData data = {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            chunks.push(create_model_data(position, chunk_data));
+            if(chunk_data.find(position + BELOW) != chunk_data.end())
+                chunks.push(create_model_data(position + BELOW, chunk_data));
+            if(chunk_data.find(position + ABOVE) != chunk_data.end())
+                chunks.push(create_model_data(position + ABOVE, chunk_data));
+            if(chunk_data.find(position + LEFT) != chunk_data.end())
+                chunks.push(create_model_data(position + LEFT, chunk_data));
+            if(chunk_data.find(position + RIGHT) != chunk_data.end())
+                chunks.push(create_model_data(position + RIGHT, chunk_data));
+            if(chunk_data.find(position + FRONT) != chunk_data.end())
+                chunks.push(create_model_data(position + FRONT, chunk_data));
+            if(chunk_data.find(position + BACK) != chunk_data.end())
+                chunks.push(create_model_data(position + BACK, chunk_data));
+        }
+        chunks_condition.notify_all();
+    }
+
+    const ChunkModelData ChunkModelFactory::create_model_data(const Vector3i &position,
+                                                              const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunk_data) {
+        const ChunkModelData data = {
             position,
             get_chunk(position + BELOW, chunk_data),
             get_chunk(position + ABOVE, chunk_data),
@@ -84,11 +105,7 @@ namespace konstructs {
             get_chunk(position + RIGHT_BACK, chunk_data),
             get_chunk(position, chunk_data)
         };
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            chunks.push(data);
-        }
-        chunks_condition.notify_one();
+        return data;
     }
 
     std::vector<std::shared_ptr<ChunkModelResult>> ChunkModelFactory::fetch_models() {

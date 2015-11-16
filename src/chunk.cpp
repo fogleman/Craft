@@ -1,4 +1,5 @@
 #include <iostream>
+#include "block.h"
 #include "compress.h"
 #include "chunk.h"
 #include "matrix.h"
@@ -39,7 +40,7 @@ namespace konstructs {
     }
     ChunkData::ChunkData() {
         mBlocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
-        memset(mBlocks, 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+        memset(mBlocks, (char)SOLID_BLOCK, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
     }
     ChunkData::~ChunkData() {
         delete[] mBlocks;

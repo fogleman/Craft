@@ -42,6 +42,9 @@ public:
         using namespace nanogui;
         performLayout(mNVGContext);
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        blocks.is_plant[SOLID_BLOCK] = 0;
+        blocks.is_obstacle[SOLID_BLOCK] = 1;
+        blocks.is_transparent[SOLID_BLOCK] = 0;
     }
 
     ~Konstructs() {
@@ -72,7 +75,7 @@ public:
         for(auto model : model_factory.fetch_models()) {
             chunk.add(model);
         }
-        int vertices = chunk.render(player, mSize.y(), mSize.x());
+        int vertices = chunk.render(player, mSize.x(), mSize.y());
         cout << "Vertices: " << vertices << endl;
         crosshair.render();
     }

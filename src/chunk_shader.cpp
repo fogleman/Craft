@@ -41,13 +41,22 @@ namespace konstructs {
         return Affine3f(Translation3f(Vector3f(real_position[0], real_position[2], real_position[1]))).matrix();
     }
 
-    Vector3i ChunkModel::pos() {
+    const Vector3i ChunkModel::pos() const {
         return position;
     }
 
     void ChunkShader::add(const shared_ptr<ChunkModelResult> data) {
-        models.push_back(new ChunkModel(data, position_attr,
-                                        normal_attr, uv_attr));
+        auto it = models.find(data->position);
+        auto model = new ChunkModel(data, position_attr,
+                                    normal_attr, uv_attr);
+        if (it != models.end()) {
+            auto second = it->second;
+            it->second = model;
+            delete second;
+        } else {
+            models.insert({data->position, model});
+        }
+
     }
 
     void shtxt_path(const char *name, const char *type, char *path, size_t max_len) {
@@ -193,7 +202,8 @@ namespace konstructs {
                 c.set(sky_sampler, 2);
                 float planes[6][4];
                 matrix::ext_frustum_planes(planes, 10, m);
-                for(auto m : models) {
+                for(auto pair : models) {
+                    auto m = pair.second;
                     Vector3i pos = m->pos();
                     if(!chunk_visible(planes, pos(0), pos(1), pos(2)))
                         continue;

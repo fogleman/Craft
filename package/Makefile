@@ -23,8 +23,7 @@ osx:
 	@echo "# Build on OSX"
 	@echo -e "\033[0m"
 
-	mkdir -p build
-	cd build && cmake ../.. && make
+	cd .. && cmake . && make
 
 windows: linux
 	@echo -e "\033[1m"

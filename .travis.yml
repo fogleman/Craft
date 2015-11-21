@@ -11,22 +11,11 @@ git:
 matrix:
   include:
     - os: osx
+      env: MAKE_COMMAND="osx"
     - os: linux
-      env:
-        - CONTAINER=nsgb/konstructs-build-image-linux
-        - CROSS_COMPILE=false
-        - MAKE_DEB=true
-        - MAKE_RPM=true
-        - MAKE_TAR=true
+      env: MAKE_COMMAND="linux deb rpm"
     - os: linux
-      env:
-        - CONTAINER=nsgb/konstructs-build-image-windows
-        - CROSS_COMPILE=true
-        - MAKE_ZIP=true
-    - os: linux
-      env:
-        - CONTAINER=nsgb/konstructs-build-image-docs
-        - MAKE_DOCS=true
+      env: MAKE_COMMAND="windows zip"
 
 before_install:
   - git submodule update --init --recursive
@@ -40,4 +29,4 @@ notifications:
     on_start: always    # options: [always|never|change] default: always
 
 script:
-  - ./package/travis-init
+  - make $MAKE_COMMAND -C package

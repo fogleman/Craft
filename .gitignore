@@ -1,4 +1,6 @@
 /build
+/package/build/
+/package/build-windows/
 /docs
 *.o
 *.exe

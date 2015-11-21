@@ -229,6 +229,18 @@ docker-zip: /tmp/build-deps/zlib-bin
 	chown $$HOST_UID *.zip
 	rm -rf konstructs-client
 
+upload-tar: export MAKE_TAR = true
+upload-tar:
+	./bintray
+
+upload-deb: export MAKE_DEB = true
+upload-deb:
+	./bintray
+
+upload-zip: export MAKE_ZIP = true
+upload-zip:
+	./bintray
+
 clean:
 	rm -rf \
 		konstructs-client-linux \

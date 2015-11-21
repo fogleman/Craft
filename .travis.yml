@@ -17,9 +17,9 @@ matrix:
     - os: osx
       env: MAKE_COMMAND="osx"
     - os: linux
-      env: MAKE_COMMAND="linux deb rpm"
+      env: MAKE_COMMAND="linux tar deb rpm upload-tar upload-deb"
     - os: linux
-      env: MAKE_COMMAND="windows zip"
+      env: MAKE_COMMAND="windows zip upload-zip"
     - os: linux
       env: MAKE_COMMAND="docs"
 

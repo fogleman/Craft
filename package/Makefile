@@ -23,6 +23,7 @@ osx:
 	@echo "# Build on OSX"
 	@echo -e "\033[0m"
 
+	brew update
 	cd .. && cmake . && make
 
 windows: linux

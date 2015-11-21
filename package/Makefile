@@ -250,6 +250,7 @@ clean:
 		konstructs-client-*.x86_64.rpm \
 		konstructs-client.zip
 
-.PHONY: build-linux build-osx build-window nop clean
-.PHONY: docker-linux
-.PHONY: package-tar package-deb package-rpm package-linux package-all
+.PHONY: linux osx window clean docs tar zip deb rpm
+.PHONY: docker-deb docker-linux docker-package-prep docker-rpm docker-windows docker-zip
+.PHONY: package-prep
+.PHONY: upload-deb upload-tar upload-zip

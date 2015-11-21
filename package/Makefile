@@ -36,7 +36,15 @@ docs:
 		nsgb/konstructs-build-image-docs \
 		doxygen
 
-windows: linux
+/usr/local/bin/bin2c:
+	@echo -e "\033[1m"
+	@echo "# Build a Linux version of bin2c for the cross compile"
+	@echo -e "\033[0m"
+
+	gcc -o bin2c ../dependencies/nanogui/resources/bin2c.c
+	mv bin2c /usr/local/bin/bin2c
+
+windows:
 	@echo -e "\033[1m"
 	@echo "# Use Docker to cross compile a Windows build"
 	@echo -e "\033[0m"
@@ -72,13 +80,10 @@ docker-windows: export CC = /usr/bin/x86_64-w64-mingw32-gcc
 docker-windows: export CXX = /usr/bin/x86_64-w64-mingw32-g++
 docker-windows: export CPP = /usr/bin/x86_64-w64-mingw32-cpp
 docker-windows: export RANLIB = /usr/bin/x86_64-w64-mingw32-ranlib
-docker-windows: /tmp/build-deps/zlib
+docker-windows: /tmp/build-deps/zlib /usr/local/bin/bin2c
 	@echo -e "\033[1m"
 	@echo "# Build the Windows build inside Docker"
 	@echo -e "\033[0m"
-
-	# This is a hack, install bin2c in PATH
-	cp build/dependencies/nanogui/bin2c /usr/local/bin/bin2c
 
 	mkdir -p build-windows
 	cd build-windows && \

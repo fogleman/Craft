@@ -37,7 +37,9 @@ public:
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
-        client("tetestte", "123456789", "localhost") {
+        client("tetestte", "123456789", "localhost"),
+        radius(10),
+        chunk(radius, 60.0f) {
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -77,8 +79,8 @@ public:
         for(auto model : model_factory.fetch_models()) {
             chunk.add(model);
         }
-        int vertices = chunk.render(player, mSize.x(), mSize.y());
-        cout << "Vertices: " << vertices << "FPS: " << fps.fps << endl;
+        int faces = chunk.render(player, mSize.x(), mSize.y());
+        cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair.render();
     }
 
@@ -220,6 +222,7 @@ private:
 
     BlockData blocks;
     Crosshair crosshair;
+    int radius;
     ChunkShader chunk;
     ChunkModelFactory model_factory;
     Client client;

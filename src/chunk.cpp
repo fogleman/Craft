@@ -33,19 +33,16 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w) {
 namespace konstructs {
     ChunkData::ChunkData(const Vector3i _position, char *compressed, const int size):
         position(_position) {
-        mBlocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+        blocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
         int out_size = inflate_data(compressed + BLOCKS_HEADER_SIZE,
                                     size - BLOCKS_HEADER_SIZE,
-                                    mBlocks, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+                                    blocks, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
     }
     ChunkData::ChunkData() {
-        mBlocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
-        memset(mBlocks, (char)SOLID_BLOCK, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
+        blocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+        memset(blocks, (char)SOLID_BLOCK, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
     }
     ChunkData::~ChunkData() {
-        delete[] mBlocks;
-    }
-    const char * const ChunkData::blocks() {
-        return mBlocks;
+        delete[] blocks;
     }
 };

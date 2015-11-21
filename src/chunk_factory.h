@@ -38,10 +38,11 @@ namespace konstructs {
     class ChunkModelResult {
     public:
         ChunkModelResult(const Vector3i _position, const int components,
-                         const int faces);
+                         const int _faces);
         ~ChunkModelResult();
         const Vector3i position;
         const int size;
+        const int faces;
         GLfloat *data();
     private:
         GLfloat *mData;

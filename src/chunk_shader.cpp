@@ -6,10 +6,13 @@
 
 namespace konstructs {
 
-    ChunkModel::ChunkModel(const shared_ptr<ChunkModelResult> data,
+    const Array3i chunk_offset = Vector3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE).array();
+
+    ChunkModel::ChunkModel(const shared_ptr<ChunkModelResult> &data,
                            GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr) :
         position(data->position),
         size(data->size),
+        faces(data->faces),
         position_attr(_position_attr),
         normal_attr(_normal_attr),
         uv_attr(_uv_attr) {
@@ -17,6 +20,11 @@ namespace konstructs {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
         glBufferData(GL_ARRAY_BUFFER, size * sizeof(GLfloat),
                      data->data(), GL_STATIC_DRAW);
+        Vector3f pos =
+            (position.array() * chunk_offset).matrix().cast<float>();
+
+        Vector3f rpos = Vector3f(pos[0], pos[2], pos[1]);
+        translation = Affine3f(Translation3f(rpos)).matrix();
     }
 
     void ChunkModel::bind() {
@@ -32,20 +40,7 @@ namespace konstructs {
                               sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
     }
 
-    Matrix4f ChunkModel::translation() {
-        Vector3f real_position =
-            (position.array() *
-             Vector3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE)
-             .array()).matrix().cast<float>();
-
-        return Affine3f(Translation3f(Vector3f(real_position[0], real_position[2], real_position[1]))).matrix();
-    }
-
-    const Vector3i ChunkModel::pos() const {
-        return position;
-    }
-
-    void ChunkShader::add(const shared_ptr<ChunkModelResult> data) {
+    void ChunkShader::add(const shared_ptr<ChunkModelResult> &data) {
         auto it = models.find(data->position);
         auto model = new ChunkModel(data, position_attr,
                                     normal_attr, uv_attr);
@@ -80,15 +75,6 @@ namespace konstructs {
     void load_textures() {
         char txtpth[KONSTRUCTS_PATH_SIZE];
 
-        GLuint font;
-        glGenTextures(1, &font);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, font);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        texture_path("font.png", txtpth, KONSTRUCTS_PATH_SIZE);
-        load_png_texture(txtpth);
-
         GLuint sky;
         glGenTextures(1, &sky);
         glActiveTexture(GL_TEXTURE2);
@@ -99,24 +85,13 @@ namespace konstructs {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         texture_path("sky.png", txtpth, KONSTRUCTS_PATH_SIZE);
         load_png_texture(txtpth);
-
-        GLuint inventory_texture;
-        glGenTextures(1, &inventory_texture);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, inventory_texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        texture_path("inventory.png", txtpth, KONSTRUCTS_PATH_SIZE);
-        load_png_texture(txtpth);
-
     }
 
-    ChunkShader::ChunkShader() :
+    ChunkShader::ChunkShader(const int _radius, const float _fov) :
         ShaderProgram(
         "chunk",
         "#version 330\n"
         "uniform mat4 matrix;\n"
-        "uniform vec3 camera;\n"
         "uniform float fog_distance;\n"
         "uniform mat4 translation;\n"
         "in vec4 position;\n"
@@ -137,11 +112,6 @@ namespace konstructs {
         "    fragment_ao = 0.3 + (1.0 - uv.z) * 0.7;\n"
         "    fragment_light = uv.w;\n"
         "    diffuse = max(0.0, dot(normal, light_direction));\n"
-        "    float camera_distance = distance(camera, vec3(global_position));\n"
-        "    fog_factor = pow(clamp(camera_distance / fog_distance, 0.0, 1.0), 4.0);\n"
-        "    float dy = global_position.y - camera.y;\n"
-        "    float dx = distance(global_position.xz, camera.xz);\n"
-        "    fog_height = (atan(dy, dx) + pi / 2) / pi;\n"
         "}\n",
         "#version 330\n"
         "uniform sampler2D sampler;\n"
@@ -151,8 +121,6 @@ namespace konstructs {
         "in vec2 fragment_uv;\n"
         "in float fragment_ao;\n"
         "in float fragment_light;\n"
-        "in float fog_factor;\n"
-        "in float fog_height;\n"
         "in float diffuse;\n"
         "out vec4 frag_color;\n"
         "const float pi = 3.14159265;\n"
@@ -160,10 +128,9 @@ namespace konstructs {
         "    vec3 color = vec3(texture2D(sampler, fragment_uv));\n"
         "    if (color == vec3(1.0, 0.0, 1.0)) {\n"
         "        discard;\n"
-        "   }\n"
-        "    bool cloud = color == vec3(1.0, 1.0, 1.0);\n"
-        "    float df = cloud ? 1.0 - diffuse * 0.2 : diffuse;\n"
-        "    float ao = cloud ? 1.0 - (1.0 - fragment_ao) * 0.2 : fragment_ao;\n"
+        "    }\n"
+        "    float df = diffuse;\n"
+        "    float ao = fragment_ao;\n"
         "    ao = min(1.0, ao + fragment_light);\n"
         "    df = min(1.0, df + fragment_light);\n"
         "    float value = min(1.0, daylight + fragment_light);\n"
@@ -171,8 +138,6 @@ namespace konstructs {
         "    vec3 ambient = vec3(value * 0.3 + 0.2) + vec3(sin(pi*daylight)/2, sin(pi*daylight)/4, 0.0);\n"
         "    vec3 light = ambient + light_color * df;\n"
         "    color = clamp(color * light * ao, vec3(0.0), vec3(1.0));\n"
-        "    vec3 sky_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));\n"
-        "    color = mix(color, sky_color, fog_factor);\n"
         "    frag_color = vec4(color, 1.0);\n"
         "}\n"),
         position_attr(attributeId("position")),
@@ -180,48 +145,47 @@ namespace konstructs {
         uv_attr(attributeId("uv")),
         matrix(uniformId("matrix")),
         translation(uniformId("translation")),
-        camera(uniformId("camera")),
-        fog_distance(uniformId("fog_distance")),
         sampler(uniformId("sampler")),
-        sky_sampler(uniformId("sky_sampler")),
-        timer(uniformId("timer")),
-        daylight(uniformId("daylight")) {
+        daylight(uniformId("daylight")),
+        radius(_radius),
+        fov(_fov) {
         load_textures();
     }
 
     int ChunkShader::render(const Player &p, const int width, const int height) {
-        int vertices = 0;
+        int faces = 0;
+        int visible = 0;
         bind([&](Context c) {
                 c.enable(GL_DEPTH_TEST);
                 c.enable(GL_CULL_FACE);
                 float aspect_ratio = (float)width / (float)height;
-                Matrix4f m = matrix::projection_perspective(60.0f, aspect_ratio, 0.025, 500.0) * p.view();
+                float max_distance = (radius - 1) * CHUNK_SIZE;
+                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, 0.25, max_distance) * p.view();
                 c.set(matrix, m);
-                c.set(camera, p.camera());
-                c.set(fog_distance, (GLfloat)(10*CHUNK_SIZE));
                 c.set(sampler, 0);
-                c.set(sky_sampler, 2);
+                c.set(daylight, 0.25f);
                 float planes[6][4];
-                matrix::ext_frustum_planes(planes, 10, m);
-                for(auto pair : models) {
-                    auto m = pair.second;
-                    Vector3i pos = m->pos();
-                    if(!chunk_visible(planes, pos(0), pos(1), pos(2)))
+                matrix::ext_frustum_planes(planes, radius, m);
+                for(const auto &pair : models) {
+                    const auto &m = pair.second;
+                    if(!chunk_visible(planes, m->position))
                         continue;
-                    c.set(translation, m->translation());
+                    visible++;
+                    c.set(translation, m->translation);
                     c.draw(m, 0, m->size);
-                    vertices += m->size;
+                    faces += m->faces;
                 }
                 c.disable(GL_CULL_FACE);
                 c.disable(GL_DEPTH_TEST);
             });
-        return vertices;
+        std::cout << "CHUNKS: " << models.size() << " VISIBLE: " << visible << std::endl;
+        return faces;
     }
 
-    int chunk_visible(float planes[6][4], int p, int q, int k) {
-        float x = p * CHUNK_SIZE - 1;
-        float z = q * CHUNK_SIZE - 1;
-        float y = k * CHUNK_SIZE - 1;
+    bool chunk_visible(const float planes[6][4], const Vector3i &position) {
+        float x = position[0] * CHUNK_SIZE - 1;
+        float z = position[1] * CHUNK_SIZE - 1;
+        float y = position[2] * CHUNK_SIZE - 1;
         float d = CHUNK_SIZE + 1;
         float points[8][3] = {
             {x + 0, y + 0, z + 0},
@@ -253,10 +217,10 @@ namespace konstructs {
                 }
             }
             if (in == 0) {
-                return 0;
+                return false;
             }
         }
-        return 1;
+        return true;
     }
 
 };

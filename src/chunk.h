@@ -15,9 +15,7 @@ namespace konstructs {
         ChunkData();
         ~ChunkData();
         const Vector3i position;
-        const char * const blocks();
-    private:
-        char *mBlocks;
+        char *blocks;
     };
 };
 

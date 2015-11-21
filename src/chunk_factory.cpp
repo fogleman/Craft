@@ -8,8 +8,8 @@
 
 namespace konstructs {
     ChunkModelResult::ChunkModelResult(const Vector3i _position, const int components,
-                                       const int faces):
-        position(_position), size(6 * components * faces) {
+                                       const int _faces):
+        position(_position), size(6 * components * _faces), faces(_faces) {
         mData = new GLfloat[size];
     }
 
@@ -126,7 +126,7 @@ namespace konstructs {
             chunks.pop();
             lk.unlock();
             auto result = compute_chunk(data, block_data);
-            {
+            if(result->size > 0) {
                 std::lock_guard<std::mutex> lock(mutex);
                 models.push_back(result);
             }
@@ -187,6 +187,25 @@ namespace konstructs {
                                                const BlockData &block_data) {
         char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * XZ_SIZE, sizeof(char));
         char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
+        char *above = data.above->blocks;
+        char *below = data.below->blocks;
+        char *left = data.left->blocks;
+        char *right = data.right->blocks;
+        char *front = data.front->blocks;
+        char *back = data.back->blocks;
+        char *above_left = data.above_left->blocks;
+        char *above_right = data.above_right->blocks;
+        char *above_front = data.above_front->blocks;
+        char *above_back = data.above_back->blocks;
+        char *above_left_front = data.above_left_front->blocks;
+        char *above_right_front = data.above_right_front->blocks;
+        char *above_left_back = data.above_left_back->blocks;
+        char *above_right_back = data.above_right_back->blocks;
+        char *left_front = data.left_front->blocks;
+        char *right_front = data.right_front->blocks;
+        char *left_back = data.left_back->blocks;
+        char *right_back = data.right_back->blocks;
+
         const char *is_transparent = block_data.is_transparent;
         const char *is_plant = block_data.is_plant;
 
@@ -196,7 +215,7 @@ namespace konstructs {
 
 
         /* Populate the opaque array with the chunk itself */
-        const char *blocks = data.self->blocks();
+        const char *blocks = data.self->blocks;
 
         CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
             int x = ex - ox;
@@ -212,7 +231,7 @@ namespace konstructs {
         /* With the six sides of the chunk */
 
         /* Populate the opaque array with the chunk below */
-        CHUNK_FOR_EACH_XZ(data.below->blocks(), CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_XZ(below, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - ox;
             int y = ey - CHUNK_SIZE - oy;
             int z = ez - oz;
@@ -228,7 +247,7 @@ namespace konstructs {
          * The shading requires additional 8 blocks
          */
         for(int i = 0; i < 8; i++) {
-            CHUNK_FOR_EACH_XZ(data.above->blocks(), i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_XZ(above, i, ex, ey, ez, ew) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
@@ -241,7 +260,7 @@ namespace konstructs {
         }
 
         /* Populate the opaque array with the chunk left */
-        CHUNK_FOR_EACH_YZ(data.left->blocks(), CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_YZ(left, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - oz;
@@ -253,7 +272,7 @@ namespace konstructs {
         } END_CHUNK_FOR_EACH_2D;
 
         /* Populate the opaque array with the chunk right */
-        CHUNK_FOR_EACH_YZ(data.right->blocks(), 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_YZ(right, 0, ex, ey, ez, ew) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - oz;
@@ -266,7 +285,7 @@ namespace konstructs {
 
 
         /* Populate the opaque array with the chunk front */
-        CHUNK_FOR_EACH_XY(data.front->blocks(), CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_XY(front, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
@@ -279,7 +298,7 @@ namespace konstructs {
 
 
         /* Populate the opaque array with the chunk back */
-        CHUNK_FOR_EACH_XY(data.back->blocks(), 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_XY(back, 0, ex, ey, ez, ew) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
@@ -296,7 +315,7 @@ namespace konstructs {
 
         for(int i = 0; i < 8; i++) {
             /* Populate the opaque array with the chunk above-left */
-            CHUNK_FOR_EACH_Z(data.above_left->blocks(), CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_Z(above_left, CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
                 int x = ex - CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
@@ -308,7 +327,7 @@ namespace konstructs {
             } END_CHUNK_FOR_EACH_1D;
 
             /* Populate the opaque array with the chunk above-right */
-            CHUNK_FOR_EACH_Z(data.above_right->blocks(), 0, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_Z(above_right, 0, i, ex, ey, ez, ew) {
                 int x = ex + CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
@@ -320,7 +339,7 @@ namespace konstructs {
             } END_CHUNK_FOR_EACH_1D;
 
             /* Populate the opaque array with the chunk above-front */
-            CHUNK_FOR_EACH_X(data.above_front->blocks(), CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_X(above_front, CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
@@ -331,7 +350,7 @@ namespace konstructs {
                 }
             } END_CHUNK_FOR_EACH_1D;
             /* Populate the opaque array with the chunk above-back */
-            CHUNK_FOR_EACH_X(data.above_back->blocks(), 0, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_X(above_back, 0, i, ex, ey, ez, ew) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
@@ -350,7 +369,7 @@ namespace konstructs {
                 int x = ex - CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
-                int w = data.above_left_front->blocks()[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                int w = above_left_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
                 opaque[XYZ(x, y, z)] = !is_transparent[w];
                 if (opaque[XYZ(x, y, z)]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
@@ -365,7 +384,7 @@ namespace konstructs {
                 int x = ex + CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
-                int w = data.above_right_front->blocks()[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                int w = above_right_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
                 opaque[XYZ(x, y, z)] = !is_transparent[w];
                 if (opaque[XYZ(x, y, z)]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
@@ -380,7 +399,7 @@ namespace konstructs {
                 int x = ex - CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
-                int w = data.above_left_back->blocks()[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                int w = above_left_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
                 opaque[XYZ(x, y, z)] = !is_transparent[w];
                 if (opaque[XYZ(x, y, z)]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
@@ -395,7 +414,7 @@ namespace konstructs {
                 int x = ex + CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
-                int w = data.above_right_back->blocks()[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                int w = above_right_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
                 opaque[XYZ(x, y, z)] = !is_transparent[w];
                 if (opaque[XYZ(x, y, z)]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
@@ -407,7 +426,7 @@ namespace konstructs {
         /* Populate the corner cases on the same level */
 
         /* Populate the opaque array with the chunk left-front */
-        CHUNK_FOR_EACH_Y(data.left_front->blocks(), CHUNK_SIZE - 1, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(left_front, CHUNK_SIZE - 1, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
@@ -419,7 +438,7 @@ namespace konstructs {
         } END_CHUNK_FOR_EACH_1D;
 
         /* Populate the opaque array with the chunk left-back */
-        CHUNK_FOR_EACH_Y(data.left_back->blocks(), CHUNK_SIZE - 1, 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(left_back, CHUNK_SIZE - 1, 0, ex, ey, ez, ew) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
@@ -431,7 +450,7 @@ namespace konstructs {
         } END_CHUNK_FOR_EACH_1D;
 
         /* Populate the opaque array with the chunk right-front */
-        CHUNK_FOR_EACH_Y(data.right_front->blocks(), 0, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(right_front, 0, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
@@ -443,7 +462,7 @@ namespace konstructs {
         } END_CHUNK_FOR_EACH_1D;
 
         /* Populate the opaque array with the chunk right-back */
-        CHUNK_FOR_EACH_Y(data.right_back->blocks(), 0, 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(right_back, 0, 0, ex, ey, ez, ew) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;

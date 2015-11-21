@@ -10,9 +10,10 @@ git:
   submodules: false
 
 matrix:
-  include:
+  allow_failures:
     - os: osx
       env: MAKE_COMMAND="osx"
+  include:
     - os: linux
       env: MAKE_COMMAND="linux deb rpm"
     - os: linux

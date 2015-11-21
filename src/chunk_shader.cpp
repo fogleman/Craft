@@ -172,7 +172,7 @@ namespace konstructs {
                         continue;
                     visible++;
                     c.set(translation, m->translation);
-                    c.draw(m, 0, m->size);
+                    c.draw(m, 0, m->faces*6);
                     faces += m->faces;
                 }
                 c.disable(GL_CULL_FACE);

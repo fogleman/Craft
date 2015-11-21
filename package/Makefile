@@ -26,6 +26,16 @@ osx:
 	brew update
 	cd .. && cmake . && make
 
+docs:
+	@echo -e "\033[1m"
+	@echo "# Use Docker to build docs with Doxygen"
+	@echo -e "\033[0m"
+
+	docker run -ti -v ${PROJECT_DIR}:/build \
+		-e HOST_UID=$$UID \
+		nsgb/konstructs-build-image-docs \
+		doxygen
+
 windows: linux
 	@echo -e "\033[1m"
 	@echo "# Use Docker to cross compile a Windows build"

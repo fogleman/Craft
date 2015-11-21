@@ -18,6 +18,8 @@ matrix:
       env: MAKE_COMMAND="linux deb rpm"
     - os: linux
       env: MAKE_COMMAND="windows zip"
+    - os: linux
+      env: MAKE_COMMAND="docs"
 
 before_install:
   - git submodule update --init --recursive

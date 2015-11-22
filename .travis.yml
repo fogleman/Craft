@@ -25,6 +25,7 @@ matrix:
 
 before_install:
   - git submodule update --init --recursive
+  - sudo pip install awscli
 
 notifications:
   webhooks:

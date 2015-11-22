@@ -241,6 +241,20 @@ upload-zip: export MAKE_ZIP = true
 upload-zip:
 	./bintray
 
+upload-docs: docs
+	@echo -e "\033[1m"
+	@echo "# Upload docs to doc.konstructs.org"
+	@echo -e "\033[0m"
+
+	@mkdir -p $$HOME/.aws
+	@echo "[default]" > $$HOME/.aws/credentials
+	@echo "aws_access_key_id = $${AWS_S3_ACCESS_KEY_ID}" >> $$HOME/.aws/credentials
+	@echo "aws_secret_access_key = $${AWS_S3_SECRET_ACCESS_KEY}" >> $$HOME/.aws/credentials
+	@echo "[default]" > $$HOME/.aws/config
+	@echo "region = eu-west-1" >> $$HOME/.aws/config
+
+	aws s3 sync ../docs/html/ s3://doc.konstructs.org/client/ --acl public-read --delete
+
 clean:
 	rm -rf \
 		konstructs-client-linux \

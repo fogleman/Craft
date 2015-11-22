@@ -21,7 +21,7 @@ matrix:
     - os: linux
       env: MAKE_COMMAND="windows zip upload-zip"
     - os: linux
-      env: MAKE_COMMAND="docs"
+      env: MAKE_COMMAND="docs upload-docs"
 
 before_install:
   - git submodule update --init --recursive

@@ -16,6 +16,7 @@
 #include "block.h"
 #include "chunk.h"
 #include "chunk_shader.h"
+#include "sky_shader.h"
 #include "client.h"
 #include "util.h"
 
@@ -39,7 +40,9 @@ public:
         model_factory(blocks),
         client("tetestte", "123456789", "localhost"),
         radius(10),
-        chunk(radius, 60.0f, 0, 2),
+        fov(60.0f),
+        sky(radius, fov, 2),
+        chunk(radius, fov, 0, 2),
         day_length(600) {
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
@@ -77,12 +80,15 @@ public:
         handle_network();
         handle_keys();
         handle_mouse();
+        glClear(GL_DEPTH_BUFFER_BIT);
         for(auto model : model_factory.fetch_models()) {
             chunk.add(model);
         }
+        sky.render(player, mSize.x(), mSize.y(), time_of_day());
+        glClear(GL_DEPTH_BUFFER_BIT);
         int faces = chunk.render(player, mSize.x(), mSize.y(), daylight(), time_of_day());
-        cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        crosshair.render();
+        //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
+        //crosshair.render();
     }
 
 private:
@@ -248,7 +254,9 @@ private:
     BlockData blocks;
     Crosshair crosshair;
     int radius;
+    int fov;
     int day_length;
+    SkyShader sky;
     ChunkShader chunk;
     ChunkModelFactory model_factory;
     Client client;

@@ -12,6 +12,11 @@ namespace konstructs {
                    const float _ry):
         id(_id), position(_position), mrx(_rx), mry(_ry) {}
 
+    Matrix4f Player::direction() const {
+        return (Affine3f(AngleAxisf(mrx, Vector3f::UnitX())) *
+                Affine3f(AngleAxisf(mry, Vector3f::UnitY()))).matrix();
+    }
+
     Matrix4f Player::view() const {
         return (Affine3f(AngleAxisf(mrx, Vector3f::UnitX())) *
                 Affine3f(AngleAxisf(mry, Vector3f::UnitY())) *

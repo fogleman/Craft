@@ -93,7 +93,7 @@ namespace konstructs {
         "chunk",
         "#version 330\n"
         "uniform mat4 matrix;\n"
-        "uniform vec3 camera;"
+        "uniform vec3 camera;\n"
         "uniform float fog_distance;\n"
         "uniform mat4 translation;\n"
         "in vec4 position;\n"

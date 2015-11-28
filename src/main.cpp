@@ -39,7 +39,8 @@ public:
         model_factory(blocks),
         client("tetestte", "123456789", "localhost"),
         radius(10),
-        chunk(radius, 60.0f) {
+        chunk(radius, 60.0f, 0, 2),
+        day_length(600) {
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -79,7 +80,7 @@ public:
         for(auto model : model_factory.fetch_models()) {
             chunk.add(model);
         }
-        int faces = chunk.render(player, mSize.x(), mSize.y());
+        int faces = chunk.render(player, mSize.x(), mSize.y(), daylight(), time_of_day());
         cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair.render();
     }
@@ -212,6 +213,30 @@ private:
         load_png_texture_from_buffer(packet->buffer(), packet->size);
     }
 
+    float time_of_day() {
+        if (day_length <= 0) {
+            return 0.5;
+        }
+        float t;
+        t = glfwGetTime();
+        t = t / day_length;
+        t = t - (int)t;
+        return t;
+    }
+
+    float daylight() {
+        float timer = time_of_day();
+        if (timer < 0.5) {
+            float t = (timer - 0.25) * 100;
+            return 1 / (1 + powf(2, -t));
+        }
+        else {
+            float t = (timer - 0.85) * 100;
+            return 1 - 1 / (1 + powf(2, -t));
+        }
+    }
+
+
     void init_menu() {
         using namespace nanogui;
 
@@ -223,6 +248,7 @@ private:
     BlockData blocks;
     Crosshair crosshair;
     int radius;
+    int day_length;
     ChunkShader chunk;
     ChunkModelFactory model_factory;
     Client client;

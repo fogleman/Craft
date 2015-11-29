@@ -15,6 +15,7 @@
 #include "crosshair.h"
 #include "block.h"
 #include "chunk.h"
+#include "world.h"
 #include "chunk_shader.h"
 #include "sky_shader.h"
 #include "client.h"
@@ -211,8 +212,8 @@ private:
         Vector3i position(p, q, k);
         const int blocks_size = packet->size - 3 * sizeof(int);
         auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
-        chunks.insert({position, chunk});
-        model_factory.create_model(position, chunks);
+        world.insert(position, chunk);
+        model_factory.create_model(position, world);
         client.chunk(1);
     }
 
@@ -263,6 +264,7 @@ private:
     int radius;
     int fov;
     int day_length;
+    World world;
     SkyShader sky;
     ChunkShader chunk;
     ChunkModelFactory model_factory;
@@ -270,7 +272,6 @@ private:
     Player player;
     double px;
     double py;
-    std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> chunks;
     FPS fps;
     double last_frame;
 };

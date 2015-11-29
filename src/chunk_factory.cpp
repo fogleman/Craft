@@ -50,60 +50,58 @@ namespace konstructs {
 
     const std::shared_ptr<ChunkData>
     ChunkModelFactory::get_chunk(const Vector3i &position,
-                                 const std::unordered_map<Vector3i,
-                                 shared_ptr<ChunkData>,
-                                 matrix_hash<Vector3i>> &chunks) {
+                                 const World &world) {
         try {
-            return chunks.at(position);
+            return world.at(position);
         } catch(std::out_of_range e) {
             return SOLID_CHUNK;
         }
     }
 
     void ChunkModelFactory::create_model(const Vector3i &position,
-                                         const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunk_data) {
+                                         const World &world) {
         {
             std::lock_guard<std::mutex> lock(mutex);
-            chunks.push(create_model_data(position, chunk_data));
-            if(chunk_data.find(position + BELOW) != chunk_data.end())
-                chunks.push(create_model_data(position + BELOW, chunk_data));
-            if(chunk_data.find(position + ABOVE) != chunk_data.end())
-                chunks.push(create_model_data(position + ABOVE, chunk_data));
-            if(chunk_data.find(position + LEFT) != chunk_data.end())
-                chunks.push(create_model_data(position + LEFT, chunk_data));
-            if(chunk_data.find(position + RIGHT) != chunk_data.end())
-                chunks.push(create_model_data(position + RIGHT, chunk_data));
-            if(chunk_data.find(position + FRONT) != chunk_data.end())
-                chunks.push(create_model_data(position + FRONT, chunk_data));
-            if(chunk_data.find(position + BACK) != chunk_data.end())
-                chunks.push(create_model_data(position + BACK, chunk_data));
+            chunks.push(create_model_data(position, world));
+            if(world.find(position + BELOW) != world.end())
+                chunks.push(create_model_data(position + BELOW, world));
+            if(world.find(position + ABOVE) != world.end())
+                chunks.push(create_model_data(position + ABOVE, world));
+            if(world.find(position + LEFT) != world.end())
+                chunks.push(create_model_data(position + LEFT, world));
+            if(world.find(position + RIGHT) != world.end())
+                chunks.push(create_model_data(position + RIGHT, world));
+            if(world.find(position + FRONT) != world.end())
+                chunks.push(create_model_data(position + FRONT, world));
+            if(world.find(position + BACK) != world.end())
+                chunks.push(create_model_data(position + BACK, world));
         }
         chunks_condition.notify_all();
     }
 
     const ChunkModelData ChunkModelFactory::create_model_data(const Vector3i &position,
-                                                              const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunk_data) {
+                                                              const World &world) {
         const ChunkModelData data = {
             position,
-            get_chunk(position + BELOW, chunk_data),
-            get_chunk(position + ABOVE, chunk_data),
-            get_chunk(position + LEFT, chunk_data),
-            get_chunk(position + RIGHT, chunk_data),
-            get_chunk(position + FRONT, chunk_data),
-            get_chunk(position + BACK, chunk_data),
-            get_chunk(position + ABOVE_LEFT, chunk_data),
-            get_chunk(position + ABOVE_RIGHT, chunk_data),
-            get_chunk(position + ABOVE_FRONT, chunk_data),
-            get_chunk(position + ABOVE_BACK, chunk_data),
-            get_chunk(position + ABOVE_LEFT_FRONT, chunk_data),
-            get_chunk(position + ABOVE_RIGHT_FRONT, chunk_data),
-            get_chunk(position + ABOVE_LEFT_BACK, chunk_data),
-            get_chunk(position + ABOVE_RIGHT_BACK, chunk_data),
-            get_chunk(position + LEFT_FRONT, chunk_data),
-            get_chunk(position + LEFT_BACK, chunk_data),
-            get_chunk(position + RIGHT_FRONT, chunk_data),
-            get_chunk(position + RIGHT_BACK, chunk_data),
-            get_chunk(position, chunk_data)
+            get_chunk(position + BELOW, world),
+            get_chunk(position + ABOVE, world),
+            get_chunk(position + LEFT, world),
+            get_chunk(position + RIGHT, world),
+            get_chunk(position + FRONT, world),
+            get_chunk(position + BACK, world),
+            get_chunk(position + ABOVE_LEFT, world),
+            get_chunk(position + ABOVE_RIGHT, world),
+            get_chunk(position + ABOVE_FRONT, world),
+            get_chunk(position + ABOVE_BACK, world),
+            get_chunk(position + ABOVE_LEFT_FRONT, world),
+            get_chunk(position + ABOVE_RIGHT_FRONT, world),
+            get_chunk(position + ABOVE_LEFT_BACK, world),
+            get_chunk(position + ABOVE_RIGHT_BACK, world),
+            get_chunk(position + LEFT_FRONT, world),
+            get_chunk(position + LEFT_BACK, world),
+            get_chunk(position + RIGHT_FRONT, world),
+            get_chunk(position + RIGHT_BACK, world),
+            get_chunk(position, world)
         };
         return data;
     }

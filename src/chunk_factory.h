@@ -8,6 +8,7 @@
 #include <condition_variable>
 
 #include "chunk.h"
+#include "world.h"
 #include "matrix.h"
 
 namespace konstructs {
@@ -52,14 +53,14 @@ namespace konstructs {
     public:
         ChunkModelFactory(const BlockData &_block_data);
         void create_model(const Vector3i &position,
-                          const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunks);
+                          const World &world);
         std::vector<std::shared_ptr<ChunkModelResult>> fetch_models();
     private:
         void worker();
         const std::shared_ptr<ChunkData> get_chunk(const Vector3i &position,
-                                                   const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunks);
+                                                   const World &world);
         const ChunkModelData create_model_data(const Vector3i &position,
-                               const std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> &chunks);
+                                               const World &world);
         std::mutex mutex;
         std::condition_variable chunks_condition;
         std::queue<ChunkModelData> chunks;

@@ -31,6 +31,18 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w) {
 }
 
 namespace konstructs {
+    int chunked_int(int p) {
+        if(p < 0) {
+            return (p - CHUNK_SIZE + 1) / CHUNK_SIZE;
+        } else {
+            return p / CHUNK_SIZE;
+        }
+    }
+
+    int chunked(float p) {
+        return chunked_int(roundf(p));
+    }
+
     ChunkData::ChunkData(const Vector3i _position, char *compressed, const int size):
         position(_position) {
         blocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
@@ -44,5 +56,19 @@ namespace konstructs {
     }
     ChunkData::~ChunkData() {
         delete[] blocks;
+    }
+
+    char ChunkData::get(const Vector3i &pos) const {
+        int lx = pos[0] - position[0] * CHUNK_SIZE;
+        int ly = pos[1] - position[2] * CHUNK_SIZE;
+        int lz = pos[2] - position[1] * CHUNK_SIZE;
+
+        // TODO: Looking for a block in the wrong chunk is a bit weird, but hit code does it
+        if(lx < CHUNK_SIZE && ly < CHUNK_SIZE && lz < CHUNK_SIZE &&
+           lx >= 0 && ly >= 0 && lz >= 0) {
+            return blocks[lx+ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE];
+        } else {
+            return 0;
+        }
     }
 };

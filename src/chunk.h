@@ -9,11 +9,17 @@
 
 namespace konstructs {
     using namespace Eigen;
+
+    int chunked_int(int p);
+
+    int chunked(float p);
+
     class ChunkData {
     public:
         ChunkData(const Vector3i _position, char *compressed, const int size);
         ChunkData();
         ~ChunkData();
+        char get(const Vector3i &pos) const;
         const Vector3i position;
         char *blocks;
     };

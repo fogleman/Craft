@@ -20,7 +20,8 @@ namespace konstructs {
 
     class SkyShader : public ShaderProgram {
     public:
-        SkyShader(const int _radius, const float _fov, const GLuint _sky_texture);
+        SkyShader(const int _radius, const float _fov, const GLuint _sky_texture,
+                  const float _near_distance);
         void render(const Player &p, const int width, const int height,
                     const float current_timer);
         const GLuint position_attr;
@@ -32,6 +33,7 @@ namespace konstructs {
     private:
         const int radius;
         const float fov;
+        const float near_distance;
         SkyModel model;
     };
 

@@ -42,8 +42,9 @@ public:
         client("tetestte", "123456789", "localhost"),
         radius(10),
         fov(60.0f),
-        sky(radius, fov, 2),
-        chunk(radius, fov, 0, 2),
+        near_distance(0.125f),
+        sky(radius, fov, 2, near_distance),
+        chunk(radius, fov, 0, 2, near_distance),
         day_length(600),
         last_frame(glfwGetTime()) {
         client.chunk(MAX_PENDING_CHUNKS);
@@ -137,8 +138,9 @@ private:
         if(glfwGetKey(mGLFWWindow, GLFW_KEY_D)) {
             sx++;
         }
-        client.position(player.update_position(sz, sx, (float)dt), player.rx(), player.ry());
-
+        client.position(player.update_position(sz, sx, (float)dt, world,
+                                               blocks, near_distance),
+                        player.rx(), player.ry());
     }
 
     void handle_network() {
@@ -263,6 +265,7 @@ private:
     Crosshair crosshair;
     int radius;
     int fov;
+    float near_distance;
     int day_length;
     World world;
     SkyShader sky;

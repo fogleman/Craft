@@ -88,7 +88,7 @@ namespace konstructs {
     }
 
     ChunkShader::ChunkShader(const int _radius, const float _fov, const GLuint _block_texture,
-                             const GLuint _sky_texture) :
+                             const GLuint _sky_texture, const float _near_distance) :
         ShaderProgram(
         "chunk",
         "#version 330\n"
@@ -166,7 +166,8 @@ namespace konstructs {
         radius(_radius),
         fov(_fov),
         block_texture(_block_texture),
-        sky_texture(_sky_texture) {
+        sky_texture(_sky_texture),
+        near_distance(_near_distance) {
         load_textures();
     }
 
@@ -179,7 +180,7 @@ namespace konstructs {
                 c.enable(GL_CULL_FACE);
                 float aspect_ratio = (float)width / (float)height;
                 float max_distance = (radius - 1) * CHUNK_SIZE;
-                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, 0.25, max_distance) * p.view();
+                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, max_distance) * p.view();
                 c.set(matrix, m);
                 c.set(sampler, (int)block_texture);
                 c.set(sky_sampler, (int)sky_texture);
@@ -201,7 +202,6 @@ namespace konstructs {
                 c.disable(GL_CULL_FACE);
                 c.disable(GL_DEPTH_TEST);
             });
-        std::cout << "CHUNKS: " << models.size() << " VISIBLE: " << visible << std::endl;
         return faces;
     }
 

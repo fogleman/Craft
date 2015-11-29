@@ -31,7 +31,7 @@ namespace konstructs {
     class ChunkShader : public ShaderProgram {
     public:
         ChunkShader(const int _radius, const float _fov, const GLuint _block_texture,
-                    const GLuint _sky_texture);
+                    const GLuint _sky_texture, const float _near_distance);
         void add(const shared_ptr<ChunkModelResult> &data);
         int render(const Player &p, const int width, const int height,
                    const float current_daylight, const float current_timer);
@@ -48,6 +48,7 @@ namespace konstructs {
         const GLuint camera;
         const GLuint block_texture;
         const GLuint sky_texture;
+        const float near_distance;
     private:
         std::unordered_map<Vector3i, ChunkModel *, matrix_hash<Vector3i>> models;
         const int radius;

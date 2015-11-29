@@ -27,12 +27,12 @@ namespace konstructs {
         return position;
     }
 
-    Vector3f Player::update_position(int sz, int sx) {
+    Vector3f Player::update_position(int sz, int sx, float dt) {
         if (!sz && !sx) {
             return position;
         }
         float strafe = atan2f(sz, sx);
-        position += Vector3f(cosf(mry + strafe) * 0.1, 0.0f, sinf(mry + strafe) * 0.1);
+        position += Vector3f(cosf(mry + strafe), 0.0f, sinf(mry + strafe)) * (dt * 10);
         return position;
     }
 

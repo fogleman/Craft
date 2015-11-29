@@ -13,7 +13,7 @@ namespace konstructs {
         Matrix4f direction() const;
         Matrix4f view() const;
         Vector3f camera() const;
-        Vector3f update_position(int sz, int sx);
+        Vector3f update_position(int sz, int sx, float dt);
         void rotate_x(float speed);
         void rotate_y(float speed);
         int id;

@@ -43,7 +43,8 @@ public:
         fov(60.0f),
         sky(radius, fov, 2),
         chunk(radius, fov, 0, 2),
-        day_length(600) {
+        day_length(600),
+        last_frame(glfwGetTime()) {
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -117,6 +118,12 @@ private:
         int sx = 0;
         int sz = 0;
 
+        double now = glfwGetTime();
+        double dt = now - last_frame;
+        dt = MIN(dt, 0.2);
+        dt = MAX(dt, 0.0);
+        last_frame = now;
+
         if(glfwGetKey(mGLFWWindow, GLFW_KEY_W)) {
             sz--;
         }
@@ -129,7 +136,7 @@ private:
         if(glfwGetKey(mGLFWWindow, GLFW_KEY_D)) {
             sx++;
         }
-        client.position(player.update_position(sz, sx), player.rx(), player.ry());
+        client.position(player.update_position(sz, sx, (float)dt), player.rx(), player.ry());
 
     }
 
@@ -265,6 +272,7 @@ private:
     double py;
     std::unordered_map<Vector3i, shared_ptr<ChunkData>, matrix_hash<Vector3i>> chunks;
     FPS fps;
+    double last_frame;
 };
 
 int main(int /* argc */, char ** /* argv */) {

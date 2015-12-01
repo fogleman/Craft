@@ -69,6 +69,8 @@ public:
         } else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
             init_menu();
             performLayout(mNVGContext);
+        } else if (key == KONSTRUCTS_KEY_FLY && action == GLFW_PRESS) {
+            player.fly();
         }
         return false;
     }
@@ -119,7 +121,7 @@ private:
     void handle_keys() {
         int sx = 0;
         int sz = 0;
-
+        bool jump = false;
         double now = glfwGetTime();
         double dt = now - last_frame;
         dt = MIN(dt, 0.2);
@@ -138,8 +140,11 @@ private:
         if(glfwGetKey(mGLFWWindow, GLFW_KEY_D)) {
             sx++;
         }
+        if(glfwGetKey(mGLFWWindow, KONSTRUCTS_KEY_JUMP)) {
+            jump = true;
+        }
         client.position(player.update_position(sz, sx, (float)dt, world,
-                                               blocks, near_distance),
+                                               blocks, near_distance, jump),
                         player.rx(), player.ry());
     }
 

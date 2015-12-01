@@ -9,7 +9,7 @@ namespace konstructs {
 
     Player::Player(const int _id, const Vector3f _position, const float _rx,
                    const float _ry):
-        id(_id), position(_position), mrx(_rx), mry(_ry) {}
+        id(_id), position(_position), mrx(_rx), mry(_ry), flying(false), dy(0) {}
 
     Matrix4f Player::direction() const {
         return (Affine3f(AngleAxisf(mrx, Vector3f::UnitX())) *
@@ -28,13 +28,75 @@ namespace konstructs {
 
     Vector3f Player::update_position(int sz, int sx, float dt,
                                      const World &world, const BlockData &blocks,
-                                     const float near_distance) {
-        if (!sz && !sx) {
-            return position;
+                                     const float near_distance, const bool jump) {
+        float vx = 0, vy = 0, vz = 0;
+        if (!sz && !sx) { // Not mowing in X or Z
+            vx = 0;
+            vz = 0;
+        } else { // Moving in X or Z
+
+
+            float strafe = atan2f(sz, sx);
+
+            if (flying) {
+                float m = cosf(mrx);
+                float y = sinf(mrx);
+                if (sx) {
+                    if (!sz) {
+                        y = 0;
+                    }
+                    m = 1;
+                }
+                if (sz < 0) {
+                    y = -y;
+                }
+                vx = cosf(mry + strafe) * m;
+                vy = y;
+                vz = sinf(mry + strafe) * m;
+            } else {
+                vx = cosf(mry + strafe);
+                vy = 0;
+                vz = sinf(mry + strafe);
+            }
         }
-        float strafe = atan2f(sz, sx);
-        position += Vector3f(cosf(mry + strafe), 0.0f, sinf(mry + strafe)) * (dt * 5);
-        collide(world, blocks, near_distance);
+
+        if(jump) {
+            if(flying) {
+                // Jump in flight moves upward at constant speed
+                vy = 1;
+            } else if(dy == 0) {
+                // Jump when walking changes the acceleration upwards to 8
+                dy = 8;
+            }
+        }
+
+        float speed = flying ? 20 : 5;
+        int estimate =
+            roundf(sqrtf(powf(vx * speed, 2) +
+                         powf(vy * speed + std::abs(dy) * 2, 2) +
+                         powf(vz * speed, 2)) * dt * 8);
+        int step = std::max(8, estimate);
+        float ut = dt / step;
+        vx = vx * ut * speed;
+        vy = vy * ut * speed;
+        vz = vz * ut * speed;
+        for (int i = 0; i < step; i++) {
+            if (flying) {
+                // When flying upwards acceleration is constant i.e. not falling
+                dy = 0;
+            } else {
+                // Calculate "gravity" by decreasing upwards acceleration
+                dy -= ut * 25;
+                dy = std::max(dy, -250.0f);
+            }
+            position += Vector3f(vx, vy + dy * ut, vz);
+            if (collide(world, blocks, near_distance)) {
+                dy = 0;
+            }
+        }
+        if (position[1] < 0) {
+            position[1] = 2;
+        }
         return position;
     }
 
@@ -52,6 +114,10 @@ namespace konstructs {
         if (mry >= (M_PI * 2)){
             mry -= (M_PI * 2);
         }
+    }
+
+    void Player::fly() {
+        flying = !flying;
     }
 
     float Player::rx() {

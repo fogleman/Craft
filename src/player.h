@@ -17,10 +17,11 @@ namespace konstructs {
         Vector3f camera() const;
         Vector3f update_position(int sz, int sx, float dt,
                                  const World &world, const BlockData &blocks,
-                                 const float near_distance);
+                                 const float near_distance, const bool jump);
         void rotate_x(float speed);
         void rotate_y(float speed);
         int id;
+        void fly();
         float rx();
         float ry();
     private:
@@ -28,6 +29,8 @@ namespace konstructs {
         Vector3f position;
         float mrx;
         float mry;
+        bool flying;
+        float dy;
     };
 
 };

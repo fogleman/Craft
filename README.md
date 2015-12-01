@@ -2,11 +2,13 @@
 
 [![Join the chat at https://gitter.im/konstructs/client](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/konstructs/client?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/konstructs/client.svg?branch=master)](https://travis-ci.org/konstructs/client)
 
-Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders).
+Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of modern C++ using modern OpenGL 3.3 (shaders).
 
 This is a fork of [fogleman/Craft](https://github.com/fogleman/Craft) created for experiments and fun. We are trying to dumb the client down and move logic to the server. There are also plans for a more survival type of gameplay.
 
 Note: Offline mode is removed in this fork, a server is required. You need to start a server on the same computer for single player.
+
+Note2: Much of this fork has now been rewritten in C++, but there is still a lot of original fogelman code left, especially for rendering and "physics" (collision detection, movement...).
 
 [![Video](http://i.imgur.com/ciU1c0l.png)](https://www.youtube.com/watch?v=KX4UyhOuuh0)
 

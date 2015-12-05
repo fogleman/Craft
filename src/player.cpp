@@ -26,6 +26,11 @@ namespace konstructs {
         return position;
     }
 
+    Vector3f Player::camera_direction() const {
+        float m = cosf(mrx);
+        return Vector3f(cosf(mry - (M_PI / 2.0f)) * m, -sinf(mrx), sinf(mry - (M_PI / 2.0f)) * m);
+    }
+
     Vector3f Player::update_position(int sz, int sx, float dt,
                                      const World &world, const BlockData &blocks,
                                      const float near_distance, const bool jump) {
@@ -98,6 +103,32 @@ namespace konstructs {
             position[1] = 2;
         }
         return position;
+    }
+
+    Block Player::looking_at(const World &world, const bool previous) const {
+        Vector3i pos(0,0,0);
+        char type = 0;
+        float best = 0;
+        int p = chunked(position[0]);
+        int q = chunked(position[2]);
+        int k = chunked(position[1]);
+        const Vector3f v = camera_direction();
+
+        for (auto chunk: world.atAndAround({p, q, k})) {
+            Block h = chunk->get(position, v, 8.0f, previous);
+            if (h.type > 0) {
+                float d = sqrtf(powf(h.position[0] - position[0], 2) +
+                                powf(h.position[1] - position[1], 2) +
+                                powf(h.position[2] - position[2], 2));
+                if (best == 0 || d < best) {
+                    best = d;
+                    pos = h.position;
+                    type = h.type;
+                }
+            }
+        }
+
+        return Block(pos, type);
     }
 
     void Player::rotate_x(float speed) {

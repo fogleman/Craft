@@ -71,4 +71,32 @@ namespace konstructs {
             return 0;
         }
     }
+
+    /**
+     * Using a camera position and a camera direction, find all blocks
+     * that intersect the directional vector up to max_distance in
+     * this chunk.
+     */
+    Block ChunkData::get(const Vector3f &cameraPosition, const Vector3f &cameraDirection,
+                         const float max_distance, const bool previous) const {
+        int m = 32;
+        Vector3f pos = cameraPosition;
+        Vector3i blockPos(0,0,0);
+        for (int i = 0; i < max_distance * m; i++) {
+            const Vector3i nBlockPos(roundf(pos[0]), roundf(pos[1]), roundf(pos[2]));
+            if (nBlockPos != blockPos) {
+                char hw = get(nBlockPos);
+                if (hw > 0) {
+                    if (previous) {
+                        return Block(blockPos, hw);
+                    } else {
+                        return Block(nBlockPos, hw);
+                    }
+                }
+                blockPos = nBlockPos;
+            }
+            pos += (cameraDirection / m);
+        }
+        return Block({0,0,0}, 0);
+    }
 };

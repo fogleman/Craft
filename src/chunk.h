@@ -20,6 +20,8 @@ namespace konstructs {
         ChunkData();
         ~ChunkData();
         char get(const Vector3i &pos) const;
+        Block get(const Vector3f &cameraPosition, const Vector3f &cameraDirection,
+                  const float max_distance, const bool previous) const;
         const Vector3i position;
         char *blocks;
     };

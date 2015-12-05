@@ -15,9 +15,11 @@ namespace konstructs {
         Matrix4f direction() const;
         Matrix4f view() const;
         Vector3f camera() const;
+        Vector3f camera_direction() const;
         Vector3f update_position(int sz, int sx, float dt,
                                  const World &world, const BlockData &blocks,
                                  const float near_distance, const bool jump);
+        Block looking_at(const World &world, const bool previous) const;
         void rotate_x(float speed);
         void rotate_y(float speed);
         int id;

@@ -129,6 +129,10 @@ namespace konstructs {
         glUniform4f(name, v.x(), v.y(), v.z(), v.w());
     }
 
+    void Context::logic_op(const GLenum opcode) {
+        glLogicOp(opcode);
+    }
+
     void Context::enable(const GLenum cap) {
         glEnable(cap);
     }

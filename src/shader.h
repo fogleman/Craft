@@ -61,6 +61,7 @@ namespace konstructs {
         void set(const GLuint name, const Vector2f &v);
         void set(const GLuint name, const Vector3f &v);
         void set(const GLuint name, const Vector4f &v);
+        void logic_op(const GLenum opcode);
         void enable(const GLenum cap);
         void disable(const GLenum cap);
     private:

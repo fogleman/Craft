@@ -5,6 +5,7 @@ namespace konstructs {
     using matrix::projection_2d;
     void Crosshair::render() {
         bind([&](Context c) {
+                c.logic_op(GL_INVERT);
                 c.enable(GL_COLOR_LOGIC_OP);
                 c.set(projection, projection_2d(width, height));
                 c.set(color, Vector4f( 0.0, 0.0, 0.0, 1.0));

@@ -18,6 +18,7 @@
 #include "world.h"
 #include "chunk_shader.h"
 #include "sky_shader.h"
+#include "selection_shader.h"
 #include "client.h"
 #include "util.h"
 
@@ -45,6 +46,7 @@ public:
         near_distance(0.125f),
         sky(radius, fov, 2, near_distance),
         chunk(radius, fov, 0, 2, near_distance),
+        selection(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()) {
         client.chunk(MAX_PENDING_CHUNKS);
@@ -92,8 +94,9 @@ public:
         sky.render(player, mSize.x(), mSize.y(), time_of_day());
         glClear(GL_DEPTH_BUFFER_BIT);
         int faces = chunk.render(player, mSize.x(), mSize.y(), daylight(), time_of_day());
+        selection.render(player, mSize.x(), mSize.y(), player.looking_at(world, false).position);
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        //crosshair.render();
+        crosshair.render();
     }
 
 private:
@@ -275,6 +278,7 @@ private:
     World world;
     SkyShader sky;
     ChunkShader chunk;
+    SelectionShader selection;
     ChunkModelFactory model_factory;
     Client client;
     Player player;

@@ -36,12 +36,12 @@ namespace konstructs {
         }
         ~EigenAttribute();
         virtual void bind();
+        const GLuint size;
         const GLuint name;
     private:
         const GLuint type;
         const bool integral;
         const GLuint dim;
-        const GLuint size;
         GLuint buffer;
     };
 

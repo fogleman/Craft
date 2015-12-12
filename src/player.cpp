@@ -6,6 +6,7 @@
 namespace konstructs {
 
     using namespace Eigen;
+    using nonstd::nullopt;
 
     Player::Player(const int _id, const Vector3f _position, const float _rx,
                    const float _ry):
@@ -105,9 +106,9 @@ namespace konstructs {
         return position;
     }
 
-    Block Player::looking_at(const World &world, const bool previous) const {
-        Vector3i pos(0,0,0);
-        char type = 0;
+    optional<Block> Player::looking_at(const World &world, const bool previous,
+                                       const BlockData &blocks) const {
+        optional<Block> block(nullopt);
         float best = 0;
         int p = chunked(position[0]);
         int q = chunked(position[2]);
@@ -115,20 +116,19 @@ namespace konstructs {
         const Vector3f v = camera_direction();
 
         for (auto chunk: world.atAndAround({p, q, k})) {
-            Block h = chunk->get(position, v, 8.0f, previous);
-            if (h.type > 0) {
+            auto seen = chunk->get(position, v, 8.0f, previous, blocks);
+            if (seen) {
+                auto h = *seen;
                 float d = sqrtf(powf(h.position[0] - position[0], 2) +
                                 powf(h.position[1] - position[1], 2) +
                                 powf(h.position[2] - position[2], 2));
                 if (best == 0 || d < best) {
                     best = d;
-                    pos = h.position;
-                    type = h.type;
+                    block = seen;
                 }
             }
         }
-
-        return Block(pos, type);
+        return block;
     }
 
     void Player::rotate_x(float speed) {

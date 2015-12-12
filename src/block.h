@@ -20,8 +20,8 @@ namespace konstructs {
     class Block {
     public:
         Block(const Vector3i _position, const char _type);
-        const Vector3i position;
-        const char type;
+        Vector3i position;
+        char type;
     };
 };
 

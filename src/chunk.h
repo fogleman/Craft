@@ -2,6 +2,7 @@
 #define _chunk_h_
 
 #include <Eigen/Geometry>
+#include "optional.hpp"
 #include "shader.h" //TODO: remove
 #include "block.h"
 
@@ -9,6 +10,7 @@
 
 namespace konstructs {
     using namespace Eigen;
+    using nonstd::optional;
 
     int chunked_int(int p);
 
@@ -20,8 +22,9 @@ namespace konstructs {
         ChunkData();
         ~ChunkData();
         char get(const Vector3i &pos) const;
-        Block get(const Vector3f &cameraPosition, const Vector3f &cameraDirection,
-                  const float max_distance, const bool previous) const;
+        optional<Block> get(const Vector3f &camera_position, const Vector3f &camera_direction,
+                            const float max_distance, const bool previous,
+                            const BlockData &blocks) const;
         const Vector3i position;
         char *blocks;
     };

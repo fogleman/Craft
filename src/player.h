@@ -1,13 +1,14 @@
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 #include <Eigen/Geometry>
+#include "optional.hpp"
 #include "world.h"
 #include "block.h"
 
 namespace konstructs {
 
     using namespace Eigen;
-
+    using nonstd::optional;
     class Player {
     public:
         Player(const int _id, const Vector3f _position,
@@ -19,7 +20,8 @@ namespace konstructs {
         Vector3f update_position(int sz, int sx, float dt,
                                  const World &world, const BlockData &blocks,
                                  const float near_distance, const bool jump);
-        Block looking_at(const World &world, const bool previous) const;
+        optional<Block> looking_at(const World &world, const bool previous,
+                                   const BlockData &blocks) const;
         void rotate_x(float speed);
         void rotate_y(float speed);
         int id;

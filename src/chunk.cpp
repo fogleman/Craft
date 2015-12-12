@@ -31,6 +31,8 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w) {
 }
 
 namespace konstructs {
+    using nonstd::nullopt;
+
     int chunked_int(int p) {
         if(p < 0) {
             return (p - CHUNK_SIZE + 1) / CHUNK_SIZE;
@@ -73,30 +75,32 @@ namespace konstructs {
     }
 
     /**
-     * Using a camera position and a camera direction, find all blocks
-     * that intersect the directional vector up to max_distance in
-     * this chunk.
+     * Using a camera position and a camera direction, find the
+     * closest within max_distance that intersect the directional
+     * vector.
      */
-    Block ChunkData::get(const Vector3f &cameraPosition, const Vector3f &cameraDirection,
-                         const float max_distance, const bool previous) const {
+    optional<Block> ChunkData::get(const Vector3f &camera_position,
+                                   const Vector3f &camera_direction,
+                                   const float max_distance, const bool previous,
+                                   const BlockData &blocks) const {
         int m = 32;
-        Vector3f pos = cameraPosition;
+        Vector3f pos = camera_position;
         Vector3i blockPos(0,0,0);
         for (int i = 0; i < max_distance * m; i++) {
             const Vector3i nBlockPos(roundf(pos[0]), roundf(pos[1]), roundf(pos[2]));
             if (nBlockPos != blockPos) {
                 char hw = get(nBlockPos);
-                if (hw > 0) {
+                if (blocks.is_obstacle[hw]) {
                     if (previous) {
-                        return Block(blockPos, hw);
+                        return optional<Block>(Block(blockPos, hw));
                     } else {
-                        return Block(nBlockPos, hw);
+                        return optional<Block>(Block(nBlockPos, hw));
                     }
                 }
                 blockPos = nBlockPos;
             }
-            pos += (cameraDirection / m);
+            pos += (camera_direction / m);
         }
-        return Block({0,0,0}, 0);
+        return nullopt;
     }
 };

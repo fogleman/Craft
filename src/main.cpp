@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include "optional.hpp"
 #include "matrix.h"
 #include "shader.h"
 #include "crosshair.h"
@@ -31,6 +32,8 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using namespace konstructs;
+using nonstd::optional;
+using nonstd::nullopt;
 
 class Konstructs: public nanogui::Screen {
 public:
@@ -48,7 +51,8 @@ public:
         chunk(radius, fov, 0, 2, near_distance),
         selection(radius, fov, near_distance, 0.52),
         day_length(600),
-        last_frame(glfwGetTime()) {
+        last_frame(glfwGetTime()),
+        looking_at(nullopt) {
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -87,6 +91,7 @@ public:
         handle_network();
         handle_keys();
         handle_mouse();
+        looking_at = player.looking_at(world, false, blocks);
         glClear(GL_DEPTH_BUFFER_BIT);
         for(auto model : model_factory.fetch_models()) {
             chunk.add(model);
@@ -94,7 +99,9 @@ public:
         sky.render(player, mSize.x(), mSize.y(), time_of_day());
         glClear(GL_DEPTH_BUFFER_BIT);
         int faces = chunk.render(player, mSize.x(), mSize.y(), daylight(), time_of_day());
-        selection.render(player, mSize.x(), mSize.y(), player.looking_at(world, false).position);
+        if(looking_at) {
+            selection.render(player, mSize.x(), mSize.y(), looking_at->position);
+        }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair.render();
     }
@@ -282,6 +289,7 @@ private:
     ChunkModelFactory model_factory;
     Client client;
     Player player;
+    optional<konstructs::Block> looking_at;
     double px;
     double py;
     FPS fps;

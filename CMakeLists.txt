@@ -42,7 +42,8 @@ include_directories(
   dependencies/nanogui/ext/glew/include
   dependencies/nanogui/ext/eigen
   dependencies/nanogui/ext/nanovg/src
-  dependencies/lodepng)
+  dependencies/lodepng
+  dependencies/optional-lite)
 
 FILE(GLOB SOURCE_FILES src/*.cpp dependencies/lodepng/lodepng.cpp src/noise/*.cpp)
 add_executable(konstructs ${SOURCE_FILES})

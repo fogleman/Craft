@@ -108,7 +108,7 @@ konstructs-client.tar.bz2: linux
 
 	mkdir -p konstructs-client-linux
 	cp build/konstructs konstructs-client-linux
-	cp -r ../shaders ../textures konstructs-client-linux
+	cp -r ../textures konstructs-client-linux
 	tar cfj konstructs-client.tar.bz2 konstructs-client-linux
 	rm -rf konstructs-client-linux
 
@@ -165,7 +165,6 @@ docker-package-prep:
 	mkdir -p konstructs-client-package/usr/local/bin/
 	mkdir -p konstructs-client-package/usr/local/share/konstructs-client
 	mkdir -p konstructs-client-package/usr/share/applications
-	cp -r ../shaders konstructs-client-package/usr/local/share/konstructs-client
 	cp -r ../textures konstructs-client-package/usr/local/share/konstructs-client
 	cp build/konstructs konstructs-client-package/usr/local/bin/konstructs-client
 	cp konstructs-client.desktop \
@@ -188,7 +187,6 @@ docker-deb: docker-package-prep
 		-n konstructs-client \
 		usr/local/bin/konstructs-client \
 		usr/local/share/konstructs-client/textures \
-		usr/local/share/konstructs-client/shaders \
 		usr/share/applications/konstructs-client.desktop
 
 	chown $$HOST_UID *.deb
@@ -210,7 +208,6 @@ docker-rpm: docker-package-prep
 		-n konstructs-client \
 		usr/local/bin/konstructs-client \
 		usr/local/share/konstructs-client/textures \
-		usr/local/share/konstructs-client/shaders \
 		usr/share/applications/konstructs-client.desktop
 
 	chown $$HOST_UID *.rpm
@@ -224,7 +221,7 @@ docker-zip: /tmp/build-deps/zlib-bin
 	mkdir -p konstructs-client
 	cp build-windows/konstructs.exe konstructs-client/konstructs-client.exe
 	cp /tmp/build-deps/zlib-bin/bin/zlib1.dll konstructs-client
-	cp -r ../shaders ../textures konstructs-client
+	cp -r ../textures konstructs-client
 	zip -r konstructs-client.zip konstructs-client
 	chown $$HOST_UID *.zip
 	rm -rf konstructs-client

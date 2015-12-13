@@ -74,6 +74,7 @@ public:
     }
 
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
+        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         if(looking_at) {
             if(button == GLFW_MOUSE_BUTTON_1 && down) {
                 client.click_at(1, looking_at->position, 1);
@@ -90,7 +91,7 @@ public:
         if (Screen::keyboardEvent(key, scancode, action, modifiers))
             return true;
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            setVisible(false);
+            glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             return true;
         } else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
             init_menu();

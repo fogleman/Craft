@@ -48,7 +48,7 @@ namespace konstructs {
         void close_inventory();
         void talk(const string &text);
         void inventory_select(const int pos);
-        void click_at(const int hit, const int button, const int x, const int y, const int z);
+        void click_at(const int hit, const Vector3i pos, const int button);
         vector<shared_ptr<Packet>> receive(const int max);
     private:
         int send_all(const char *data, const int length);

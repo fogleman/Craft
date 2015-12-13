@@ -2,6 +2,7 @@
 
 namespace konstructs {
     void World::insert(const Vector3i &pos, std::shared_ptr<ChunkData> data) {
+        chunks.erase(pos);
         chunks.insert({pos, data});
     }
 

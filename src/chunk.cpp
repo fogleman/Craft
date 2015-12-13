@@ -90,7 +90,7 @@ namespace konstructs {
             const Vector3i nBlockPos(roundf(pos[0]), roundf(pos[1]), roundf(pos[2]));
             if (nBlockPos != blockPos) {
                 char hw = get(nBlockPos);
-                if (blocks.is_obstacle[hw]) {
+                if (blocks.is_obstacle[hw] || blocks.is_plant[hw]) {
                     if (previous) {
                         return optional<Block>(Block(blockPos, hw));
                     } else {

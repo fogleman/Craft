@@ -52,7 +52,8 @@ public:
         selection(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
-        looking_at(nullopt) {
+        looking_at(nullopt),
+        looking_through(nullopt){
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -64,6 +65,19 @@ public:
     }
 
     ~Konstructs() {
+    }
+
+    virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
+        if(looking_at) {
+            if(button == GLFW_MOUSE_BUTTON_1 && down) {
+                client.click_at(1, looking_at->position, 1);
+            } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
+                client.click_at(1, looking_through->position, 2);
+            } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
+                client.click_at(1, looking_at->position, 3);
+            }
+        }
+        return Screen::mouseButtonEvent(p, button, down, modifiers);
     }
 
     virtual bool keyboardEvent(int key, int scancode, int action, int modifiers) {
@@ -92,6 +106,7 @@ public:
         handle_keys();
         handle_mouse();
         looking_at = player.looking_at(world, false, blocks);
+        looking_through = player.looking_at(world, true, blocks);
         glClear(GL_DEPTH_BUFFER_BIT);
         for(auto model : model_factory.fetch_models()) {
             chunk.add(model);
@@ -290,6 +305,7 @@ private:
     Client client;
     Player player;
     optional<konstructs::Block> looking_at;
+    optional<konstructs::Block> looking_through;
     double px;
     double py;
     FPS fps;

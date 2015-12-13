@@ -157,10 +157,10 @@ namespace konstructs {
         send_string(ss.str());
     }
 
-    void Client::click_at(const int hit, const int x, const int y, const int z,
+    void Client::click_at(const int hit, const Vector3i pos,
                           const int button) {
         std::stringstream ss;
-        ss << "M," << hit << "," << x << "," << y << "," << z << "," << button;
+        ss << "M," << hit << "," << pos[0] << "," << pos[1] << "," << pos[2] << "," << button;
         send_string(ss.str());
     }
 

@@ -20,6 +20,7 @@
 #include "chunk_shader.h"
 #include "sky_shader.h"
 #include "selection_shader.h"
+#include "hud_shader.h"
 #include "client.h"
 #include "util.h"
 
@@ -55,6 +56,7 @@ public:
         near_distance(0.125f),
         sky(radius, fov, 2, near_distance),
         chunk(radius, fov, 0, 2, near_distance),
+        hud_shader(17, 14),
         selection(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
@@ -126,6 +128,7 @@ public:
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair.render();
+        hud_shader.render(mSize.x(), mSize.y());
     }
 
 private:
@@ -308,6 +311,7 @@ private:
     SkyShader sky;
     ChunkShader chunk;
     SelectionShader selection;
+    HudShader hud_shader;
     ChunkModelFactory model_factory;
     Client client;
     Player player;

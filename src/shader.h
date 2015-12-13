@@ -51,6 +51,8 @@ namespace konstructs {
             draw_mode(_draw_mode) {}
         void draw(Attribute *attribute,
                   const GLuint offset, const GLuint size);
+        void draw(Attribute &attribute,
+                  const GLuint offset, const GLuint size);
         void draw(std::shared_ptr<Attribute> attribute,
                   const GLuint offset, const GLuint size);
         void draw(const std::vector<std::shared_ptr<Attribute>> &attributes,

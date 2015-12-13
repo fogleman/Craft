@@ -16,20 +16,6 @@ void make_plant(
     float *data, float ao, float light,
     float px, float py, float pz, float n, int w, float rotation, const int blocks[256][6]);
 
-void make_player(
-    float *data,
-    float x, float y, float z, float rx, float ry);
-
-void make_cube_wireframe(
-    float *data, float x, float y, float z, float n);
-
-void make_character(
-    float *data,
-    float x, float y, float n, float m, char c);
-
-void make_character_3d(
-    float *data, float x, float y, float z, float n, int face, char c);
-
 void make_sphere(float *data, float r, int detail);
 
 #endif

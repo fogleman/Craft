@@ -7,6 +7,7 @@
 #include "block.h"
 
 #define CHUNK_SIZE 32
+#define BLOCKS_HEADER_SIZE 2
 
 namespace konstructs {
     using namespace Eigen;
@@ -29,19 +30,6 @@ namespace konstructs {
         char *blocks;
     };
 };
-
-typedef struct {
-  char blocks[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
-  int p;
-  int q;
-  int k;
-  int faces;
-  int dirty;
-  GLuint buffer;
-} Chunk;
-
-char chunk_get(Chunk *chunk, int x, int y, int z);
-void chunk_set(Chunk *chunk, int x, int y, int z, int w);
 
 #define CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) \
   for(int ex = 0; ex < CHUNK_SIZE; ex++) { \

@@ -4,6 +4,8 @@
 #include "matrix.h"
 #include "util.h"
 
+#define KONSTRUCTS_PATH_SIZE 256
+
 namespace konstructs {
 
     const Array3i chunk_offset = Vector3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE).array();

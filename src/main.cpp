@@ -46,7 +46,6 @@ class Konstructs: public nanogui::Screen {
 public:
     Konstructs() :
         nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
-        crosshair(mSize.y(), mSize.x()),
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
@@ -127,7 +126,7 @@ public:
             selection.render(player, mSize.x(), mSize.y(), looking_at->position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        crosshair.render();
+        crosshair.render(mSize.x(), mSize.y());
         hud_shader.render(mSize.x(), mSize.y());
     }
 

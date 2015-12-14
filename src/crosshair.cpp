@@ -3,8 +3,35 @@
 
 namespace konstructs {
     using matrix::projection_2d;
-    void Crosshair::render() {
+    Crosshair::Crosshair() :
+        ShaderProgram(
+            "crosshair",
+            "#version 330\n"
+            "uniform mat4 projection;\n"
+            "in vec4 position;\n"
+            "void main() {\n"
+            "    gl_Position = projection * position;\n"
+            "}\n",
+            "#version 330\n"
+            "uniform vec4 color;\n"
+            "out vec4 fragColor;\n"
+            "void main() {\n"
+            "    fragColor = vec4(color);\n"
+            "}\n",
+            GL_LINES),
+        projection(uniformId("projection")),
+        position(attributeId("position")),
+        color(uniformId("color")) { }
+
+    void Crosshair::render(const int width, const int height) {
         bind([&](Context c) {
+                float p = 0.03;
+                MatrixXf segments(2, 4);
+                segments.col(0) <<  0, -p;
+                segments.col(1) <<  0,  p;
+                segments.col(2) << -p,  0;
+                segments.col(3) <<  p,  0;
+                EigenAttribute data(position, segments);
                 c.logic_op(GL_INVERT);
                 c.enable(GL_COLOR_LOGIC_OP);
                 c.set(projection, projection_2d(width, height));

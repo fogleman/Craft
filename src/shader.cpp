@@ -133,7 +133,7 @@ namespace konstructs {
         glDisable(cap);
     }
 
-    EigenModel::~EigenModel() {
+    BufferModel::~BufferModel() {
         glDeleteBuffers(1, &buffer);
     }
 

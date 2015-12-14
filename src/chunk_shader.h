@@ -12,11 +12,10 @@
 namespace konstructs {
     using std::shared_ptr;
 
-    class ChunkModel : public Model {
+    class ChunkModel : public BufferModel {
     public:
         ChunkModel(const shared_ptr<ChunkModelResult> &data,
                    GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);
-        ~ChunkModel();
         virtual void bind();
         const Vector3i position;
         const size_t size;
@@ -26,7 +25,6 @@ namespace konstructs {
         const GLuint position_attr;
         const GLuint normal_attr;
         const GLuint uv_attr;
-        GLuint buffer;
     };
 
     class ChunkShader : public ShaderProgram {

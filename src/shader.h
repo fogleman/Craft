@@ -17,7 +17,14 @@ namespace konstructs {
         virtual void bind() {}
     };
 
-    class EigenModel : public Model {
+    class BufferModel : public Model {
+    public:
+        ~BufferModel();
+    protected:
+        GLuint buffer;
+    };
+
+    class EigenModel : public BufferModel {
     public:
         template <typename Matrix> EigenModel(const GLuint _name,
                                                   const Matrix &m):
@@ -34,7 +41,6 @@ namespace konstructs {
             glBufferData(GL_ARRAY_BUFFER, m.size() * compSize, m.data(), GL_STATIC_DRAW);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
-        ~EigenModel();
         virtual void bind();
         const GLuint size;
         const GLuint name;
@@ -42,7 +48,6 @@ namespace konstructs {
         const GLuint type;
         const bool integral;
         const GLuint dim;
-        GLuint buffer;
     };
 
     class Context {

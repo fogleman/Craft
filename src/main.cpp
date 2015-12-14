@@ -20,6 +20,7 @@
 #include "chunk_shader.h"
 #include "sky_shader.h"
 #include "selection_shader.h"
+#include "hud.h"
 #include "hud_shader.h"
 #include "textures.h"
 #include "client.h"
@@ -62,7 +63,7 @@ public:
         last_frame(glfwGetTime()),
         looking_at(nullopt),
         looking_through(nullopt),
-        hud_background(17 * 14, -1) {
+        hud(17, 14) {
         load_textures();
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
@@ -72,15 +73,15 @@ public:
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
         memset(&fps, 0, sizeof(fps));
-        hud_background[4] = 2;
-        hud_background[5] = 2;
-        hud_background[6] = 2;
-        hud_background[7] = 2;
-        hud_background[8] = 2;
-        hud_background[9] = 2;
-        hud_background[10] = 2;
-        hud_background[11] = 2;
-        hud_background[12] = 2;
+        hud.set_background(0, 4, 2);
+        hud.set_background(0, 5, 2);
+        hud.set_background(0, 6, 2);
+        hud.set_background(0, 7, 2);
+        hud.set_background(0, 8, 2);
+        hud.set_background(0, 9, 2);
+        hud.set_background(0, 10, 2);
+        hud.set_background(0, 11, 2);
+        hud.set_background(0, 12, 2);
     }
 
     ~Konstructs() {
@@ -140,7 +141,7 @@ public:
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair_shader.render(mSize.x(), mSize.y());
-        hud_shader.render(mSize.x(), mSize.y(), hud_background);
+        hud_shader.render(mSize.x(), mSize.y(), hud.backgrounds());
     }
 
 private:
@@ -329,7 +330,7 @@ private:
     Player player;
     optional<konstructs::Block> looking_at;
     optional<konstructs::Block> looking_through;
-    vector<int> hud_background;
+    Hud hud;
     double px;
     double py;
     FPS fps;

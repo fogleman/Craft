@@ -7,7 +7,7 @@
 
 namespace konstructs {
 
-    class SkyModel : public Model {
+    class SkyModel : public BufferModel {
     public:
         SkyModel(GLuint _position_attr, GLuint _uv_attr);
         virtual void bind();
@@ -15,7 +15,6 @@ namespace konstructs {
     private:
         const GLuint position_attr;
         const GLuint uv_attr;
-        GLuint buffer;
     };
 
     class SkyShader : public ShaderProgram {

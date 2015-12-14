@@ -4,7 +4,7 @@
 #include "shader.h"
 namespace konstructs {
 
-    class HudModel : public Model {
+    class HudModel : public BufferModel {
     public:
         HudModel(const int *background,
                  GLuint _position_attr, GLuint color_attr,
@@ -13,7 +13,6 @@ namespace konstructs {
     private:
         const GLuint position_attr;
         const GLuint color_attr;
-        GLuint buffer;
     };
 
     class HudShader: private ShaderProgram {

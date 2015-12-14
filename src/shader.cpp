@@ -85,29 +85,15 @@ namespace konstructs {
         f(c);
     }
 
-    void Context::draw(Attribute *attribute,
+    void Context::draw(Model *model,
                        const GLuint offset, const GLuint size) {
-        attribute->bind();
+        model->bind();
         glDrawArrays(draw_mode, offset, size);
     }
 
-    void Context::draw(Attribute &attribute,
+    void Context::draw(Model &model,
                        const GLuint offset, const GLuint size) {
-        attribute.bind();
-        glDrawArrays(draw_mode, offset, size);
-    }
-
-    void Context::draw(std::shared_ptr<Attribute> attribute,
-                       const GLuint offset, const GLuint size) {
-        std::vector<std::shared_ptr<Attribute>> attributes = { attribute };
-        draw(attributes, offset, size);
-    }
-
-    void Context::draw(const std::vector<std::shared_ptr<Attribute>> &attributes,
-                       const GLuint offset, const GLuint size) {
-        for(auto attribute : attributes) {
-            attribute->bind();
-        }
+        model.bind();
         glDrawArrays(draw_mode, offset, size);
     }
 
@@ -147,11 +133,11 @@ namespace konstructs {
         glDisable(cap);
     }
 
-    EigenAttribute::~EigenAttribute() {
+    EigenModel::~EigenModel() {
         glDeleteBuffers(1, &buffer);
     }
 
-    void EigenAttribute::bind() {
+    void EigenModel::bind() {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
         glEnableVertexAttribArray(name);
         glVertexAttribPointer(name, dim,

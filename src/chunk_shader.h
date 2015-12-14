@@ -12,7 +12,7 @@
 namespace konstructs {
     using std::shared_ptr;
 
-    class ChunkModel : public Attribute {
+    class ChunkModel : public Model {
     public:
         ChunkModel(const shared_ptr<ChunkModelResult> &data,
                    GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);

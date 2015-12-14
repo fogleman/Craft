@@ -12,14 +12,14 @@ namespace konstructs {
 
     GLuint creater_shader(const GLint type, const std::string &shader);
 
-    class Attribute {
+    class Model {
     public:
         virtual void bind() {}
     };
 
-    class EigenAttribute : public Attribute {
+    class EigenModel : public Model {
     public:
-        template <typename Matrix> EigenAttribute(const GLuint _name,
+        template <typename Matrix> EigenModel(const GLuint _name,
                                                   const Matrix &m):
             name(_name),
             type((GLuint) nanogui::type_traits <typename Matrix::Scalar>::type),
@@ -34,7 +34,7 @@ namespace konstructs {
             glBufferData(GL_ARRAY_BUFFER, m.size() * compSize, m.data(), GL_STATIC_DRAW);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
-        ~EigenAttribute();
+        ~EigenModel();
         virtual void bind();
         const GLuint size;
         const GLuint name;
@@ -49,13 +49,9 @@ namespace konstructs {
     public:
         Context(const GLenum _draw_mode) :
             draw_mode(_draw_mode) {}
-        void draw(Attribute *attribute,
+        void draw(Model *model,
                   const GLuint offset, const GLuint size);
-        void draw(Attribute &attribute,
-                  const GLuint offset, const GLuint size);
-        void draw(std::shared_ptr<Attribute> attribute,
-                  const GLuint offset, const GLuint size);
-        void draw(const std::vector<std::shared_ptr<Attribute>> &attributes,
+        void draw(Model &model,
                   const GLuint offset, const GLuint size);
         void set(const GLuint name, const float value);
         void set(const GLuint name, const Matrix4f &value);

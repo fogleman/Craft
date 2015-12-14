@@ -7,7 +7,7 @@
 
 namespace konstructs {
 
-    class SkyModel : public Attribute {
+    class SkyModel : public Model {
     public:
         SkyModel(GLuint _position_attr, GLuint _uv_attr);
         virtual void bind();

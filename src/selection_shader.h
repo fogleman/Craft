@@ -18,7 +18,7 @@ namespace konstructs {
         const GLuint translation;
         const float near_distance;
     private:
-        EigenAttribute model;
+        EigenModel model;
         const int radius;
         const float fov;
     };

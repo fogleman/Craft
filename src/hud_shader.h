@@ -4,7 +4,7 @@
 #include "shader.h"
 namespace konstructs {
 
-    class HudModel : public Attribute {
+    class HudModel : public Model {
     public:
         HudModel(const int *background,
                  GLuint _position_attr, GLuint color_attr,
@@ -28,7 +28,6 @@ namespace konstructs {
         const GLuint color;
         const int columns;
         const int rows;
-        std::shared_ptr<Attribute> data;
     };
 };
 #endif

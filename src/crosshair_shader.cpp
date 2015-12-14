@@ -31,7 +31,7 @@ namespace konstructs {
                 segments.col(1) <<  0,  p;
                 segments.col(2) << -p,  0;
                 segments.col(3) <<  p,  0;
-                EigenAttribute data(position, segments);
+                EigenModel data(position, segments);
                 c.logic_op(GL_INVERT);
                 c.enable(GL_COLOR_LOGIC_OP);
                 c.set(projection, projection_2d(width, height));

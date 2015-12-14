@@ -1,9 +1,9 @@
 #include "matrix.h"
-#include "crosshair.h"
+#include "crosshair_shader.h"
 
 namespace konstructs {
     using matrix::projection_2d;
-    Crosshair::Crosshair() :
+    CrosshairShader::CrosshairShader() :
         ShaderProgram(
             "crosshair",
             "#version 330\n"
@@ -23,7 +23,7 @@ namespace konstructs {
         position(attributeId("position")),
         color(uniformId("color")) { }
 
-    void Crosshair::render(const int width, const int height) {
+    void CrosshairShader::render(const int width, const int height) {
         bind([&](Context c) {
                 float p = 0.03;
                 MatrixXf segments(2, 4);

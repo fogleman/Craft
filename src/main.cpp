@@ -13,7 +13,7 @@
 #include "optional.hpp"
 #include "matrix.h"
 #include "shader.h"
-#include "crosshair.h"
+#include "crosshair_shader.h"
 #include "block.h"
 #include "chunk.h"
 #include "world.h"
@@ -126,7 +126,7 @@ public:
             selection.render(player, mSize.x(), mSize.y(), looking_at->position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        crosshair.render(mSize.x(), mSize.y());
+        crosshair_shader.render(mSize.x(), mSize.y());
         hud_shader.render(mSize.x(), mSize.y());
     }
 
@@ -301,7 +301,7 @@ private:
     }
 
     BlockData blocks;
-    Crosshair crosshair;
+    CrosshairShader crosshair_shader;
     int radius;
     int fov;
     float near_distance;

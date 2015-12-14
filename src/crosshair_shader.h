@@ -1,12 +1,12 @@
-#ifndef __CROSSHAIR_H__
-#define __CROSSHAIR_H__
-#include <memory>
+#ifndef __CROSSHAIR_SHADER_H__
+#define __CROSSHAIR_SHADER_H__
 #include "shader.h"
+
 namespace konstructs {
 
-    class Crosshair : private ShaderProgram {
+    class CrosshairShader : private ShaderProgram {
     public:
-        Crosshair();
+        CrosshairShader();
         void render(const int width, const int height);
     private:
         const GLuint projection;

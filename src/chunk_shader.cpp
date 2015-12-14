@@ -13,20 +13,23 @@ namespace konstructs {
     ChunkModel::ChunkModel(const shared_ptr<ChunkModelResult> &data,
                            GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr) :
         position(data->position),
-        size(data->size),
         faces(data->faces),
         position_attr(_position_attr),
         normal_attr(_normal_attr),
         uv_attr(_uv_attr) {
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glBufferData(GL_ARRAY_BUFFER, size * sizeof(GLfloat),
+        glBufferData(GL_ARRAY_BUFFER, data->size * sizeof(GLfloat),
                      data->data(), GL_STATIC_DRAW);
         Vector3f pos =
             (position.array() * chunk_offset).matrix().cast<float>();
 
         Vector3f rpos = Vector3f(pos[0], pos[2], pos[1]);
         translation = Affine3f(Translation3f(rpos)).matrix();
+    }
+
+    int ChunkModel::vertices() {
+        return faces*6;
     }
 
     void ChunkModel::bind() {
@@ -198,7 +201,7 @@ namespace konstructs {
                         continue;
                     visible++;
                     c.set(translation, m->translation);
-                    c.draw(m, 0, m->faces*6);
+                    c.draw(m);
                     faces += m->faces;
                 }
                 c.disable(GL_CULL_FACE);

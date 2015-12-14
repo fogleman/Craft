@@ -85,16 +85,14 @@ namespace konstructs {
         f(c);
     }
 
-    void Context::draw(Model *model,
-                       const GLuint offset, const GLuint size) {
+    void Context::draw(Model *model) {
         model->bind();
-        glDrawArrays(draw_mode, offset, size);
+        glDrawArrays(draw_mode, 0, model->vertices());
     }
 
-    void Context::draw(Model &model,
-                       const GLuint offset, const GLuint size) {
+    void Context::draw(Model &model) {
         model.bind();
-        glDrawArrays(draw_mode, offset, size);
+        glDrawArrays(draw_mode, 0, model.vertices());
     }
 
     void Context::set(const GLuint name, const float value) {
@@ -135,6 +133,10 @@ namespace konstructs {
 
     BufferModel::~BufferModel() {
         glDeleteBuffers(1, &buffer);
+    }
+
+    int EigenModel::vertices() {
+        return columns;
     }
 
     void EigenModel::bind() {

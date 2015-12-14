@@ -7,10 +7,12 @@ namespace konstructs {
     MatrixXf make_square(const int columns, const int rows, const int type);
 
     HudModel::HudModel(const int *background_buffer,
-                       GLuint _position_attr, GLuint color_attr,
+                       const GLuint position_attr, const GLuint color_attr,
                        const int columns, const int rows) :
-        position_attr(_position_attr),
-        color_attr(color_attr) {
+        position_attr(position_attr),
+        color_attr(color_attr),
+        columns(columns),
+        rows(rows) {
 
         auto data = make_square(columns, rows, 0);
 
@@ -21,6 +23,9 @@ namespace konstructs {
 
     }
 
+    int HudModel::vertices() {
+        return columns*rows*6;
+    }
 
     void HudModel::bind() {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -67,7 +72,7 @@ namespace konstructs {
                 HudModel m(NULL, position, color, columns, rows);
                 c.set(scale, 4.0f/(float)columns);
                 c.set(xscale, (float)height / (float)width);
-                c.draw(m, 0, columns*rows*6);
+                c.draw(m);
             });
     }
 

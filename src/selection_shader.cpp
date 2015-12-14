@@ -72,7 +72,7 @@ namespace konstructs {
                 const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, max_distance) * p.view();
                 c.set(matrix, m);
                 c.set(translation, Affine3f(Translation3f(selected.cast<float>())).matrix());
-                c.draw(&model, 0, model.size);
+                c.draw(&model);
                 c.disable(GL_DEPTH_TEST);
             });
     }

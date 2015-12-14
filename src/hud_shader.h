@@ -10,9 +10,12 @@ namespace konstructs {
                  GLuint _position_attr, GLuint color_attr,
                  const int columns, const int rows);
         virtual void bind();
+        virtual int vertices();
     private:
         const GLuint position_attr;
         const GLuint color_attr;
+        const int columns;
+        const int rows;
     };
 
     class HudShader: private ShaderProgram {

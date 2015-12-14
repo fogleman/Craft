@@ -14,7 +14,8 @@ namespace konstructs {
 
     class Model {
     public:
-        virtual void bind() {}
+        virtual void bind() = 0;
+        virtual int vertices() = 0;
     };
 
     class BufferModel : public Model {
@@ -26,13 +27,13 @@ namespace konstructs {
 
     class EigenModel : public BufferModel {
     public:
-        template <typename Matrix> EigenModel(const GLuint _name,
-                                                  const Matrix &m):
-            name(_name),
+        template <typename Matrix> EigenModel(const GLuint name,
+                                              const Matrix &m):
+            name(name),
             type((GLuint) nanogui::type_traits <typename Matrix::Scalar>::type),
             integral((bool) nanogui::type_traits<typename Matrix::Scalar>::integral),
             dim(m.rows()),
-            size(m.cols()) {
+            columns(m.cols()) {
             uint32_t compSize = sizeof(typename Matrix::Scalar);
             GLuint glType = (GLuint) nanogui::type_traits<typename Matrix::Scalar>::type;
 
@@ -42,22 +43,21 @@ namespace konstructs {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         virtual void bind();
-        const GLuint size;
+        virtual int vertices();
         const GLuint name;
     private:
         const GLuint type;
         const bool integral;
         const GLuint dim;
+        const int columns;
     };
 
     class Context {
     public:
         Context(const GLenum _draw_mode) :
             draw_mode(_draw_mode) {}
-        void draw(Model *model,
-                  const GLuint offset, const GLuint size);
-        void draw(Model &model,
-                  const GLuint offset, const GLuint size);
+        void draw(Model *model);
+        void draw(Model &model);
         void set(const GLuint name, const float value);
         void set(const GLuint name, const Matrix4f &value);
         void set(const GLuint name, const int value);

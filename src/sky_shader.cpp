@@ -7,8 +7,7 @@ namespace konstructs {
 
     SkyModel::SkyModel(const GLuint _position_attr, const GLuint _uv_attr) :
         position_attr(_position_attr),
-        uv_attr(_uv_attr),
-        vertices(512 * 3) {
+        uv_attr(_uv_attr) {
         float *data = new float[12288];
         make_sphere(data, 1, 3);
         glGenBuffers(1, &buffer);
@@ -16,6 +15,10 @@ namespace konstructs {
         glBufferData(GL_ARRAY_BUFFER, 12288 * sizeof(GLfloat),
                      data, GL_STATIC_DRAW);
         delete[] data;
+    }
+
+    int SkyModel::vertices() {
+        return 512 * 3;
     }
 
     void SkyModel::bind() {
@@ -72,7 +75,7 @@ namespace konstructs {
                 c.set(matrix, m);
                 c.set(sampler, (int)sky_texture);
                 c.set(timer, current_timer);
-                c.draw(&model, 0, model.vertices);
+                c.draw(&model);
                 c.disable(GL_CULL_FACE);
                 c.disable(GL_DEPTH_TEST);
             });

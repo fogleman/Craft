@@ -11,7 +11,7 @@ namespace konstructs {
     public:
         SkyModel(GLuint _position_attr, GLuint _uv_attr);
         virtual void bind();
-        const GLuint vertices;
+        virtual int vertices();
     private:
         const GLuint position_attr;
         const GLuint uv_attr;

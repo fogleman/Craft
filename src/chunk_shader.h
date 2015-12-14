@@ -17,8 +17,8 @@ namespace konstructs {
         ChunkModel(const shared_ptr<ChunkModelResult> &data,
                    GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);
         virtual void bind();
+        virtual int vertices();
         const Vector3i position;
-        const size_t size;
         const int faces;
         Matrix4f translation;
     private:

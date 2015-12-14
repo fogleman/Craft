@@ -16,6 +16,7 @@ namespace konstructs {
     public:
         ChunkModel(const shared_ptr<ChunkModelResult> &data,
                    GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr);
+        ~ChunkModel();
         virtual void bind();
         const Vector3i position;
         const size_t size;

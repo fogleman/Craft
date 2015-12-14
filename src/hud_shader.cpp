@@ -19,8 +19,8 @@ namespace konstructs {
         glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat),
                      data.data(), GL_STATIC_DRAW);
 
-        //std::cout << data.size() << std::endl;
     }
+
 
     void HudModel::bind() {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);

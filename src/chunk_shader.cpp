@@ -29,6 +29,10 @@ namespace konstructs {
         translation = Affine3f(Translation3f(rpos)).matrix();
     }
 
+    ChunkModel::~ChunkModel() {
+        glDeleteBuffers(1, &buffer);
+    }
+
     void ChunkModel::bind() {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
         glEnableVertexAttribArray(position_attr);

@@ -56,12 +56,13 @@ public:
         near_distance(0.125f),
         sky_shader(radius, fov, SKY_TEXTURE, near_distance),
         chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),
-        hud_shader(17, 14),
+        hud_shader(17, 14, INVENTORY_TEXTURE),
         selection_shader(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
         looking_at(nullopt),
-        looking_through(nullopt) {
+        looking_through(nullopt),
+        hud_background(17 * 14, -1) {
         load_textures();
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
@@ -71,6 +72,15 @@ public:
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
         memset(&fps, 0, sizeof(fps));
+        hud_background[4] = 2;
+        hud_background[5] = 2;
+        hud_background[6] = 2;
+        hud_background[7] = 2;
+        hud_background[8] = 2;
+        hud_background[9] = 2;
+        hud_background[10] = 2;
+        hud_background[11] = 2;
+        hud_background[12] = 2;
     }
 
     ~Konstructs() {
@@ -130,7 +140,7 @@ public:
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair_shader.render(mSize.x(), mSize.y());
-        //hud_shader.render(mSize.x(), mSize.y());
+        hud_shader.render(mSize.x(), mSize.y(), hud_background);
     }
 
 private:
@@ -319,6 +329,7 @@ private:
     Player player;
     optional<konstructs::Block> looking_at;
     optional<konstructs::Block> looking_through;
+    vector<int> hud_background;
     double px;
     double py;
     FPS fps;

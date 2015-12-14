@@ -53,10 +53,10 @@ public:
         radius(10),
         fov(60.0f),
         near_distance(0.125f),
-        sky(radius, fov, 2, near_distance),
-        chunk(radius, fov, 0, 2, near_distance),
+        sky_shader(radius, fov, 2, near_distance),
+        chunk_shader(radius, fov, 0, 2, near_distance),
         hud_shader(17, 14),
-        selection(radius, fov, near_distance, 0.52),
+        selection_shader(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
         looking_at(nullopt),
@@ -117,13 +117,14 @@ public:
         looking_through = player.looking_at(world, true, blocks);
         glClear(GL_DEPTH_BUFFER_BIT);
         for(auto model : model_factory.fetch_models()) {
-            chunk.add(model);
+            chunk_shader.add(model);
         }
-        sky.render(player, mSize.x(), mSize.y(), time_of_day());
+        sky_shader.render(player, mSize.x(), mSize.y(), time_of_day());
         glClear(GL_DEPTH_BUFFER_BIT);
-        int faces = chunk.render(player, mSize.x(), mSize.y(), daylight(), time_of_day());
+        int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
+                                        daylight(), time_of_day());
         if(looking_at) {
-            selection.render(player, mSize.x(), mSize.y(), looking_at->position);
+            selection_shader.render(player, mSize.x(), mSize.y(), looking_at->position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair_shader.render(mSize.x(), mSize.y());
@@ -307,9 +308,9 @@ private:
     float near_distance;
     int day_length;
     World world;
-    SkyShader sky;
-    ChunkShader chunk;
-    SelectionShader selection;
+    SkyShader sky_shader;
+    ChunkShader chunk_shader;
+    SelectionShader selection_shader;
     HudShader hud_shader;
     ChunkModelFactory model_factory;
     Client client;

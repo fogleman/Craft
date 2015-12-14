@@ -2,9 +2,6 @@
 #include <math.h>
 #include "chunk_shader.h"
 #include "matrix.h"
-#include "util.h"
-
-#define KONSTRUCTS_PATH_SIZE 256
 
 namespace konstructs {
 
@@ -57,39 +54,6 @@ namespace konstructs {
             models.insert({data->position, model});
         }
 
-    }
-
-    void shtxt_path(const char *name, const char *type, char *path, size_t max_len) {
-        snprintf(path, max_len, "%s/%s", type, name);
-
-        if (!file_exist(path)) {
-            snprintf(path, max_len, "/usr/local/share/konstructs-client/%s/%s", type, name);
-        }
-
-        if (!file_exist(path)) {
-            printf("Error, no %s for %s found.\n", type, name);
-            exit(1);
-        }
-    }
-
-    void texture_path(const char *name, char *path, size_t max_len) {
-        shtxt_path(name, "textures", path, max_len);
-    }
-
-
-    void load_textures() {
-        char txtpth[KONSTRUCTS_PATH_SIZE];
-
-        GLuint sky;
-        glGenTextures(1, &sky);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, sky);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        texture_path("sky.png", txtpth, KONSTRUCTS_PATH_SIZE);
-        load_png_texture(txtpth);
     }
 
     ChunkShader::ChunkShader(const int _radius, const float _fov, const GLuint _block_texture,
@@ -172,9 +136,7 @@ namespace konstructs {
         fov(_fov),
         block_texture(_block_texture),
         sky_texture(_sky_texture),
-        near_distance(_near_distance) {
-        load_textures();
-    }
+        near_distance(_near_distance) {}
 
     int ChunkShader::render(const Player &p, const int width, const int height,
                             const float current_daylight, const float current_timer) {

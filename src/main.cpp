@@ -21,6 +21,7 @@
 #include "sky_shader.h"
 #include "selection_shader.h"
 #include "hud_shader.h"
+#include "textures.h"
 #include "client.h"
 #include "util.h"
 
@@ -53,14 +54,15 @@ public:
         radius(10),
         fov(60.0f),
         near_distance(0.125f),
-        sky_shader(radius, fov, 2, near_distance),
-        chunk_shader(radius, fov, 0, 2, near_distance),
+        sky_shader(radius, fov, SKY_TEXTURE, near_distance),
+        chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),
         hud_shader(17, 14),
         selection_shader(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
         looking_at(nullopt),
-        looking_through(nullopt){
+        looking_through(nullopt) {
+        load_textures();
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
         performLayout(mNVGContext);

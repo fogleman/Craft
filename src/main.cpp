@@ -128,7 +128,7 @@ public:
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         crosshair_shader.render(mSize.x(), mSize.y());
-        hud_shader.render(mSize.x(), mSize.y());
+        //hud_shader.render(mSize.x(), mSize.y());
     }
 
 private:

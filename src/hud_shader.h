@@ -1,9 +1,14 @@
 #ifndef __HUDSHADER_H__
 #define __HUDSHADER_H__
 #include <vector>
+#include <Eigen/Geometry>
+#include "optional.hpp"
 #include "shader.h"
 
 namespace konstructs {
+    using Eigen::Vector2i;
+    using nonstd::optional;
+    using nonstd::nullopt;
 
     class HudModel : public BufferModel {
     public:
@@ -21,6 +26,8 @@ namespace konstructs {
     class HudShader: private ShaderProgram {
     public:
         HudShader(const int columns, const int rows, const int texture);
+        optional<Vector2i> clicked_at(const double x, const double y,
+                                      const int width, const int height);
         void render(const int width, const int height, const std::vector<int> &background);
 
     private:

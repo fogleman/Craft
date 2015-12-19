@@ -70,6 +70,27 @@ namespace konstructs {
         rows(rows){
     }
 
+    optional<Vector2i> HudShader::clicked_at(const double x, const double y,
+                                             const int width, const int height) {
+        // Convert to Open GL coordinates (-1 to 1) and inverted y
+        double glx = (x / (double)width) * 2.0 - 1.0;
+        double gly = (((double)height - y) / (double)height) * 2.0 - 1.0;
+
+        double scale = 4.0/(double)columns;
+        double xscale = (double)height / (double)width;
+
+        // Convert to inventory positions
+        double ix = (glx + 2.0*xscale*0.6) / (scale*xscale*0.6);
+        double iy = (gly + 1.0) / (scale * 0.6);
+
+        // Return position if it is within bounds
+        if(ix >= 0.0 && ix < (double)columns && iy >= 0.0 && iy < (double)rows) {
+            return optional<Vector2i>({(int)ix, (int)iy});
+        } else {
+            return nullopt;
+        }
+    }
+
     void HudShader::render(const int width, const int height, const vector<int> &background) {
         bind([&](Context c) {
                 HudModel m(background, position, uv, columns, rows);

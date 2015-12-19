@@ -36,7 +36,7 @@
 #define KONSTRUCTS_KEY_RIGHT 'D'
 #define KONSTRUCTS_KEY_JUMP GLFW_KEY_SPACE
 #define KONSTRUCTS_KEY_FLY GLFW_KEY_TAB
-
+#define KONSTRUCTS_KEY_INVENTORY 'E'
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -63,7 +63,8 @@ public:
         last_frame(glfwGetTime()),
         looking_at(nullopt),
         looking_through(nullopt),
-        hud(17, 14) {
+        hud(17, 14),
+        hud_interaction(false) {
         load_textures();
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
@@ -88,14 +89,27 @@ public:
     }
 
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
-        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        if(looking_at) {
-            if(button == GLFW_MOUSE_BUTTON_1 && down) {
-                client.click_at(1, looking_at->position, 1);
-            } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
-                client.click_at(1, looking_through->position, 2);
-            } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
-                client.click_at(1, looking_at->position, 3);
+        if(hud_interaction) {
+            double x, y;
+            glfwGetCursorPos(mGLFWWindow, &x, &y);
+
+            auto clicked_at = hud_shader.clicked_at(x, y, mSize.x(), mSize.y());
+
+            if(clicked_at)
+                cout << "Clicked at: " << (*clicked_at)[0] << ", " << (*clicked_at)[1] << endl;
+            else
+                cout << "Clicked outside" << endl;
+
+        } else {
+            glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            if(looking_at) {
+                if(button == GLFW_MOUSE_BUTTON_1 && down) {
+                    client.click_at(1, looking_at->position, 1);
+                } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
+                    client.click_at(1, looking_through->position, 2);
+                } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
+                    client.click_at(1, looking_at->position, 3);
+                }
             }
         }
         return Screen::mouseButtonEvent(p, button, down, modifiers);
@@ -106,14 +120,18 @@ public:
             return true;
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
             glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            return true;
         } else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
             init_menu();
             performLayout(mNVGContext);
         } else if (key == KONSTRUCTS_KEY_FLY && action == GLFW_PRESS) {
             player.fly();
+        } else if(key == KONSTRUCTS_KEY_INVENTORY && action == GLFW_PRESS) {
+            hud_interaction = true;
+            glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        } else {
+            return false;
         }
-        return false;
+        return true;
     }
 
     virtual void draw(NVGcontext *ctx) {
@@ -140,7 +158,8 @@ public:
             selection_shader.render(player, mSize.x(), mSize.y(), looking_at->position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        crosshair_shader.render(mSize.x(), mSize.y());
+        if(!hud_interaction)
+            crosshair_shader.render(mSize.x(), mSize.y());
         hud_shader.render(mSize.x(), mSize.y(), hud.backgrounds());
     }
 
@@ -160,8 +179,7 @@ private:
             player.rotate_y(drx);
             px = mx;
             py = my;
-        }
-        else {
+        } else {
             glfwGetCursorPos(mGLFWWindow, &px, &py);
         }
     }
@@ -331,6 +349,7 @@ private:
     optional<konstructs::Block> looking_at;
     optional<konstructs::Block> looking_through;
     Hud hud;
+    bool hud_interaction;
     double px;
     double py;
     FPS fps;

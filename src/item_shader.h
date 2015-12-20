@@ -1,6 +1,6 @@
 #ifndef __ITEM_SHADER_H__
 #define __ITEM_SHADER_H__
-
+#include <unordered_map>
 #include "shader.h"
 #include "item.h"
 
@@ -10,6 +10,7 @@ namespace konstructs {
     public:
         ItemStackModel(const GLuint position_attr, const GLuint uv_attr,
                        const int columns, const int rows,
+                       const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                        const int blocks[256][6]);
         virtual void bind();
         virtual int vertices();
@@ -23,6 +24,7 @@ namespace konstructs {
     public:
         ItemShader(const int columns, const int rows, const int texture);
         void render(const int width, const int height,
+                    const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                     const int blocks[256][6]);
     private:
         const GLuint position;

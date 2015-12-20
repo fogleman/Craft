@@ -85,6 +85,7 @@ public:
         hud.set_background(0, 10, 2);
         hud.set_background(0, 11, 2);
         hud.set_background(0, 12, 2);
+        hud.set_stack(Vector2i(4, 0), {1, 1});
     }
 
     ~Konstructs() {
@@ -163,7 +164,7 @@ public:
         if(!hud_interaction)
             crosshair_shader.render(mSize.x(), mSize.y());
         hud_shader.render(mSize.x(), mSize.y(), hud.backgrounds());
-        item_shader.render(mSize.x(), mSize.y(), blocks.blocks);
+        item_shader.render(mSize.x(), mSize.y(), hud.stacks(), blocks.blocks);
     }
 
 private:

@@ -4,21 +4,24 @@
 
 namespace konstructs {
     using std::vector;
-    float* make_stacks(const int columns, const int rows, const int blocks[256][6]);
+    float* make_stacks(const int columns, const int rows,
+                       const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                       const int blocks[256][6]);
 
     ItemStackModel::ItemStackModel(const GLuint position_attr, const GLuint uv_attr,
                                    const int columns, const int rows,
+                                   const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                                    const int blocks[256][6]) :
         position_attr(position_attr),
         uv_attr(uv_attr) {
 
-        auto data = make_stacks(columns, rows, blocks);
+        auto data = make_stacks(columns, rows, stacks, blocks);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glBufferData(GL_ARRAY_BUFFER, rows * columns * 10 * 6 * 6 * sizeof(GLfloat),
+        glBufferData(GL_ARRAY_BUFFER, stacks.size() * 10 * 6 * 6 * sizeof(GLfloat),
                      data, GL_STATIC_DRAW);
-        verts = rows * columns * 6 * 6;
+        verts = stacks.size() * 6 * 6;
         delete[] data;
     }
 
@@ -74,9 +77,10 @@ namespace konstructs {
     }
 
     void ItemShader::render(const int width, const int height,
+                            const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                             const int blocks[256][6]) {
         bind([&](Context c) {
-                ItemStackModel m(position, uv, columns, rows, blocks);
+                ItemStackModel m(position, uv, columns, rows, stacks, blocks);
                 c.set(scale, 4.0f/(float)columns);
                 c.set(xscale, (float)height / (float)width);
                 c.set(sampler, texture);
@@ -84,7 +88,9 @@ namespace konstructs {
             });
     }
 
-    float* make_stacks(const int columns, const int rows, const int blocks[256][6]) {
+    float* make_stacks(const int columns, const int rows,
+                       const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                       const int blocks[256][6]) {
         float ao[6][4] = {0};
         float light[6][4] = {
             {0.5, 0.5, 0.5, 0.5},
@@ -94,13 +100,15 @@ namespace konstructs {
             {0.5, 0.5, 0.5, 0.5},
             {0.5, 0.5, 0.5, 0.5}
         };
-        float *d = new float[rows * columns * 10 * 6 * 6];
-        for (int j=0; j<rows; j++) {
-            for (int i=0; i<columns; i++) {
-                make_cube(d + (i+j*columns) * 10 * 6 * 6, ao, light,
-                          1, 1, 1, 1, 1, 1,
-                          i + 0.5, j + 0.5, 0, 0.35, 3, blocks);
-            }
+
+        int i = 0;
+        float *d = new float[stacks.size() * 10 * 6 * 6];
+        for (const auto &pair: stacks) {
+            make_cube(d + i * 10 * 6 * 6, ao, light,
+                      1, 1, 1, 1, 1, 1,
+                      pair.first[0] + 0.5, pair.first[1] + 0.5, 0, 0.35,
+                      pair.second.type, blocks);
+            i++;
         }
         return d;
     }

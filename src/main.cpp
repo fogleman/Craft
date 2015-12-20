@@ -22,7 +22,6 @@
 #include "selection_shader.h"
 #include "hud.h"
 #include "hud_shader.h"
-#include "item_shader.h"
 #include "textures.h"
 #include "client.h"
 #include "util.h"
@@ -58,8 +57,7 @@ public:
         near_distance(0.125f),
         sky_shader(radius, fov, SKY_TEXTURE, near_distance),
         chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),
-        hud_shader(17, 14, INVENTORY_TEXTURE),
-        item_shader(17, 14, BLOCK_TEXTURES),
+        hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES),
         selection_shader(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
@@ -76,15 +74,15 @@ public:
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
         memset(&fps, 0, sizeof(fps));
-        hud.set_background(0, 4, 2);
-        hud.set_background(0, 5, 2);
-        hud.set_background(0, 6, 2);
-        hud.set_background(0, 7, 2);
-        hud.set_background(0, 8, 2);
-        hud.set_background(0, 9, 2);
-        hud.set_background(0, 10, 2);
-        hud.set_background(0, 11, 2);
-        hud.set_background(0, 12, 2);
+        hud.set_background(Vector2i(4, 0), 2);
+        hud.set_background(Vector2i(5, 0), 2);
+        hud.set_background(Vector2i(6, 0), 2);
+        hud.set_background(Vector2i(7, 0), 2);
+        hud.set_background(Vector2i(8, 0), 2);
+        hud.set_background(Vector2i(9, 0), 2);
+        hud.set_background(Vector2i(10, 0), 2);
+        hud.set_background(Vector2i(11, 0), 2);
+        hud.set_background(Vector2i(12, 0), 2);
         hud.set_stack(Vector2i(4, 0), {1, 1});
     }
 
@@ -163,8 +161,7 @@ public:
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         if(!hud_interaction)
             crosshair_shader.render(mSize.x(), mSize.y());
-        hud_shader.render(mSize.x(), mSize.y(), hud.backgrounds());
-        item_shader.render(mSize.x(), mSize.y(), hud.stacks(), blocks.blocks);
+        hud_shader.render(mSize.x(), mSize.y(), hud.backgrounds(), hud.stacks(), blocks.blocks);
     }
 
 private:
@@ -347,7 +344,6 @@ private:
     ChunkShader chunk_shader;
     SelectionShader selection_shader;
     HudShader hud_shader;
-    ItemShader item_shader;
     ChunkModelFactory model_factory;
     Client client;
     Player player;

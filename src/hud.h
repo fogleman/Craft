@@ -11,14 +11,14 @@ namespace konstructs {
     class Hud {
     public:
         Hud(const int columns, const int rows);
-        void set_background(const int row, const int column, const int t);
+        void set_background(const Vector2i pos, const int t);
         void set_stack(const Vector2i pos, const ItemStack stack);
-        std::vector<int> backgrounds();
+        std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> backgrounds();
         std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> stacks();
         const int rows;
         const int columns;
     private:
-        std::vector<int> bg;
+        std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> bg;
         std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> item_stacks;
     };
 

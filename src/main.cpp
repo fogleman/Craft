@@ -22,6 +22,7 @@
 #include "selection_shader.h"
 #include "hud.h"
 #include "hud_shader.h"
+#include "item_shader.h"
 #include "textures.h"
 #include "client.h"
 #include "util.h"
@@ -58,6 +59,7 @@ public:
         sky_shader(radius, fov, SKY_TEXTURE, near_distance),
         chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),
         hud_shader(17, 14, INVENTORY_TEXTURE),
+        item_shader(17, 14, BLOCK_TEXTURES),
         selection_shader(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
@@ -161,6 +163,7 @@ public:
         if(!hud_interaction)
             crosshair_shader.render(mSize.x(), mSize.y());
         hud_shader.render(mSize.x(), mSize.y(), hud.backgrounds());
+        item_shader.render(mSize.x(), mSize.y(), blocks.blocks);
     }
 
 private:
@@ -343,6 +346,7 @@ private:
     ChunkShader chunk_shader;
     SelectionShader selection_shader;
     HudShader hud_shader;
+    ItemShader item_shader;
     ChunkModelFactory model_factory;
     Client client;
     Player player;

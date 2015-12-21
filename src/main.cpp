@@ -161,7 +161,7 @@ public:
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         if(!hud_interaction)
             crosshair_shader.render(mSize.x(), mSize.y());
-        hud_shader.render(mSize.x(), mSize.y(), hud.backgrounds(), hud.stacks(), blocks.blocks);
+        hud_shader.render(mSize.x(), mSize.y(), hud, blocks.blocks);
     }
 
 private:

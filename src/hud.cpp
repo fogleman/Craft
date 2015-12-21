@@ -7,13 +7,13 @@ namespace konstructs {
     void Hud::set_background(const Vector2i pos, const int t) {
         bg.insert({pos, t});
     }
-    std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> Hud::backgrounds() {
+    std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> Hud::backgrounds() const {
         return bg;
     }
     void Hud::set_stack(const Vector2i pos, const ItemStack stack) {
         item_stacks.insert({pos, stack});
     }
-    std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> Hud::stacks() {
+    std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> Hud::stacks() const {
         return item_stacks;
     }
 };

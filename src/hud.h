@@ -13,8 +13,8 @@ namespace konstructs {
         Hud(const int columns, const int rows);
         void set_background(const Vector2i pos, const int t);
         void set_stack(const Vector2i pos, const ItemStack stack);
-        std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> backgrounds();
-        std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> stacks();
+        std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> backgrounds() const;
+        std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> stacks() const;
         const int rows;
         const int columns;
     private:

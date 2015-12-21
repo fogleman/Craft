@@ -1,4 +1,5 @@
 #include "matrix.h"
+#include "hud.h"
 #include "cube.h"
 #include "hud_shader.h"
 
@@ -135,17 +136,16 @@ namespace konstructs {
     }
 
     void HudShader::render(const int width, const int height,
-                           const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
-                           const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                           const Hud &hud,
                            const int blocks[256][6]) {
         bind([&](Context c) {
                 c.set(scale, 4.0f/(float)columns);
                 c.set(xscale, (float)height / (float)width);
                 c.set(sampler, texture);
-                HudModel hm(background, position, uv, columns, rows);
+                HudModel hm(hud.backgrounds(), position, uv, columns, rows);
                 c.draw(hm);
                 c.set(sampler, block_texture);
-                ItemStackModel ism(position, uv, columns, rows, stacks, blocks);
+                ItemStackModel ism(position, uv, columns, rows, hud.stacks(), blocks);
                 c.draw(ism);
             });
     }

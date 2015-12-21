@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <utility>
 #include "optional.hpp"
 #include "matrix.h"
 #include "shader.h"
@@ -43,6 +44,7 @@ using std::endl;
 using namespace konstructs;
 using nonstd::optional;
 using nonstd::nullopt;
+using std::pair;
 
 class Konstructs: public nanogui::Screen {
 public:
@@ -62,7 +64,6 @@ public:
         day_length(600),
         last_frame(glfwGetTime()),
         looking_at(nullopt),
-        looking_through(nullopt),
         hud(17, 14),
         hud_interaction(false) {
         load_textures();
@@ -104,12 +105,13 @@ public:
         } else {
             glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             if(looking_at) {
+                auto &l = *looking_at;
                 if(button == GLFW_MOUSE_BUTTON_1 && down) {
-                    client.click_at(1, looking_at->position, 1);
+                    client.click_at(1, l.second.position, 1);
                 } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
-                    client.click_at(1, looking_through->position, 2);
+                    client.click_at(1, l.first.position, 2);
                 } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
-                    client.click_at(1, looking_at->position, 3);
+                    client.click_at(1, l.second.position, 3);
                 }
             }
         }
@@ -145,8 +147,7 @@ public:
         handle_network();
         handle_keys();
         handle_mouse();
-        looking_at = player.looking_at(world, false, blocks);
-        looking_through = player.looking_at(world, true, blocks);
+        looking_at = player.looking_at(world, blocks);
         glClear(GL_DEPTH_BUFFER_BIT);
         for(auto model : model_factory.fetch_models()) {
             chunk_shader.add(model);
@@ -156,7 +157,8 @@ public:
         int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
                                         daylight(), time_of_day());
         if(looking_at) {
-            selection_shader.render(player, mSize.x(), mSize.y(), looking_at->position);
+            selection_shader.render(player, mSize.x(), mSize.y(),
+                                    looking_at->second.position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         if(!hud_interaction)
@@ -347,8 +349,7 @@ private:
     ChunkModelFactory model_factory;
     Client client;
     Player player;
-    optional<konstructs::Block> looking_at;
-    optional<konstructs::Block> looking_through;
+    optional<pair<konstructs::Block, konstructs::Block>> looking_at;
     Hud hud;
     bool hud_interaction;
     double px;

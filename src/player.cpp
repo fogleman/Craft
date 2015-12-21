@@ -29,7 +29,9 @@ namespace konstructs {
 
     Vector3f Player::camera_direction() const {
         float m = cosf(mrx);
-        return Vector3f(cosf(mry - (M_PI / 2.0f)) * m, -sinf(mrx), sinf(mry - (M_PI / 2.0f)) * m);
+        Vector3f vec(cosf(mry - (M_PI / 2.0f)) * m, -sinf(mrx), sinf(mry - (M_PI / 2.0f)) * m);
+        vec.normalize();
+        return vec;
     }
 
     Vector3f Player::update_position(int sz, int sx, float dt,
@@ -106,19 +108,20 @@ namespace konstructs {
         return position;
     }
 
-    optional<Block> Player::looking_at(const World &world, const bool previous,
+    optional<pair<Block, Block>> Player::looking_at(const World &world,
                                        const BlockData &blocks) const {
-        optional<Block> block(nullopt);
+        optional<pair<Block, Block>> block(nullopt);
         float best = 0;
         int p = chunked(position[0]);
         int q = chunked(position[2]);
         int k = chunked(position[1]);
         const Vector3f v = camera_direction();
 
-        for (auto chunk: world.atAndAround({p, q, k})) {
-            auto seen = chunk->get(position, v, 8.0f, previous, blocks);
+        const auto &atAndAround = world.atAndAround({p, q, k});
+        for (const auto &chunk: atAndAround) {
+            const auto &seen = chunk->get(position, v, 8.0f, blocks);
             if (seen) {
-                auto h = *seen;
+                auto h = seen->second;
                 float d = sqrtf(powf(h.position[0] - position[0], 2) +
                                 powf(h.position[1] - position[1], 2) +
                                 powf(h.position[2] - position[2], 2));

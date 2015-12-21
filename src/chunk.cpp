@@ -53,11 +53,11 @@ namespace konstructs {
      * closest within max_distance that intersect the directional
      * vector.
      */
-    optional<Block> ChunkData::get(const Vector3f &camera_position,
-                                   const Vector3f &camera_direction,
-                                   const float max_distance, const bool previous,
-                                   const BlockData &blocks) const {
-        int m = 32;
+    optional<pair<Block, Block>> ChunkData::get(const Vector3f &camera_position,
+                                                const Vector3f &camera_direction,
+                                                const float max_distance,
+                                                const BlockData &blocks) const {
+        int m = 4;
         Vector3f pos = camera_position;
         Vector3i blockPos(0,0,0);
         for (int i = 0; i < max_distance * m; i++) {
@@ -65,11 +65,8 @@ namespace konstructs {
             if (nBlockPos != blockPos) {
                 char hw = get(nBlockPos);
                 if (blocks.is_obstacle[hw] || blocks.is_plant[hw]) {
-                    if (previous) {
-                        return optional<Block>(Block(blockPos, hw));
-                    } else {
-                        return optional<Block>(Block(nBlockPos, hw));
-                    }
+                    return optional<pair<Block, Block>>(pair<Block, Block>(Block(blockPos, hw),
+                                                                           Block(nBlockPos, hw)));
                 }
                 blockPos = nBlockPos;
             }

@@ -5,6 +5,9 @@
 
 namespace konstructs {
 
+    using matrix::distance;
+
+    float distance(const Vector3f &pos, const Vector3i &model_pos);
     const Array3i chunk_offset = Vector3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE).array();
 
     ChunkModel::ChunkModel(const shared_ptr<ChunkModelResult> &data,
@@ -157,19 +160,32 @@ namespace konstructs {
                 c.set(camera, p.camera());
                 float planes[6][4];
                 matrix::ext_frustum_planes(planes, radius, m);
-                for(const auto &pair : models) {
-                    const auto &m = pair.second;
-                    if(!chunk_visible(planes, m->position))
+                for(auto it = models.begin(); it != models.end(); ) {
+                    const auto &m = it->second;
+                    const auto &pos = m->position;
+                    if(distance(p.camera(), pos) > (radius + 2) * CHUNK_SIZE) {
+                        it = models.erase(it);
+                       continue;
+                    }
+                    if(!chunk_visible(planes, pos)) {
+                        ++it;
                         continue;
+                    }
                     visible++;
                     c.set(translation, m->translation);
                     c.draw(m);
                     faces += m->faces;
+                    ++it;
                 }
                 c.disable(GL_CULL_FACE);
                 c.disable(GL_DEPTH_TEST);
             });
         return faces;
+    }
+
+    float distance(const Vector3f &pos, const Vector3i &model_pos) {
+        Vector3f real = (model_pos * CHUNK_SIZE).cast<float>();
+        return distance(pos, Vector3f(real[0], real[2], real[1]));
     }
 
     bool chunk_visible(const float planes[6][4], const Vector3i &position) {

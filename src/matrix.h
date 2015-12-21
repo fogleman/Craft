@@ -22,6 +22,7 @@ namespace konstructs {
         }
     };
     namespace matrix {
+        float distance(Vector3f from, Vector3f to);
         Matrix4f projection(int width, int height);
         Matrix4f projection_2d(const int width, const int height);
         Matrix4f projection_frustum(float left, float right, float bottom,

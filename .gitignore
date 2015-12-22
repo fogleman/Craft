@@ -1,7 +1,9 @@
 /build
 /package/build/
 /package/build-windows/
-/docs
+/docs/html
+/docs/latex
+/docs/*.db
 *.o
 *.exe
 *.dll

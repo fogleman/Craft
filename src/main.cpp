@@ -243,7 +243,10 @@ private:
     }
 
     void handle_network() {
-        for(auto packet : client.receive(10)) {
+        for(auto packet : client.receive(100)) {
+            handle_packet(packet.get());
+        }
+        for(auto packet : client.receive_chunks(10)) {
             handle_packet(packet.get());
         }
     }

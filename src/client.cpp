@@ -95,7 +95,10 @@ namespace konstructs {
             int r = recv_all(packet->buffer(), packet->size);
             // move data over to packet_buffer
             packets_mutex.lock();
-            packets.push(packet);
+            if(packet->type == 'C')
+                chunk_packets.push(packet);
+            else
+                packets.push(packet);
             packets_mutex.unlock();
         }
     }
@@ -107,6 +110,18 @@ namespace konstructs {
             if(packets.empty()) break;
             head.push_back(packets.front());
             packets.pop();
+        }
+        packets_mutex.unlock();
+        return head;
+    }
+
+    vector<shared_ptr<Packet>> Client::receive_chunks(const int max) {
+        vector<shared_ptr<Packet>> head;
+        packets_mutex.lock();
+        for(int i=0; i < max; i++) {
+            if(chunk_packets.empty()) break;
+            head.push_back(chunk_packets.front());
+            chunk_packets.pop();
         }
         packets_mutex.unlock();
         return head;

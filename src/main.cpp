@@ -75,16 +75,15 @@ public:
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
         memset(&fps, 0, sizeof(fps));
-        hud.set_background(Vector2i(4, 0), 2);
-        hud.set_background(Vector2i(5, 0), 2);
-        hud.set_background(Vector2i(6, 0), 2);
-        hud.set_background(Vector2i(7, 0), 2);
-        hud.set_background(Vector2i(8, 0), 2);
-        hud.set_background(Vector2i(9, 0), 2);
-        hud.set_background(Vector2i(10, 0), 2);
-        hud.set_background(Vector2i(11, 0), 2);
-        hud.set_background(Vector2i(12, 0), 2);
-        hud.set_stack(Vector2i(4, 0), {1, 1});
+        hud.set_background(Vector2i(4, 0), 3);
+        hud.set_background(Vector2i(5, 0), 3);
+        hud.set_background(Vector2i(6, 0), 3);
+        hud.set_background(Vector2i(7, 0), 3);
+        hud.set_background(Vector2i(8, 0), 3);
+        hud.set_background(Vector2i(9, 0), 3);
+        hud.set_background(Vector2i(10, 0), 3);
+        hud.set_background(Vector2i(11, 0), 3);
+        hud.set_background(Vector2i(12, 0), 3);
     }
 
     ~Konstructs() {
@@ -92,16 +91,20 @@ public:
 
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
         if(hud_interaction) {
-            double x, y;
-            glfwGetCursorPos(mGLFWWindow, &x, &y);
+            if(down) {
+                double x, y;
+                glfwGetCursorPos(mGLFWWindow, &x, &y);
 
-            auto clicked_at = hud_shader.clicked_at(x, y, mSize.x(), mSize.y());
+                auto clicked_at = hud_shader.clicked_at(x, y, mSize.x(), mSize.y());
 
-            if(clicked_at)
-                cout << "Clicked at: " << (*clicked_at)[0] << ", " << (*clicked_at)[1] << endl;
-            else
-                cout << "Clicked outside" << endl;
-
+                if(clicked_at) {
+                    Vector2i pos = *clicked_at;
+                    if(hud.active(pos)) {
+                        int index = pos[0] + pos[1] * 17;
+                        client.click_inventory(index);
+                    }
+                }
+            }
         } else {
             glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             if(looking_at) {
@@ -122,15 +125,24 @@ public:
         if (Screen::keyboardEvent(key, scancode, action, modifiers))
             return true;
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            if(hud_interaction) {
+                close_hud();
+            } else {
+                glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
         } else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
             init_menu();
             performLayout(mNVGContext);
         } else if (key == KONSTRUCTS_KEY_FLY && action == GLFW_PRESS) {
             player.fly();
         } else if(key == KONSTRUCTS_KEY_INVENTORY && action == GLFW_PRESS) {
-            hud_interaction = true;
-            glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            if(hud_interaction) {
+                close_hud();
+            } else {
+                client.click_at(0, Vector3i::Zero(), 3);
+            }
+        } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
+            client.inventory_select(key - 49);
         } else {
             return false;
         }
@@ -217,13 +229,26 @@ private:
                         player.rx(), player.ry());
     }
 
-    void handle_network() {
-        for(auto packet : client.receive(10)) {
-            handle_packet(packet);
+    void close_hud() {
+        hud_interaction = false;
+        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        client.close_inventory();
+        for(int i = 0; i < 17; i++) {
+            for(int j = 1; j < 14; j++) {
+                Vector2i pos(i, j);
+                hud.reset_background(pos);
+                hud.reset_stack(pos);
+            }
         }
     }
 
-    void handle_packet(shared_ptr<konstructs::Packet> packet) {
+    void handle_network() {
+        for(auto packet : client.receive(10)) {
+            handle_packet(packet.get());
+        }
+    }
+
+    void handle_packet(konstructs::Packet *packet) {
         switch(packet->type) {
         case 'U':
             handle_player_packet(packet->to_string());
@@ -236,6 +261,17 @@ private:
             break;
         case 'M':
             handle_texture(packet);
+            break;
+        case 'G':
+            handle_belt(packet->to_string());
+            break;
+        case 'I':
+            handle_inventory(packet->to_string());
+            hud_interaction = true;
+            glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            break;
+        case 'A':
+            handle_select_active(packet->to_string());
             break;
         default:
             cout << "UNKNOWN: " << packet->type << endl;
@@ -272,7 +308,7 @@ private:
     }
 
 
-    void handle_chunk(shared_ptr<konstructs::Packet> packet) {
+    void handle_chunk(konstructs::Packet *packet) {
         int p, q, k;
         char *pos = packet->buffer();
 
@@ -293,7 +329,7 @@ private:
         client.chunk(1);
     }
 
-    void handle_texture(shared_ptr<konstructs::Packet> packet) {
+    void handle_texture(konstructs::Packet *packet) {
         GLuint texture;
         glGenTextures(1, &texture);
         glActiveTexture(GL_TEXTURE0);
@@ -301,6 +337,53 @@ private:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         load_png_texture_from_buffer(packet->buffer(), packet->size);
+    }
+
+    void handle_belt(const string &str) {
+        int column, size, type;
+        if(sscanf(str.c_str(), ",%d,%d,%d",
+                  &column, &size, &type) != 3)
+            throw std::runtime_error(str);
+        Vector2i pos(column + 4, 0);
+
+        if(size < 1) {
+            hud.reset_stack(pos);
+        } else {
+            hud.set_stack(pos, {size, type});
+        }
+    }
+
+    void handle_inventory(const string &str) {
+        int index, size, type;
+        if(sscanf(str.c_str(), ",%d,%d,%d",
+                  &index, &size, &type) != 3)
+            throw std::runtime_error(str);
+        int row = index / 17;
+        int column = index % 17;
+        Vector2i pos(column, row);
+
+        if(type == -1) {
+            hud.reset_background(pos);
+            hud.reset_stack(pos);
+        } else {
+            hud.set_background(pos, 2);
+            hud.set_stack(pos, {size, type});
+        }
+    }
+
+    void handle_select_active(const string &str) {
+        int column;
+        if(sscanf(str.c_str(), ",%d",
+                  &column) != 1)
+            throw std::runtime_error(str);
+        for(int i = 0; i < 9; i++) {
+            Vector2i pos(i + 4, 0);
+            if(i == column) {
+                hud.set_background(pos, 3);
+            } else {
+                hud.set_background(pos, 2);
+            }
+        }
     }
 
     float time_of_day() {

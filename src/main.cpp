@@ -246,8 +246,8 @@ private:
         for(auto packet : client.receive(100)) {
             handle_packet(packet.get());
         }
-        for(auto packet : client.receive_chunks(10)) {
-            handle_packet(packet.get());
+        for(auto chunk : client.receive_chunks(10)) {
+            handle_chunk(chunk);
         }
     }
 
@@ -258,9 +258,6 @@ private:
             break;
         case 'W':
             handle_block_type(packet->to_string());
-            break;
-        case 'C':
-            handle_chunk(packet);
             break;
         case 'M':
             handle_texture(packet);
@@ -311,24 +308,9 @@ private:
     }
 
 
-    void handle_chunk(konstructs::Packet *packet) {
-        int p, q, k;
-        char *pos = packet->buffer();
-
-        p = ntohl(*((int*)pos));
-        pos += sizeof(int);
-
-        q = ntohl(*((int*)pos));
-        pos += sizeof(int);
-
-        k = ntohl(*((int*)pos));
-        pos += sizeof(int);
-
-        Vector3i position(p, q, k);
-        const int blocks_size = packet->size - 3 * sizeof(int);
-        auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
-        world.insert(position, chunk);
-        model_factory.create_model(position, world);
+    void handle_chunk(const std::shared_ptr<ChunkData> chunk) {
+        world.insert(chunk->position, chunk);
+        model_factory.create_model(chunk->position, world);
         client.chunk(1);
     }
 

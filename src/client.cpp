@@ -71,6 +71,27 @@ namespace konstructs {
         return t;
     }
 
+    void Client::process_chunk(Packet *packet) {
+        int p, q, k;
+        char *pos = packet->buffer();
+
+        p = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        q = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        k = ntohl(*((int*)pos));
+        pos += sizeof(int);
+
+        Vector3i position(p, q, k);
+        const int blocks_size = packet->size - 3 * sizeof(int);
+        auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
+        packets_mutex.lock();
+        chunks.push_back(chunk);
+        packets_mutex.unlock();
+    }
+
     void Client::recv_worker() {
         int size;
         while (1) {
@@ -94,12 +115,13 @@ namespace konstructs {
             // read 'size' bytes from the network
             int r = recv_all(packet->buffer(), packet->size);
             // move data over to packet_buffer
-            packets_mutex.lock();
             if(packet->type == 'C')
-                chunk_packets.push(packet);
-            else
+                process_chunk(packet.get());
+            else {
+                packets_mutex.lock();
                 packets.push(packet);
-            packets_mutex.unlock();
+                packets_mutex.unlock();
+            }
         }
     }
 
@@ -115,14 +137,13 @@ namespace konstructs {
         return head;
     }
 
-    vector<shared_ptr<Packet>> Client::receive_chunks(const int max) {
-        vector<shared_ptr<Packet>> head;
+    vector<shared_ptr<ChunkData>> Client::receive_chunks(const int max) {
         packets_mutex.lock();
-        for(int i=0; i < max; i++) {
-            if(chunk_packets.empty()) break;
-            head.push_back(chunk_packets.front());
-            chunk_packets.pop();
-        }
+        auto maxIter = chunks.begin() + max;
+        auto endIter = chunks.end();
+        auto last = maxIter < endIter ? maxIter : endIter;
+        vector<shared_ptr<ChunkData>> head(chunks.begin(), last);
+        chunks.erase(chunks.begin(), last);
         packets_mutex.unlock();
         return head;
     }

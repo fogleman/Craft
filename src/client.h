@@ -7,6 +7,7 @@
 #include <queue>
 #include <thread>
 #include <Eigen/Geometry>
+#include "chunk.h"
 
 #define DEFAULT_PORT 4080
 
@@ -50,18 +51,19 @@ namespace konstructs {
         void inventory_select(const int pos);
         void click_at(const int hit, const Vector3i pos, const int button);
         vector<shared_ptr<Packet>> receive(const int max);
-        vector<shared_ptr<Packet>> receive_chunks(const int max);
+        vector<shared_ptr<ChunkData>> receive_chunks(const int max);
     private:
         int send_all(const char *data, const int length);
         void send_string(const string &str);
         size_t recv_all(char* out_buf, const size_t size);
+        void process_chunk(Packet *packet);
         void recv_worker();
         int bytes_sent;
         int sock;
         std::mutex packets_mutex;
         std::thread *worker_thread;
         std::queue<shared_ptr<Packet>> packets;
-        std::queue<shared_ptr<Packet>> chunk_packets;
+        std::vector<shared_ptr<ChunkData>> chunks;
     };
 };
 

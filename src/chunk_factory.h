@@ -52,8 +52,8 @@ namespace konstructs {
     class ChunkModelFactory {
     public:
         ChunkModelFactory(const BlockData &_block_data);
-        void create_model(const Vector3i &position,
-                          const World &world);
+        void create_models(const std::vector<Vector3i> &positions,
+                           const World &world);
         std::vector<std::shared_ptr<ChunkModelResult>> fetch_models();
     private:
         void worker();

@@ -246,8 +246,16 @@ private:
         for(auto packet : client.receive(100)) {
             handle_packet(packet.get());
         }
-        for(auto chunk : client.receive_chunks(10)) {
-            handle_chunk(chunk);
+        auto new_chunks = client.receive_chunks(10);
+        if(!new_chunks.empty()) {
+            std::vector<Vector3i> positions;
+            positions.reserve(new_chunks.size());
+            for(auto chunk : new_chunks) {
+                world.insert(chunk->position, chunk);
+                positions.push_back(chunk->position);
+            }
+            model_factory.create_models(positions, world);
+            client.chunk(new_chunks.size());
         }
     }
 
@@ -305,13 +313,6 @@ private:
         blocks.blocks[w][3] = bottom;
         blocks.blocks[w][4] = front;
         blocks.blocks[w][5] = back;
-    }
-
-
-    void handle_chunk(const std::shared_ptr<ChunkData> chunk) {
-        world.insert(chunk->position, chunk);
-        model_factory.create_model(chunk->position, world);
-        client.chunk(1);
     }
 
     void handle_texture(konstructs::Packet *packet) {

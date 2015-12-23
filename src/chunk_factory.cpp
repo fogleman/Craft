@@ -58,23 +58,25 @@ namespace konstructs {
         }
     }
 
-    void ChunkModelFactory::create_model(const Vector3i &position,
-                                         const World &world) {
+    void ChunkModelFactory::create_models(const std::vector<Vector3i> &positions,
+                                          const World &world) {
         {
             std::lock_guard<std::mutex> lock(mutex);
-            chunks.push(create_model_data(position, world));
-            if(world.find(position + BELOW) != world.end())
-                chunks.push(create_model_data(position + BELOW, world));
-            if(world.find(position + ABOVE) != world.end())
-                chunks.push(create_model_data(position + ABOVE, world));
-            if(world.find(position + LEFT) != world.end())
-                chunks.push(create_model_data(position + LEFT, world));
-            if(world.find(position + RIGHT) != world.end())
-                chunks.push(create_model_data(position + RIGHT, world));
-            if(world.find(position + FRONT) != world.end())
-                chunks.push(create_model_data(position + FRONT, world));
-            if(world.find(position + BACK) != world.end())
-                chunks.push(create_model_data(position + BACK, world));
+            for(auto position: positions) {
+                chunks.push(create_model_data(position, world));
+                if(world.find(position + BELOW) != world.end())
+                    chunks.push(create_model_data(position + BELOW, world));
+                if(world.find(position + ABOVE) != world.end())
+                    chunks.push(create_model_data(position + ABOVE, world));
+                if(world.find(position + LEFT) != world.end())
+                    chunks.push(create_model_data(position + LEFT, world));
+                if(world.find(position + RIGHT) != world.end())
+                    chunks.push(create_model_data(position + RIGHT, world));
+                if(world.find(position + FRONT) != world.end())
+                    chunks.push(create_model_data(position + FRONT, world));
+                if(world.find(position + BACK) != world.end())
+                    chunks.push(create_model_data(position + BACK, world));
+            }
         }
         chunks_condition.notify_all();
     }

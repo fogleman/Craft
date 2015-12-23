@@ -65,7 +65,9 @@ public:
         last_frame(glfwGetTime()),
         looking_at(nullopt),
         hud(17, 14),
-        hud_interaction(false) {
+        hud_interaction(false),
+        menu_state(0) {
+
         load_textures();
         client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
@@ -105,6 +107,8 @@ public:
                     }
                 }
             }
+        } else if(menu_state) {
+            // menu open
         } else {
             glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             if(looking_at) {
@@ -131,8 +135,11 @@ public:
                 glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
         } else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
-            init_menu();
-            performLayout(mNVGContext);
+            if (!menu_state) {
+                init_menu();
+            } else {
+                hide_menu();
+            }
         } else if (key == KONSTRUCTS_KEY_FLY && action == GLFW_PRESS) {
             player.fly();
         } else if(key == KONSTRUCTS_KEY_INVENTORY && action == GLFW_PRESS) {
@@ -399,9 +406,22 @@ private:
     void init_menu() {
         using namespace nanogui;
 
-        Window *window = new Window(this, "Button demo");
-        window->setPosition(Vector2i(15, 15));
+        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+        window = new Window(this, "Main Menu");
         window->setLayout(new GroupLayout());
+
+        new Label(window, "This is a simple example menu with no options... Press F1 again to hide it!", "sans-bold");
+
+        window->center();
+        performLayout(mNVGContext);
+        menu_state = 1;
+    }
+
+    void hide_menu() {
+        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        window->dispose();
+        menu_state = 0;
     }
 
     BlockData blocks;
@@ -425,6 +445,8 @@ private:
     double py;
     FPS fps;
     double last_frame;
+    int menu_state;
+    nanogui::Window *window;
 };
 
 int main(int /* argc */, char ** /* argv */) {

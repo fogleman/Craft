@@ -8,22 +8,19 @@ namespace konstructs {
     using std::vector;
 
 
-    float* make_stacks(const int columns, const int rows,
-                       const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+    float* make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                        const int blocks[256][6]);
 
-    vector<float> make_square(const int columns, const int rows,
-                              const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background);
+    vector<float> make_square(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background);
 
 
     ItemStackModel::ItemStackModel(const GLuint position_attr, const GLuint uv_attr,
-                                   const int columns, const int rows,
                                    const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                                    const int blocks[256][6]) :
         position_attr(position_attr),
         uv_attr(uv_attr) {
 
-        auto data = make_stacks(columns, rows, stacks, blocks);
+        auto data = make_stacks(stacks, blocks);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -48,12 +45,11 @@ namespace konstructs {
     }
 
     HudModel::HudModel(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
-                       const GLuint position_attr, const GLuint uv_attr,
-                       const int columns, const int rows) :
+                       const GLuint position_attr, const GLuint uv_attr) :
         position_attr(position_attr),
         uv_attr(uv_attr) {
 
-        auto data = make_square(columns, rows, background);
+        auto data = make_square(background);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -142,16 +138,15 @@ namespace konstructs {
                 c.set(scale, 4.0f/(float)columns);
                 c.set(xscale, (float)height / (float)width);
                 c.set(sampler, texture);
-                HudModel hm(hud.backgrounds(), position, uv, columns, rows);
+                HudModel hm(hud.backgrounds(), position, uv);
                 c.draw(hm);
                 c.set(sampler, block_texture);
-                ItemStackModel ism(position, uv, columns, rows, hud.stacks(), blocks);
+                ItemStackModel ism(position, uv, hud.stacks(), blocks);
                 c.draw(ism);
             });
     }
 
-    vector<float> make_square(const int columns, const int rows,
-                              const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background) {
+    vector<float> make_square(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background) {
         vector<float> m;
         float ts = 0.25;
         for(auto pair: background) {
@@ -182,8 +177,7 @@ namespace konstructs {
         return m;
     }
 
-    float* make_stacks(const int columns, const int rows,
-                       const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+    float* make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                        const int blocks[256][6]) {
         float ao[6][4] = {0};
         float light[6][4] = {

@@ -14,7 +14,6 @@ namespace konstructs {
     class ItemStackModel : public BufferModel {
     public:
         ItemStackModel(const GLuint position_attr, const GLuint uv_attr,
-                       const int columns, const int rows,
                        const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                        const int blocks[256][6]);
         virtual void bind();
@@ -28,8 +27,7 @@ namespace konstructs {
     class HudModel : public BufferModel {
     public:
         HudModel(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
-                 const GLuint position_attr, const GLuint uv_attr,
-                 const int columns, const int rows);
+                 const GLuint position_attr, const GLuint uv_attr);
         virtual void bind();
         virtual int vertices();
     private:

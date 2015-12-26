@@ -187,7 +187,7 @@ public:
                                     looking_at->second.position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        if(!hud_interaction)
+        if(!hud_interaction && !menu_state)
             crosshair_shader.render(mSize.x(), mSize.y());
         hud_shader.render(mSize.x(), mSize.y(), hud, blocks.blocks);
     }

@@ -22,7 +22,11 @@
 
 namespace konstructs {
 
-    Client::Client(const string &nick, const string &hash,
+    Client::Client() : connected(false) {
+        worker_thread = new std::thread(&Client::recv_worker, this);
+    }
+
+    void Client::open_connection(const string &nick, const string &hash,
                    const string &hostname, const int port) {
         struct hostent *host;
         struct sockaddr_in address;
@@ -45,7 +49,6 @@ namespace konstructs {
             SHOWERROR("connect");
             throw std::runtime_error("Failed to connect");
         }
-        worker_thread = new std::thread(&Client::recv_worker, this);
         version(PROTOCOL_VERSION, nick, hash);
     }
 
@@ -93,6 +96,12 @@ namespace konstructs {
     }
 
     void Client::recv_worker() {
+
+        // Wait for an open connection
+        std::unique_lock<std::mutex> ulck_connected(mutex_connected);
+        cv_connected.wait(ulck_connected, [&]{ return connected; });
+        ulck_connected.unlock();
+
         int size;
         while (1) {
             // Read header from network
@@ -224,5 +233,16 @@ namespace konstructs {
         std::stringstream ss;
         ss << "T," << text;
         send_string(ss.str());
+    }
+
+    bool Client::is_connected() {
+        std::unique_lock<std::mutex> ulck_connected(mutex_connected);
+        return connected;
+    }
+
+    void Client::set_connected(bool state) {
+        std::unique_lock<std::mutex> ulck_connected(mutex_connected);
+        connected = state;
+        cv_connected.notify_all();
     }
 };

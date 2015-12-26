@@ -46,14 +46,16 @@ using nonstd::optional;
 using nonstd::nullopt;
 using std::pair;
 
+void print_usage();
+
 class Konstructs: public nanogui::Screen {
 public:
-    Konstructs() :
+    Konstructs(const string &hostname, const string &nick, const string &hash) :
         nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
-        client("tetestte", "123456789", "localhost"),
+        client(),
         radius(10),
         fov(60.0f),
         near_distance(0.125f),
@@ -68,9 +70,13 @@ public:
         hud_interaction(false),
         menu_state(0) {
 
-        load_textures();
-        client.chunk(MAX_PENDING_CHUNKS);
         using namespace nanogui;
+        if (nick.size() > 0 && hash.size() > 0 && hostname.size() > 0) {
+            setup_connection(nick, hash, hostname);
+        } else {
+            printf("Not implemented: Show main menu with the option to connect, use the cli\n\n");
+            print_usage();
+        }
         performLayout(mNVGContext);
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         blocks.is_plant[SOLID_BLOCK] = 0;
@@ -145,7 +151,7 @@ public:
         } else if(key == KONSTRUCTS_KEY_INVENTORY && action == GLFW_PRESS) {
             if(hud_interaction) {
                 close_hud();
-            } else {
+            } else if (client.is_connected()){
                 client.click_at(0, Vector3i::Zero(), 3);
             }
         } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
@@ -163,8 +169,10 @@ public:
     virtual void drawContents() {
         using namespace nanogui;
         update_fps(&fps);
-        handle_network();
-        handle_keys();
+        if (client.is_connected()) {
+            handle_network();
+            handle_keys();
+        }
         handle_mouse();
         looking_at = player.looking_at(world, blocks);
         glClear(GL_DEPTH_BUFFER_BIT);
@@ -424,6 +432,14 @@ private:
         menu_state = 0;
     }
 
+
+    void setup_connection(const string &nick, const string &hash, const string &hostname) {
+        client.open_connection(nick, hash, hostname);
+        load_textures();
+        client.chunk(MAX_PENDING_CHUNKS);
+        client.set_connected(true);
+    }
+
     BlockData blocks;
     CrosshairShader crosshair_shader;
     int radius;
@@ -449,12 +465,64 @@ private:
     nanogui::Window *window;
 };
 
-int main(int /* argc */, char ** /* argv */) {
+void print_usage() {
+    printf("OPTIONS: -h/--help                  - Show this help\n");
+    printf("         -s/--server   <address>    - Server to enter\n");
+    printf("         -u/--username <username>   - Username to login\n");
+    printf("         -p/--password <password>   - Passworld to login\n\n");
+    exit(0);
+}
+
+int main(int argc, char ** argv) {
+
+    #define MAX_ADDR_LENGTH 255
+    #define MAX_NAME_LENGTH 64
+    #define MAX_PASS_LENGTH 64
+
+    char server_addr[MAX_ADDR_LENGTH];
+    char server_user[MAX_NAME_LENGTH];
+    char server_pass[MAX_PASS_LENGTH];
+
+    server_addr[0] = '\0';
+    server_user[0] = '\0';
+    server_pass[0] = '\0';
+
+    if (argc > 1) {
+        for (int i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+                print_usage();
+            }
+            if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
+                if (!argv[i+1]) {
+                    print_usage();
+                } else {
+                    strncpy(server_addr, argv[i+1], MAX_ADDR_LENGTH);
+                }
+            }
+            if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
+                if (!argv[i+1]) {
+                    print_usage();
+                } else {
+                    strncpy(server_user, argv[i+1], MAX_NAME_LENGTH);
+                }
+            }
+            if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
+                if (!argv[i+1]) {
+                    print_usage();
+                } else {
+                    strncpy(server_pass, argv[i+1], MAX_PASS_LENGTH);
+                }
+            }
+        }
+
+        printf("Connecting to %s with user %s\n", server_addr, server_user);
+    }
+
     try {
         nanogui::init();
 
         {
-            nanogui::ref<Konstructs> app = new Konstructs();
+            nanogui::ref<Konstructs> app = new Konstructs(server_addr, server_user, server_pass);
             app->drawAll();
             app->setVisible(true);
             nanogui::mainloop();

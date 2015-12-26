@@ -3,6 +3,7 @@
 namespace konstructs {
     #define BLOCK_TEXTURES 0
     #define SKY_TEXTURE 2
+    #define FONT_TEXTURE 3
     #define INVENTORY_TEXTURE 4
     void load_textures();
 };

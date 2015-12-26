@@ -36,6 +36,15 @@ namespace konstructs {
         texture_path("sky.png", txtpth, KONSTRUCTS_PATH_SIZE);
         load_png_texture(txtpth);
 
+        GLuint font;
+        glGenTextures(1, &font);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, font);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        texture_path("font.png", txtpth, KONSTRUCTS_PATH_SIZE);
+        load_png_texture(txtpth);
+
         GLuint inventory_texture;
         glGenTextures(1, &inventory_texture);
         glActiveTexture(GL_TEXTURE4);

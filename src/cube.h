@@ -18,4 +18,5 @@ void make_plant(
 
 void make_sphere(float *data, float r, int detail);
 
+void make_character(float *data, float x, float y, float n, float m, char c, float z);
 #endif

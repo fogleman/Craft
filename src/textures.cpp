@@ -8,6 +8,10 @@ namespace konstructs {
         snprintf(path, max_len, "%s/%s", type, name);
 
         if (!file_exist(path)) {
+            snprintf(path, max_len, "../%s/%s", type, name);
+        }
+
+        if (!file_exist(path)) {
             snprintf(path, max_len, "/usr/local/share/konstructs-client/%s/%s", type, name);
         }
 

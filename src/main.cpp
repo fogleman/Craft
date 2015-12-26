@@ -68,7 +68,8 @@ public:
         looking_at(nullopt),
         hud(17, 14),
         hud_interaction(false),
-        menu_state(0) {
+        menu_state(0),
+        hud_selection(0) {
 
         using namespace nanogui;
         if (nick.size() > 0 && hash.size() > 0 && hostname.size() > 0) {
@@ -95,6 +96,15 @@ public:
     }
 
     ~Konstructs() {
+    }
+
+    virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel) {
+        if (hud_selection <= 0 && rel[1] > 0) return true;
+        if (hud_selection >= 8 && rel[1] < 0) return true;
+        hud.set_background({ 4 + hud_selection, 0 }, 2);
+        hud_selection -= 1 * rel[1];
+        hud.set_background({ 4 + hud_selection, 0 }, 3);
+        client.inventory_select(hud_selection);
     }
 
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
@@ -462,6 +472,7 @@ private:
     FPS fps;
     double last_frame;
     int menu_state;
+    int hud_selection;
     nanogui::Window *window;
 };
 

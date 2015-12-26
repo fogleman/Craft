@@ -46,6 +46,8 @@ using nonstd::optional;
 using nonstd::nullopt;
 using std::pair;
 
+void print_usage();
+
 class Konstructs: public nanogui::Screen {
 public:
     Konstructs(const string &hostname, const string &nick, const string &hash) :
@@ -71,6 +73,9 @@ public:
         using namespace nanogui;
         if (nick.size() > 0 && hash.size() > 0 && hostname.size() > 0) {
             setup_connection(nick, hash, hostname);
+        } else {
+            printf("Not implemented: Show main menu with the option to connect, use the cli\n\n");
+            print_usage();
         }
         performLayout(mNVGContext);
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -460,8 +465,7 @@ private:
     nanogui::Window *window;
 };
 
-void print_usage(char **argv) {
-    printf("USAGE: %s [options]\n", argv[0]);
+void print_usage() {
     printf("OPTIONS: -h/--help                  - Show this help\n");
     printf("         -s/--server   <address>    - Server to enter\n");
     printf("         -u/--username <username>   - Username to login\n");
@@ -486,25 +490,25 @@ int main(int argc, char ** argv) {
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-                print_usage(argv);
+                print_usage();
             }
             if (strcmp(argv[i], "--server") == 0 || strcmp(argv[i], "-s") == 0) {
                 if (!argv[i+1]) {
-                    print_usage(argv);
+                    print_usage();
                 } else {
                     strncpy(server_addr, argv[i+1], MAX_ADDR_LENGTH);
                 }
             }
             if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
                 if (!argv[i+1]) {
-                    print_usage(argv);
+                    print_usage();
                 } else {
                     strncpy(server_user, argv[i+1], MAX_NAME_LENGTH);
                 }
             }
             if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
                 if (!argv[i+1]) {
-                    print_usage(argv);
+                    print_usage();
                 } else {
                     strncpy(server_pass, argv[i+1], MAX_PASS_LENGTH);
                 }

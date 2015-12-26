@@ -184,6 +184,10 @@ namespace konstructs {
                 for (int dk = -r; dk <= r; dk++) {
                     try {
                         ChunkData *chunk = world.at(Vector3i(p + dp, q + dq, k + dk)).get();
+                        if (blocks.is_obstacle[chunk->get(Vector3i(nx, ny, nz))]) {
+                            position[1] += 2.0f;
+                            return 1;
+                        }
                         for (int dy = 0; dy < height; dy++) {
                             if (px < -pad && blocks.is_obstacle[chunk->get(Vector3i(nx - 1, ny - dy, nz))]) {
                                 position[0] = nx - pad;

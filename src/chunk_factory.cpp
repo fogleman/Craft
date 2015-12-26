@@ -1,6 +1,5 @@
 #include <thread>
 #include "chunk_factory.h"
-#include "noise/noise.h"
 #include "util.h"
 #include "cube.h"
 
@@ -553,7 +552,7 @@ namespace konstructs {
                         min_ao = std::min(min_ao, ao[a][b]);
                     }
                 }
-                float rotation = simplex2(ex, ez, 4, 0.5, 2) * 360;
+                float rotation = ((float)((ex * ey) % 360)) / 360.0f;
                 make_plant(vertices + offset, min_ao, 0,
                            ex, ey, ez, 0.5, ew, rotation, block_data.blocks);
             }

@@ -2,6 +2,7 @@
 #define _client_h_
 #include <iostream>
 #include <mutex>
+#include <condition_variable>
 #include <string>
 #include <memory>
 #include <queue>
@@ -38,7 +39,8 @@ namespace konstructs {
 
     class Client {
     public:
-        Client(const string &nick, const string &hash,
+        Client();
+        void open_connection(const string &nick, const string &hash,
                const string &hostname, const int port = DEFAULT_PORT);
         void version(const int version, const string &nick, const string &hash);
         void position(const Vector3f position,
@@ -50,6 +52,8 @@ namespace konstructs {
         void talk(const string &text);
         void inventory_select(const int pos);
         void click_at(const int hit, const Vector3i pos, const int button);
+        bool is_connected();
+        void set_connected(bool state);
         vector<shared_ptr<Packet>> receive(const int max);
         vector<shared_ptr<ChunkData>> receive_chunks(const int max);
     private:
@@ -61,9 +65,12 @@ namespace konstructs {
         int bytes_sent;
         int sock;
         std::mutex packets_mutex;
+        std::mutex mutex_connected;
+        std::condition_variable cv_connected;
         std::thread *worker_thread;
         std::queue<shared_ptr<Packet>> packets;
         std::vector<shared_ptr<ChunkData>> chunks;
+        bool connected;
     };
 };
 

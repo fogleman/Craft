@@ -137,7 +137,7 @@ namespace konstructs {
             "in vec2 fragment_uv;\n"
             "out vec4 fragColor;\n"
             "void main() {\n"
-            "    vec3 color = vec3(texture2D(sampler, fragment_uv));\n"
+            "    vec3 color = vec3(texture(sampler, fragment_uv));\n"
             "    if (color == vec3(1.0, 0.0, 1.0)) {\n"
             "        discard;\n"
             "    }\n"

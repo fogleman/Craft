@@ -106,7 +106,7 @@ namespace konstructs {
         "out vec4 frag_color;\n"
         "const float pi = 3.14159265;\n"
         "void main() {\n"
-        "    vec3 color = vec3(texture2D(sampler, fragment_uv));\n"
+        "    vec3 color = vec3(texture(sampler, fragment_uv));\n"
         "    if (color == vec3(1.0, 0.0, 1.0)) {\n"
         "        discard;\n"
         "    }\n"
@@ -120,7 +120,7 @@ namespace konstructs {
         "    vec3 ambient = vec3(value * 0.3 + 0.2) + vec3(sin(pi*daylight)/2, sin(pi*daylight)/4, 0.0);\n"
         "    vec3 light = ambient + light_color * df;\n"
         "    color = clamp(color * light * ao, vec3(0.0), vec3(1.0));\n"
-        "    vec3 sky_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));\n"
+        "    vec3 sky_color = vec3(texture(sky_sampler, vec2(timer, fog_height)));\n"
         "    color = mix(color, sky_color, fog_factor);\n"
         "    frag_color = vec4(color, 1.0);\n"
         "}\n"),

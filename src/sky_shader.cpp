@@ -51,7 +51,7 @@ namespace konstructs {
         "out vec4 frag_color;\n"
         "void main() {\n"
         "    vec2 uv = vec2(timer, fragment_uv.t);\n"
-        "    frag_color = texture2D(sampler, uv);\n"
+        "    frag_color = texture(sampler, uv);\n"
         "}\n"),
         position_attr(attributeId("position")),
         uv_attr(attributeId("uv")),

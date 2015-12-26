@@ -1,0 +1,37 @@
+#top, #side-nav {
+    margin-top: 50px;
+}
+
+#navrow1, #navrow1 li,
+#navrow2, #navrow2 li,
+#navrow3, #navrow3 li,
+#navrow4, #navrow4 li
+{
+    background: #222;
+}
+
+.tabs, .tabs2, .tabs3, .tabs4 {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif !important;
+    font-size: 14px;
+}
+
+.tablist a {
+    text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.25);
+    color: #9d9d9d;
+    background-image: none;
+    line-height: 20px;
+    font-weight: normal;
+    padding: 10px 15px;
+}
+
+.tablist a:hover {
+    background: #222;
+}
+
+.tablist li.current a {
+    background: #080808;
+}
+
+.navbar-inverse {
+    border: 0px solid #9d9d9d !important;
+}

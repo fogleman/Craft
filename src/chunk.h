@@ -1,22 +1,38 @@
 #ifndef _chunk_h_
 #define _chunk_h_
 
-#include <GLFW/glfw3.h>
+#include <utility>
+#include <Eigen/Geometry>
+#include "optional.hpp"
+#include "shader.h" //TODO: remove
+#include "block.h"
 
 #define CHUNK_SIZE 32
+#define BLOCKS_HEADER_SIZE 2
 
-typedef struct {
-  char blocks[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
-  int p;
-  int q;
-  int k;
-  int faces;
-  int dirty;
-  GLuint buffer;
-} Chunk;
+namespace konstructs {
+    using namespace Eigen;
+    using nonstd::optional;
+    using std::pair;
 
-char chunk_get(Chunk *chunk, int x, int y, int z);
-void chunk_set(Chunk *chunk, int x, int y, int z, int w);
+    int chunked_int(int p);
+
+    int chunked(float p);
+
+    class ChunkData {
+    public:
+        ChunkData(const Vector3i _position, char *compressed, const int size);
+        ChunkData();
+        ~ChunkData();
+        char get(const Vector3i &pos) const;
+        optional<pair<Block, Block>> get(const Vector3f &camera_position,
+                                         const Vector3f &camera_direction,
+                                         const float max_distance,
+                                         const BlockData &blocks) const;
+        const Vector3i position;
+        char *blocks;
+    };
+};
 
 #define CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) \
   for(int ex = 0; ex < CHUNK_SIZE; ex++) { \
@@ -71,7 +87,5 @@ void chunk_set(Chunk *chunk, int x, int y, int z, int w);
 
 #define END_CHUNK_FOR_EACH_1D \
   }
-
-
 
 #endif

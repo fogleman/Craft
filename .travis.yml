@@ -1,13 +1,31 @@
 ---
 
-os:
-  - linux
-  - osx
-
 sudo: required
+dist: trusty
 language: cpp
 services:
   - docker
+
+git:
+  submodules: false
+
+matrix:
+  allow_failures:
+    - os: osx
+      env: MAKE_COMMAND="osx"
+  include:
+    - os: osx
+      env: MAKE_COMMAND="osx"
+    - os: linux
+      env: MAKE_COMMAND="linux tar deb rpm upload-tar upload-deb"
+    - os: linux
+      env: MAKE_COMMAND="windows zip upload-zip"
+    - os: linux
+      env: MAKE_COMMAND="docs upload-docs"
+
+before_install:
+  - git submodule update --init --recursive
+  - sudo pip install awscli
 
 notifications:
   webhooks:
@@ -17,8 +35,5 @@ notifications:
     on_failure: always  # options: [always|never|change] default: always
     on_start: always    # options: [always|never|change] default: always
 
-env:
-  - CONTAINER=nsgb/konstructs-build-image
-
 script:
-  - ./package/travis-init
+  - make $MAKE_COMMAND -C package

@@ -1,9 +1,11 @@
-#ifndef _item_h_
-#define _item_h_
+#ifndef _ITEM_H_
+#define _ITEM_H_
 
-extern int blocks[256][6];
-extern char is_plant[256];
-extern char is_obstacle[256];
-extern char is_transparent[256];
+namespace konstructs {
+    struct ItemStack {
+        const int amount;
+        const int type;
+    };
+};
 
 #endif

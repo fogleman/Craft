@@ -57,13 +57,23 @@ upload_client() {
 
 # Upload master to bintray
 if [ "x$TRAVIS_BRANCH" == "xmaster" ] && [ "x$TRAVIS_PULL_REQUEST" == "xfalse" ]; then
-  upload_client windows client $(echo *.zip) master-dev
-  upload_client linux client $(echo *.tar.bz2) master-dev
+  if [[ $MAKE_ZIP == true ]]; then
+    upload_client windows client $(echo *.zip) master-dev
+  fi
+  if [[ $MAKE_TAR == true ]]; then
+    upload_client linux client $(echo *.tar.bz2) master-dev
+  fi
 fi
 
 # Upload tagged releases to bintray
 if [ $TRAVIS_TAG ]; then
-  upload_client_deb debian client $(echo *.deb) $TRAVIS_TAG
-  upload_client windows client $(echo *.zip) $TRAVIS_TAG
-  upload_client linux client $(echo *.tar.bz2) $TRAVIS_TAG
+  if [[ $MAKE_DEB == true ]]; then
+    upload_client_deb debian client $(echo *.deb) $TRAVIS_TAG
+  fi
+  if [[ $MAKE_ZIP == true ]]; then
+    upload_client windows client $(echo *.zip) $TRAVIS_TAG
+  fi
+  if [[ $MAKE_TAR == true ]]; then
+    upload_client linux client $(echo *.tar.bz2) $TRAVIS_TAG
+  fi
 fi

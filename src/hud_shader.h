@@ -24,6 +24,18 @@ namespace konstructs {
         int verts;
     };
 
+    class AmountModel : public BufferModel {
+    public:
+        AmountModel(const GLuint position_attr, const GLuint uv_attr,
+                    const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks);
+        virtual void bind();
+        virtual int vertices();
+    private:
+        const GLuint position_attr;
+        const GLuint uv_attr;
+        int verts;
+    };
+
     class HudModel : public BufferModel {
     public:
         HudModel(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
@@ -39,7 +51,7 @@ namespace konstructs {
     class HudShader: private ShaderProgram {
     public:
         HudShader(const int columns, const int rows, const int texture,
-                  const int block_texture);
+                  const int block_texture, const int font_texture);
         optional<Vector2i> clicked_at(const double x, const double y,
                                       const int width, const int height);
         void render(const int width, const int height,
@@ -54,6 +66,7 @@ namespace konstructs {
         const GLuint uv;
         const int texture;
         const int block_texture;
+        const int font_texture;
         const int columns;
         const int rows;
     };

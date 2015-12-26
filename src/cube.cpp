@@ -246,7 +246,7 @@ void make_sphere(float *data, float r, int detail) {
 
 void make_character(
     float *data,
-    float x, float y, float n, float m, char c)
+    float x, float y, float n, float m, char c, float z)
 {
     float *d = data;
     float s = 0.0625;
@@ -255,16 +255,22 @@ void make_character(
     int w = c - 32;
     float du = (w % 16) * a;
     float dv = 1 - (w / 16) * b - b;
-    *(d++) = x - n; *(d++) = y - m;
+    *(d++) = x - n; *(d++) = y - m; *(d++) = z;
     *(d++) = du + 0; *(d++) = dv;
-    *(d++) = x + n; *(d++) = y - m;
+    *(d++) = 0; *(d++) = 0;
+    *(d++) = x + n; *(d++) = y - m; *(d++) = z;
     *(d++) = du + a; *(d++) = dv;
-    *(d++) = x + n; *(d++) = y + m;
+    *(d++) = 0; *(d++) = 0;
+    *(d++) = x + n; *(d++) = y + m; *(d++) = z;
     *(d++) = du + a; *(d++) = dv + b;
-    *(d++) = x - n; *(d++) = y - m;
+    *(d++) = 0; *(d++) = 0;
+    *(d++) = x - n; *(d++) = y - m; *(d++) = z;
     *(d++) = du + 0; *(d++) = dv;
-    *(d++) = x + n; *(d++) = y + m;
+    *(d++) = 0; *(d++) = 0;
+    *(d++) = x + n; *(d++) = y + m; *(d++) = z;
     *(d++) = du + a; *(d++) = dv + b;
-    *(d++) = x - n; *(d++) = y + m;
+    *(d++) = 0; *(d++) = 0;
+    *(d++) = x - n; *(d++) = y + m; *(d++) = z;
     *(d++) = du + 0; *(d++) = dv + b;
+    *(d++) = 0; *(d++) = 0;
 }

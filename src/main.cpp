@@ -61,7 +61,7 @@ public:
         near_distance(0.125f),
         sky_shader(radius, fov, SKY_TEXTURE, near_distance),
         chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),
-        hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES),
+        hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE),
         selection_shader(radius, fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),

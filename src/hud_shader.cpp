@@ -2,6 +2,7 @@
 #include "hud.h"
 #include "cube.h"
 #include "hud_shader.h"
+#include <string>
 
 namespace konstructs {
     using matrix::projection_2d;
@@ -10,6 +11,8 @@ namespace konstructs {
 
     float* make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                        const int blocks[256][6]);
+
+    float* make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks, int total);
 
     vector<float> make_square(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background);
 
@@ -44,6 +47,43 @@ namespace konstructs {
                               sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
     }
 
+    AmountModel::AmountModel(const GLuint position_attr, const GLuint uv_attr,
+                             const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks):
+        position_attr(position_attr),
+        uv_attr(uv_attr) {
+        int total_text_length = 0;
+        for (const auto &pair: stacks) {
+            if(pair.second.amount > 9) {
+                total_text_length += 2;
+            } else {
+                total_text_length ++;
+            }
+        }
+
+        auto data = make_stack_amounts(stacks, total_text_length);
+
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, total_text_length * 7 * 6 * sizeof(GLfloat),
+                     data, GL_STATIC_DRAW);
+        verts = total_text_length * 6;
+        delete[] data;
+    }
+
+    int AmountModel::vertices() {
+        return verts;
+    }
+
+    void AmountModel::bind() {
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glEnableVertexAttribArray(position_attr);
+        glEnableVertexAttribArray(uv_attr);
+        glVertexAttribPointer(position_attr, 3, GL_FLOAT, GL_FALSE,
+                              sizeof(GLfloat) * 7, 0);
+        glVertexAttribPointer(uv_attr, 4, GL_FLOAT, GL_FALSE,
+                              sizeof(GLfloat) * 7, (GLvoid *)(sizeof(GLfloat) * 3));
+    }
+
     HudModel::HudModel(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
                        const GLuint position_attr, const GLuint uv_attr) :
         position_attr(position_attr),
@@ -73,7 +113,7 @@ namespace konstructs {
     }
 
     HudShader::HudShader(const int columns, const int rows, const int texture,
-                         const int block_texture) :
+                         const int block_texture, const int font_texture) :
         ShaderProgram(
             "hud",
 
@@ -107,6 +147,7 @@ namespace konstructs {
         sampler(uniformId("sampler")),
         texture(texture),
         block_texture(block_texture),
+        font_texture(font_texture),
         columns(columns),
         rows(rows) {}
 
@@ -143,6 +184,9 @@ namespace konstructs {
                 c.set(sampler, block_texture);
                 ItemStackModel ism(position, uv, hud.stacks(), blocks);
                 c.draw(ism);
+                c.set(sampler, font_texture);
+                AmountModel am(position, uv, hud.stacks());
+                c.draw(am);
             });
     }
 
@@ -197,6 +241,23 @@ namespace konstructs {
                       pair.first[0] + 0.5, pair.first[1] + 0.5, 0, 0.35,
                       pair.second.type, blocks);
             i++;
+        }
+        return d;
+    }
+
+    float* make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                              int total) {
+        int i = 0;
+
+        float *d = new float[total * 7 * 6];
+
+        for (const auto &pair: stacks) {
+            std::string text = std::to_string(pair.second.amount);
+            for (int index = 0; index < text.length(); index++) {
+                int offset = text.length() - index - 1;
+                make_character(d + i * 7 * 6, pair.first[0] - (float)offset*0.3 + 0.75f, pair.first[1] + 0.25f, 0.15, 0.2, text[index], 0.0);
+                i++;
+            }
         }
         return d;
     }

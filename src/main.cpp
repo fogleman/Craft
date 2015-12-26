@@ -333,7 +333,7 @@ private:
     void handle_texture(konstructs::Packet *packet) {
         GLuint texture;
         glGenTextures(1, &texture);
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE5);
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -415,6 +415,7 @@ private:
         using namespace nanogui;
 
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glActiveTexture(GL_TEXTURE0);
 
         window = new Window(this, "Main Menu");
         window->setLayout(new GroupLayout());

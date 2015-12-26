@@ -53,6 +53,9 @@ namespace konstructs {
         uv_attr(uv_attr) {
         int total_text_length = 0;
         for (const auto &pair: stacks) {
+            if(pair.second.amount == 0) {
+                continue;
+            }
             if(pair.second.amount > 9) {
                 total_text_length += 2;
             } else {
@@ -252,6 +255,9 @@ namespace konstructs {
         float *d = new float[total * 7 * 6];
 
         for (const auto &pair: stacks) {
+            if(pair.second.amount == 0) {
+                continue;
+            }
             std::string text = std::to_string(pair.second.amount);
             for (int index = 0; index < text.length(); index++) {
                 int offset = text.length() - index - 1;

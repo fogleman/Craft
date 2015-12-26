@@ -309,7 +309,7 @@ private:
         if(sscanf(str.c_str(), ",%d,%f,%f,%f,%f,%f",
                   &pid, &x, &y, &z, &rx, &ry) != 6)
             throw std::runtime_error(str);
-        player = Player(pid, Vector3f(x, 50.0, z), rx, ry);
+        player = Player(pid, Vector3f(x, y, z), rx, ry);
     }
 
     void handle_block_type(const string &str) {

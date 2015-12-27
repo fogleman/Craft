@@ -8,11 +8,19 @@ namespace konstructs {
     using matrix::projection_2d;
     using std::vector;
 
+    Matrix4f hud_translation_matrix(const float scale, const float xscale,
+                                    const float screen_area);
 
-    float* make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+    Vector4f hud_offset_vector(const float xscale, const float screen_area);
+
+    void make_block(int type, float x, float y, float z, float size, float *d,
+                    const int blocks[256][6]);
+
+    void make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                       float *d,
                        const int blocks[256][6]);
 
-    float* make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks, int total);
+    void make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks, float *d);
 
     vector<float> make_square(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background);
 
@@ -23,7 +31,8 @@ namespace konstructs {
         position_attr(position_attr),
         uv_attr(uv_attr) {
 
-        auto data = make_stacks(stacks, blocks);
+        float *data = new float[stacks.size() * 10 * 6 * 6];
+        make_stacks(stacks, data, blocks);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -62,8 +71,9 @@ namespace konstructs {
                 total_text_length ++;
             }
         }
+        float *data = new float[total_text_length * 7 * 6];
 
-        auto data = make_stack_amounts(stacks, total_text_length);
+        make_stack_amounts(stacks, data);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -115,6 +125,38 @@ namespace konstructs {
                               sizeof(GLfloat) * 7, (GLvoid*)(sizeof(GLfloat)*3));
     }
 
+    BlockModel::BlockModel(const GLuint position_attr, const GLuint uv_attr,
+                           const int type, const float x, const float y,
+                           const float size,
+                           const int blocks[256][6]) :
+        position_attr(position_attr),
+        uv_attr(uv_attr) {
+        float *data = new float[10 * 6 * 6];
+        make_block(type, x, y, 0.0, size, data, blocks);
+
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, 10 * 6 * 6 * sizeof(GLfloat),
+                     data, GL_STATIC_DRAW);
+        verts = 6 * 6;
+        delete[] data;
+    }
+
+    int BlockModel::vertices() {
+        return verts;
+    }
+
+    void BlockModel::bind() {
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glEnableVertexAttribArray(position_attr);
+        glEnableVertexAttribArray(uv_attr);
+        glVertexAttribPointer(position_attr, 3, GL_FLOAT, GL_FALSE,
+                              sizeof(GLfloat) * 10, 0);
+        glVertexAttribPointer(uv_attr, 4, GL_FLOAT, GL_FALSE,
+                              sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
+    }
+
+
     HudShader::HudShader(const int columns, const int rows, const int texture,
                          const int block_texture, const int font_texture) :
         ShaderProgram(
@@ -130,7 +172,6 @@ namespace konstructs {
             "    fragment_uv = uv.xy;\n"
             "    gl_Position = vec4(position, 1.0) * matrix + offset;\n"
             "}\n",
-
             "#version 330\n"
             "uniform sampler2D sampler;\n"
             "in vec2 fragment_uv;\n"
@@ -175,28 +216,76 @@ namespace konstructs {
     }
 
     void HudShader::render(const int width, const int height,
+                           const float mouse_x, const float mouse_y,
                            const Hud &hud,
                            const int blocks[256][6]) {
         bind([&](Context c) {
-                Matrix4f m;
                 float scale = 4.0f/(float)columns;
                 float xscale = (float)height / (float)width;
-                m.col(0) << scale * 0.6f * xscale, 0.0f, 0.0f, 0.0f;
-                m.col(1) << 0.0f, scale * 0.6, 0.0f, 0.0f;
-                m.col(2) << 0.0f, 0.0f, 1.0f, 0.0f;
-                m.col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
-                c.set(matrix, m);
-                c.set(offset, Vector4f(-2*xscale*0.6f, -1.0f, 0.0f, 0.0f));
+                float screen_area = 0.6;
+
+                /* Set up for 17 x 14 HUD grid */
+                c.set(matrix,  hud_translation_matrix(scale, xscale, screen_area));
+                c.set(offset, hud_offset_vector(xscale, screen_area));
+
+                /* Use background texture*/
                 c.set(sampler, texture);
+
+                /* Generate and draw background model */
                 HudModel hm(hud.backgrounds(), position, uv);
                 c.draw(hm);
+
+                /* Use block texture */
                 c.set(sampler, block_texture);
+                /* Generate and draw item stacks */
                 ItemStackModel ism(position, uv, hud.stacks(), blocks);
                 c.draw(ism);
+
+                /* Use font texture */
                 c.set(sampler, font_texture);
+
+                /* Generate and draw item stack amounts */
                 AmountModel am(position, uv, hud.stacks());
                 c.draw(am);
+
+                /* Check for held block*/
+                auto held = hud.held();
+                if(held) {
+
+                    /* Calculate mouse position on screen as gl coordinates */
+                    float x = (mouse_x / (float)width) * 2.0f - 1.0f;
+                    float y = (((float)height - mouse_y) / (float)height) * 2.0f - 1.0f;
+
+                    /* Set up for drawing on whole screen */
+                    Matrix4f m = Matrix4f::Identity();
+                    /* This scales items drawn so that they are kept "square" */
+                    m(0) = xscale;
+                    Vector4f v = Vector4f::Zero();
+                    c.set(matrix, m);
+                    c.set(offset, v);
+                    /* Use block textures */
+                    c.set(sampler, block_texture);
+                    /* Generate a single block model */
+                    BlockModel bm(position, uv, held->type, x / xscale, y,
+                                  scale * xscale * 0.6, blocks);
+                    c.draw(bm);
+                }
+
             });
+    }
+
+    Matrix4f hud_translation_matrix(const float scale, const float xscale,
+                                    const float screen_area) {
+        Matrix4f m;
+        m.col(0) << scale * screen_area * xscale, 0.0f, 0.0f, 0.0f;
+        m.col(1) << 0.0f, scale * screen_area, 0.0f, 0.0f;
+        m.col(2) << 0.0f, 0.0f, 1.0f, 0.0f;
+        m.col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+        return m;
+    }
+
+    Vector4f hud_offset_vector(const float xscale, const float screen_area) {
+        return Vector4f(-2*xscale*screen_area, -1.0f, 0.0f, 0.0f);
     }
 
     vector<float> make_square(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background) {
@@ -230,8 +319,8 @@ namespace konstructs {
         return m;
     }
 
-    float* make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
-                       const int blocks[256][6]) {
+    void make_block(int type, float x, float y, float z, float size, float *d,
+                    const int blocks[256][6]) {
         float ao[6][4] = {0};
         float light[6][4] = {
             {0.5, 0.5, 0.5, 0.5},
@@ -241,24 +330,27 @@ namespace konstructs {
             {0.5, 0.5, 0.5, 0.5},
             {0.5, 0.5, 0.5, 0.5}
         };
-
-        int i = 0;
-        float *d = new float[stacks.size() * 10 * 6 * 6];
-        for (const auto &pair: stacks) {
-            make_cube(d + i * 10 * 6 * 6, ao, light,
-                      1, 1, 1, 1, 1, 1,
-                      pair.first[0] + 0.5, pair.first[1] + 0.5, 0, 0.35,
-                      pair.second.type, blocks);
-            i++;
-        }
-        return d;
+        make_cube(d, ao, light,
+                  1, 1, 1, 1, 1, 1,
+                  x, y, z, size,
+                  type, blocks);
     }
 
-    float* make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
-                              int total) {
-        int i = 0;
+    void make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                     float *d,
+                     const int blocks[256][6]) {
 
-        float *d = new float[total * 7 * 6];
+        int i = 0;
+        for (const auto &pair: stacks) {
+            make_block(pair.second.type, pair.first[0] + 0.5, pair.first[1] + 0.5, 0, 0.35,
+                       d + i * 10 * 6 * 6, blocks);
+            i++;
+        }
+    }
+
+    void make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                            float *d) {
+        int i = 0;
 
         for (const auto &pair: stacks) {
             if(pair.second.amount == 0) {
@@ -271,7 +363,6 @@ namespace konstructs {
                 i++;
             }
         }
-        return d;
     }
 
 };

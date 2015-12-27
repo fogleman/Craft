@@ -200,7 +200,9 @@ public:
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         if(!hud_interaction && !menu_state)
             crosshair_shader.render(mSize.x(), mSize.y());
-        hud_shader.render(mSize.x(), mSize.y(), hud, blocks.blocks);
+        double mx, my;
+        glfwGetCursorPos(mGLFWWindow, &mx, &my);
+        hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks.blocks);
     }
 
 private:
@@ -306,6 +308,9 @@ private:
         case 'A':
             handle_select_active(packet->to_string());
             break;
+        case 'i':
+            handle_held_stack(packet->to_string());
+            break;
         default:
             cout << "UNKNOWN: " << packet->type << endl;
             break;
@@ -394,6 +399,18 @@ private:
             } else {
                 hud.set_background(pos, 2);
             }
+        }
+    }
+
+    void handle_held_stack(const string &str) {
+        int amount, type;
+        if(sscanf(str.c_str(), ",%d,%d",
+                  &amount, &type) != 2)
+            throw std::runtime_error(str);
+        if(type == -1) {
+            hud.reset_held();
+        } else {
+            hud.set_held({amount, type});
         }
     }
 

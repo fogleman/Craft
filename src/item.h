@@ -3,8 +3,8 @@
 
 namespace konstructs {
     struct ItemStack {
-        const int amount;
-        const int type;
+        int amount;
+        int type;
     };
 };
 

@@ -48,6 +48,20 @@ namespace konstructs {
         int verts;
     };
 
+    class BlockModel : public BufferModel {
+    public:
+        BlockModel(const GLuint position_attr, const GLuint uv_attr,
+                   const int type, const float x, const float y,
+                   const float size,
+                   const int blocks[256][6]);
+        virtual void bind();
+        virtual int vertices();
+    private:
+        const GLuint position_attr;
+        const GLuint uv_attr;
+        int verts;
+    };
+
     class HudShader: private ShaderProgram {
     public:
         HudShader(const int columns, const int rows, const int texture,
@@ -55,13 +69,14 @@ namespace konstructs {
         optional<Vector2i> clicked_at(const double x, const double y,
                                       const int width, const int height);
         void render(const int width, const int height,
+                    const float mouse_x, const float mouse_y,
                     const Hud &hud,
                     const int blocks[256][6]);
 
     private:
         const GLuint position;
-        const GLuint scale;
-        const GLuint xscale;
+        const GLuint matrix;
+        const GLuint offset;
         const GLuint sampler;
         const GLuint uv;
         const int texture;

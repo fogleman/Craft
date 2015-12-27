@@ -1,9 +1,20 @@
 #include "hud.h"
 
 namespace konstructs {
+    using nonstd::nullopt;
     Hud::Hud(const int columns, const int rows):
         rows(rows),
-        columns(columns) {}
+        columns(columns),
+        held_stack(nullopt){}
+    optional<ItemStack> Hud::held() const {
+        return held_stack;
+    }
+    void Hud::set_held(ItemStack stack) {
+        held_stack = optional<ItemStack>(stack);
+    }
+    void Hud::reset_held() {
+        held_stack = nullopt;
+    }
     void Hud::set_background(const Vector2i pos, const int t) {
         bg.erase(pos);
         bg.insert({pos, t});

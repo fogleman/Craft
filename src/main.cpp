@@ -77,7 +77,7 @@ public:
         if (nick.size() > 0 && hash.size() > 0 && hostname.size() > 0) {
             setup_connection(nick, hash, hostname);
         } else {
-            init_menu();
+            init_menu(nick, hash, hostname);
         }
         blocks.is_plant[SOLID_BLOCK] = 0;
         blocks.is_obstacle[SOLID_BLOCK] = 1;
@@ -150,11 +150,12 @@ public:
                 glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
         } else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
-            if (!menu_state) {
-                init_menu();
+            // TODO: implement this again when time has come ;)
+            /*if (!menu_state) {
+                init_menu("","","");
             } else {
                 hide_menu();
-            }
+            }*/
         } else if (key == KONSTRUCTS_KEY_FLY && action == GLFW_PRESS) {
             player.fly();
         } else if(key == KONSTRUCTS_KEY_INVENTORY && action == GLFW_PRESS) {
@@ -420,28 +421,32 @@ private:
     }
 
 
-    void init_menu() {
+    void init_menu(std::string username, std::string password, std::string hostname = "play.konstructs.org") {
         using namespace nanogui;
 
-        menu_server_hostname = "play.konstructs.org";
-        menu_server_username = "";
-        menu_server_password = "";
+        menu_server_hostname = hostname != "" ? hostname : "play.konstructs.org"; // default host
+        menu_server_username = username;
+        menu_server_password = password;
 
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         glActiveTexture(GL_TEXTURE0);
 
         FormHelper *gui = new FormHelper(this);
         window = gui->addWindow({0,0}, "Main Menu");
-
+        gui->setFixedSize({125, 20});
         gui->addGroup("Connect to a server");
         gui->addVariable("Server address", menu_server_hostname);
         gui->addVariable("Username", menu_server_username);
         gui->addVariable("Password", menu_server_password);
         gui->addButton("Connect", [&](){
-                setup_connection(menu_server_username,
-                                 menu_server_password,
-                                 menu_server_hostname);
-                hide_menu();
+                if (menu_server_username != "" &&
+                        menu_server_password != "" &&
+                        menu_server_hostname != "") {
+                    setup_connection(menu_server_username,
+                                     menu_server_password,
+                                     menu_server_hostname);
+                    hide_menu();
+                }
             });
 
         window->center();
@@ -501,18 +506,9 @@ void print_usage() {
 }
 
 int main(int argc, char ** argv) {
-
-    #define MAX_ADDR_LENGTH 255
-    #define MAX_NAME_LENGTH 64
-    #define MAX_PASS_LENGTH 64
-
-    char server_addr[MAX_ADDR_LENGTH];
-    char server_user[MAX_NAME_LENGTH];
-    char server_pass[MAX_PASS_LENGTH];
-
-    server_addr[0] = '\0';
-    server_user[0] = '\0';
-    server_pass[0] = '\0';
+    std::string hostname = "";
+    std::string username = "";
+    std::string password = "";
 
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
@@ -523,33 +519,33 @@ int main(int argc, char ** argv) {
                 if (!argv[i+1]) {
                     print_usage();
                 } else {
-                    strncpy(server_addr, argv[i+1], MAX_ADDR_LENGTH);
+                    hostname = argv[i+1];
                 }
             }
             if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
                 if (!argv[i+1]) {
                     print_usage();
                 } else {
-                    strncpy(server_user, argv[i+1], MAX_NAME_LENGTH);
+                    username = argv[i+1];
                 }
             }
             if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
                 if (!argv[i+1]) {
                     print_usage();
                 } else {
-                    strncpy(server_pass, argv[i+1], MAX_PASS_LENGTH);
+                    password = argv[i+1];
                 }
             }
         }
 
-        printf("Connecting to %s with user %s\n", server_addr, server_user);
+        //printf("Connecting to %s with user %s\n", server_addr, server_user);
     }
 
     try {
         nanogui::init();
 
         {
-            nanogui::ref<Konstructs> app = new Konstructs(server_addr, server_user, server_pass);
+            nanogui::ref<Konstructs> app = new Konstructs(hostname, username, password);
             app->drawAll();
             app->setVisible(true);
             nanogui::mainloop();

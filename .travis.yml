@@ -13,6 +13,8 @@ matrix:
   allow_failures:
     - os: osx
       env: MAKE_COMMAND="osx"
+    - os: linux
+      env: MAKE_COMMAND="docs upload-docs"
   include:
     - os: osx
       env: MAKE_COMMAND="osx"

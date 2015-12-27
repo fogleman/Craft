@@ -71,14 +71,13 @@ public:
         menu_state(0) {
 
         using namespace nanogui;
+        performLayout(mNVGContext);
+        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         if (nick.size() > 0 && hash.size() > 0 && hostname.size() > 0) {
             setup_connection(nick, hash, hostname);
         } else {
-            printf("Not implemented: Show main menu with the option to connect, use the cli\n\n");
-            print_usage();
+            init_menu();
         }
-        performLayout(mNVGContext);
-        glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         blocks.is_plant[SOLID_BLOCK] = 0;
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
@@ -188,7 +187,7 @@ public:
                                     looking_at->second.position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        if(!hud_interaction)
+        if(!hud_interaction && !menu_state)
             crosshair_shader.render(mSize.x(), mSize.y());
         hud_shader.render(mSize.x(), mSize.y(), hud, blocks.blocks);
     }
@@ -414,13 +413,26 @@ private:
     void init_menu() {
         using namespace nanogui;
 
+        menu_server_hostname = "play.konstructs.org";
+        menu_server_username = "";
+        menu_server_password = "";
+
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         glActiveTexture(GL_TEXTURE0);
 
-        window = new Window(this, "Main Menu");
-        window->setLayout(new GroupLayout());
+        FormHelper *gui = new FormHelper(this);
+        window = gui->addWindow({0,0}, "Main Menu");
 
-        new Label(window, "This is a simple example menu with no options... Press F1 again to hide it!", "sans-bold");
+        gui->addGroup("Connect to a server");
+        gui->addVariable("Server address", menu_server_hostname);
+        gui->addVariable("Username", menu_server_username);
+        gui->addVariable("Password", menu_server_password);
+        gui->addButton("Connect", [&](){
+                setup_connection(menu_server_username,
+                                 menu_server_password,
+                                 menu_server_hostname);
+                hide_menu();
+            });
 
         window->center();
         performLayout(mNVGContext);
@@ -441,6 +453,9 @@ private:
         client.set_connected(true);
     }
 
+    std::string menu_server_hostname;
+    std::string menu_server_username;
+    std::string menu_server_password;
     BlockData blocks;
     CrosshairShader crosshair_shader;
     int radius;

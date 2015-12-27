@@ -60,8 +60,8 @@ namespace konstructs {
 
     private:
         const GLuint position;
-        const GLuint scale;
-        const GLuint xscale;
+        const GLuint matrix;
+        const GLuint offset;
         const GLuint sampler;
         const GLuint uv;
         const int texture;

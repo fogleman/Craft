@@ -121,15 +121,14 @@ namespace konstructs {
             "hud",
 
             "#version 330\n"
-            "uniform float scale;\n"
-            "uniform float xscale;\n"
+            "uniform vec4 offset;\n"
+            "uniform mat4 matrix;\n"
             "in vec3 position;\n"
             "in vec4 uv;\n"
             "out vec2 fragment_uv;\n"
             "void main() {\n"
             "    fragment_uv = uv.xy;\n"
-            "    vec4 pos = vec4(position.x*scale * 0.6 * xscale, position.y*scale*0.6 - 1.0, position.z, 1);\n"
-            "    gl_Position = vec4(pos.x - 2*xscale*0.6, pos.y, pos.z, pos.w);\n"
+            "    gl_Position = vec4(position, 1.0) * matrix + offset;\n"
             "}\n",
 
             "#version 330\n"
@@ -145,8 +144,8 @@ namespace konstructs {
             "}\n"),
         position(attributeId("position")),
         uv(attributeId("uv")),
-        scale(uniformId("scale")),
-        xscale(uniformId("xscale")),
+        offset(uniformId("offset")),
+        matrix(uniformId("matrix")),
         sampler(uniformId("sampler")),
         texture(texture),
         block_texture(block_texture),
@@ -179,8 +178,15 @@ namespace konstructs {
                            const Hud &hud,
                            const int blocks[256][6]) {
         bind([&](Context c) {
-                c.set(scale, 4.0f/(float)columns);
-                c.set(xscale, (float)height / (float)width);
+                Matrix4f m;
+                float scale = 4.0f/(float)columns;
+                float xscale = (float)height / (float)width;
+                m.col(0) << scale * 0.6f * xscale, 0.0f, 0.0f, 0.0f;
+                m.col(1) << 0.0f, scale * 0.6, 0.0f, 0.0f;
+                m.col(2) << 0.0f, 0.0f, 1.0f, 0.0f;
+                m.col(3) << 0.0f, 0.0f, 0.0f, 1.0f;
+                c.set(matrix, m);
+                c.set(offset, Vector4f(-2*xscale*0.6f, -1.0f, 0.0f, 0.0f));
                 c.set(sampler, texture);
                 HudModel hm(hud.backgrounds(), position, uv);
                 c.draw(hm);

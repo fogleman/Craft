@@ -431,6 +431,7 @@ private:
                 setup_connection(menu_server_username,
                                  menu_server_password,
                                  menu_server_hostname);
+                hide_menu();
             });
 
         window->center();

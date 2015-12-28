@@ -67,6 +67,7 @@ namespace konstructs {
         void logic_op(const GLenum opcode);
         void enable(const GLenum cap);
         void disable(const GLenum cap);
+        void blend_func(const GLenum sfactor, const GLenum dfactor);
     private:
         const GLenum draw_mode;
     };

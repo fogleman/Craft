@@ -131,6 +131,10 @@ namespace konstructs {
         glDisable(cap);
     }
 
+    void Context::blend_func(const GLenum sfactor, const GLenum dfactor) {
+        glBlendFunc(sfactor, dfactor);
+    }
+
     BufferModel::~BufferModel() {
         glDeleteBuffers(1, &buffer);
     }

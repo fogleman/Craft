@@ -153,7 +153,7 @@ namespace konstructs {
             "in vec4 uv;\n"
             "out vec2 fragment_uv;\n"
             "out float diffuse;\n"
-            "const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));\n"
+            "const vec3 light_direction = normalize(vec3(1.0, 0.5, 0.0));\n"
             "void main() {\n"
             "    fragment_uv = uv.xy;\n"
             "    diffuse = max(0.0, dot(normal, light_direction));\n"

@@ -8,7 +8,7 @@ void make_cube_faces(
     float *data, float ao[6][4], float light[6][4],
     int left, int right, int top, int bottom, int front, int back,
     int wleft, int wright, int wtop, int wbottom, int wfront, int wback,
-    float x, float y, float z, float n)
+    float n)
 {
     static const float positions[6][4][3] = {
         {{-1, -1, -1}, {-1, -1, +1}, {-1, +1, -1}, {-1, +1, +1}},
@@ -65,9 +65,9 @@ void make_cube_faces(
         int flip = ao[i][0] + ao[i][3] > ao[i][1] + ao[i][2];
         for (int v = 0; v < 6; v++) {
             int j = flip ? flipped[i][v] : indices[i][v];
-            *(d++) = x + n * positions[i][j][0];
-            *(d++) = y + n * positions[i][j][1];
-            *(d++) = z + n * positions[i][j][2];
+            *(d++) = n * positions[i][j][0];
+            *(d++) = n * positions[i][j][1];
+            *(d++) = n * positions[i][j][2];
             *(d++) = normals[i][0];
             *(d++) = normals[i][1];
             *(d++) = normals[i][2];
@@ -77,6 +77,39 @@ void make_cube_faces(
             *(d++) = light[i][j];
         }
     }
+}
+
+void make_rotated_cube(float *data, float ao[6][4], float light[6][4],
+                       int left, int right, int top, int bottom, int front, int back,
+                       float x, float y, float z, float n, float rx, float ry,
+                       int w, const int blocks[256][6]) {
+    int wleft = blocks[w][0];
+    int wright = blocks[w][1];
+    int wtop = blocks[w][2];
+    int wbottom = blocks[w][3];
+    int wfront = blocks[w][4];
+    int wback = blocks[w][5];
+    make_cube_faces(
+        data, ao, light,
+        left, right, top, bottom, front, back,
+        wleft, wright, wtop, wbottom, wfront, wback,
+        n);
+    float ma[16];
+    float mb[16];
+    mat_identity(ma);
+    /* Create rotation transformation */
+    mat_rotate(mb, 0, 1, 0, ry);
+    mat_multiply(ma, mb, ma);
+    mat_rotate(mb, 1, 0, 0, rx);
+    mat_multiply(ma, mb, ma);
+    /* Apply to normals */
+    mat_apply(data, ma, (left + right + top + bottom + front + back)*6, 3, 10);
+    /* Create translation transformation */
+    mat_translate(mb, x, y, z);
+    /* Merge with rotation transformation */
+    mat_multiply(ma, mb, ma);
+    /* Apply to vertices */
+    mat_apply(data, ma, (left + right + top + bottom + front + back)*6, 0, 10);
 }
 
 void make_cube(
@@ -94,7 +127,13 @@ void make_cube(
         data, ao, light,
         left, right, top, bottom, front, back,
         wleft, wright, wtop, wbottom, wfront, wback,
-        x, y, z, n);
+        n);
+    float ma[16];
+    float mb[16];
+    mat_identity(ma);
+    mat_translate(mb, x, y, z);
+    mat_multiply(ma, mb, ma);
+    mat_apply(data, ma, (left + right + top + bottom + front + back)*6, 0, 10);
 }
 
 void make_plant(
@@ -256,21 +295,32 @@ void make_character(
     float du = (w % 16) * a;
     float dv = 1 - (w / 16) * b - b;
     *(d++) = x - n; *(d++) = y - m; *(d++) = z;
+    *(d++) = 0.0; *(d++) = 1.0; *(d++) = 0.0;
     *(d++) = du + 0; *(d++) = dv;
     *(d++) = 0; *(d++) = 0;
+
     *(d++) = x + n; *(d++) = y - m; *(d++) = z;
+    *(d++) = 0.0; *(d++) = 1.0; *(d++) = 0.0;
     *(d++) = du + a; *(d++) = dv;
     *(d++) = 0; *(d++) = 0;
+
     *(d++) = x + n; *(d++) = y + m; *(d++) = z;
+    *(d++) = 0.0; *(d++) = 1.0; *(d++) = 0.0;
     *(d++) = du + a; *(d++) = dv + b;
     *(d++) = 0; *(d++) = 0;
+
     *(d++) = x - n; *(d++) = y - m; *(d++) = z;
+    *(d++) = 0.0; *(d++) = 1.0; *(d++) = 0.0;
     *(d++) = du + 0; *(d++) = dv;
     *(d++) = 0; *(d++) = 0;
+
     *(d++) = x + n; *(d++) = y + m; *(d++) = z;
+    *(d++) = 0.0; *(d++) = 1.0; *(d++) = 0.0;
     *(d++) = du + a; *(d++) = dv + b;
     *(d++) = 0; *(d++) = 0;
+
     *(d++) = x - n; *(d++) = y + m; *(d++) = z;
+    *(d++) = 0.0; *(d++) = 1.0; *(d++) = 0.0;
     *(d++) = du + 0; *(d++) = dv + b;
     *(d++) = 0; *(d++) = 0;
 }

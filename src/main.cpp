@@ -198,6 +198,7 @@ public:
                                     looking_at->second.position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
+        glClear(GL_DEPTH_BUFFER_BIT);
         if(!hud_interaction && !menu_state)
             crosshair_shader.render(mSize.x(), mSize.y());
         double mx, my;

@@ -81,7 +81,7 @@ void make_cube_faces(
 
 void make_rotated_cube(float *data, float ao[6][4], float light[6][4],
                        int left, int right, int top, int bottom, int front, int back,
-                       float x, float y, float z, float n, float rx, float ry,
+                       float x, float y, float z, float n, float rx, float ry, float rz,
                        int w, const int blocks[256][6]) {
     int wleft = blocks[w][0];
     int wright = blocks[w][1];
@@ -101,6 +101,8 @@ void make_rotated_cube(float *data, float ao[6][4], float light[6][4],
     mat_rotate(mb, 0, 1, 0, ry);
     mat_multiply(ma, mb, ma);
     mat_rotate(mb, 1, 0, 0, rx);
+    mat_multiply(ma, mb, ma);
+    mat_rotate(mb, 0, 0, 1, rz);
     mat_multiply(ma, mb, ma);
     /* Apply to normals */
     mat_apply(data, ma, (left + right + top + bottom + front + back)*6, 3, 10);

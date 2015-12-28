@@ -14,7 +14,7 @@ void make_cube(
 
 void make_rotated_cube(float *data, float ao[6][4], float light[6][4],
                        int left, int right, int top, int bottom, int front, int back,
-                       float x, float y, float z, float n, float rx, float ry,
+                       float x, float y, float z, float n, float rx, float ry, float rz,
                        int w, const int blocks[256][6]);
 
 void make_plant(

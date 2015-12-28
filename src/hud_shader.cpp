@@ -15,13 +15,14 @@ namespace konstructs {
     Vector4f hud_offset_vector(const float xscale, const float screen_area);
 
     void make_block(int type, float x, float y, float z, float size,
-                    float rx, float ry, float *d,
+                    float rx, float ry, float rz, float *d,
                     const int blocks[256][6]);
 
     void make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                      float *d,
                      const float rx,
                      const float ry,
+                     const float rz,
                      const int blocks[256][6]);
 
     void make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks, float *d);
@@ -54,7 +55,7 @@ namespace konstructs {
         BaseModel(position_attr, normal_attr, uv_attr) {
 
         float *data = new float[stacks.size() * 10 * 6 * 6];
-        make_stacks(stacks, data, - M_PI / 8, M_PI / 8, blocks);
+        make_stacks(stacks, data, - M_PI / 8, M_PI / 8, 0, blocks);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -124,7 +125,7 @@ namespace konstructs {
                            const int blocks[256][6]) :
         BaseModel(position_attr, normal_attr, uv_attr) {
         float *data = new float[10 * 6 * 6];
-        make_block(type, x, y, 0.0, size, - M_PI / 8, M_PI / 4, data, blocks);
+        make_block(type, x, y, 0.0, size, - M_PI / 8, M_PI / 4, 0, data, blocks);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -340,7 +341,7 @@ namespace konstructs {
     }
 
     void make_block(int type, float x, float y, float z, float size,
-                    float rx, float ry, float *d,
+                    float rx, float ry, float rz, float *d,
                     const int blocks[256][6]) {
         float ao[6][4] = {0};
         float light[6][4] = {
@@ -353,7 +354,7 @@ namespace konstructs {
         };
         make_rotated_cube(d, ao, light,
                           1, 1, 1, 1, 1, 1,
-                          x, y, z, size, rx, ry,
+                          x, y, z, size, rx, ry, rz,
                           type, blocks);
     }
 
@@ -361,12 +362,13 @@ namespace konstructs {
                      float *d,
                      const float rx,
                      const float ry,
+                     const float rz,
                      const int blocks[256][6]) {
 
         int i = 0;
         for (const auto &pair: stacks) {
             make_block(pair.second.type, pair.first[0] + 0.5, pair.first[1] + 0.45, 0, 0.3,
-                       rx, ry, d + i * 10 * 6 * 6, blocks);
+                       rx, ry, rz, d + i * 10 * 6 * 6, blocks);
             i++;
         }
     }

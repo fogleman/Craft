@@ -132,7 +132,7 @@ public:
                     client.click_at(1, l.second.position, 1);
                 } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
                     client.click_at(1, l.first.position, 2);
-                } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
+                } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
                     client.click_at(1, l.second.position, 3);
                 }
             }

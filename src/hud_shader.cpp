@@ -166,11 +166,12 @@ namespace konstructs {
             "out vec4 fragColor;\n"
             "const vec3 light_color = vec3(1.0, 1.0, 1.0);\n"
             "void main() {\n"
-            "    vec3 color = vec3(texture(sampler, fragment_uv));\n"
-            "    if (color == vec3(1.0, 0.0, 1.0)) {\n"
+            "    vec4 color = vec4(texture(sampler, fragment_uv));\n"
+            "    if (color.xyz == vec3(1.0, 0.0, 1.0)) {\n"
             "        discard;\n"
             "    }\n"
-            "    fragColor = vec4(mix(color, light_color * diffuse, 0.2), 0.6);\n"
+            "    float fr_a = max(color.a, 0.7f);\n"
+            "    fragColor = vec4(mix(color.xyz, light_color * diffuse, 0.2), fr_a);\n"
             "}\n"),
         position(attributeId("position")),
         normal(attributeId("normal")),

@@ -16,6 +16,9 @@ namespace konstructs {
         BaseModel(const GLuint position_attr, const GLuint normal_attr,
                   const GLuint uv_attr);
         virtual void bind();
+        virtual int vertices();
+    protected:
+        int verts;
     private:
         const GLuint position_attr;
         const GLuint normal_attr;
@@ -28,9 +31,6 @@ namespace konstructs {
                        const GLuint uv_attr,
                        const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                        const int blocks[256][6]);
-        virtual int vertices();
-    private:
-        int verts;
     };
 
     class AmountModel : public BaseModel {
@@ -38,9 +38,6 @@ namespace konstructs {
         AmountModel(const GLuint position_attr, const GLuint normal_attr,
                     const GLuint uv_attr,
                     const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks);
-        virtual int vertices();
-    private:
-        int verts;
     };
 
     class HudModel : public BaseModel {
@@ -48,9 +45,6 @@ namespace konstructs {
         HudModel(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
                  const GLuint position_attr, const GLuint normal_attr,
                  const GLuint uv_attr);
-        virtual int vertices();
-    private:
-        int verts;
     };
 
     class BlockModel : public BaseModel {
@@ -60,9 +54,6 @@ namespace konstructs {
                    const int type, const float x, const float y,
                    const float size,
                    const int blocks[256][6]);
-        virtual int vertices();
-    private:
-        int verts;
     };
 
     class HudShader: private ShaderProgram {

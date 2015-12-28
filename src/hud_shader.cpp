@@ -47,6 +47,9 @@ namespace konstructs {
                               sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
     }
 
+    int BaseModel::vertices() {
+        return verts;
+    }
 
     ItemStackModel::ItemStackModel(const GLuint position_attr, const GLuint normal_attr,
                                    const GLuint uv_attr,
@@ -63,10 +66,6 @@ namespace konstructs {
                      data, GL_STATIC_DRAW);
         verts = stacks.size() * 6 * 6;
         delete[] data;
-    }
-
-    int ItemStackModel::vertices() {
-        return verts;
     }
 
     AmountModel::AmountModel(const GLuint position_attr, const GLuint normal_attr,
@@ -96,10 +95,6 @@ namespace konstructs {
         delete[] data;
     }
 
-    int AmountModel::vertices() {
-        return verts;
-    }
-
     HudModel::HudModel(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
                        const GLuint position_attr, const GLuint normal_attr,
                        const GLuint uv_attr) :
@@ -112,10 +107,6 @@ namespace konstructs {
         glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat),
                      data.data(), GL_STATIC_DRAW);
         verts = data.size() / 10;
-    }
-
-    int HudModel::vertices() {
-        return verts;
     }
 
     BlockModel::BlockModel(const GLuint position_attr, const GLuint normal_attr,
@@ -134,11 +125,6 @@ namespace konstructs {
         verts = 6 * 6;
         delete[] data;
     }
-
-    int BlockModel::vertices() {
-        return verts;
-    }
-
 
     HudShader::HudShader(const int columns, const int rows, const int texture,
                          const int block_texture, const int font_texture) :

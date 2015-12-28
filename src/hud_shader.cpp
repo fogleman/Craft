@@ -181,7 +181,7 @@ namespace konstructs {
             "    if (color == vec3(1.0, 0.0, 1.0)) {\n"
             "        discard;\n"
             "    }\n"
-            "    fragColor = vec4(color, 1.0);\n"
+            "    fragColor = vec4(color, 0.6);\n"
             "}\n"),
         position(attributeId("position")),
         uv(attributeId("uv")),
@@ -224,6 +224,8 @@ namespace konstructs {
                 float xscale = (float)height / (float)width;
                 float screen_area = 0.6;
 
+                c.blend_func(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
                 /* Set up for 17 x 14 HUD grid */
                 c.set(matrix,  hud_translation_matrix(scale, xscale, screen_area));
                 c.set(offset, hud_offset_vector(xscale, screen_area));
@@ -233,7 +235,9 @@ namespace konstructs {
 
                 /* Generate and draw background model */
                 HudModel hm(hud.backgrounds(), position, uv);
+                c.enable(GL_BLEND);
                 c.draw(hm);
+                c.disable(GL_BLEND);
 
                 /* Use block texture */
                 c.set(sampler, block_texture);
@@ -246,7 +250,9 @@ namespace konstructs {
 
                 /* Generate and draw item stack amounts */
                 AmountModel am(position, uv, hud.stacks());
+                c.enable(GL_BLEND);
                 c.draw(am);
+                c.disable(GL_BLEND);
 
                 /* Check for held block*/
                 auto held = hud.held();

@@ -31,7 +31,7 @@ namespace konstructs {
 
         GLuint sky;
         glGenTextures(1, &sky);
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE0 + SKY_TEXTURE);
         glBindTexture(GL_TEXTURE_2D, sky);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -42,7 +42,7 @@ namespace konstructs {
 
         GLuint font;
         glGenTextures(1, &font);
-        glActiveTexture(GL_TEXTURE3);
+        glActiveTexture(GL_TEXTURE0 + FONT_TEXTURE);
         glBindTexture(GL_TEXTURE_2D, font);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -51,7 +51,7 @@ namespace konstructs {
 
         GLuint inventory_texture;
         glGenTextures(1, &inventory_texture);
-        glActiveTexture(GL_TEXTURE4);
+        glActiveTexture(GL_TEXTURE0 + INVENTORY_TEXTURE);
         glBindTexture(GL_TEXTURE_2D, inventory_texture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

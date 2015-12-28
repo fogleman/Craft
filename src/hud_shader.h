@@ -5,61 +5,56 @@
 #include "optional.hpp"
 #include "shader.h"
 #include "item.h"
+#include "block.h"
 
 namespace konstructs {
     using Eigen::Vector2i;
     using nonstd::optional;
     using nonstd::nullopt;
 
-    class ItemStackModel : public BufferModel {
+    class BaseModel : public BufferModel {
     public:
-        ItemStackModel(const GLuint position_attr, const GLuint uv_attr,
+        BaseModel(const GLuint position_attr, const GLuint normal_attr,
+                  const GLuint uv_attr);
+        virtual void bind();
+        virtual int vertices();
+    protected:
+        int verts;
+    private:
+        const GLuint position_attr;
+        const GLuint normal_attr;
+        const GLuint uv_attr;
+    };
+
+    class ItemStackModel : public BaseModel {
+    public:
+        ItemStackModel(const GLuint position_attr, const GLuint normal_attr,
+                       const GLuint uv_attr,
                        const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
-                       const int blocks[256][6]);
-        virtual void bind();
-        virtual int vertices();
-    private:
-        const GLuint position_attr;
-        const GLuint uv_attr;
-        int verts;
+                       const BlockData &blocks);
     };
 
-    class AmountModel : public BufferModel {
+    class AmountModel : public BaseModel {
     public:
-        AmountModel(const GLuint position_attr, const GLuint uv_attr,
+        AmountModel(const GLuint position_attr, const GLuint normal_attr,
+                    const GLuint uv_attr,
                     const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks);
-        virtual void bind();
-        virtual int vertices();
-    private:
-        const GLuint position_attr;
-        const GLuint uv_attr;
-        int verts;
     };
 
-    class HudModel : public BufferModel {
+    class HudModel : public BaseModel {
     public:
         HudModel(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background,
-                 const GLuint position_attr, const GLuint uv_attr);
-        virtual void bind();
-        virtual int vertices();
-    private:
-        const GLuint position_attr;
-        const GLuint uv_attr;
-        int verts;
+                 const GLuint position_attr, const GLuint normal_attr,
+                 const GLuint uv_attr);
     };
 
-    class BlockModel : public BufferModel {
+    class BlockModel : public BaseModel {
     public:
-        BlockModel(const GLuint position_attr, const GLuint uv_attr,
+        BlockModel(const GLuint position_attr, const GLuint normal_attr,
+                   const GLuint uv_attr,
                    const int type, const float x, const float y,
                    const float size,
-                   const int blocks[256][6]);
-        virtual void bind();
-        virtual int vertices();
-    private:
-        const GLuint position_attr;
-        const GLuint uv_attr;
-        int verts;
+                   const BlockData &blocks);
     };
 
     class HudShader: private ShaderProgram {
@@ -71,19 +66,21 @@ namespace konstructs {
         void render(const int width, const int height,
                     const float mouse_x, const float mouse_y,
                     const Hud &hud,
-                    const int blocks[256][6]);
+                    const BlockData &blocks);
 
     private:
         const GLuint position;
+        const GLuint normal;
+        const GLuint uv;
         const GLuint matrix;
         const GLuint offset;
         const GLuint sampler;
-        const GLuint uv;
         const int texture;
         const int block_texture;
         const int font_texture;
         const int columns;
         const int rows;
+        const float screen_area;
     };
 };
 #endif

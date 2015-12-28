@@ -198,11 +198,12 @@ public:
                                     looking_at->second.position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
+        glClear(GL_DEPTH_BUFFER_BIT);
         if(!hud_interaction && !menu_state)
             crosshair_shader.render(mSize.x(), mSize.y());
         double mx, my;
         glfwGetCursorPos(mGLFWWindow, &mx, &my);
-        hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks.blocks);
+        hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks);
     }
 
 private:

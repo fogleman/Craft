@@ -44,8 +44,8 @@ namespace konstructs {
         glGenTextures(1, &font);
         glActiveTexture(GL_TEXTURE0 + FONT_TEXTURE);
         glBindTexture(GL_TEXTURE_2D, font);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         texture_path("font.png", txtpth, KONSTRUCTS_PATH_SIZE);
         load_png_texture(txtpth);
 

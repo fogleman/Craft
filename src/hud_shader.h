@@ -5,6 +5,7 @@
 #include "optional.hpp"
 #include "shader.h"
 #include "item.h"
+#include "block.h"
 
 namespace konstructs {
     using Eigen::Vector2i;
@@ -30,7 +31,7 @@ namespace konstructs {
         ItemStackModel(const GLuint position_attr, const GLuint normal_attr,
                        const GLuint uv_attr,
                        const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
-                       const int blocks[256][6]);
+                       const BlockData &blocks);
     };
 
     class AmountModel : public BaseModel {
@@ -53,7 +54,7 @@ namespace konstructs {
                    const GLuint uv_attr,
                    const int type, const float x, const float y,
                    const float size,
-                   const int blocks[256][6]);
+                   const BlockData &blocks);
     };
 
     class HudShader: private ShaderProgram {
@@ -65,7 +66,7 @@ namespace konstructs {
         void render(const int width, const int height,
                     const float mouse_x, const float mouse_y,
                     const Hud &hud,
-                    const int blocks[256][6]);
+                    const BlockData &blocks);
 
     private:
         const GLuint position;

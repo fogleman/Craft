@@ -203,7 +203,7 @@ public:
             crosshair_shader.render(mSize.x(), mSize.y());
         double mx, my;
         glfwGetCursorPos(mGLFWWindow, &mx, &my);
-        hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks.blocks);
+        hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks);
     }
 
 private:

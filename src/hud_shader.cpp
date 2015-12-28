@@ -125,7 +125,7 @@ namespace konstructs {
                            const int blocks[256][6]) :
         BaseModel(position_attr, normal_attr, uv_attr) {
         float *data = new float[10 * 6 * 6];
-        make_block(type, x, y, 0.0, size, - M_PI / 8, M_PI / 4, 0, data, blocks);
+        make_block(type, x, y, 0.0, size, - M_PI / 8, M_PI / 8, M_PI / 32, data, blocks);
 
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -262,7 +262,7 @@ namespace konstructs {
                     c.set(sampler, block_texture);
                     /* Generate a single block model */
                     BlockModel bm(position, normal, uv, held->type, x / xscale, y,
-                                  scale * xscale * screen_area * 0.7, blocks);
+                                  scale * xscale * screen_area * 0.55, blocks);
                     glClear(GL_DEPTH_BUFFER_BIT);
                     c.draw(bm);
                 }

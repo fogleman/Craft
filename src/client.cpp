@@ -90,17 +90,17 @@ namespace konstructs {
         Vector3i position(p, q, k);
         const int blocks_size = packet->size - 3 * sizeof(int);
         auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
-        packets_mutex.lock();
+        std::unique_lock<std::mutex> ulock_packets(packets_mutex);
         chunks.push_back(chunk);
-        packets_mutex.unlock();
+        ulock_packets.unlock();
     }
 
     void Client::recv_worker() {
 
         // Wait for an open connection
-        std::unique_lock<std::mutex> ulck_connected(mutex_connected);
-        cv_connected.wait(ulck_connected, [&]{ return connected; });
-        ulck_connected.unlock();
+        std::unique_lock<std::mutex> ulock_connected(mutex_connected);
+        cv_connected.wait(ulock_connected, [&]{ return connected; });
+        ulock_connected.unlock();
 
         int size;
         while (1) {
@@ -127,33 +127,33 @@ namespace konstructs {
             if(packet->type == 'C')
                 process_chunk(packet.get());
             else {
-                packets_mutex.lock();
+                std::unique_lock<std::mutex> ulock_packets(packets_mutex);
                 packets.push(packet);
-                packets_mutex.unlock();
+                ulock_packets.unlock();
             }
         }
     }
 
     vector<shared_ptr<Packet>> Client::receive(const int max) {
         vector<shared_ptr<Packet>> head;
-        packets_mutex.lock();
+        std::unique_lock<std::mutex> ulock_packets(packets_mutex);
         for(int i=0; i < max; i++) {
             if(packets.empty()) break;
             head.push_back(packets.front());
             packets.pop();
         }
-        packets_mutex.unlock();
+        ulock_packets.unlock();
         return head;
     }
 
     vector<shared_ptr<ChunkData>> Client::receive_chunks(const int max) {
-        packets_mutex.lock();
+        std::unique_lock<std::mutex> ulock_packets(packets_mutex);
         auto maxIter = chunks.begin() + max;
         auto endIter = chunks.end();
         auto last = maxIter < endIter ? maxIter : endIter;
         vector<shared_ptr<ChunkData>> head(chunks.begin(), last);
         chunks.erase(chunks.begin(), last);
-        packets_mutex.unlock();
+        ulock_packets.unlock();
         return head;
     }
 

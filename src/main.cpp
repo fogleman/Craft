@@ -296,6 +296,8 @@ private:
         /* Render prio chunk after all other chunks have been inserted */
         if(prio) {
             Vector3i pos = (*prio)->position;
+            /* Add for later processing as well */
+            model_factory.create_models({pos}, world);
             /* Force render of prioritized chunk */
             force_render(pos);
         }

@@ -6,8 +6,8 @@ namespace konstructs {
         chunks.insert({pos, data});
     }
 
-    const std::shared_ptr<ChunkData> World::at(const Vector3i &pos) const {
-        return chunks.at(pos);
+    const std::shared_ptr<ChunkData> World::chunk(const Vector3i &chunk_pos) const {
+        return chunks.at(chunk_pos);
     }
 
     const std::vector<std::shared_ptr<ChunkData>> World::atAndAround(const Vector3i &pos) const {

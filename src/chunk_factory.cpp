@@ -51,7 +51,7 @@ namespace konstructs {
     ChunkModelFactory::get_chunk(const Vector3i &position,
                                  const World &world) {
         try {
-            return world.at(position);
+            return world.chunk(position);
         } catch(std::out_of_range e) {
             return SOLID_CHUNK;
         }

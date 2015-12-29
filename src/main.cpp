@@ -194,7 +194,7 @@ public:
         glClear(GL_DEPTH_BUFFER_BIT);
         int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
                                         daylight(), time_of_day());
-        if(looking_at) {
+        if(looking_at && !hud_interaction && !menu_state) {
             selection_shader.render(player, mSize.x(), mSize.y(),
                                     looking_at->second.position);
         }

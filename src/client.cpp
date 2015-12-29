@@ -21,6 +21,7 @@
 #define HEADER_SIZE 4
 
 namespace konstructs {
+    using nonstd::nullopt;
 
     Client::Client() : connected(false) {
         worker_thread = new std::thread(&Client::recv_worker, this);
@@ -92,7 +93,6 @@ namespace konstructs {
         auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
         std::unique_lock<std::mutex> ulock_packets(packets_mutex);
         chunks.push_back(chunk);
-        ulock_packets.unlock();
     }
 
     void Client::recv_worker() {
@@ -129,7 +129,6 @@ namespace konstructs {
             else {
                 std::unique_lock<std::mutex> ulock_packets(packets_mutex);
                 packets.push(packet);
-                ulock_packets.unlock();
             }
         }
     }
@@ -142,8 +141,23 @@ namespace konstructs {
             head.push_back(packets.front());
             packets.pop();
         }
-        ulock_packets.unlock();
         return head;
+    }
+
+    optional<shared_ptr<ChunkData>> Client::receive_prio_chunk(const Vector3i pos) {
+        std::unique_lock<std::mutex> ulock_packets(packets_mutex);
+        for(auto it = chunks.begin(); it != chunks.end(); ++it) {
+            auto chunk = *it;
+            Vector3i chunk_position = chunk->position;
+            int dp = chunk_position[0] - pos[0];
+            int dq = chunk_position[1] - pos[1];
+            int dk = chunk_position[2] - pos[2];
+            if(dp >= -1 && dp <= 1 && dq >= -1 && dq <= 1 && dk >= -1 && dk <= 1) {
+                chunks.erase(it);
+                return optional<shared_ptr<ChunkData>>(chunk);
+            }
+        }
+        return nullopt;
     }
 
     vector<shared_ptr<ChunkData>> Client::receive_chunks(const int max) {
@@ -153,7 +167,6 @@ namespace konstructs {
         auto last = maxIter < endIter ? maxIter : endIter;
         vector<shared_ptr<ChunkData>> head(chunks.begin(), last);
         chunks.erase(chunks.begin(), last);
-        ulock_packets.unlock();
         return head;
     }
 

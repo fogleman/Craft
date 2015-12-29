@@ -3,15 +3,34 @@
 #include "util.h"
 #include "cube.h"
 
-#define WORKERS 4
+#define WORKERS 2
 
 namespace konstructs {
+    static Vector3i BELOW(0, 0, -1);
+    static Vector3i ABOVE(0, 0, 1);
+    static Vector3i LEFT(-1, 0, 0);
+    static Vector3i RIGHT(1, 0, 0);
+    static Vector3i FRONT(0, -1, 0);
+    static Vector3i BACK(0, 1, 0);
+    static Vector3i ABOVE_LEFT(-1, 0, 1);
+    static Vector3i ABOVE_RIGHT(1, 0, 1);
+    static Vector3i ABOVE_FRONT(0, -1, 1);
+    static Vector3i ABOVE_BACK(0, 1, 1);
+    static Vector3i ABOVE_LEFT_FRONT(-1, -1, 1);
+    static Vector3i ABOVE_RIGHT_FRONT(1, -1, 1);
+    static Vector3i ABOVE_LEFT_BACK(-1, 1, 1);
+    static Vector3i ABOVE_RIGHT_BACK(1, 1, 1);
+    static Vector3i LEFT_FRONT(-1, -1, 0);
+    static Vector3i RIGHT_FRONT(1, -1, 0);
+    static Vector3i LEFT_BACK(-1, 1, 0);
+    static Vector3i RIGHT_BACK(1, 1, 0);
+    static std::shared_ptr<ChunkData> SOLID_CHUNK(std::make_shared<ChunkData>());
+
     ChunkModelResult::ChunkModelResult(const Vector3i _position, const int components,
                                        const int _faces):
         position(_position), size(6 * components * _faces), faces(_faces) {
         mData = new GLfloat[size];
     }
-
 
     ChunkModelResult::~ChunkModelResult() {
         delete[] mData;
@@ -21,39 +40,10 @@ namespace konstructs {
         return mData;
     }
 
-    ChunkModelFactory::ChunkModelFactory(const BlockData &_block_data) :
-        block_data(_block_data),
-        BELOW(0, 0, -1),
-        ABOVE(0, 0, 1),
-        LEFT(-1, 0, 0),
-        RIGHT(1, 0, 0),
-        FRONT(0, -1, 0),
-        BACK(0, 1, 0),
-        ABOVE_LEFT(-1, 0, 1),
-        ABOVE_RIGHT(1, 0, 1),
-        ABOVE_FRONT(0, -1, 1),
-        ABOVE_BACK(0, 1, 1),
-        ABOVE_LEFT_FRONT(-1, -1, 1),
-        ABOVE_RIGHT_FRONT(1, -1, 1),
-        ABOVE_LEFT_BACK(-1, 1, 1),
-        ABOVE_RIGHT_BACK(1, 1, 1),
-        LEFT_FRONT(-1, -1, 0),
-        RIGHT_FRONT(1, -1, 0),
-        LEFT_BACK(-1, 1, 0),
-        RIGHT_BACK(1, 1, 0),
-        SOLID_CHUNK(std::make_shared<ChunkData>()) {
+    ChunkModelFactory::ChunkModelFactory(const BlockData &block_data) :
+        block_data(block_data) {
         for(int i = 0; i < WORKERS; i++) {
             new std::thread(&ChunkModelFactory::worker, this);
-        }
-    }
-
-    const std::shared_ptr<ChunkData>
-    ChunkModelFactory::get_chunk(const Vector3i &position,
-                                 const World &world) {
-        try {
-            return world.at(position);
-        } catch(std::out_of_range e) {
-            return SOLID_CHUNK;
         }
     }
 
@@ -62,25 +52,43 @@ namespace konstructs {
         {
             std::lock_guard<std::mutex> lock(mutex);
             for(auto position: positions) {
-                chunks.push(create_model_data(position, world));
-                if(world.find(position + BELOW) != world.end())
-                    chunks.push(create_model_data(position + BELOW, world));
-                if(world.find(position + ABOVE) != world.end())
-                    chunks.push(create_model_data(position + ABOVE, world));
-                if(world.find(position + LEFT) != world.end())
-                    chunks.push(create_model_data(position + LEFT, world));
-                if(world.find(position + RIGHT) != world.end())
-                    chunks.push(create_model_data(position + RIGHT, world));
-                if(world.find(position + FRONT) != world.end())
-                    chunks.push(create_model_data(position + FRONT, world));
-                if(world.find(position + BACK) != world.end())
-                    chunks.push(create_model_data(position + BACK, world));
+                for(auto m : adjacent(position, world)) {
+                    chunks.push(m);
+                }
             }
         }
         chunks_condition.notify_all();
     }
 
-    const ChunkModelData ChunkModelFactory::create_model_data(const Vector3i &position,
+    std::vector<ChunkModelData> adjacent(const Vector3i position, const World &world) {
+        std::vector<ChunkModelData> adj;
+        adj.reserve(7);
+        adj.push_back(create_model_data(position, world));
+        if(world.find(position + BELOW) != world.end())
+            adj.push_back(create_model_data(position + BELOW, world));
+        if(world.find(position + ABOVE) != world.end())
+            adj.push_back(create_model_data(position + ABOVE, world));
+        if(world.find(position + LEFT) != world.end())
+            adj.push_back(create_model_data(position + LEFT, world));
+        if(world.find(position + RIGHT) != world.end())
+            adj.push_back(create_model_data(position + RIGHT, world));
+        if(world.find(position + FRONT) != world.end())
+            adj.push_back(create_model_data(position + FRONT, world));
+        if(world.find(position + BACK) != world.end())
+            adj.push_back(create_model_data(position + BACK, world));
+        return adj;
+    }
+
+    const std::shared_ptr<ChunkData>  get_chunk(const Vector3i &position,
+                                                const World &world) {
+        try {
+            return world.chunk(position);
+        } catch(std::out_of_range e) {
+            return SOLID_CHUNK;
+        }
+    }
+
+    const ChunkModelData create_model_data(const Vector3i &position,
                                                               const World &world) {
         const ChunkModelData data = {
             position,
@@ -126,7 +134,7 @@ namespace konstructs {
             ulock.unlock();
             auto result = compute_chunk(data, block_data);
             if(result->size > 0) {
-                std::lock_guard<std::mutex> lock(mutex);
+                std::lock_guard<std::mutex> ulock(mutex);
                 models.push_back(result);
             }
         }

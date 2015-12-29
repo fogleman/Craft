@@ -1,4 +1,6 @@
 #include <iostream>
+#include <memory>
+#include <string.h>
 #include "block.h"
 #include "compress.h"
 #include "chunk.h"
@@ -30,6 +32,9 @@ namespace konstructs {
         blocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
         memset(blocks, (char)SOLID_BLOCK, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE);
     }
+    ChunkData::ChunkData(const Vector3i position, char *blocks) :
+        position(position), blocks(blocks) {}
+
     ChunkData::~ChunkData() {
         delete[] blocks;
     }
@@ -46,6 +51,19 @@ namespace konstructs {
         } else {
             return 0;
         }
+    }
+
+    std::shared_ptr<ChunkData> ChunkData::set(const Vector3i &pos, const char type) const {
+        int lx = pos[0] - position[0] * CHUNK_SIZE;
+        int ly = pos[1] - position[2] * CHUNK_SIZE;
+        int lz = pos[2] - position[1] * CHUNK_SIZE;
+
+        char *new_blocks = new char[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+        memcpy(new_blocks, blocks, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+
+        new_blocks[lx+ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE] = type;
+
+        return std::make_shared<ChunkData>(position, new_blocks);
     }
 
     /**

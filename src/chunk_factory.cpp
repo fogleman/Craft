@@ -119,11 +119,11 @@ namespace konstructs {
 
     void ChunkModelFactory::worker() {
         while(1) {
-            std::unique_lock<std::mutex> lk(mutex);
-            chunks_condition.wait(lk, [&]{return !chunks.empty();});
+            std::unique_lock<std::mutex> ulock(mutex);
+            chunks_condition.wait(ulock, [&]{return !chunks.empty();});
             auto data = chunks.front();
             chunks.pop();
-            lk.unlock();
+            ulock.unlock();
             auto result = compute_chunk(data, block_data);
             if(result->size > 0) {
                 std::lock_guard<std::mutex> lock(mutex);

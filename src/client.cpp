@@ -93,7 +93,6 @@ namespace konstructs {
         auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
         std::unique_lock<std::mutex> ulock_packets(packets_mutex);
         chunks.push_back(chunk);
-        ulock_packets.unlock();
     }
 
     void Client::recv_worker() {
@@ -130,7 +129,6 @@ namespace konstructs {
             else {
                 std::unique_lock<std::mutex> ulock_packets(packets_mutex);
                 packets.push(packet);
-                ulock_packets.unlock();
             }
         }
     }
@@ -143,7 +141,6 @@ namespace konstructs {
             head.push_back(packets.front());
             packets.pop();
         }
-        ulock_packets.unlock();
         return head;
     }
 
@@ -170,7 +167,6 @@ namespace konstructs {
         auto last = maxIter < endIter ? maxIter : endIter;
         vector<shared_ptr<ChunkData>> head(chunks.begin(), last);
         chunks.erase(chunks.begin(), last);
-        ulock_packets.unlock();
         return head;
     }
 

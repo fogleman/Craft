@@ -134,7 +134,7 @@ namespace konstructs {
             ulock.unlock();
             auto result = compute_chunk(data, block_data);
             if(result->size > 0) {
-                std::lock_guard<std::mutex> lock(mutex);
+                std::lock_guard<std::mutex> ulock(mutex);
                 models.push_back(result);
             }
         }

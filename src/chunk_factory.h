@@ -63,6 +63,8 @@ namespace konstructs {
         std::vector<std::shared_ptr<ChunkModelResult>> models;
         const BlockData &block_data;
     };
+
+    std::vector<ChunkModelData> adjacent(const Vector3i position, const World &world);
     const std::shared_ptr<ChunkData> get_chunk(const Vector3i &position,
                                                const World &world);
     const ChunkModelData create_model_data(const Vector3i &position,

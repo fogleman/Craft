@@ -8,6 +8,7 @@
 #include <queue>
 #include <thread>
 #include <Eigen/Geometry>
+#include "optional.hpp"
 #include "chunk.h"
 
 #define DEFAULT_PORT 4080
@@ -15,6 +16,7 @@
 namespace konstructs {
     using namespace std;
     using namespace Eigen;
+    using nonstd::optional;
 
     class Packet {
     public:
@@ -30,7 +32,6 @@ namespace konstructs {
         char* buffer() { return mBuffer; }
         string to_string() {
             string str(mBuffer, size);
-            std::cout << str << std::endl;
             return str;
         }
     private:
@@ -55,6 +56,7 @@ namespace konstructs {
         bool is_connected();
         void set_connected(bool state);
         vector<shared_ptr<Packet>> receive(const int max);
+        optional<shared_ptr<ChunkData>> receive_prio_chunk(const Vector3i pos);
         vector<shared_ptr<ChunkData>> receive_chunks(const int max);
     private:
         int send_all(const char *data, const int length);
@@ -69,7 +71,7 @@ namespace konstructs {
         std::condition_variable cv_connected;
         std::thread *worker_thread;
         std::queue<shared_ptr<Packet>> packets;
-        std::vector<shared_ptr<ChunkData>> chunks;
+        std::deque<shared_ptr<ChunkData>> chunks;
         bool connected;
     };
 };

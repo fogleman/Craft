@@ -88,6 +88,7 @@ public:
 
     virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel) {
         client.inventory_select(hud.scroll(rel[1]));
+        return true;
     }
 
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
@@ -121,9 +122,7 @@ public:
                             world.chunk_at(l.first.position)->set(l.first.position,
                                                                   selected->type);
                         world.insert(updated_chunk);
-                        auto model_data = create_model_data(updated_chunk->position, world);
-                        auto result = compute_chunk(model_data, blocks);
-                        chunk_shader.add(result);
+                        force_render(updated_chunk->position);
                     }
                     client.click_at(1, l.first.position, 2);
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
@@ -203,6 +202,14 @@ public:
 
 private:
 
+    void force_render(const Vector3i &position) {
+        auto model_data = adjacent(position, world);
+        for(auto m : model_data) {
+            auto result = compute_chunk(m, blocks);
+            chunk_shader.add(result);
+        }
+    }
+
     void handle_mouse() {
         int exclusive =
              glfwGetInputMode(mGLFWWindow, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
@@ -269,6 +276,12 @@ private:
         for(auto packet : client.receive(100)) {
             handle_packet(packet.get());
         }
+        Vector3f pos = player.camera();
+
+        auto prio = client.receive_prio_chunk(Vector3i(chunked(pos[0]), chunked(pos[2]), chunked(pos[1])));
+        /* Insert prio chunk into world */
+        if(prio)
+            world.insert(*prio);
         auto new_chunks = client.receive_chunks(10);
         if(!new_chunks.empty()) {
             std::vector<Vector3i> positions;
@@ -280,6 +293,13 @@ private:
             model_factory.create_models(positions, world);
             client.chunk(new_chunks.size());
         }
+        /* Render prio chunk after all other chunks have been inserted */
+        if(prio) {
+            Vector3i pos = (*prio)->position;
+            /* Force render of prioritized chunk */
+            force_render(pos);
+        }
+
     }
 
     void handle_packet(konstructs::Packet *packet) {

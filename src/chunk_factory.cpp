@@ -52,22 +52,31 @@ namespace konstructs {
         {
             std::lock_guard<std::mutex> lock(mutex);
             for(auto position: positions) {
-                chunks.push(create_model_data(position, world));
-                if(world.find(position + BELOW) != world.end())
-                    chunks.push(create_model_data(position + BELOW, world));
-                if(world.find(position + ABOVE) != world.end())
-                    chunks.push(create_model_data(position + ABOVE, world));
-                if(world.find(position + LEFT) != world.end())
-                    chunks.push(create_model_data(position + LEFT, world));
-                if(world.find(position + RIGHT) != world.end())
-                    chunks.push(create_model_data(position + RIGHT, world));
-                if(world.find(position + FRONT) != world.end())
-                    chunks.push(create_model_data(position + FRONT, world));
-                if(world.find(position + BACK) != world.end())
-                    chunks.push(create_model_data(position + BACK, world));
+                for(auto m : adjacent(position, world)) {
+                    chunks.push(m);
+                }
             }
         }
         chunks_condition.notify_all();
+    }
+
+    std::vector<ChunkModelData> adjacent(const Vector3i position, const World &world) {
+        std::vector<ChunkModelData> adj;
+        adj.reserve(7);
+        adj.push_back(create_model_data(position, world));
+        if(world.find(position + BELOW) != world.end())
+            adj.push_back(create_model_data(position + BELOW, world));
+        if(world.find(position + ABOVE) != world.end())
+            adj.push_back(create_model_data(position + ABOVE, world));
+        if(world.find(position + LEFT) != world.end())
+            adj.push_back(create_model_data(position + LEFT, world));
+        if(world.find(position + RIGHT) != world.end())
+            adj.push_back(create_model_data(position + RIGHT, world));
+        if(world.find(position + FRONT) != world.end())
+            adj.push_back(create_model_data(position + FRONT, world));
+        if(world.find(position + BACK) != world.end())
+            adj.push_back(create_model_data(position + BACK, world));
+        return adj;
     }
 
     const std::shared_ptr<ChunkData>  get_chunk(const Vector3i &position,

@@ -6,12 +6,31 @@
 #define WORKERS 4
 
 namespace konstructs {
+    static Vector3i BELOW(0, 0, -1);
+    static Vector3i ABOVE(0, 0, 1);
+    static Vector3i LEFT(-1, 0, 0);
+    static Vector3i RIGHT(1, 0, 0);
+    static Vector3i FRONT(0, -1, 0);
+    static Vector3i BACK(0, 1, 0);
+    static Vector3i ABOVE_LEFT(-1, 0, 1);
+    static Vector3i ABOVE_RIGHT(1, 0, 1);
+    static Vector3i ABOVE_FRONT(0, -1, 1);
+    static Vector3i ABOVE_BACK(0, 1, 1);
+    static Vector3i ABOVE_LEFT_FRONT(-1, -1, 1);
+    static Vector3i ABOVE_RIGHT_FRONT(1, -1, 1);
+    static Vector3i ABOVE_LEFT_BACK(-1, 1, 1);
+    static Vector3i ABOVE_RIGHT_BACK(1, 1, 1);
+    static Vector3i LEFT_FRONT(-1, -1, 0);
+    static Vector3i RIGHT_FRONT(1, -1, 0);
+    static Vector3i LEFT_BACK(-1, 1, 0);
+    static Vector3i RIGHT_BACK(1, 1, 0);
+    static std::shared_ptr<ChunkData> SOLID_CHUNK(std::make_shared<ChunkData>());
+
     ChunkModelResult::ChunkModelResult(const Vector3i _position, const int components,
                                        const int _faces):
         position(_position), size(6 * components * _faces), faces(_faces) {
         mData = new GLfloat[size];
     }
-
 
     ChunkModelResult::~ChunkModelResult() {
         delete[] mData;
@@ -21,39 +40,10 @@ namespace konstructs {
         return mData;
     }
 
-    ChunkModelFactory::ChunkModelFactory(const BlockData &_block_data) :
-        block_data(_block_data),
-        BELOW(0, 0, -1),
-        ABOVE(0, 0, 1),
-        LEFT(-1, 0, 0),
-        RIGHT(1, 0, 0),
-        FRONT(0, -1, 0),
-        BACK(0, 1, 0),
-        ABOVE_LEFT(-1, 0, 1),
-        ABOVE_RIGHT(1, 0, 1),
-        ABOVE_FRONT(0, -1, 1),
-        ABOVE_BACK(0, 1, 1),
-        ABOVE_LEFT_FRONT(-1, -1, 1),
-        ABOVE_RIGHT_FRONT(1, -1, 1),
-        ABOVE_LEFT_BACK(-1, 1, 1),
-        ABOVE_RIGHT_BACK(1, 1, 1),
-        LEFT_FRONT(-1, -1, 0),
-        RIGHT_FRONT(1, -1, 0),
-        LEFT_BACK(-1, 1, 0),
-        RIGHT_BACK(1, 1, 0),
-        SOLID_CHUNK(std::make_shared<ChunkData>()) {
+    ChunkModelFactory::ChunkModelFactory(const BlockData &block_data) :
+        block_data(block_data) {
         for(int i = 0; i < WORKERS; i++) {
             new std::thread(&ChunkModelFactory::worker, this);
-        }
-    }
-
-    const std::shared_ptr<ChunkData>
-    ChunkModelFactory::get_chunk(const Vector3i &position,
-                                 const World &world) {
-        try {
-            return world.chunk(position);
-        } catch(std::out_of_range e) {
-            return SOLID_CHUNK;
         }
     }
 
@@ -80,7 +70,16 @@ namespace konstructs {
         chunks_condition.notify_all();
     }
 
-    const ChunkModelData ChunkModelFactory::create_model_data(const Vector3i &position,
+    const std::shared_ptr<ChunkData>  get_chunk(const Vector3i &position,
+                                                const World &world) {
+        try {
+            return world.chunk(position);
+        } catch(std::out_of_range e) {
+            return SOLID_CHUNK;
+        }
+    }
+
+    const ChunkModelData create_model_data(const Vector3i &position,
                                                               const World &world) {
         const ChunkModelData data = {
             position,

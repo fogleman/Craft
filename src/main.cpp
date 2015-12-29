@@ -134,7 +134,9 @@ public:
                     std::shared_ptr<ChunkData> updated_chunk =
                         world.chunk_at(l.first.position)->set(l.first.position, 1);
                     world.insert(updated_chunk);
-                    model_factory.create_models({updated_chunk->position}, world);
+                    auto model_data = create_model_data(updated_chunk->position, world);
+                    auto result = compute_chunk(model_data, blocks);
+                    chunk_shader.add(result);
                     client.click_at(1, l.first.position, 2);
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
                     client.click_at(1, l.second.position, 3);

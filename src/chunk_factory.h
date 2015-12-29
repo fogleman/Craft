@@ -57,35 +57,17 @@ namespace konstructs {
         std::vector<std::shared_ptr<ChunkModelResult>> fetch_models();
     private:
         void worker();
-        const std::shared_ptr<ChunkData> get_chunk(const Vector3i &position,
-                                                   const World &world);
-        const ChunkModelData create_model_data(const Vector3i &position,
-                                               const World &world);
         std::mutex mutex;
         std::condition_variable chunks_condition;
         std::queue<ChunkModelData> chunks;
         std::vector<std::shared_ptr<ChunkModelResult>> models;
-        const Vector3i BELOW;
-        const Vector3i ABOVE;
-        const Vector3i LEFT;
-        const Vector3i RIGHT;
-        const Vector3i FRONT;
-        const Vector3i BACK;
-        const Vector3i ABOVE_LEFT;
-        const Vector3i ABOVE_RIGHT;
-        const Vector3i ABOVE_FRONT;
-        const Vector3i ABOVE_BACK;
-        const Vector3i ABOVE_LEFT_FRONT;
-        const Vector3i ABOVE_RIGHT_FRONT;
-        const Vector3i ABOVE_LEFT_BACK;
-        const Vector3i ABOVE_RIGHT_BACK;
-        const Vector3i LEFT_FRONT;
-        const Vector3i RIGHT_FRONT;
-        const Vector3i LEFT_BACK;
-        const Vector3i RIGHT_BACK;
-        const shared_ptr<ChunkData> SOLID_CHUNK;
         const BlockData &block_data;
     };
+    const std::shared_ptr<ChunkData> get_chunk(const Vector3i &position,
+                                               const World &world);
+    const ChunkModelData create_model_data(const Vector3i &position,
+                                           const World &world);
+
     shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data, const BlockData &block_data);
 };
 #endif

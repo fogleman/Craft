@@ -166,6 +166,7 @@ public:
             }
         } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
             client.inventory_select(key - 49);
+            hud_selection = key - 49;
         } else {
             return false;
         }

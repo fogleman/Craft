@@ -131,6 +131,10 @@ public:
                 if(button == GLFW_MOUSE_BUTTON_1 && down) {
                     client.click_at(1, l.second.position, 1);
                 } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
+                    std::shared_ptr<ChunkData> updated_chunk =
+                        world.chunk_at(l.first.position)->set(l.first.position, 1);
+                    world.insert(updated_chunk);
+                    model_factory.create_models({updated_chunk->position}, world);
                     client.click_at(1, l.first.position, 2);
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
                     client.click_at(1, l.second.position, 3);
@@ -280,7 +284,7 @@ private:
             std::vector<Vector3i> positions;
             positions.reserve(new_chunks.size());
             for(auto chunk : new_chunks) {
-                world.insert(chunk->position, chunk);
+                world.insert(chunk);
                 positions.push_back(chunk->position);
             }
             model_factory.create_models(positions, world);

@@ -1,9 +1,17 @@
 #include "world.h"
 
 namespace konstructs {
-    void World::insert(const Vector3i &pos, std::shared_ptr<ChunkData> data) {
+    void World::insert(std::shared_ptr<ChunkData> data) {
+        const Vector3i pos = data->position;
         chunks.erase(pos);
         chunks.insert({pos, data});
+    }
+
+    const std::shared_ptr<ChunkData> World::chunk_at(const Vector3i &block_pos) const {
+        Vector3i chunk_pos(chunked_int(block_pos[0]),
+                           chunked_int(block_pos[2]),
+                           chunked_int(block_pos[1]));
+        return chunks.at(chunk_pos);
     }
 
     const std::shared_ptr<ChunkData> World::chunk(const Vector3i &chunk_pos) const {

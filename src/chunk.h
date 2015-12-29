@@ -22,9 +22,11 @@ namespace konstructs {
     class ChunkData {
     public:
         ChunkData(const Vector3i _position, char *compressed, const int size);
+        ChunkData(const Vector3i position, char *blocks);
         ChunkData();
         ~ChunkData();
         char get(const Vector3i &pos) const;
+        std::shared_ptr<ChunkData> set(const Vector3i &pos, const char type) const;
         optional<pair<Block, Block>> get(const Vector3f &camera_position,
                                          const Vector3f &camera_direction,
                                          const float max_distance,

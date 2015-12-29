@@ -3,7 +3,7 @@
 #include "util.h"
 #include "cube.h"
 
-#define WORKERS 4
+#define WORKERS 2
 
 namespace konstructs {
     static Vector3i BELOW(0, 0, -1);

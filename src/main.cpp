@@ -66,10 +66,8 @@ public:
         day_length(600),
         last_frame(glfwGetTime()),
         looking_at(nullopt),
-        hud(17, 14),
-        hud_interaction(false),
-        menu_state(0),
-        hud_selection(0) {
+        hud(17, 14, 9),
+        menu_state(0) {
 
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -83,31 +81,17 @@ public:
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
         memset(&fps, 0, sizeof(fps));
-        hud.set_background(Vector2i(4, 0), 3);
-        hud.set_background(Vector2i(5, 0), 3);
-        hud.set_background(Vector2i(6, 0), 3);
-        hud.set_background(Vector2i(7, 0), 3);
-        hud.set_background(Vector2i(8, 0), 3);
-        hud.set_background(Vector2i(9, 0), 3);
-        hud.set_background(Vector2i(10, 0), 3);
-        hud.set_background(Vector2i(11, 0), 3);
-        hud.set_background(Vector2i(12, 0), 3);
     }
 
     ~Konstructs() {
     }
 
     virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel) {
-        if (hud_selection <= 0 && rel[1] > 0) return true;
-        if (hud_selection >= 8 && rel[1] < 0) return true;
-        hud.set_background({ 4 + hud_selection, 0 }, 2);
-        hud_selection -= 1 * rel[1];
-        hud.set_background({ 4 + hud_selection, 0 }, 3);
-        client.inventory_select(hud_selection);
+        client.inventory_select(hud.scroll(rel[1]));
     }
 
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
-        if(hud_interaction) {
+        if(hud.get_interactive()) {
             if(down) {
                 double x, y;
                 glfwGetCursorPos(mGLFWWindow, &x, &y);
@@ -131,12 +115,16 @@ public:
                 if(button == GLFW_MOUSE_BUTTON_1 && down) {
                     client.click_at(1, l.second.position, 1);
                 } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
-                    std::shared_ptr<ChunkData> updated_chunk =
-                        world.chunk_at(l.first.position)->set(l.first.position, 1);
-                    world.insert(updated_chunk);
-                    auto model_data = create_model_data(updated_chunk->position, world);
-                    auto result = compute_chunk(model_data, blocks);
-                    chunk_shader.add(result);
+                    optional<ItemStack> selected = hud.selected();
+                    if(selected) {
+                        std::shared_ptr<ChunkData> updated_chunk =
+                            world.chunk_at(l.first.position)->set(l.first.position,
+                                                                  selected->type);
+                        world.insert(updated_chunk);
+                        auto model_data = create_model_data(updated_chunk->position, world);
+                        auto result = compute_chunk(model_data, blocks);
+                        chunk_shader.add(result);
+                    }
                     client.click_at(1, l.first.position, 2);
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
                     client.click_at(1, l.second.position, 3);
@@ -150,7 +138,7 @@ public:
         if (Screen::keyboardEvent(key, scancode, action, modifiers))
             return true;
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            if(hud_interaction) {
+            if(hud.get_interactive()) {
                 close_hud();
             } else {
                 glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -165,14 +153,14 @@ public:
         } else if (key == KONSTRUCTS_KEY_FLY && action == GLFW_PRESS) {
             player.fly();
         } else if(key == KONSTRUCTS_KEY_INVENTORY && action == GLFW_PRESS) {
-            if(hud_interaction) {
+            if(hud.get_interactive()) {
                 close_hud();
             } else if (client.is_connected()){
                 client.click_at(0, Vector3i::Zero(), 3);
             }
         } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
             client.inventory_select(key - 49);
-            hud_selection = key - 49;
+            hud.set_selected(key - 49);
         } else {
             return false;
         }
@@ -200,13 +188,13 @@ public:
         glClear(GL_DEPTH_BUFFER_BIT);
         int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
                                         daylight(), time_of_day());
-        if(looking_at && !hud_interaction && !menu_state) {
+        if(looking_at && !hud.get_interactive() && !menu_state) {
             selection_shader.render(player, mSize.x(), mSize.y(),
                                     looking_at->second.position);
         }
         //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
         glClear(GL_DEPTH_BUFFER_BIT);
-        if(!hud_interaction && !menu_state)
+        if(!hud.get_interactive() && !menu_state)
             crosshair_shader.render(mSize.x(), mSize.y());
         double mx, my;
         glfwGetCursorPos(mGLFWWindow, &mx, &my);
@@ -265,7 +253,7 @@ private:
     }
 
     void close_hud() {
-        hud_interaction = false;
+        hud.set_interactive(false);
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         client.close_inventory();
         for(int i = 0; i < 17; i++) {
@@ -310,7 +298,7 @@ private:
             break;
         case 'I':
             handle_inventory(packet->to_string());
-            hud_interaction = true;
+            hud.set_interactive(true);
             glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             break;
         case 'A':
@@ -368,12 +356,11 @@ private:
         if(sscanf(str.c_str(), ",%d,%d,%d",
                   &column, &size, &type) != 3)
             throw std::runtime_error(str);
-        Vector2i pos(column + 4, 0);
 
         if(size < 1) {
-            hud.reset_stack(pos);
+            hud.reset_belt(column);
         } else {
-            hud.set_stack(pos, {size, type});
+            hud.set_belt(column, {size, type});
         }
     }
 
@@ -512,13 +499,11 @@ private:
     Player player;
     optional<pair<konstructs::Block, konstructs::Block>> looking_at;
     Hud hud;
-    bool hud_interaction;
     double px;
     double py;
     FPS fps;
     double last_frame;
     int menu_state;
-    int hud_selection;
     nanogui::Window *window;
 };
 

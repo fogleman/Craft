@@ -221,6 +221,9 @@ docker-zip: /tmp/build-deps/zlib-bin
 	mkdir -p konstructs-client
 	cp build-windows/konstructs.exe konstructs-client/konstructs-client.exe
 	cp /tmp/build-deps/zlib-bin/bin/zlib1.dll konstructs-client
+	cp /usr/i686-w64-mingw32/sys-root/mingw/bin/libgcc_s_sjlj-1.dll konstructs-client
+	cp /usr/i686-w64-mingw32/sys-root/mingw/bin/libstdc++-6.dll konstructs-client
+	cp /usr/i686-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll konstructs-client
 	cp -r ../textures konstructs-client
 	zip -r konstructs-client.zip konstructs-client
 	chown $$HOST_UID *.zip

@@ -527,6 +527,31 @@ private:
     nanogui::Window *window;
 };
 
+#ifdef WIN32
+int init_winsock() {
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    int err;
+
+    wVersionRequested = MAKEWORD(2, 2);
+    err = WSAStartup(wVersionRequested, &wsaData);
+    if (err != 0) {
+        printf("WSAStartup failed with error: %d\n", err);
+        return 1;
+    }
+
+    if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+        printf("Could not find a usable version of Winsock.dll\n");
+        WSACleanup();
+        return 1;
+    }
+
+    return 0;
+}
+#else
+int init_winsock() { return 0; }
+#endif
+
 void print_usage() {
     printf("OPTIONS: -h/--help                  - Show this help\n");
     printf("         -s/--server   <address>    - Server to enter\n");
@@ -571,6 +596,11 @@ int main(int argc, char ** argv) {
         //printf("Connecting to %s with user %s\n", server_addr, server_user);
     }
 
+    if (init_winsock()) {
+        printf("Failed to load winsock");
+        return 1;
+    }
+
     try {
         nanogui::init();
 
@@ -592,5 +622,8 @@ int main(int argc, char ** argv) {
         return -1;
     }
 
+#ifdef WIN32
+    WSACleanup();
+#endif
     return 0;
 }

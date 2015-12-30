@@ -53,7 +53,9 @@ namespace konstructs {
             std::lock_guard<std::mutex> lock(mutex);
             for(auto position: positions) {
                 for(auto m : adjacent(position, world)) {
-                    chunks.push(m);
+                    chunks.push(m.position);
+                    model_data.erase(m.position);
+                    model_data.insert({m.position, m});
                 }
             }
         }
@@ -129,8 +131,13 @@ namespace konstructs {
         while(1) {
             std::unique_lock<std::mutex> ulock(mutex);
             chunks_condition.wait(ulock, [&]{return !chunks.empty();});
-            auto data = chunks.front();
+            auto position = chunks.front();
             chunks.pop();
+            auto itr = model_data.find(position);
+            if(itr == model_data.end())
+                continue;
+            auto data = itr->second;
+            model_data.erase(itr);
             ulock.unlock();
             auto result = compute_chunk(data, block_data);
             if(result->size > 0) {

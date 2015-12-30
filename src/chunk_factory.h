@@ -59,7 +59,8 @@ namespace konstructs {
         void worker();
         std::mutex mutex;
         std::condition_variable chunks_condition;
-        std::queue<ChunkModelData> chunks;
+        std::queue<Vector3i> chunks;
+        std::unordered_map<Vector3i, ChunkModelData, matrix_hash<Vector3i>> model_data;
         std::vector<std::shared_ptr<ChunkModelResult>> models;
         const BlockData &block_data;
     };

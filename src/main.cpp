@@ -203,11 +203,9 @@ public:
 private:
 
     void force_render(const Vector3i &position) {
-        auto model_data = adjacent(position, world);
-        for(auto m : model_data) {
-            auto result = compute_chunk(m, blocks);
-            chunk_shader.add(result);
-        }
+        auto model_data = create_model_data(position, world);
+        auto result = compute_chunk(model_data, blocks);
+        chunk_shader.add(result);
     }
 
     void handle_mouse() {

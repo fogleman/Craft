@@ -26,6 +26,7 @@ endif()
 #-----------------------------------------------------------------------
 option(NANOGUI_BUILD_PYTHON OFF)
 option(NANOGUI_BUILD_EXAMPLE OFF)
+option(NANOGUI_BUILD_SHARED OFF)
 add_subdirectory(dependencies/nanogui)
 
 #-----------------------------------------------------------------------
@@ -49,9 +50,13 @@ FILE(GLOB SOURCE_FILES src/*.cpp dependencies/lodepng/lodepng.cpp src/noise/*.cp
 add_executable(konstructs ${SOURCE_FILES})
 
 if(MINGW)
-  target_link_libraries(konstructs ws2_32.lib
-    ${ZLIB_LIBRARIES} nanogui)
+  target_link_libraries(konstructs
+    ws2_32.lib
+    ${ZLIB_LIBRARIES}
+    nanogui ${NANOGUI_EXTRA_LIBS})
 else()
   target_link_libraries(konstructs
-    ${ZLIB_LIBRARIES} nanogui glfw)
+    ${ZLIB_LIBRARIES}
+    nanogui ${NANOGUI_EXTRA_LIBS}
+    glfw)
 endif()

@@ -56,25 +56,15 @@ windows:
 
 /tmp/build-deps/zlib:
 	@echo -e "\033[1m"
-	@echo "# Download zlib lib for Windows"
+	@echo "# ERROR: Place zlib lib for Windows in /tmp/build-deps/zlib"
 	@echo -e "\033[0m"
-
-	mkdir -p /tmp/build-deps/zlib
-	wget http://netcologne.dl.sourceforge.net/project/gnuwin32/zlib/1.2.3/zlib-1.2.3-lib.zip \
-		-O /tmp/build-deps/zlib-1.2.3-lib.zip
-	echo "b0a2df1a2b0dd0bd801d71d06ce42360  /tmp/build-deps/zlib-1.2.3-lib.zip" | md5sum -c -
-	cd /tmp/build-deps/zlib && unzip ../zlib*lib.zip
+	exit 1
 
 /tmp/build-deps/zlib-bin:
 	@echo -e "\033[1m"
-	@echo "# Download zlib bin for Windows"
+	@echo "# ERROR: Place zlib bin for Windows in /tmp/build-deps/zlib-bin"
 	@echo -e "\033[0m"
-
-	mkdir -p /tmp/build-deps/zlib-bin
-	wget http://netcologne.dl.sourceforge.net/project/gnuwin32/zlib/1.2.3/zlib-1.2.3-bin.zip \
-		-O /tmp/build-deps/zlib-1.2.3-bin.zip
-	echo "0b431b557399c1b3948c13c803a22c95  /tmp/build-deps/zlib-1.2.3-bin.zip" | md5sum -c -
-	cd /tmp/build-deps/zlib-bin && unzip ../zlib*bin.zip
+	exit 1
 
 docker-windows: export CC = /usr/bin/x86_64-w64-mingw32-gcc
 docker-windows: export CXX = /usr/bin/x86_64-w64-mingw32-g++

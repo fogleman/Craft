@@ -18,6 +18,7 @@ endif()
 
 if(MINGW)
   add_definitions(-DWIN32)
+  add_definitions(-DEIGEN_DONT_ALIGN)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 endif()
 

@@ -24,7 +24,7 @@
 //========================================================================
 //
 // This program is used to test the iconify/restore functionality for
-// both fullscreen and windowed mode windows
+// both full screen and windowed mode windows
 //
 //========================================================================
 
@@ -37,7 +37,12 @@
 
 static void usage(void)
 {
-    printf("Usage: iconify [-h] [-f]\n");
+    printf("Usage: iconify [-h] [-f [-a] [-n]]\n");
+    printf("Options:\n");
+    printf("  -a create windows for all monitors\n");
+    printf("  -f create full screen window(s)\n");
+    printf("  -h show this help\n");
+    printf("  -n no automatic iconification of full screen windows\n");
 }
 
 static void error_callback(int error, const char* description)
@@ -91,38 +96,43 @@ static void window_iconify_callback(GLFWwindow* window, int iconified)
            iconified ? "iconified" : "restored");
 }
 
-int main(int argc, char** argv)
+static void window_refresh_callback(GLFWwindow* window)
 {
-    int width, height, ch;
-    GLFWmonitor* monitor = NULL;
+    int width, height;
+
+    printf("%0.2f Window refresh\n", glfwGetTime());
+
+    glfwGetFramebufferSize(window, &width, &height);
+
+    glfwMakeContextCurrent(window);
+
+    glEnable(GL_SCISSOR_TEST);
+
+    glScissor(0, 0, width, height);
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glScissor(0, 0, 640, 480);
+    glClearColor(1, 1, 1, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glfwSwapBuffers(window);
+}
+
+static GLFWwindow* create_window(GLFWmonitor* monitor)
+{
+    int width, height;
     GLFWwindow* window;
-
-    glfwSetErrorCallback(error_callback);
-
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
-
-    while ((ch = getopt(argc, argv, "fh")) != -1)
-    {
-        switch (ch)
-        {
-            case 'h':
-                usage();
-                exit(EXIT_SUCCESS);
-
-            case 'f':
-                monitor = glfwGetPrimaryMonitor();
-                break;
-
-            default:
-                usage();
-                exit(EXIT_FAILURE);
-        }
-    }
 
     if (monitor)
     {
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+
         width = mode->width;
         height = mode->height;
     }
@@ -139,35 +149,106 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    return window;
+}
 
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetWindowSizeCallback(window, window_size_callback);
-    glfwSetWindowFocusCallback(window, window_focus_callback);
-    glfwSetWindowIconifyCallback(window, window_iconify_callback);
+int main(int argc, char** argv)
+{
+    int ch, i, window_count;
+    GLboolean auto_iconify = GL_TRUE, fullscreen = GL_FALSE, all_monitors = GL_FALSE;
+    GLFWwindow** windows;
 
-    printf("Window is %s and %s\n",
-           glfwGetWindowAttrib(window, GLFW_ICONIFIED) ? "iconified" : "restored",
-           glfwGetWindowAttrib(window, GLFW_FOCUSED) ? "focused" : "defocused");
-
-    glEnable(GL_SCISSOR_TEST);
-
-    while (!glfwWindowShouldClose(window))
+    while ((ch = getopt(argc, argv, "afhn")) != -1)
     {
-        glfwGetFramebufferSize(window, &width, &height);
+        switch (ch)
+        {
+            case 'a':
+                all_monitors = GL_TRUE;
+                break;
 
-        glScissor(0, 0, width, height);
-        glClearColor(0, 0, 0, 0);
-        glClear(GL_COLOR_BUFFER_BIT);
+            case 'h':
+                usage();
+                exit(EXIT_SUCCESS);
 
-        glScissor(0, 0, 640, 480);
-        glClearColor(1, 1, 1, 0);
-        glClear(GL_COLOR_BUFFER_BIT);
+            case 'f':
+                fullscreen = GL_TRUE;
+                break;
 
-        glfwSwapBuffers(window);
+            case 'n':
+                auto_iconify = GL_FALSE;
+                break;
+
+            default:
+                usage();
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    glfwSetErrorCallback(error_callback);
+
+    if (!glfwInit())
+        exit(EXIT_FAILURE);
+
+    glfwWindowHint(GLFW_AUTO_ICONIFY, auto_iconify);
+
+    if (fullscreen && all_monitors)
+    {
+        int monitor_count;
+        GLFWmonitor** monitors = glfwGetMonitors(&monitor_count);
+
+        window_count = monitor_count;
+        windows = calloc(window_count, sizeof(GLFWwindow*));
+
+        for (i = 0;  i < monitor_count;  i++)
+        {
+            windows[i] = create_window(monitors[i]);
+            if (!windows[i])
+                break;
+        }
+    }
+    else
+    {
+        GLFWmonitor* monitor = NULL;
+
+        if (fullscreen)
+            monitor = glfwGetPrimaryMonitor();
+
+        window_count = 1;
+        windows = calloc(window_count, sizeof(GLFWwindow*));
+        windows[0] = create_window(monitor);
+    }
+
+    for (i = 0;  i < window_count;  i++)
+    {
+        glfwSetKeyCallback(windows[i], key_callback);
+        glfwSetFramebufferSizeCallback(windows[i], framebuffer_size_callback);
+        glfwSetWindowSizeCallback(windows[i], window_size_callback);
+        glfwSetWindowFocusCallback(windows[i], window_focus_callback);
+        glfwSetWindowIconifyCallback(windows[i], window_iconify_callback);
+        glfwSetWindowRefreshCallback(windows[i], window_refresh_callback);
+
+        window_refresh_callback(windows[i]);
+
+        printf("Window is %s and %s\n",
+            glfwGetWindowAttrib(windows[i], GLFW_ICONIFIED) ? "iconified" : "restored",
+            glfwGetWindowAttrib(windows[i], GLFW_FOCUSED) ? "focused" : "defocused");
+    }
+
+    for (;;)
+    {
         glfwPollEvents();
+
+        for (i = 0;  i < window_count;  i++)
+        {
+            if (glfwWindowShouldClose(windows[i]))
+                break;
+        }
+
+        if (i < window_count)
+            break;
+
+        // Workaround for an issue with msvcrt and mintty
+        fflush(stdout);
     }
 
     glfwTerminate();

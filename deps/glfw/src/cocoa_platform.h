@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.0 OS X - www.glfw.org
+// GLFW 3.1 OS X - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2009-2010 Camilla Berglund <elmindreda@elmindreda.org>
 //
@@ -24,9 +24,8 @@
 //
 //========================================================================
 
-#ifndef _cocoa_platform_h_
-#define _cocoa_platform_h_
-
+#ifndef _glfw3_cocoa_platform_h_
+#define _glfw3_cocoa_platform_h_
 
 #include <stdint.h>
 
@@ -37,113 +36,87 @@
 typedef void* id;
 #endif
 
-#if defined(_GLFW_NSGL)
- #include "nsgl_platform.h"
-#else
- #error "No supported context creation API selected"
-#endif
+#include "posix_tls.h"
+#include "iokit_joystick.h"
 
-#include <IOKit/IOKitLib.h>
-#include <IOKit/IOCFPlugIn.h>
-#include <IOKit/hid/IOHIDLib.h>
-#include <IOKit/hid/IOHIDKeys.h>
+#if defined(_GLFW_NSGL)
+ #include "nsgl_context.h"
+#else
+ #error "The Cocoa backend depends on NSGL platform support"
+#endif
 
 #define _GLFW_PLATFORM_WINDOW_STATE         _GLFWwindowNS  ns
 #define _GLFW_PLATFORM_LIBRARY_WINDOW_STATE _GLFWlibraryNS ns
+#define _GLFW_PLATFORM_LIBRARY_TIME_STATE   _GLFWtimeNS    ns_time
 #define _GLFW_PLATFORM_MONITOR_STATE        _GLFWmonitorNS ns
+#define _GLFW_PLATFORM_CURSOR_STATE         _GLFWcursorNS  ns
 
 
-//========================================================================
-// GLFW platform specific types
-//========================================================================
-
-
-//------------------------------------------------------------------------
-// Platform-specific window structure
-//------------------------------------------------------------------------
+// Cocoa-specific per-window data
+//
 typedef struct _GLFWwindowNS
 {
     id              object;
-    id	            delegate;
+    id              delegate;
     id              view;
     unsigned int    modifierFlags;
+
+    // The total sum of the distances the cursor has been warped
+    // since the last cursor motion event was processed
+    // This is kept to counteract Cocoa doing the same internally
+    double          warpDeltaX, warpDeltaY;
+
 } _GLFWwindowNS;
 
 
-//------------------------------------------------------------------------
-// Joystick information & state
-//------------------------------------------------------------------------
-typedef struct
-{
-    int             present;
-    char            name[256];
-
-    IOHIDDeviceInterface** interface;
-
-    CFMutableArrayRef axisElements;
-    CFMutableArrayRef buttonElements;
-    CFMutableArrayRef hatElements;
-
-    float*          axes;
-    unsigned char*  buttons;
-
-} _GLFWjoy;
-
-
-//------------------------------------------------------------------------
-// Platform-specific library global data for Cocoa
-//------------------------------------------------------------------------
+// Cocoa-specific global data
+//
 typedef struct _GLFWlibraryNS
 {
-    struct {
-        double      base;
-        double      resolution;
-    } timer;
-
     CGEventSourceRef eventSource;
     id              delegate;
     id              autoreleasePool;
     id              cursor;
 
+    short int       publicKeys[256];
     char*           clipboardString;
 
-    _GLFWjoy        joysticks[GLFW_JOYSTICK_LAST + 1];
 } _GLFWlibraryNS;
 
 
-//------------------------------------------------------------------------
-// Platform-specific monitor structure
-//------------------------------------------------------------------------
+// Cocoa-specific per-monitor data
+//
 typedef struct _GLFWmonitorNS
 {
     CGDirectDisplayID   displayID;
     CGDisplayModeRef    previousMode;
-    id                  screen;
+    uint32_t            unitNumber;
 
 } _GLFWmonitorNS;
 
 
-//========================================================================
-// Prototypes for platform specific internal functions
-//========================================================================
+// Cocoa-specific per-cursor data
+//
+typedef struct _GLFWcursorNS
+{
+    id              object;
 
-// Time
+} _GLFWcursorNS;
+
+
+// Cocoa-specific global timer data
+//
+typedef struct _GLFWtimeNS
+{
+    double          base;
+    double          resolution;
+
+} _GLFWtimeNS;
+
+
 void _glfwInitTimer(void);
 
-// Joystick input
-void _glfwInitJoysticks(void);
-void _glfwTerminateJoysticks(void);
-
-// Fullscreen
 GLboolean _glfwSetVideoMode(_GLFWmonitor* monitor, const GLFWvidmode* desired);
 void _glfwRestoreVideoMode(_GLFWmonitor* monitor);
 
-// OpenGL support
-int _glfwInitContextAPI(void);
-void _glfwTerminateContextAPI(void);
-int _glfwCreateContext(_GLFWwindow* window,
-                       const _GLFWwndconfig* wndconfig,
-                       const _GLFWfbconfig* fbconfig);
-void _glfwDestroyContext(_GLFWwindow* window);
-
-#endif // _cocoa_platform_h_
+#endif // _glfw3_cocoa_platform_h_

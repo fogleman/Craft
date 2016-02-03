@@ -24,6 +24,8 @@
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
  #define _USE_MATH_DEFINES
+#elif __GNUC__
+ #define _GNU_SOURCE
 #endif
 
 #include <math.h>

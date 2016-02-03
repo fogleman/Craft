@@ -9,14 +9,15 @@
 // (If the code seems a little bit strange here and there, it may be
 //  because I am not a friend of orthogonal projections)
 //========================================================================
-
-#define GLFW_INCLUDE_GLEXT
-#include <GLFW/glfw3.h>
-
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
  #define _USE_MATH_DEFINES
+#elif __GNUC__
+ #define _GNU_SOURCE
 #endif
+
+#define GLFW_INCLUDE_GLEXT
+#include <GLFW/glfw3.h>
 
 #include <math.h>
 #include <stdio.h>

@@ -87,12 +87,20 @@ namespace konstructs {
 
     void Context::draw(Model *model) {
         model->bind();
-        glDrawArrays(draw_mode, 0, model->vertices());
+        if(model->is_indexed()) {
+            glDrawElements(draw_mode, model->vertices(), GL_UNSIGNED_INT, 0);
+        } else {
+            glDrawArrays(draw_mode, 0, model->vertices());
+        }
     }
 
     void Context::draw(Model &model) {
         model.bind();
-        glDrawArrays(draw_mode, 0, model.vertices());
+        if(model.is_indexed()) {
+            glDrawElements(draw_mode, model.vertices(), GL_UNSIGNED_INT, 0);
+        } else {
+            glDrawArrays(draw_mode, 0, model.vertices());
+        }
     }
 
     void Context::set(const GLuint name, const float value) {
@@ -139,6 +147,10 @@ namespace konstructs {
         glDeleteBuffers(1, &buffer);
     }
 
+    bool BufferModel::is_indexed() {
+        return false;
+    }
+
     int EigenModel::vertices() {
         return columns;
     }
@@ -148,5 +160,69 @@ namespace konstructs {
         glEnableVertexAttribArray(name);
         glVertexAttribPointer(name, dim,
                               type, integral, 0, 0);
+    }
+
+    ShapeModel::ShapeModel(GLuint position_attr, GLuint normal_attr,
+                           GLuint uv_attr, tinyobj::shape_t &shape) :
+        position_attr(position_attr),
+        normal_attr(normal_attr),
+        uv_attr(uv_attr) {
+
+        glGenBuffers(1, &position_buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+        glBufferData(GL_ARRAY_BUFFER, shape.mesh.positions.size() * sizeof(GLfloat),
+                     shape.mesh.positions.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &normal_buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+        glBufferData(GL_ARRAY_BUFFER, shape.mesh.normals.size() * sizeof(GLfloat),
+                     shape.mesh.normals.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &uv_buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+        glBufferData(GL_ARRAY_BUFFER, shape.mesh.texcoords.size() * sizeof(GLfloat),
+                     shape.mesh.texcoords.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &index_buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, shape.mesh.indices.size() * sizeof(GLint),
+                     shape.mesh.indices.data(), GL_STATIC_DRAW);
+
+        indices = shape.mesh.indices.size();
+
+    }
+
+    void ShapeModel::bind() {
+        glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+        glEnableVertexAttribArray(position_attr);
+        glVertexAttribPointer(position_attr, 3, GL_FLOAT,
+                              GL_FALSE, 0, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+        glEnableVertexAttribArray(normal_attr);
+        glVertexAttribPointer(normal_attr, 3, GL_FLOAT,
+                              GL_FALSE, 0, 0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, uv_buffer);
+        glEnableVertexAttribArray(uv_attr);
+        glVertexAttribPointer(uv_attr, 2, GL_FLOAT,
+                              GL_FALSE, 0, 0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    }
+
+    int ShapeModel::vertices() {
+        return indices;
+    }
+
+    bool ShapeModel::is_indexed() {
+        return true;
+    }
+
+    ShapeModel::~ShapeModel() {
+        glDeleteBuffers(1, &position_buffer);
+        glDeleteBuffers(1, &normal_buffer);
+        glDeleteBuffers(1, &uv_buffer);
+        glDeleteBuffers(1, &index_buffer);
     }
 };

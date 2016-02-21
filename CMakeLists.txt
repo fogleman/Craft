@@ -45,9 +45,16 @@ include_directories(
   dependencies/nanogui/ext/eigen
   dependencies/nanogui/ext/nanovg/src
   dependencies/lodepng
-  dependencies/optional-lite)
+  dependencies/optional-lite
+  dependencies/tinyobjloader)
 
-FILE(GLOB SOURCE_FILES src/*.cpp dependencies/lodepng/lodepng.cpp src/noise/*.cpp)
+FILE(
+  GLOB SOURCE_FILES
+  src/*.cpp
+  dependencies/lodepng/lodepng.cpp
+  src/noise/*.cpp
+  dependencies/tinyobjloader/tiny_obj_loader.cc)
+
 add_executable(konstructs ${SOURCE_FILES})
 
 if(MINGW)

@@ -6,6 +6,7 @@
 #include <nanogui/opengl.h>
 #include <nanogui/glutil.h>
 #include <Eigen/Geometry>
+#include "tiny_obj_loader.h"
 
 namespace konstructs {
     using namespace Eigen;
@@ -32,6 +33,8 @@ namespace konstructs {
         virtual void bind() = 0;
         /** Return the number of vertices in the VBO */
         virtual int vertices() = 0;
+        /** Return if model is indexed */
+        virtual bool is_indexed() = 0;
     };
 
     /** Base class for that require no special handling for their VBO.
@@ -41,6 +44,7 @@ namespace konstructs {
     class BufferModel : public Model {
     public:
         ~BufferModel();
+        virtual bool is_indexed();
     protected:
         GLuint buffer;
     };
@@ -77,6 +81,25 @@ namespace konstructs {
         const bool integral;
         const GLuint dim;
         const int columns;
+    };
+
+    class ShapeModel : public Model {
+    public:
+        ShapeModel(GLuint position_attr, GLuint normal_attr, GLuint uv_attr,
+                   tinyobj::shape_t &shape);
+        ~ShapeModel();
+        virtual void bind();
+        virtual int vertices();
+        virtual bool is_indexed();
+    private:
+        GLuint position_attr;
+        GLuint normal_attr;
+        GLuint uv_attr;
+        GLuint position_buffer;
+        GLuint normal_buffer;
+        GLuint uv_buffer;
+        GLuint index_buffer;
+        int indices;
     };
 
     /** A Context instance provides access to Open GL functionality in

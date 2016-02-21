@@ -17,6 +17,12 @@ namespace konstructs {
                 Affine3f(AngleAxisf(mry, Vector3f::UnitY()))).matrix();
     }
 
+    Matrix4f Player::translation() const {
+        return (Affine3f(Translation3f(position)) *
+                Affine3f(AngleAxisf(-mry, Vector3f::UnitY())) *
+                Affine3f(AngleAxisf(-mrx, Vector3f::UnitX()))).matrix();
+    }
+
     Matrix4f Player::view() const {
         return (Affine3f(AngleAxisf(mrx, Vector3f::UnitX())) *
                 Affine3f(AngleAxisf(mry, Vector3f::UnitY())) *

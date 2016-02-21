@@ -17,6 +17,7 @@ namespace konstructs {
         Player(const int _id, const Vector3f _position,
                const float _rx, const float _ry);
         Matrix4f direction() const;
+        Matrix4f translation() const;
         Matrix4f view() const;
         Vector3f camera() const;
         Vector3f camera_direction() const;

@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include "tiny_obj_loader.h"
 #include "optional.hpp"
 #include "matrix.h"
 #include "shader.h"
@@ -23,6 +24,7 @@
 #include "selection_shader.h"
 #include "hud.h"
 #include "hud_shader.h"
+#include "player_shader.h"
 #include "textures.h"
 #include "client.h"
 #include "util.h"
@@ -81,9 +83,14 @@ public:
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
         memset(&fps, 0, sizeof(fps));
+
+        tinyobj::shape_t shape = load_player();
+        player_shader = new PlayerShader(radius, fov, PLAYER_TEXTURE, SKY_TEXTURE,
+                                         near_distance, shape);
     }
 
     ~Konstructs() {
+        delete player_shader;
     }
 
     virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel) {
@@ -187,6 +194,8 @@ public:
         glClear(GL_DEPTH_BUFFER_BIT);
         int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
                                         daylight(), time_of_day());
+        player_shader->render(player, mSize.x(), mSize.y(),
+                              daylight(), time_of_day());
         if(looking_at && !hud.get_interactive() && !menu_state) {
             selection_shader.render(player, mSize.x(), mSize.y(),
                                     looking_at->second.position);
@@ -304,6 +313,12 @@ private:
 
     void handle_packet(konstructs::Packet *packet) {
         switch(packet->type) {
+        case 'P':
+            handle_other_player_packet(packet->to_string());
+            break;
+        case 'D':
+            handle_delete_other_player_packet(packet->to_string());
+            break;
         case 'U':
             handle_player_packet(packet->to_string());
             break;
@@ -341,6 +356,24 @@ private:
                   &pid, &x, &y, &z, &rx, &ry) != 6)
             throw std::runtime_error(str);
         player = Player(pid, Vector3f(x, y, z), rx, ry);
+    }
+
+    void handle_other_player_packet(const string &str) {
+        int pid;
+        float x, y, z, rx, ry;
+        if(sscanf(str.c_str(), ",%d,%f,%f,%f,%f,%f",
+                  &pid, &x, &y, &z, &rx, &ry) != 6)
+            throw std::runtime_error(str);
+        player_shader->add(Player(pid, Vector3f(x, y, z), rx, ry));
+    }
+
+    void handle_delete_other_player_packet(const string &str) {
+        int pid;
+
+        if(sscanf(str.c_str(), ",%d",
+                  &pid) != 1)
+            throw std::runtime_error(str);
+        player_shader->remove(pid);
     }
 
     void handle_block_type(const string &str) {
@@ -514,6 +547,7 @@ private:
     ChunkShader chunk_shader;
     SelectionShader selection_shader;
     HudShader hud_shader;
+    PlayerShader *player_shader;
     ChunkModelFactory model_factory;
     Client client;
     Player player;

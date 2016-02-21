@@ -7,3 +7,6 @@
 [submodule "dependencies/optional-lite"]
 	path = dependencies/optional-lite
 	url = https://github.com/martinmoene/optional-lite.git
+[submodule "dependencies/tinyobjloader"]
+	path = dependencies/tinyobjloader
+	url = https://github.com/syoyo/tinyobjloader.git

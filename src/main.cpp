@@ -135,6 +135,8 @@ public:
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
                     client.click_at(1, l.second.position, 3);
                 }
+            } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
+                client.click_at(0, Vector3i::Zero(), 3);
             }
         }
         return Screen::mouseButtonEvent(p, button, down, modifiers);
@@ -162,7 +164,12 @@ public:
             if(hud.get_interactive()) {
                 close_hud();
             } else if (client.is_connected()){
-                client.click_at(0, Vector3i::Zero(), 3);
+                if(looking_at) {
+                    auto &l = *looking_at;
+                    client.click_at(1, l.second.position, 3);
+                } else {
+                    client.click_at(0, Vector3i::Zero(), 3);
+                }
             }
         } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
             client.inventory_select(key - 49);

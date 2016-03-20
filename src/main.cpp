@@ -290,7 +290,7 @@ private:
         for(auto packet : client.receive(100)) {
             handle_packet(packet.get());
         }
-        Vector3f pos = player.camera();
+        Vector3f pos = player.position;
 
         auto prio = client.receive_prio_chunk(Vector3i(chunked(pos[0]), chunked(pos[2]), chunked(pos[1])));
         /* Insert prio chunk into world */

@@ -32,9 +32,9 @@ namespace konstructs {
         void fly();
         float rx();
         float ry();
+        Vector3f position;
     private:
         int collide(const World &world, const BlockData &blocks, const float near_distance);
-        Vector3f position;
         float mrx;
         float mry;
         bool flying;

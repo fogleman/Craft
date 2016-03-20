@@ -8,6 +8,8 @@ namespace konstructs {
     using namespace Eigen;
     using nonstd::nullopt;
 
+    static Vector3f PLAYER_HEIGHT = Vector3f(0, 0.5, 0);
+
     Player::Player(const int _id, const Vector3f _position, const float _rx,
                    const float _ry):
         id(_id), position(_position), mrx(_rx), mry(_ry), flying(false), dy(0) {}
@@ -26,11 +28,11 @@ namespace konstructs {
     Matrix4f Player::view() const {
         return (Affine3f(AngleAxisf(mrx, Vector3f::UnitX())) *
                 Affine3f(AngleAxisf(mry, Vector3f::UnitY())) *
-                Affine3f(Translation3f(-position))).matrix();
+                Affine3f(Translation3f(-camera()))).matrix();
     }
 
     Vector3f Player::camera() const {
-        return position;
+        return position + PLAYER_HEIGHT;
     }
 
     Vector3f Player::camera_direction() const {
@@ -118,19 +120,19 @@ namespace konstructs {
                                        const BlockData &blocks) const {
         optional<pair<Block, Block>> block(nullopt);
         float best = 0;
-        int p = chunked(position[0]);
-        int q = chunked(position[2]);
-        int k = chunked(position[1]);
         const Vector3f v = camera_direction();
-
+        const Vector3f camera_position = camera();
+        int p = chunked(camera_position[0]);
+        int q = chunked(camera_position[2]);
+        int k = chunked(camera_position[1]);
         const auto &atAndAround = world.atAndAround({p, q, k});
         for (const auto &chunk: atAndAround) {
-            const auto &seen = chunk->get(position, v, 8.0f, blocks);
+            const auto &seen = chunk->get(camera_position, v, 8.0f, blocks);
             if (seen) {
                 auto h = seen->second;
-                float d = sqrtf(powf(h.position[0] - position[0], 2) +
-                                powf(h.position[1] - position[1], 2) +
-                                powf(h.position[2] - position[2], 2));
+                float d = sqrtf(powf(h.position[0] - camera_position[0], 2) +
+                                powf(h.position[1] - camera_position[1], 2) +
+                                powf(h.position[2] - camera_position[2], 2));
                 if (best == 0 || d < best) {
                     best = d;
                     block = seen;

@@ -8,7 +8,8 @@ namespace konstructs {
     using namespace Eigen;
     using nonstd::nullopt;
 
-    static Vector3f PLAYER_HEIGHT = Vector3f(0, 0.5, 0);
+    static float CAMERA_OFFSET = 0.5f;
+    static Vector3f CAMERA_OFFSET_VECTOR = Vector3f(0, CAMERA_OFFSET, 0);
 
     Player::Player(const int _id, const Vector3f _position, const float _rx,
                    const float _ry):
@@ -32,7 +33,7 @@ namespace konstructs {
     }
 
     Vector3f Player::camera() const {
-        return position + PLAYER_HEIGHT;
+        return position + CAMERA_OFFSET_VECTOR;
     }
 
     Vector3f Player::camera_direction() const {
@@ -204,11 +205,12 @@ namespace konstructs {
                                 position[0] = nx + pad;
                             }
                             if (py < -pad && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy - 1, nz))]) {
+                                std::cout << "Too low" << std::endl;
                                 position[1] = ny - pad;
                                 result = 1;
                             }
-                            if (py > pad && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy + 1, nz))]) {
-                                position[1] = ny + pad;
+                            if (py > (pad - CAMERA_OFFSET) && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy + 1, nz))]) {
+                                position[1] = ny + pad - CAMERA_OFFSET;
                                 result = 1;
                             }
                             if (pz < -pad && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy, nz - 1))]) {

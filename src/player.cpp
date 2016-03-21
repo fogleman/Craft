@@ -205,7 +205,6 @@ namespace konstructs {
                                 position[0] = nx + pad;
                             }
                             if (py < -pad && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy - 1, nz))]) {
-                                std::cout << "Too low" << std::endl;
                                 position[1] = ny - pad;
                                 result = 1;
                             }

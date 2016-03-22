@@ -59,7 +59,7 @@ public:
         model_factory(blocks),
         client(),
         radius(10),
-        fov(60.0f),
+        fov(70.0f),
         near_distance(0.125f),
         sky_shader(radius, fov, SKY_TEXTURE, near_distance),
         chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),

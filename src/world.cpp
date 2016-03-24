@@ -1,17 +1,40 @@
 #include "world.h"
 
 namespace konstructs {
+    void World::request_chunk(const Vector3i &pos, Client &client) {
+        /* Keep track of the chunk so we don't request it again */
+        requested.insert(pos);
+        client.chunk(pos);
+    }
+
+    bool World::chunk_not_requested(const Vector3i &pos) const {
+        return requested.find(pos) == requested.end() && chunks.find(pos) == chunks.end();
+    }
+
+    void World::delete_unused_chunks(const Vector3f position, const int radi) {
+        for ( auto it = chunks.begin(); it != chunks.end();) {
+            if ((it->second->position - chunked_vec(position)).norm() > radi) {
+                it = chunks.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     void World::insert(std::shared_ptr<ChunkData> data) {
+        /* Overwrite any existing chunk, we always want the latest data */
         const Vector3i pos = data->position;
         chunks.erase(pos);
         chunks.insert({pos, data});
+
+        /* We now have the chunk, so we don't need to keep track of
+         * it being requested.
+         */
+        requested.erase(pos);
     }
 
     const std::shared_ptr<ChunkData> World::chunk_at(const Vector3i &block_pos) const {
-        Vector3i chunk_pos(chunked_int(block_pos[0]),
-                           chunked_int(block_pos[2]),
-                           chunked_int(block_pos[1]));
-        return chunks.at(chunk_pos);
+        return chunks.at(chunked_vec_int(block_pos));
     }
 
     const std::shared_ptr<ChunkData> World::chunk(const Vector3i &chunk_pos) const {

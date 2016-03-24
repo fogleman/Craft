@@ -13,11 +13,6 @@ namespace konstructs {
         using namespace Eigen;
         using namespace nanogui;
 
-        float distance(Vector3f from, Vector3f to) {
-            Vector3f diff = from - to;
-            return sqrt(diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]);
-        }
-
         Matrix4f projection(int width, int height) {
             float aspect_ratio = (float)width / (float)height;
             float y_scale = (1.0f / tanf((FOV / 2.0f) * PI / 360.0)) * aspect_ratio;

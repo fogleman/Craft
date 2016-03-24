@@ -33,7 +33,9 @@ namespace konstructs {
                     const GLuint _sky_texture, const float _near_distance);
         void add(const shared_ptr<ChunkModelResult> &data);
         int render(const Player &p, const int width, const int height,
-                   const float current_daylight, const float current_timer);
+                   const float current_daylight, const float current_timer,
+                   World &world, Client &client);
+        void delete_unused_models(const Vector3f position, const int radi);
         const GLuint position_attr;
         const GLuint normal_attr;
         const GLuint uv_attr;

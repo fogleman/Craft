@@ -222,9 +222,9 @@ namespace konstructs {
         send_string(ss.str());
     }
 
-    void Client::chunk(const int amount) {
+    void Client::chunk(const Vector3i position) {
         std::stringstream ss;
-        ss << "C," << amount;
+        ss << "C," << position[0] << "," << position[1] << "," << position[2];
         send_string(ss.str());
     }
 

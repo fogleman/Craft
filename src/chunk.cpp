@@ -21,6 +21,14 @@ namespace konstructs {
         return chunked_int(roundf(p));
     }
 
+    Vector3i chunked_vec_int(const Vector3i position) {
+        return Vector3i(chunked_int(position[0]), chunked_int(position[2]), chunked_int(position[1]));
+    }
+
+    Vector3i chunked_vec(const Vector3f position) {
+        return chunked_vec_int(position.cast<int>());
+    }
+
     ChunkData::ChunkData(const Vector3i _position, char *compressed, const int size):
         position(_position) {
         blocks = new char[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];

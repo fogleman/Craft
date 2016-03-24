@@ -19,6 +19,10 @@ namespace konstructs {
 
     int chunked(float p);
 
+    Vector3i chunked_vec_int(const Vector3i position);
+
+    Vector3i chunked_vec(const Vector3f position);
+
     class ChunkData {
     public:
         ChunkData(const Vector3i _position, char *compressed, const int size);

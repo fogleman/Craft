@@ -52,8 +52,13 @@ void print_usage();
 
 class Konstructs: public nanogui::Screen {
 public:
-    Konstructs(const string &hostname, const string &nick, const string &hash) :
-        nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH, KONSTRUCTS_APP_HEIGHT), KONSTRUCTS_APP_TITLE),
+    Konstructs(const string &hostname,
+               const string &nick,
+               const string &hash,
+               bool debug_mode) :
+        nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH,
+                                        KONSTRUCTS_APP_HEIGHT),
+                        KONSTRUCTS_APP_TITLE),
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
@@ -69,7 +74,8 @@ public:
         last_frame(glfwGetTime()),
         looking_at(nullopt),
         hud(17, 14, 9),
-        menu_state(0) {
+        menu_state(0),
+        debug_mode(debug_mode) {
 
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -158,7 +164,9 @@ public:
             } else {
                 hide_menu();
             }*/
-        } else if (key == KONSTRUCTS_KEY_FLY && action == GLFW_PRESS) {
+        } else if (key == KONSTRUCTS_KEY_FLY
+                && action == GLFW_PRESS
+                && debug_mode) {
             player.fly();
         } else if(key == KONSTRUCTS_KEY_INVENTORY && action == GLFW_PRESS) {
             if(hud.get_interactive()) {
@@ -579,6 +587,7 @@ private:
     FPS fps;
     double last_frame;
     int menu_state;
+    bool debug_mode;
     nanogui::Window *window;
 };
 
@@ -619,6 +628,7 @@ int main(int argc, char ** argv) {
     std::string hostname = "";
     std::string username = "";
     std::string password = "";
+    bool debug_mode = false;
 
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
@@ -646,6 +656,9 @@ int main(int argc, char ** argv) {
                     password = argv[i+1];
                 }
             }
+            if (strcmp(argv[i], "--debug") == 0 || strcmp(argv[i], "-d") == 0) {
+                debug_mode = true;
+            }
         }
 
         //printf("Connecting to %s with user %s\n", server_addr, server_user);
@@ -660,7 +673,7 @@ int main(int argc, char ** argv) {
         nanogui::init();
 
         {
-            nanogui::ref<Konstructs> app = new Konstructs(hostname, username, password);
+            nanogui::ref<Konstructs> app = new Konstructs(hostname, username, password, debug_mode);
             app->drawAll();
             app->setVisible(true);
             nanogui::mainloop();

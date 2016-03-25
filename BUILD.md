@@ -1,24 +1,25 @@
 # Install and Dependencies
 
+Clone the git repository and download/update all submodules.
+
+    git submodule update --init --recursive
+
 ## Mac OS X
 
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
-if you don\'t already have it. You may use [Homebrew](http://brew.sh) to simplify
-the installation:
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don\'t already have it. You may use [Homebrew](http://brew.sh) to simplify the installation:
 
     brew install cmake
 
-## Linux (Ubuntu)
+## Ubuntu Linux
 
     sudo apt-get install cmake libglew-dev xorg-dev
     sudo apt-get build-dep glfw
 
 ## Windows
 
-Note: Windows builds are untested on this fork.
+Note: Windows builds are untested on this fork. The official builds are cross compiled, for more information see [package/README.md](package/README.md).
 
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
-and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
 
 Use the following commands in place of the ones described in the next section.
 
@@ -30,16 +31,6 @@ Use the following commands in place of the ones described in the next section.
 Once you have the dependencies, run the following commands in your
 terminal.
 
-    git clone https://github.com/konstructs/client.git
-    cd client
-    cmake .
-    make
-    ./konstructs
-
-## Dependencies
-
-* GLEW is used for managing OpenGL extensions across platforms.
-* GLFW is used for cross-platform window management.
-* lodepng is used for loading PNG textures.
-* tinycthread is used for cross-platform threading.
-* zlib for chunk data decompression (server sends compressed chunks).
+    mkdir build && cd build
+    cmake .. && make
+    ./konstructs -h

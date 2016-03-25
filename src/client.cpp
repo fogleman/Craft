@@ -15,7 +15,7 @@
 #include <sstream>
 #include "client.h"
 
-#define PROTOCOL_VERSION 5
+#define PROTOCOL_VERSION 6
 #define MAX_RECV_SIZE 4096*1024
 #define PACKETS (MAX_PENDING_CHUNKS * 2)
 #define HEADER_SIZE 4

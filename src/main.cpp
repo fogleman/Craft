@@ -198,30 +198,30 @@ public:
         if (client.is_connected()) {
             handle_network();
             handle_keys();
+            handle_mouse();
+            looking_at = player.looking_at(world, blocks);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            for(auto model : model_factory.fetch_models()) {
+                chunk_shader.add(model);
+            }
+            sky_shader.render(player, mSize.x(), mSize.y(), time_of_day());
+            glClear(GL_DEPTH_BUFFER_BIT);
+            int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
+                                            daylight(), time_of_day(), world, client);
+            player_shader->render(player, mSize.x(), mSize.y(),
+                                  daylight(), time_of_day());
+            if(looking_at && !hud.get_interactive() && !menu_state) {
+                selection_shader.render(player, mSize.x(), mSize.y(),
+                                        looking_at->second.position);
+            }
+            //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
+            glClear(GL_DEPTH_BUFFER_BIT);
+            if(!hud.get_interactive() && !menu_state)
+                crosshair_shader.render(mSize.x(), mSize.y());
+            double mx, my;
+            glfwGetCursorPos(mGLFWWindow, &mx, &my);
+            hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks);
         }
-        handle_mouse();
-        looking_at = player.looking_at(world, blocks);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        for(auto model : model_factory.fetch_models()) {
-            chunk_shader.add(model);
-        }
-        sky_shader.render(player, mSize.x(), mSize.y(), time_of_day());
-        glClear(GL_DEPTH_BUFFER_BIT);
-        int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
-                                        daylight(), time_of_day(), world, client);
-        player_shader->render(player, mSize.x(), mSize.y(),
-                              daylight(), time_of_day());
-        if(looking_at && !hud.get_interactive() && !menu_state) {
-            selection_shader.render(player, mSize.x(), mSize.y(),
-                                    looking_at->second.position);
-        }
-        //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-        glClear(GL_DEPTH_BUFFER_BIT);
-        if(!hud.get_interactive() && !menu_state)
-            crosshair_shader.render(mSize.x(), mSize.y());
-        double mx, my;
-        glfwGetCursorPos(mGLFWWindow, &mx, &my);
-        hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks);
     }
 
 private:

@@ -200,7 +200,7 @@ public:
         sky_shader.render(player, mSize.x(), mSize.y(), time_of_day());
         glClear(GL_DEPTH_BUFFER_BIT);
         int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
-                                        daylight(), time_of_day());
+                                        daylight(), time_of_day(), world, client);
         player_shader->render(player, mSize.x(), mSize.y(),
                               daylight(), time_of_day());
         if(looking_at && !hud.get_interactive() && !menu_state) {
@@ -305,7 +305,6 @@ private:
                 positions.push_back(chunk->position);
             }
             model_factory.create_models(positions, world);
-            client.chunk(new_chunks.size());
         }
         /* Render prio chunk after all other chunks have been inserted */
         if(prio) {
@@ -314,6 +313,11 @@ private:
             model_factory.create_models({pos}, world);
             /* Force render of prioritized chunk */
             force_render(pos);
+        } else {
+            /* Oh, no need to build models on main thread,
+             * let's do bookkeeping! */
+            chunk_shader.delete_unused_models(player.camera(), radius);
+            world.delete_unused_chunks(player.camera(), radius);
         }
 
     }
@@ -536,7 +540,6 @@ private:
     void setup_connection(const string &nick, const string &hash, const string &hostname) {
         client.open_connection(nick, hash, hostname);
         load_textures();
-        client.chunk(MAX_PENDING_CHUNKS);
         client.set_connected(true);
     }
 

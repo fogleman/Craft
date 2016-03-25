@@ -46,7 +46,7 @@ namespace konstructs {
         void version(const int version, const string &nick, const string &hash);
         void position(const Vector3f position,
                       const float rx, const float ry);
-        void chunk(const int amount);
+        void chunk(const Vector3i position);
         void konstruct();
         void click_inventory(const int item);
         void close_inventory();

@@ -25,6 +25,7 @@ endif()
 #-----------------------------------------------------------------------
 # Nano GUI
 #-----------------------------------------------------------------------
+SET(GLFW_USE_OPTIMUS_HPG ON CACHE BOOL "Build glfw with HPG (High Performance Graphics) on windows")
 option(NANOGUI_BUILD_PYTHON OFF)
 option(NANOGUI_BUILD_EXAMPLE OFF)
 option(NANOGUI_BUILD_SHARED OFF)

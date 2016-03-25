@@ -59,7 +59,7 @@ public:
         model_factory(blocks),
         client(),
         radius(10),
-        fov(60.0f),
+        fov(70.0f),
         near_distance(0.125f),
         sky_shader(radius, fov, SKY_TEXTURE, near_distance),
         chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),
@@ -290,7 +290,7 @@ private:
         for(auto packet : client.receive(100)) {
             handle_packet(packet.get());
         }
-        Vector3f pos = player.camera();
+        Vector3f pos = player.position;
 
         auto prio = client.receive_prio_chunk(Vector3i(chunked(pos[0]), chunked(pos[2]), chunked(pos[1])));
         /* Insert prio chunk into world */

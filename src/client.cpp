@@ -13,6 +13,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sstream>
+#include <algorithm>
 #include "client.h"
 
 #define PROTOCOL_VERSION 7
@@ -162,9 +163,8 @@ namespace konstructs {
 
     vector<shared_ptr<ChunkData>> Client::receive_chunks(const int max) {
         std::unique_lock<std::mutex> ulock_packets(packets_mutex);
-        auto maxIter = chunks.begin() + max;
-        auto endIter = chunks.end();
-        auto last = maxIter < endIter ? maxIter : endIter;
+        int maxOrSize = std::min(max, (int)chunks.size());
+        auto last = chunks.begin() + maxOrSize;
         vector<shared_ptr<ChunkData>> head(chunks.begin(), last);
         chunks.erase(chunks.begin(), last);
         return head;

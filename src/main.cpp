@@ -353,6 +353,9 @@ private:
         case 'i':
             handle_held_stack(packet->to_string());
             break;
+        case 'T':
+            handle_time(packet->to_string());
+            break;
         default:
             cout << "UNKNOWN: " << packet->type << endl;
             break;
@@ -471,6 +474,14 @@ private:
         } else {
             hud.set_held({amount, type});
         }
+    }
+
+    void handle_time(const string &str) {
+        long time_value;
+        if(sscanf(str.c_str(), ",%lu", &time_value) != 1) {
+            throw std::runtime_error(str);
+        }
+        glfwSetTime((double)time_value);
     }
 
     float time_of_day() {

@@ -6,8 +6,7 @@ This is a Infiniminer/Minecraft inspired multiplayer open source game, focused o
 
 Just a few thousand lines of modern C++ using modern OpenGL 3.3 (shaders).
 
-This client requires a server to run. You need to start a server on the same computer for a single player like experience.
-
+To play the game, you can connect to the official server at `play.konstructs.org`, or start your own server, even on the same computer for a single player like experience.
 
 For more information see our web page at http://www.konstructs.org
 

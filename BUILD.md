@@ -6,7 +6,9 @@ Clone the git repository and download/update all submodules.
 
 ## Mac OS X
 
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) if you don\'t already have it. You may use [Homebrew](http://brew.sh) to simplify the installation:
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
+if you don\'t already have it. You may use [Homebrew](http://brew.sh) to simplify
+the installation:
 
     brew install cmake
 
@@ -19,7 +21,8 @@ Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
 
 Note: Windows builds are untested on this fork. The official builds are cross compiled, for more information see [package/README.md](package/README.md).
 
-Download and install [CMake](http://www.cmake.org/cmake/resources/software.html) and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
+and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
 
 Use the following commands in place of the ones described in the next section.
 

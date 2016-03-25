@@ -239,7 +239,7 @@ namespace konstructs {
 
                 /* Check for held block*/
                 auto held = hud.held();
-                if(held) {
+                if(held && hud.get_interactive()) {
 
                     /* Calculate mouse position on screen as gl coordinates */
                     float x = (mouse_x / (float)width) * 2.0f - 1.0f;

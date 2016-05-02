@@ -6,6 +6,11 @@
 #define VOID_BLOCK 0
 #define SOLID_BLOCK 100
 
+#define STATE_SOLID 0
+#define STATE_LIQUID 1
+#define STATE_GAS 2
+#define STATE_PLASMA 3
+
 namespace konstructs {
 
     using namespace Eigen;
@@ -15,6 +20,7 @@ namespace konstructs {
         char is_plant[256];
         char is_obstacle[256];
         char is_transparent[256];
+        char state[256];
     };
 
     class Block {

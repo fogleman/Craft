@@ -84,6 +84,13 @@ namespace konstructs {
             } else if(dy == 0) {
                 // Jump when walking changes the acceleration upwards to 8
                 dy = 8;
+            } else {
+                // Get middle of block
+                Vector3i iPos((int)(position[0] + 0.5f), (int)(position[1]), (int)(position[2] + 0.5f));
+                ChunkData *chunk = world.chunk_at(iPos).get();
+                if(blocks.state[chunk->get(iPos)] == STATE_LIQUID) {
+                    dy = 5.5;
+                }
             }
         }
 

@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <stdexcept>
 #include "tiny_obj_loader.h"
 #include "optional.hpp"
 #include "matrix.h"
@@ -88,6 +89,7 @@ public:
         blocks.is_plant[SOLID_BLOCK] = 0;
         blocks.is_obstacle[SOLID_BLOCK] = 1;
         blocks.is_transparent[SOLID_BLOCK] = 0;
+        blocks.state[SOLID_BLOCK] = STATE_SOLID;
         memset(&fps, 0, sizeof(fps));
 
         tinyobj::shape_t shape = load_player();
@@ -401,11 +403,23 @@ private:
     void handle_block_type(const string &str) {
         int w, obstacle, transparent, left, right, top, bottom, front, back;
         char shape[16];
-        if(sscanf(str.c_str(), ",%d,%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
-                  &w, shape, &obstacle, &transparent, &left, &right,
-                  &top, &bottom, &front, &back) != 10)
+        char state[16];
+        if(sscanf(str.c_str(), ",%d,%15[^,],%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
+                  &w, shape, state, &obstacle, &transparent, &left, &right,
+                  &top, &bottom, &front, &back) != 11)
             throw std::runtime_error(str);
         blocks.is_plant[w] = strncmp(shape, "plant", 16) == 0;
+        if(strncmp(state, "solid", 16) == 0) {
+            blocks.state[w] = STATE_SOLID;
+        } else if(strncmp(state, "liquid", 16) == 0) {
+            blocks.state[w] = STATE_LIQUID;
+        } else if(strncmp(state, "gas", 16) == 0) {
+            blocks.state[w] = STATE_GAS;
+        } else if(strncmp(state, "plasma", 16) == 0) {
+            blocks.state[w] = STATE_PLASMA;
+        } else {
+            throw std::invalid_argument("Invalid block type state received!");
+        }
         blocks.is_obstacle[w] = obstacle;
         blocks.is_transparent[w] = transparent;
         blocks.blocks[w][0] = left;

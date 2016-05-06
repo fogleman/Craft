@@ -192,6 +192,9 @@ namespace konstructs {
         }
     }
 
+    bool face_visible(int self, int neighbour, const char *is_transparent, const char *state) {
+        return is_transparent[neighbour] || (self != neighbour && state[neighbour] == STATE_LIQUID);
+    }
 
     GLfloat *malloc_faces(int components, int faces) {
         return (GLfloat*)malloc(sizeof(GLfloat) * 6 * components * faces);
@@ -199,7 +202,7 @@ namespace konstructs {
 
     shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data,
                                                const BlockData &block_data) {
-        char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * XZ_SIZE, sizeof(char));
+        char *blocks = (char *)calloc(XZ_SIZE * XZ_SIZE * XZ_SIZE, sizeof(char));
         char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
         char *above = data.above->blocks;
         char *below = data.below->blocks;
@@ -222,42 +225,43 @@ namespace konstructs {
 
         const char *is_transparent = block_data.is_transparent;
         const char *is_plant = block_data.is_plant;
+        const char *state = block_data.state;
 
         int ox = - CHUNK_SIZE - 1;
         int oy = - CHUNK_SIZE - 1;
         int oz = - CHUNK_SIZE - 1;
 
 
-        /* Populate the opaque array with the chunk itself */
-        const char *blocks = data.self->blocks;
+        /* Populate the blocks array with the chunk itself */
+        const char *self = data.self->blocks;
 
-        CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH(self, ex, ey, ez, ew) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH;
 
         /* With the six sides of the chunk */
 
-        /* Populate the opaque array with the chunk below */
+        /* Populate the blocks array with the chunk below */
         CHUNK_FOR_EACH_XZ(below, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - ox;
             int y = ey - CHUNK_SIZE - oy;
             int z = ez - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
 
 
-        /* Populate the opaque array with the chunk above
+        /* Populate the blocks array with the chunk above
          * The shading requires additional 8 blocks
          */
         for(int i = 0; i < 8; i++) {
@@ -266,59 +270,59 @@ namespace konstructs {
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
                 int w = ew;
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_2D;
         }
 
-        /* Populate the opaque array with the chunk left */
+        /* Populate the blocks array with the chunk left */
         CHUNK_FOR_EACH_YZ(left, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
 
-        /* Populate the opaque array with the chunk right */
+        /* Populate the blocks array with the chunk right */
         CHUNK_FOR_EACH_YZ(right, 0, ex, ey, ez, ew) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
 
 
-        /* Populate the opaque array with the chunk front */
+        /* Populate the blocks array with the chunk front */
         CHUNK_FOR_EACH_XY(front, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
 
 
-        /* Populate the opaque array with the chunk back */
+        /* Populate the blocks array with the chunk back */
         CHUNK_FOR_EACH_XY(back, 0, ex, ey, ez, ew) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
@@ -328,54 +332,54 @@ namespace konstructs {
          */
 
         for(int i = 0; i < 8; i++) {
-            /* Populate the opaque array with the chunk above-left */
+            /* Populate the blocks array with the chunk above-left */
             CHUNK_FOR_EACH_Z(above_left, CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
                 int x = ex - CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
                 int w = ew;
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
 
-            /* Populate the opaque array with the chunk above-right */
+            /* Populate the blocks array with the chunk above-right */
             CHUNK_FOR_EACH_Z(above_right, 0, i, ex, ey, ez, ew) {
                 int x = ex + CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
                 int w = ew;
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
 
-            /* Populate the opaque array with the chunk above-front */
+            /* Populate the blocks array with the chunk above-front */
             CHUNK_FOR_EACH_X(above_front, CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
                 int w = ew;
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
-            /* Populate the opaque array with the chunk above-back */
+            /* Populate the blocks array with the chunk above-back */
             CHUNK_FOR_EACH_X(above_back, 0, i, ex, ey, ez, ew) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
                 int w = ew;
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
 
-            /* Populate the opaque array with the block above-left-front */
+            /* Populate the blocks array with the block above-left-front */
             {
                 int ex = CHUNK_SIZE - 1;
                 int ey = i;
@@ -384,13 +388,13 @@ namespace konstructs {
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
                 int w = above_left_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
 
-            /* Populate the opaque array with the block above-right-front */
+            /* Populate the blocks array with the block above-right-front */
             {
                 int ex = 0;
                 int ey = i;
@@ -399,13 +403,13 @@ namespace konstructs {
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
                 int w = above_right_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
 
-            /* Populate the opaque array with the block above-left-back */
+            /* Populate the blocks array with the block above-left-back */
             {
                 int ex = CHUNK_SIZE - 1;
                 int ey = i;
@@ -414,13 +418,13 @@ namespace konstructs {
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
                 int w = above_left_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
 
-            /* Populate the opaque array with the block above-right-back */
+            /* Populate the blocks array with the block above-right-back */
             {
                 int ex = 0;
                 int ey = i;
@@ -429,8 +433,8 @@ namespace konstructs {
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
                 int w = above_right_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                opaque[XYZ(x, y, z)] = !is_transparent[w];
-                if (opaque[XYZ(x, y, z)]) {
+                blocks[XYZ(x, y, z)] = w;
+                if (!is_transparent[w]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
@@ -439,50 +443,50 @@ namespace konstructs {
 
         /* Populate the corner cases on the same level */
 
-        /* Populate the opaque array with the chunk left-front */
+        /* Populate the blocks array with the chunk left-front */
         CHUNK_FOR_EACH_Y(left_front, CHUNK_SIZE - 1, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
 
-        /* Populate the opaque array with the chunk left-back */
+        /* Populate the blocks array with the chunk left-back */
         CHUNK_FOR_EACH_Y(left_back, CHUNK_SIZE - 1, 0, ex, ey, ez, ew) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
 
-        /* Populate the opaque array with the chunk right-front */
+        /* Populate the blocks array with the chunk right-front */
         CHUNK_FOR_EACH_Y(right_front, 0, CHUNK_SIZE - 1, ex, ey, ez, ew) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
 
-        /* Populate the opaque array with the chunk right-back */
+        /* Populate the blocks array with the chunk right-back */
         CHUNK_FOR_EACH_Y(right_back, 0, 0, ex, ey, ez, ew) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
             int w = ew;
-            opaque[XYZ(x, y, z)] = !is_transparent[w];
-            if (opaque[XYZ(x, y, z)]) {
+            blocks[XYZ(x, y, z)] = w;
+            if (!is_transparent[w]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
@@ -490,19 +494,19 @@ namespace konstructs {
 
         // count exposed faces
         int faces = 0;
-        CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH(self, ex, ey, ez, ew) {
             if (ew <= 0) {
                 continue;
             }
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - oz;
-            int f1 = !opaque[XYZ(x - 1, y, z)];
-            int f2 = !opaque[XYZ(x + 1, y, z)];
-            int f3 = !opaque[XYZ(x, y + 1, z)];
-            int f4 = !opaque[XYZ(x, y - 1, z)];
-            int f5 = !opaque[XYZ(x, y, z - 1)];
-            int f6 = !opaque[XYZ(x, y, z + 1)];
+            int f1 = face_visible(ew, blocks[XYZ(x - 1, y, z)], is_transparent, state);
+            int f2 = face_visible(ew, blocks[XYZ(x + 1, y, z)], is_transparent, state);
+            int f3 = face_visible(ew, blocks[XYZ(x, y + 1, z)], is_transparent, state);
+            int f4 = face_visible(ew, blocks[XYZ(x, y - 1, z)], is_transparent, state);
+            int f5 = face_visible(ew, blocks[XYZ(x, y, z - 1)], is_transparent, state);
+            int f6 = face_visible(ew, blocks[XYZ(x, y, z + 1)], is_transparent, state);
             int total = f1 + f2 + f3 + f4 + f5 + f6;
             if (total == 0) {
                 continue;
@@ -518,19 +522,19 @@ namespace konstructs {
         GLfloat * vertices = result->data();
         int offset = 0;
 
-        CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH(self, ex, ey, ez, ew) {
             if (ew <= 0) {
                 continue;
             }
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - oz;
-            int f1 = !opaque[XYZ(x - 1, y, z)];
-            int f2 = !opaque[XYZ(x + 1, y, z)];
-            int f3 = !opaque[XYZ(x, y + 1, z)];
-            int f4 = !opaque[XYZ(x, y - 1, z)];
-            int f5 = !opaque[XYZ(x, y, z - 1)];
-            int f6 = !opaque[XYZ(x, y, z + 1)];
+            int f1 = face_visible(ew, blocks[XYZ(x - 1, y, z)], is_transparent, state);
+            int f2 = face_visible(ew, blocks[XYZ(x + 1, y, z)], is_transparent, state);
+            int f3 = face_visible(ew, blocks[XYZ(x, y + 1, z)], is_transparent, state);
+            int f4 = face_visible(ew, blocks[XYZ(x, y - 1, z)], is_transparent, state);
+            int f5 = face_visible(ew, blocks[XYZ(x, y, z - 1)], is_transparent, state);
+            int f6 = face_visible(ew, blocks[XYZ(x, y, z + 1)], is_transparent, state);
             int total = f1 + f2 + f3 + f4 + f5 + f6;
             if (total == 0) {
                 continue;
@@ -541,11 +545,11 @@ namespace konstructs {
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     for (int dz = -1; dz <= 1; dz++) {
-                        neighbors[index] = opaque[XYZ(x + dx, y + dy, z + dz)];
+                        neighbors[index] = !is_transparent[blocks[XYZ(x + dx, y + dy, z + dz)]];
                         shades[index] = 0;
                         if (y + dy <= highest[XZ(x + dx, z + dz)]) {
                             for (int oy = 0; oy < 8; oy++) {
-                                if (opaque[XYZ(x + dx, y + dy + oy, z + dz)]) {
+                                if (!is_transparent[blocks[XYZ(x + dx, y + dy + oy, z + dz)]]) {
                                     shades[index] = 1.0 - oy * 0.125;
                                     break;
                                 }
@@ -579,7 +583,7 @@ namespace konstructs {
             offset += total * 60;
         } END_CHUNK_FOR_EACH;
 
-        free(opaque);
+        free(blocks);
         free(highest);
         return result;
     }

@@ -23,8 +23,9 @@ osx:
 	@echo "# Build on OSX"
 	@echo -e "\033[0m"
 
-	brew update
-	cd .. && cmake . && make
+	cd .. \
+		&& sudo cmake . \
+		&& sudo make
 
 docs:
 	@echo -e "\033[1m"

@@ -125,7 +125,7 @@ namespace konstructs {
     }
 
     optional<pair<Block, Block>> Player::looking_at(const World &world,
-                                       const BlockData &blocks) const {
+                                                    const BlockData &blocks) const {
         optional<pair<Block, Block>> block(nullopt);
         float best = 0;
         const Vector3f v = camera_direction();

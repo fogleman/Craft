@@ -49,9 +49,8 @@ namespace konstructs {
         "}\n",
         "#version 330\n"
         "out vec4 frag_color;\n"
-        "const float pi = 3.14159265;\n"
         "void main() {\n"
-        "    frag_color = vec4(1.0, 1.0, 1.0, 1.0);\n"
+        "    frag_color = vec4(0.1, 0.1, 0.1, 1.0);\n"
         "}\n",
         GL_LINES),
         position_attr(attributeId("position")),

@@ -10,6 +10,7 @@ git:
   submodules: false
 
 matrix:
+  fast_finish: true
   allow_failures:
     - os: linux
       env: MAKE_COMMAND="docs upload-docs"

@@ -11,14 +11,15 @@ git:
 
 matrix:
   allow_failures:
-    - os: osx
-      env: MAKE_COMMAND="osx"
     - os: linux
       env: MAKE_COMMAND="docs upload-docs"
   include:
     - os: osx
+      osx_image: xcode7.3
+      compiler: clang
       env: MAKE_COMMAND="osx"
     - os: linux
+      compiler: gcc
       env: MAKE_COMMAND="linux tar deb rpm upload-tar upload-deb"
     - os: linux
       env: MAKE_COMMAND="windows zip upload-zip"
@@ -27,7 +28,10 @@ matrix:
 
 before_install:
   - git submodule update --init --recursive
-  - sudo pip install awscli
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      sudo pip install awscli
+    fi
 
 notifications:
   webhooks:

@@ -366,6 +366,9 @@ private:
         case 'T':
             handle_time(packet->to_string());
             break;
+        case 'c':
+            handle_chunk_updated(packet->to_string());
+            break;
         default:
             cout << "UNKNOWN: " << packet->type << endl;
             break;
@@ -504,6 +507,15 @@ private:
             throw std::runtime_error(str);
         }
         glfwSetTime((double)time_value);
+    }
+
+    void handle_chunk_updated(const string &str) {
+        int p,q,k;
+        if(sscanf(str.c_str(), ",%d,%d,%d", &p, &q, &k) != 3) {
+            throw std::runtime_error(str);
+        }
+        Vector3i pos(p, q, k);
+        world.set_chunk_updated(pos);
     }
 
     float time_of_day() {

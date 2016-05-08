@@ -12,8 +12,10 @@ namespace konstructs {
     class World {
     public:
         void request_chunk(const Vector3i &pos, Client &client);
+        void set_chunk_updated(const Vector3i &pos);
         bool chunk_not_requested(const Vector3i &pos) const;
-void delete_unused_chunks(const Vector3f position, const int radi);
+        bool chunk_updated_since_requested(const Vector3i &pos) const;
+        void delete_unused_chunks(const Vector3f position, const int radi);
         void insert(std::shared_ptr<ChunkData> data);
         const std::shared_ptr<ChunkData> chunk_at(const Vector3i &block_pos) const;
         const std::shared_ptr<ChunkData> chunk(const Vector3i &chunk_pos) const;
@@ -23,6 +25,7 @@ void delete_unused_chunks(const Vector3f position, const int radi);
     private:
         std::unordered_map<Vector3i, std::shared_ptr<ChunkData>, matrix_hash<Vector3i>> chunks;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> requested;
+        std::unordered_set<Vector3i, matrix_hash<Vector3i>> updated;
     };
 };
 

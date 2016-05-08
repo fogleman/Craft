@@ -4,11 +4,22 @@ namespace konstructs {
     void World::request_chunk(const Vector3i &pos, Client &client) {
         /* Keep track of the chunk so we don't request it again */
         requested.insert(pos);
+        /* Remove requested chunks from updated (we will get the latest update) */
+        updated.erase(pos);
         client.chunk(pos);
     }
 
+    void World::set_chunk_updated(const Vector3i &pos) {
+        updated.insert(pos);
+    }
+
     bool World::chunk_not_requested(const Vector3i &pos) const {
-        return requested.find(pos) == requested.end() && chunks.find(pos) == chunks.end();
+        return (updated.find(pos) != updated.end() && chunks.find(pos) != chunks.end()) // Updated and exist in the world
+            || (requested.find(pos) == requested.end() && chunks.find(pos) == chunks.end()); // Not requested and not in world
+    }
+
+    bool World::chunk_updated_since_requested(const Vector3i &pos) const {
+        return updated.find(pos) != updated.end();
     }
 
     void World::delete_unused_chunks(const Vector3f position, const int radi) {

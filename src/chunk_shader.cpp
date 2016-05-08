@@ -167,8 +167,9 @@ namespace konstructs {
                             Vector3i pos(p, q, k);
                             int distance = (pos - player_chunk).norm();
                             int score;
+                            auto it = models.find(pos);
+                            bool is_updated = world.chunk_updated_since_requested(pos);
                             if(chunk_visible(planes, pos)) {
-                                auto it = models.find(pos);
                                 if(it != models.end()) {
                                     /* Ok, found the model, let's render it!
                                      */
@@ -177,10 +178,18 @@ namespace konstructs {
                                     c.set(translation, m->translation);
                                     c.draw(m);
                                     faces += m->faces;
-                                    /* We already have a model of the chunk,
-                                     * so we really don't need it.
-                                     */
-                                    score = NO_CHUNK_FOUND;
+                                    if(is_updated) {
+                                        /* We already have a model of the chunk,
+                                         * but it's outdated, so it needs to be refreshed.
+                                         */
+                                        score = distance / 2;
+                                    } else {
+                                        /* We already have a model of the chunk,
+                                         * it didn't change since last requested,
+                                         * so we really don't need it.
+                                         */
+                                        score = NO_CHUNK_FOUND;
+                                    }
                                 } else {
                                     /* We wanted to render the model,
                                      * but we didn't have it, so we really want this chunk!
@@ -192,7 +201,13 @@ namespace konstructs {
                                  * but if she turns around she might need this chunk
                                  * so let's fetch it, but not super urgent
                                  */
-                                score = distance;
+                                if(it != models.end() && !is_updated) {
+                                    /* We already have it and it's not updated */
+                                    score = NO_CHUNK_FOUND;
+                                } else {
+                                    /* We don't have it or it's update*/
+                                    score = distance;
+                                }
                             }
                             if(score < best_chunk_score && world.chunk_not_requested(pos)) {
                                 best_chunk_score = score;

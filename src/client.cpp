@@ -16,7 +16,7 @@
 #include <algorithm>
 #include "client.h"
 
-#define PROTOCOL_VERSION 7
+#define PROTOCOL_VERSION 8
 #define MAX_RECV_SIZE 4096*1024
 #define PACKETS (MAX_PENDING_CHUNKS * 2)
 #define HEADER_SIZE 4
@@ -232,9 +232,9 @@ namespace konstructs {
         send_string("K");
     }
 
-    void Client::click_inventory(const int item) {
+    void Client::click_inventory(const int item, const int button) {
         std::stringstream ss;
-        ss << "R," << item;
+        ss << "R," << item << "," << button;
         send_string(ss.str());
     }
 

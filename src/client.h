@@ -48,7 +48,7 @@ namespace konstructs {
                       const float rx, const float ry);
         void chunk(const Vector3i position);
         void konstruct();
-        void click_inventory(const int item);
+        void click_inventory(const int item, const int button);
         void close_inventory();
         void talk(const string &text);
         void inventory_select(const int pos);

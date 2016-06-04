@@ -118,7 +118,8 @@ public:
                     Vector2i pos = *clicked_at;
                     if(hud.active(pos)) {
                         int index = pos[0] + pos[1] * 17;
-                        client.click_inventory(index);
+
+                        client.click_inventory(index, translate_button(button));
                     }
                 }
             }
@@ -129,7 +130,7 @@ public:
             if(looking_at) {
                 auto &l = *looking_at;
                 if(button == GLFW_MOUSE_BUTTON_1 && down) {
-                    client.click_at(1, l.second.position, 1);
+                    client.click_at(1, l.second.position, translate_button(button));
                 } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
                     optional<ItemStack> selected = hud.selected();
                     if(selected) {
@@ -139,12 +140,12 @@ public:
                         world.insert(updated_chunk);
                         force_render(updated_chunk->position);
                     }
-                    client.click_at(1, l.first.position, 2);
+                    client.click_at(1, l.first.position, translate_button(button));
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
-                    client.click_at(1, l.second.position, 3);
+                    client.click_at(1, l.second.position, translate_button(button));
                 }
             } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
-                client.click_at(0, Vector3i::Zero(), 3);
+                client.click_at(0, Vector3i::Zero(), translate_button(button));
             }
         }
         return Screen::mouseButtonEvent(p, button, down, modifiers);
@@ -227,6 +228,17 @@ public:
     }
 
 private:
+
+    int translate_button(int button) {
+        switch(button) {
+        case GLFW_MOUSE_BUTTON_1:
+            return 1;
+        case GLFW_MOUSE_BUTTON_2:
+            return 2;
+        case GLFW_MOUSE_BUTTON_3:
+            return 3;
+        }
+    }
 
     void force_render(const Vector3i &position) {
         auto model_data = create_model_data(position, world);

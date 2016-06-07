@@ -29,7 +29,7 @@ namespace konstructs {
     }
 
     void Client::open_connection(const string &nick, const string &hash,
-                   const string &hostname, const int port) {
+                                 const string &hostname, const int port) {
         struct hostent *host;
         struct sockaddr_in address;
         if ((host = gethostbyname(hostname.c_str())) == 0) {
@@ -97,39 +97,46 @@ namespace konstructs {
     }
 
     void Client::recv_worker() {
+        while(1) {
+            try {
+                // Wait for an open connection
+                std::unique_lock<std::mutex> ulock_connected(mutex_connected);
+                cv_connected.wait(ulock_connected, [&]{ return connected; });
+                ulock_connected.unlock();
 
-        // Wait for an open connection
-        std::unique_lock<std::mutex> ulock_connected(mutex_connected);
-        cv_connected.wait(ulock_connected, [&]{ return connected; });
-        ulock_connected.unlock();
+                int size;
+                while (1) {
+                    // Read header from network
+                    recv_all((char*)&size, HEADER_SIZE);
 
-        int size;
-        while (1) {
-            // Read header from network
-            recv_all((char*)&size, HEADER_SIZE);
+                    size = ntohl(size);
 
-            size = ntohl(size);
+                    if (size > MAX_RECV_SIZE) {
+                        std::cerr << "package too large, received " << size << " bytes" << std::endl;
+                        throw std::runtime_error("Packet too large");
+                    }
 
-            if (size > MAX_RECV_SIZE) {
-                std::cerr << "package too large, received " << size << " bytes" << std::endl;
-                throw std::runtime_error("Packet too large");
-            }
+                    char type;
+                    // read 'size' bytes from the network
+                    recv_all(&type, sizeof(char));
 
-            char type;
-            // read 'size' bytes from the network
-            recv_all(&type, sizeof(char));
-
-            // Remove one byte type header'
-            size = size - 1;
-            auto packet = make_shared<Packet>(type,size);
-            // read 'size' bytes from the network
-            int r = recv_all(packet->buffer(), packet->size);
-            // move data over to packet_buffer
-            if(packet->type == 'C')
-                process_chunk(packet.get());
-            else {
-                std::unique_lock<std::mutex> ulock_packets(packets_mutex);
-                packets.push(packet);
+                    // Remove one byte type header'
+                    size = size - 1;
+                    auto packet = make_shared<Packet>(type,size);
+                    // read 'size' bytes from the network
+                    int r = recv_all(packet->buffer(), packet->size);
+                    // move data over to packet_buffer
+                    if(packet->type == 'C')
+                        process_chunk(packet.get());
+                    else {
+                        std::unique_lock<std::mutex> ulock_packets(packets_mutex);
+                        packets.push(packet);
+                    }
+                }
+            } catch(const std::exception& ex) {
+                std::cout << "Caught exception: " << ex.what() << std::endl;
+                std::cout << "Will assume connection is down: " << ex.what() << std::endl;
+                force_close();
             }
         }
     }
@@ -175,6 +182,7 @@ namespace konstructs {
         while (count < length) {
             int n = send(sock, data + count, length, 0);
             if (n == -1) {
+                force_close();
                 return -1;
             }
             count += n;
@@ -188,11 +196,9 @@ namespace konstructs {
         int header_size = htonl(str.size());
         if (send_all((char*)&header_size, sizeof(header_size)) == -1) {
             SHOWERROR("client_sendall");
-            throw std::runtime_error("Failed to send");
         }
         if (send_all(str.c_str(), str.size()) == -1) {
             SHOWERROR("client_sendall");
-            throw std::runtime_error("Failed to send");
         }
     }
 
@@ -257,5 +263,10 @@ namespace konstructs {
         std::unique_lock<std::mutex> ulck_connected(mutex_connected);
         connected = state;
         cv_connected.notify_all();
+    }
+
+    void Client::force_close() {
+        close(sock);
+        set_connected(false);
     }
 };

@@ -64,6 +64,7 @@ namespace konstructs {
         size_t recv_all(char* out_buf, const size_t size);
         void process_chunk(Packet *packet);
         void recv_worker();
+        void force_close();
         int bytes_sent;
         int sock;
         std::mutex packets_mutex;

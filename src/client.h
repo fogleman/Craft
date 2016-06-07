@@ -51,8 +51,7 @@ namespace konstructs {
         void click_inventory(const int item, const int button);
         void close_inventory();
         void talk(const string &text);
-        void inventory_select(const int pos);
-        void click_at(const int hit, const Vector3i pos, const int button);
+        void click_at(const int hit, const Vector3i pos, const int button, const int active);
         bool is_connected();
         string get_error_message();
         void set_connected(bool state);

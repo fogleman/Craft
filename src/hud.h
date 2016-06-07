@@ -25,6 +25,7 @@ namespace konstructs {
         optional<ItemStack> selected() const;
         int scroll(int direction);
         void set_selected(int s);
+        int get_selection() const;
         void set_interactive(bool i);
         bool get_interactive() const;
         std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> backgrounds() const;

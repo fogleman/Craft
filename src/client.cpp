@@ -230,16 +230,10 @@ namespace konstructs {
         send_string(ss.str());
     }
 
-    void Client::inventory_select(const int pos) {
-        std::stringstream ss;
-        ss << "A," << pos;
-        send_string(ss.str());
-    }
-
     void Client::click_at(const int hit, const Vector3i pos,
-                          const int button) {
+                          const int button, const int active) {
         std::stringstream ss;
-        ss << "M," << hit << "," << pos[0] << "," << pos[1] << "," << pos[2] << "," << button;
+        ss << "M," << hit << "," << pos[0] << "," << pos[1] << "," << pos[2] << "," << button << "," << active;
         send_string(ss.str());
     }
 

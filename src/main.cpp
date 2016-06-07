@@ -54,12 +54,15 @@ void print_usage();
 class Konstructs: public nanogui::Screen {
 public:
     Konstructs(const string &hostname,
-               const string &nick,
-               const string &hash,
+               const string &username,
+               const string &password,
                bool debug_mode) :
         nanogui::Screen(Eigen::Vector2i(KONSTRUCTS_APP_WIDTH,
                                         KONSTRUCTS_APP_HEIGHT),
                         KONSTRUCTS_APP_TITLE),
+        hostname(hostname),
+        username(username),
+        password(password),
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
@@ -75,16 +78,16 @@ public:
         last_frame(glfwGetTime()),
         looking_at(nullopt),
         hud(17, 14, 9),
-        menu_state(0),
+        menu_state(false),
         debug_mode(debug_mode) {
 
         using namespace nanogui;
         performLayout(mNVGContext);
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        if (nick.size() > 0 && hash.size() > 0 && hostname.size() > 0) {
-            setup_connection(nick, hash, hostname);
+        if (username.size() > 0 && password.size() > 0 && hostname.size() > 0) {
+            setup_connection();
         } else {
-            init_menu(nick, hash, hostname);
+            show_menu(string("Connect to a server"));
         }
         blocks.is_plant[SOLID_BLOCK] = 0;
         blocks.is_obstacle[SOLID_BLOCK] = 1;
@@ -163,7 +166,7 @@ public:
         } else if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
             // TODO: implement this again when time has come ;)
             /*if (!menu_state) {
-                init_menu("","","");
+                show_menu("","","");
             } else {
                 hide_menu();
             }*/
@@ -224,6 +227,8 @@ public:
             double mx, my;
             glfwGetCursorPos(mGLFWWindow, &mx, &my);
             hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks);
+        } else if(!menu_state){
+            show_menu(client.get_error_message());
         }
     }
 
@@ -554,12 +559,8 @@ private:
     }
 
 
-    void init_menu(std::string username, std::string password, std::string hostname = "play.konstructs.org") {
+    void show_menu(string message) {
         using namespace nanogui;
-
-        menu_server_hostname = hostname != "" ? hostname : "play.konstructs.org"; // default host
-        menu_server_username = username;
-        menu_server_password = password;
 
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         glActiveTexture(GL_TEXTURE0);
@@ -567,42 +568,44 @@ private:
         FormHelper *gui = new FormHelper(this);
         window = gui->addWindow({0,0}, "Main Menu");
         gui->setFixedSize({125, 20});
-        gui->addGroup("Connect to a server");
-        gui->addVariable("Server address", menu_server_hostname);
-        gui->addVariable("Username", menu_server_username);
-        gui->addVariable("Password", menu_server_password);
+        gui->addGroup(message);
+        gui->addVariable("Server address", hostname);
+        gui->addVariable("Username", username);
+        gui->addVariable("Password", password);
         gui->addButton("Connect", [&](){
-                if (menu_server_username != "" &&
-                        menu_server_password != "" &&
-                        menu_server_hostname != "") {
-                    setup_connection(menu_server_username,
-                                     menu_server_password,
-                                     menu_server_hostname);
+                if (username != "" &&
+                    password != "" &&
+                    hostname != "") {
                     hide_menu();
+                    setup_connection();
                 }
             });
 
         window->center();
         performLayout(mNVGContext);
-        menu_state = 1;
+        menu_state = true;
     }
 
     void hide_menu() {
         glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         window->dispose();
-        menu_state = 0;
+        menu_state = false;
     }
 
 
-    void setup_connection(const string &nick, const string &hash, const string &hostname) {
-        client.open_connection(nick, hash, hostname);
-        load_textures();
-        client.set_connected(true);
+    void setup_connection() {
+        try {
+            client.open_connection(username, password, hostname);
+            load_textures();
+            client.set_connected(true);
+        } catch(const std::exception& ex) {
+            show_menu(client.get_error_message());
+        }
     }
 
-    std::string menu_server_hostname;
-    std::string menu_server_username;
-    std::string menu_server_password;
+    std::string hostname;
+    std::string username;
+    std::string password;
     BlockData blocks;
     CrosshairShader crosshair_shader;
     int radius;
@@ -624,7 +627,7 @@ private:
     double py;
     FPS fps;
     double last_frame;
-    int menu_state;
+    bool menu_state;
     bool debug_mode;
     nanogui::Window *window;
 };

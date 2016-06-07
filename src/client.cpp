@@ -28,8 +28,13 @@ namespace konstructs {
         worker_thread = new std::thread(&Client::recv_worker, this);
     }
 
+    string Client::get_error_message() {
+        return error_message;
+    }
+
     void Client::open_connection(const string &nick, const string &hash,
                                  const string &hostname, const int port) {
+        error_message = "";
         struct hostent *host;
         struct sockaddr_in address;
         if ((host = gethostbyname(hostname.c_str())) == 0) {
@@ -37,7 +42,8 @@ namespace konstructs {
             std::cerr << "WSAGetLastError: " << WSAGetLastError() << std::endl;
 #endif
             SHOWERROR("gethostbyname");
-            exit(1);
+            error_message = "Could not find server: " + hostname;
+            throw std::runtime_error(error_message);
         }
         memset(&address, 0, sizeof(address));
         address.sin_family = AF_INET;
@@ -45,11 +51,13 @@ namespace konstructs {
         address.sin_port = htons(port);
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
             SHOWERROR("socket");
-            throw std::runtime_error("Failed to create socket");
+            error_message = "Failed to create socket";
+            throw std::runtime_error(error_message);
         }
         if (connect(sock, (struct sockaddr *)&address, sizeof(address)) == -1) {
             SHOWERROR("connect");
-            throw std::runtime_error("Failed to connect");
+            error_message = "Could not connect to server";
+            throw std::runtime_error(error_message);
         }
         version(PROTOCOL_VERSION, nick, hash);
     }
@@ -74,6 +82,11 @@ namespace konstructs {
             t += length;
         }
         return t;
+    }
+
+    void Client::process_error(Packet *packet) {
+        error_message = packet->to_string().substr(1);
+        force_close();
     }
 
     void Client::process_chunk(Packet *packet) {
@@ -105,7 +118,7 @@ namespace konstructs {
                 ulock_connected.unlock();
 
                 int size;
-                while (1) {
+                while (connected) {
                     // Read header from network
                     recv_all((char*)&size, HEADER_SIZE);
 
@@ -128,6 +141,8 @@ namespace konstructs {
                     // move data over to packet_buffer
                     if(packet->type == 'C')
                         process_chunk(packet.get());
+                    else if(packet->type == 'E')
+                        process_error(packet.get());
                     else {
                         std::unique_lock<std::mutex> ulock_packets(packets_mutex);
                         packets.push(packet);
@@ -136,6 +151,7 @@ namespace konstructs {
             } catch(const std::exception& ex) {
                 std::cout << "Caught exception: " << ex.what() << std::endl;
                 std::cout << "Will assume connection is down: " << ex.what() << std::endl;
+                error_message = "Disconnected from server.";
                 force_close();
             }
         }
@@ -182,7 +198,6 @@ namespace konstructs {
         while (count < length) {
             int n = send(sock, data + count, length, 0);
             if (n == -1) {
-                force_close();
                 return -1;
             }
             count += n;

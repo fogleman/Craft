@@ -228,7 +228,7 @@ public:
             glfwGetCursorPos(mGLFWWindow, &mx, &my);
             hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks);
         } else if(!menu_state){
-            show_menu(string("Disconnected from server."));
+            show_menu(client.get_error_message());
         }
     }
 
@@ -599,7 +599,7 @@ private:
             load_textures();
             client.set_connected(true);
         } catch(const std::exception& ex) {
-            show_menu(string("Connection failed, please check your details."));
+            show_menu(client.get_error_message());
         }
     }
 

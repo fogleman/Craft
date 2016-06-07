@@ -54,6 +54,7 @@ namespace konstructs {
         void inventory_select(const int pos);
         void click_at(const int hit, const Vector3i pos, const int button);
         bool is_connected();
+        string get_error_message();
         void set_connected(bool state);
         vector<shared_ptr<Packet>> receive(const int max);
         optional<shared_ptr<ChunkData>> receive_prio_chunk(const Vector3i pos);
@@ -62,6 +63,7 @@ namespace konstructs {
         int send_all(const char *data, const int length);
         void send_string(const string &str);
         size_t recv_all(char* out_buf, const size_t size);
+        void process_error(Packet *packet);
         void process_chunk(Packet *packet);
         void recv_worker();
         void force_close();
@@ -74,6 +76,7 @@ namespace konstructs {
         std::queue<shared_ptr<Packet>> packets;
         std::deque<shared_ptr<ChunkData>> chunks;
         bool connected;
+        std::string error_message;
     };
 };
 

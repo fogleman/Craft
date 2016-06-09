@@ -14,16 +14,18 @@ namespace konstructs {
 
     class Player {
     public:
-        Player(const int _id, const Vector3f _position,
-               const float _rx, const float _ry);
+        Player(const int id, const Vector3f position,
+               const float rx, const float ry);
         Matrix4f direction() const;
         Matrix4f translation() const;
         Matrix4f view() const;
         Vector3f camera() const;
         Vector3f camera_direction() const;
+        Vector3i feet() const;
+        bool can_place(Vector3i block, const World &world, const BlockData &blocks);
         Vector3f update_position(int sz, int sx, float dt,
                                  const World &world, const BlockData &blocks,
-                                 const float near_distance, const bool jump);
+                                 const float near_distance, const bool jump, const bool sneaking);
         optional<pair<Block, Block>> looking_at(const World &world,
                                                 const BlockData &blocks) const;
         void rotate_x(float speed);
@@ -34,7 +36,8 @@ namespace konstructs {
         float ry();
         Vector3f position;
     private:
-        int collide(const World &world, const BlockData &blocks, const float near_distance);
+        int collide(const World &world, const BlockData &blocks,
+                    const float near_distance, const bool sneaking);
         float mrx;
         float mry;
         bool flying;

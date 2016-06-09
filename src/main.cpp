@@ -105,7 +105,7 @@ public:
     }
 
     virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel) {
-        client.inventory_select(hud.scroll(rel[1]));
+        hud.scroll(rel[1]);
         return true;
     }
 
@@ -133,7 +133,7 @@ public:
             if(looking_at) {
                 auto &l = *looking_at;
                 if(button == GLFW_MOUSE_BUTTON_1 && down) {
-                    client.click_at(1, l.second.position, translate_button(button));
+                    client.click_at(1, l.second.position, translate_button(button), hud.get_selection());
                 } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
                     optional<ItemStack> selected = hud.selected();
                     if(selected) {
@@ -143,12 +143,12 @@ public:
                         world.insert(updated_chunk);
                         force_render(updated_chunk->position);
                     }
-                    client.click_at(1, l.first.position, translate_button(button));
+                    client.click_at(1, l.first.position, translate_button(button), hud.get_selection());
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
-                    client.click_at(1, l.second.position, translate_button(button));
+                    client.click_at(1, l.second.position, translate_button(button), hud.get_selection());
                 }
             } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
-                client.click_at(0, Vector3i::Zero(), translate_button(button));
+                client.click_at(0, Vector3i::Zero(), translate_button(button), hud.get_selection());
             }
         }
         return Screen::mouseButtonEvent(p, button, down, modifiers);
@@ -180,13 +180,12 @@ public:
             } else if (client.is_connected()){
                 if(looking_at) {
                     auto &l = *looking_at;
-                    client.click_at(1, l.second.position, 3);
+                    client.click_at(1, l.second.position, 3, hud.get_selection());
                 } else {
-                    client.click_at(0, Vector3i::Zero(), 3);
+                    client.click_at(0, Vector3i::Zero(), 3, hud.get_selection());
                 }
             }
         } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
-            client.inventory_select(key - 49);
             hud.set_selected(key - 49);
         } else {
             return false;
@@ -374,9 +373,6 @@ private:
             hud.set_interactive(true);
             glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             break;
-        case 'A':
-            handle_select_active(packet->to_string());
-            break;
         case 'i':
             handle_held_stack(packet->to_string());
             break;
@@ -488,21 +484,6 @@ private:
         } else {
             hud.set_background(pos, 2);
             hud.set_stack(pos, {size, type});
-        }
-    }
-
-    void handle_select_active(const string &str) {
-        int column;
-        if(sscanf(str.c_str(), ",%d",
-                  &column) != 1)
-            throw std::runtime_error(str);
-        for(int i = 0; i < 9; i++) {
-            Vector2i pos(i + 4, 0);
-            if(i == column) {
-                hud.set_background(pos, 3);
-            } else {
-                hud.set_background(pos, 2);
-            }
         }
     }
 

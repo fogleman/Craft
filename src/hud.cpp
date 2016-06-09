@@ -89,6 +89,18 @@ namespace konstructs {
     }
     void Hud::set_selected(int s) {
         selection = s;
+        for(int i = 0; i < 9; i++) {
+            Vector2i pos(i + 4, 0);
+            if(i == selection) {
+                set_background(pos, 3);
+            } else {
+                set_background(pos, 2);
+            }
+        }
+
+    }
+    int Hud::get_selection() const {
+        return selection;
     }
     void Hud::set_interactive(bool i) {
         interactive = i;

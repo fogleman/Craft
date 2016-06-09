@@ -21,6 +21,8 @@ namespace konstructs {
         Matrix4f view() const;
         Vector3f camera() const;
         Vector3f camera_direction() const;
+        Vector3i feet() const;
+        bool can_place(Vector3i block, const World &world, const BlockData &blocks);
         Vector3f update_position(int sz, int sx, float dt,
                                  const World &world, const BlockData &blocks,
                                  const float near_distance, const bool jump);

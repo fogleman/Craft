@@ -43,6 +43,26 @@ namespace konstructs {
         return vec;
     }
 
+    Vector3i Player::feet() const {
+        return Vector3i(roundf(position[0]), roundf(position[1]) - 1, roundf(position[2]));
+    }
+
+    bool Player::can_place(Vector3i block, const World &world, const BlockData &blocks) {
+        Vector3i f = feet();
+        /* Are we trying to place blocks on ourselves? */
+        if(block(0) == f(0) && block(2) == f(2) && block(1) >= f(1) && block(1) < f(1) + 2) {
+            /* We may place on our feet under certain circumstances */
+            if(f(1) == block(1)) {
+                /* Allow placing on our feet if the block above our head is not an obstacle*/
+                return !blocks.is_obstacle[world.get_block(Vector3i(f(0), f(1) + 2, f(2)))];
+            } else {
+                /* We are never allowed to place on our head */
+                return false;
+            }
+        }
+        return true;
+    }
+
     Vector3f Player::update_position(int sz, int sx, float dt,
                                      const World &world, const BlockData &blocks,
                                      const float near_distance, const bool jump) {

@@ -134,7 +134,7 @@ public:
                 auto &l = *looking_at;
                 if(button == GLFW_MOUSE_BUTTON_1 && down) {
                     client.click_at(1, l.second.position, translate_button(button), hud.get_selection());
-                } else if(button == GLFW_MOUSE_BUTTON_2 && down) {
+                } else if(button == GLFW_MOUSE_BUTTON_2 && down && player.can_place(l.first.position, world, blocks)) {
                     optional<ItemStack> selected = hud.selected();
                     if(selected) {
                         std::shared_ptr<ChunkData> updated_chunk =

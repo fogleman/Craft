@@ -65,7 +65,8 @@ namespace konstructs {
 
     Vector3f Player::update_position(int sz, int sx, float dt,
                                      const World &world, const BlockData &blocks,
-                                     const float near_distance, const bool jump) {
+                                     const float near_distance, const bool jump,
+                                     const bool sneaking) {
         float vx = 0, vy = 0, vz = 0;
         if (!sz && !sx) { // Not mowing in X or Z
             vx = 0;
@@ -134,7 +135,7 @@ namespace konstructs {
                 dy = std::max(dy, -250.0f);
             }
             position += Vector3f(vx, vy + dy * ut, vz);
-            if (collide(world, blocks, near_distance)) {
+            if (collide(world, blocks, near_distance, sneaking)) {
                 dy = 0;
             }
         }
@@ -198,7 +199,8 @@ namespace konstructs {
         return mry;
     }
 
-    int Player::collide(const World &world, const BlockData &blocks, const float near_distance) {
+    int Player::collide(const World &world, const BlockData &blocks,
+                        const float near_distance, const bool sneaking) {
         int result = 0;
         float x = position[0];
         float y = position[1];
@@ -214,45 +216,54 @@ namespace konstructs {
         float py = y - ny;
         float pz = z - nz;
         float pad = near_distance * 2;
-        int r = 1;
-        for (int dp = -r; dp <= r; dp++) {
-            for (int dq = -r; dq <= r; dq++) {
-                for (int dk = -r; dk <= r; dk++) {
-                    try {
-                        ChunkData *chunk = world.chunk(Vector3i(p + dp, q + dq, k + dk)).get();
-                        if (blocks.is_obstacle[chunk->get(Vector3i(nx, ny-1, nz))]) {
-                            position[1] += 1.0f;
-                            return 1;
-                        }
-                        for (int dy = 0; dy < height; dy++) {
-                            if (px < -pad && blocks.is_obstacle[chunk->get(Vector3i(nx - 1, ny - dy, nz))]) {
-                                position[0] = nx - pad;
-                            }
-                            if (px > pad && blocks.is_obstacle[chunk->get(Vector3i(nx + 1, ny - dy, nz))]) {
-                                position[0] = nx + pad;
-                            }
-                            if (py < -pad && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy - 1, nz))]) {
-                                position[1] = ny - pad;
-                                result = 1;
-                            }
-                            if (py > (pad - CAMERA_OFFSET) && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy + 1, nz))]) {
-                                position[1] = ny + pad - CAMERA_OFFSET;
-                                result = 1;
-                            }
-                            if (pz < -pad && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy, nz - 1))]) {
-                                position[2] = nz - pad;
-                            }
-                            if (pz > pad && blocks.is_obstacle[chunk->get(Vector3i(nx, ny - dy, nz + 1))]) {
-                                position[2] = nz + pad;
-                            }
-                        }
-                    } catch(std::out_of_range e) {
-                        continue;
-                    }
+
+        try {
+
+            if (blocks.is_obstacle[world.get_block(feet())]) {
+                position[1] += 1.0f;
+                return 1;
+            }
+
+            if(sneaking) {
+                if (px < -pad && !blocks.is_obstacle[world.get_block(Vector3i(nx - 1, ny - 2, nz))]) {
+                    position[0] = nx - pad;
+                }
+                if (px > pad && !blocks.is_obstacle[world.get_block(Vector3i(nx + 1, ny - 2, nz))]) {
+                    position[0] = nx + pad;
+                }
+                if (pz < -pad && !blocks.is_obstacle[world.get_block(Vector3i(nx, ny - 2, nz - 1))]) {
+                    position[2] = nz - pad;
+                }
+                if (pz > pad && !blocks.is_obstacle[world.get_block(Vector3i(nx, ny - 2, nz + 1))]) {
+                    position[2] = nz + pad;
                 }
             }
+            for (int dy = 0; dy < height; dy++) {
+                if (px < -pad && blocks.is_obstacle[world.get_block(Vector3i(nx - 1, ny - dy, nz))]) {
+                    position[0] = nx - pad;
+                }
+                if (px > pad && blocks.is_obstacle[world.get_block(Vector3i(nx + 1, ny - dy, nz))]) {
+                    position[0] = nx + pad;
+                }
+                if (py < -pad && blocks.is_obstacle[world.get_block(Vector3i(nx, ny - dy - 1, nz))]) {
+                    position[1] = ny - pad;
+                    result = 1;
+                }
+                if (py > (pad - CAMERA_OFFSET) && blocks.is_obstacle[world.get_block(Vector3i(nx, ny - dy + 1, nz))]) {
+                    position[1] = ny + pad - CAMERA_OFFSET;
+                    result = 1;
+                }
+                if (pz < -pad && blocks.is_obstacle[world.get_block(Vector3i(nx, ny - dy, nz - 1))]) {
+                    position[2] = nz - pad;
+                }
+                if (pz > pad && blocks.is_obstacle[world.get_block(Vector3i(nx, ny - dy, nz + 1))]) {
+                    position[2] = nz + pad;
+                }
+            }
+        } catch(std::out_of_range e) {
+            /* chunk was not loaded yet */
+            return result;
         }
-
         return result;
     }
 };

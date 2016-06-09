@@ -40,6 +40,7 @@
 #define KONSTRUCTS_KEY_RIGHT 'D'
 #define KONSTRUCTS_KEY_JUMP GLFW_KEY_SPACE
 #define KONSTRUCTS_KEY_FLY GLFW_KEY_TAB
+#define KONSTRUCTS_KEY_SNEAK GLFW_KEY_LEFT_SHIFT
 #define KONSTRUCTS_KEY_INVENTORY 'E'
 using std::cout;
 using std::cerr;
@@ -273,6 +274,7 @@ private:
         int sx = 0;
         int sz = 0;
         bool jump = false;
+        bool sneak = false;
         double now = glfwGetTime();
         double dt = now - last_frame;
         dt = MIN(dt, 0.2);
@@ -294,8 +296,11 @@ private:
         if(glfwGetKey(mGLFWWindow, KONSTRUCTS_KEY_JUMP)) {
             jump = true;
         }
+        if(glfwGetKey(mGLFWWindow, KONSTRUCTS_KEY_SNEAK)) {
+            sneak = true;
+        }
         client.position(player.update_position(sz, sx, (float)dt, world,
-                                               blocks, near_distance, jump),
+                                               blocks, near_distance, jump, sneak),
                         player.rx(), player.ry());
     }
 

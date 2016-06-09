@@ -14,8 +14,8 @@ namespace konstructs {
 
     class Player {
     public:
-        Player(const int _id, const Vector3f _position,
-               const float _rx, const float _ry);
+        Player(const int id, const Vector3f position,
+               const float rx, const float ry);
         Matrix4f direction() const;
         Matrix4f translation() const;
         Matrix4f view() const;

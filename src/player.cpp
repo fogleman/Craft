@@ -11,9 +11,9 @@ namespace konstructs {
     static float CAMERA_OFFSET = 0.5f;
     static Vector3f CAMERA_OFFSET_VECTOR = Vector3f(0, CAMERA_OFFSET, 0);
 
-    Player::Player(const int _id, const Vector3f _position, const float _rx,
-                   const float _ry):
-        id(_id), position(_position), mrx(_rx), mry(_ry), flying(false), dy(0) {}
+    Player::Player(const int id, const Vector3f position, const float rx,
+                   const float ry):
+        id(id), position(position), mrx(rx), mry(ry), flying(false), dy(0) {}
 
     Matrix4f Player::direction() const {
         return (Affine3f(AngleAxisf(mrx, Vector3f::UnitX())) *

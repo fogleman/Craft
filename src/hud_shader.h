@@ -31,7 +31,7 @@ namespace konstructs {
         ItemStackModel(const GLuint position_attr, const GLuint normal_attr,
                        const GLuint uv_attr,
                        const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
-                       const BlockData &blocks);
+                       const BlockTypeInfo &blocks);
     };
 
     class AmountModel : public BaseModel {
@@ -54,7 +54,7 @@ namespace konstructs {
                    const GLuint uv_attr,
                    const int type, const float x, const float y,
                    const float size,
-                   const BlockData &blocks);
+                   const BlockTypeInfo &blocks);
     };
 
     class HudShader: private ShaderProgram {
@@ -66,7 +66,7 @@ namespace konstructs {
         void render(const int width, const int height,
                     const float mouse_x, const float mouse_y,
                     const Hud &hud,
-                    const BlockData &blocks);
+                    const BlockTypeInfo &blocks);
 
     private:
         const GLuint position;

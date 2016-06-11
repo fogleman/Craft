@@ -90,10 +90,10 @@ public:
         } else {
             show_menu(string("Connect to a server"));
         }
-        blocks.is_plant[SOLID_BLOCK] = 0;
-        blocks.is_obstacle[SOLID_BLOCK] = 1;
-        blocks.is_transparent[SOLID_BLOCK] = 0;
-        blocks.state[SOLID_BLOCK] = STATE_SOLID;
+        blocks.is_plant[SOLID_TYPE] = 0;
+        blocks.is_obstacle[SOLID_TYPE] = 1;
+        blocks.is_transparent[SOLID_TYPE] = 0;
+        blocks.state[SOLID_TYPE] = STATE_SOLID;
         memset(&fps, 0, sizeof(fps));
 
         tinyobj::shape_t shape = load_player();
@@ -140,7 +140,7 @@ public:
                     if(selected) {
                         std::shared_ptr<ChunkData> updated_chunk =
                             world.chunk_at(l.first.position)->set(l.first.position,
-                                                                  selected->type);
+                                                                  {selected->type, MAX_HEALTH});
                         world.insert(updated_chunk);
                         force_render(updated_chunk->position);
                     }
@@ -470,7 +470,7 @@ private:
         if(size < 1) {
             hud.reset_belt(column);
         } else {
-            hud.set_belt(column, {size, type});
+            hud.set_belt(column, {size, (uint16_t)type});
         }
     }
 
@@ -488,7 +488,7 @@ private:
             hud.reset_stack(pos);
         } else {
             hud.set_background(pos, 2);
-            hud.set_stack(pos, {size, type});
+            hud.set_stack(pos, {size, (uint16_t)type});
         }
     }
 
@@ -500,7 +500,7 @@ private:
         if(type == -1) {
             hud.reset_held();
         } else {
-            hud.set_held({amount, type});
+            hud.set_held({amount, (uint16_t)type});
         }
     }
 
@@ -592,7 +592,7 @@ private:
     std::string hostname;
     std::string username;
     std::string password;
-    BlockData blocks;
+    BlockTypeInfo blocks;
     CrosshairShader crosshair_shader;
     int radius;
     int fov;

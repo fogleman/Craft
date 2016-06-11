@@ -44,7 +44,7 @@ namespace konstructs {
         requested.erase(pos);
     }
 
-    const char World::get_block(const Vector3i &block_pos) const {
+    const BlockData World::get_block(const Vector3i &block_pos) const {
         return chunks.at(chunked_vec_int(block_pos))->get(block_pos);
     }
 

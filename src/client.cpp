@@ -26,6 +26,7 @@ namespace konstructs {
 
     Client::Client() : connected(false) {
         worker_thread = new std::thread(&Client::recv_worker, this);
+        inflation_buffer = new char[BLOCK_BUFFER_SIZE];
     }
 
     string Client::get_error_message() {
@@ -104,7 +105,7 @@ namespace konstructs {
 
         Vector3i position(p, q, k);
         const int blocks_size = packet->size - 3 * sizeof(int);
-        auto chunk = make_shared<ChunkData>(position, pos, blocks_size);
+        auto chunk = make_shared<ChunkData>(position, pos, blocks_size, inflation_buffer);
         std::unique_lock<std::mutex> ulock_packets(packets_mutex);
         chunks.push_back(chunk);
     }

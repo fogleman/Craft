@@ -16,14 +16,14 @@ namespace konstructs {
 
     void make_block(int type, float x, float y, float z, float size,
                     float rx, float ry, float rz, float *d,
-                    const BlockData &blocks);
+                    const BlockTypeInfo &blocks);
 
     void make_stacks(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
                      float *d,
                      const float rx,
                      const float ry,
                      const float rz,
-                     const BlockData &blocks);
+                     const BlockTypeInfo &blocks);
 
     void make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks, float *d);
 
@@ -54,7 +54,7 @@ namespace konstructs {
     ItemStackModel::ItemStackModel(const GLuint position_attr, const GLuint normal_attr,
                                    const GLuint uv_attr,
                                    const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
-                                   const BlockData &blocks) :
+                                   const BlockTypeInfo &blocks) :
         BaseModel(position_attr, normal_attr, uv_attr) {
 
         verts = 0;
@@ -120,7 +120,7 @@ namespace konstructs {
                            const GLuint uv_attr,
                            const int type, const float x, const float y,
                            const float size,
-                           const BlockData &blocks) :
+                           const BlockTypeInfo &blocks) :
         BaseModel(position_attr, normal_attr, uv_attr) {
         verts = blocks.is_plant[type] ? 6 : 6 * 6;
         float *data = new float[verts * 10];
@@ -203,7 +203,7 @@ namespace konstructs {
     void HudShader::render(const int width, const int height,
                            const float mouse_x, const float mouse_y,
                            const Hud &hud,
-                           const BlockData &blocks) {
+                           const BlockTypeInfo &blocks) {
         bind([&](Context c) {
                 float scale = 4.0f/(float)columns;
                 float xscale = (float)height / (float)width;
@@ -336,7 +336,7 @@ namespace konstructs {
 
     void make_block(int type, float x, float y, float z, float size,
                     float rx, float ry, float rz, float *d,
-                    const BlockData &blocks) {
+                    const BlockTypeInfo &blocks) {
         float ao[6][4] = {0};
         float light[6][4] = {
             {0.5, 0.5, 0.5, 0.5},
@@ -364,7 +364,7 @@ namespace konstructs {
                      const float rx,
                      const float ry,
                      const float rz,
-                     const BlockData &blocks) {
+                     const BlockTypeInfo &blocks) {
 
         int offset = 0;
         for (const auto &pair: stacks) {

@@ -17,7 +17,7 @@ namespace konstructs {
         bool chunk_updated_since_requested(const Vector3i &pos) const;
         void delete_unused_chunks(const Vector3f position, const int radi);
         void insert(std::shared_ptr<ChunkData> data);
-        const char get_block(const Vector3i &block_pos) const;
+        const BlockData get_block(const Vector3i &block_pos) const;
         const std::shared_ptr<ChunkData> chunk_at(const Vector3i &block_pos) const;
         const std::shared_ptr<ChunkData> chunk(const Vector3i &chunk_pos) const;
         const std::vector<std::shared_ptr<ChunkData>> atAndAround(const Vector3i &pos) const;

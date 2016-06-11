@@ -7,7 +7,9 @@
 #include "shader.h" //TODO: remove
 #include "block.h"
 
+#define BLOCK_SIZE 4
 #define CHUNK_SIZE 32
+#define BLOCK_BUFFER_SIZE (CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*BLOCK_SIZE)
 #define BLOCKS_HEADER_SIZE 2
 
 namespace konstructs {
@@ -25,71 +27,71 @@ namespace konstructs {
 
     class ChunkData {
     public:
-        ChunkData(const Vector3i _position, char *compressed, const int size);
-        ChunkData(const Vector3i position, char *blocks);
+        ChunkData(const Vector3i _position, char *compressed, const int size, char *buffer);
+        ChunkData(const Vector3i position, BlockData *blocks);
         ChunkData();
         ~ChunkData();
-        char get(const Vector3i &pos) const;
-        std::shared_ptr<ChunkData> set(const Vector3i &pos, const char type) const;
+        BlockData get(const Vector3i &pos) const;
+        std::shared_ptr<ChunkData> set(const Vector3i &pos, const BlockData &data) const;
         optional<pair<Block, Block>> get(const Vector3f &camera_position,
                                          const Vector3f &camera_direction,
                                          const float max_distance,
-                                         const BlockData &blocks) const;
+                                         const BlockTypeInfo &blocks) const;
         const Vector3i position;
-        char *blocks;
+        BlockData *blocks;
     };
 };
 
-#define CHUNK_FOR_EACH(blocks, ex, ey, ez, ew) \
+#define CHUNK_FOR_EACH(blocks, ex, ey, ez, eb) \
   for(int ex = 0; ex < CHUNK_SIZE; ex++) { \
     for(int ey = 0; ey < CHUNK_SIZE; ey++) { \
       for(int ez = 0; ez < CHUNK_SIZE; ez++) { \
-        int ew = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+        BlockData eb = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
 
 #define END_CHUNK_FOR_EACH \
        } \
      } \
    }
 
-#define CHUNK_FOR_EACH_YZ(blocks, x, ex, ey, ez, ew)     \
+#define CHUNK_FOR_EACH_YZ(blocks, x, ex, ey, ez, eb)     \
   for(int ey = 0; ey < CHUNK_SIZE; ey++) { \
     for(int ez = 0; ez < CHUNK_SIZE; ez++) { \
       int ex = x; \
-      int ew = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+      BlockData eb = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
 
-#define CHUNK_FOR_EACH_XY(blocks, z, ex, ey, ez, ew)     \
+#define CHUNK_FOR_EACH_XY(blocks, z, ex, ey, ez, eb)     \
   for(int ex = 0; ex < CHUNK_SIZE; ex++) { \
     for(int ey = 0; ey < CHUNK_SIZE; ey++) { \
       int ez = z; \
-      int ew = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+      BlockData eb = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
 
-#define CHUNK_FOR_EACH_XZ(blocks, y, ex, ey, ez, ew)     \
+#define CHUNK_FOR_EACH_XZ(blocks, y, ex, ey, ez, eb)     \
   for(int ex = 0; ex < CHUNK_SIZE; ex++) { \
     for(int ez = 0; ez < CHUNK_SIZE; ez++) { \
       int ey = y; \
-      int ew = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+      BlockData eb = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
 
 #define END_CHUNK_FOR_EACH_2D \
      } \
    }
 
-#define CHUNK_FOR_EACH_X(blocks, y, z, ex, ey, ez, ew)   \
+#define CHUNK_FOR_EACH_X(blocks, y, z, ex, ey, ez, eb)   \
   for(int ex = 0; ex < CHUNK_SIZE; ex++) { \
     int ey = y; \
     int ez = z; \
-    int ew = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+    BlockData eb = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
 
-#define CHUNK_FOR_EACH_Y(blocks, x, z, ex, ey, ez, ew)   \
+#define CHUNK_FOR_EACH_Y(blocks, x, z, ex, ey, ez, eb)   \
   for(int ey = 0; ey < CHUNK_SIZE; ey++) { \
     int ez = z; \
     int ex = x; \
-    int ew = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+    BlockData eb = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
 
-#define CHUNK_FOR_EACH_Z(blocks, x, y, ex, ey, ez, ew)   \
+#define CHUNK_FOR_EACH_Z(blocks, x, y, ex, ey, ez, eb)   \
   for(int ez = 0; ez < CHUNK_SIZE; ez++) { \
     int ex = x; \
     int ey = y; \
-    int ew = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+    BlockData eb = blocks[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
 
 #define END_CHUNK_FOR_EACH_1D \
   }

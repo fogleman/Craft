@@ -40,7 +40,7 @@ namespace konstructs {
         return mData;
     }
 
-    ChunkModelFactory::ChunkModelFactory(const BlockData &block_data) :
+    ChunkModelFactory::ChunkModelFactory(const BlockTypeInfo &block_data) :
         block_data(block_data) {
         for(int i = 0; i < WORKERS; i++) {
             new std::thread(&ChunkModelFactory::worker, this);
@@ -201,27 +201,27 @@ namespace konstructs {
     }
 
     shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data,
-                                               const BlockData &block_data) {
-        char *blocks = (char *)calloc(XZ_SIZE * XZ_SIZE * XZ_SIZE, sizeof(char));
+                                               const BlockTypeInfo &block_data) {
+        BlockData *blocks = (BlockData *)calloc(XZ_SIZE * XZ_SIZE * XZ_SIZE, sizeof(BlockData));
         char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
-        char *above = data.above->blocks;
-        char *below = data.below->blocks;
-        char *left = data.left->blocks;
-        char *right = data.right->blocks;
-        char *front = data.front->blocks;
-        char *back = data.back->blocks;
-        char *above_left = data.above_left->blocks;
-        char *above_right = data.above_right->blocks;
-        char *above_front = data.above_front->blocks;
-        char *above_back = data.above_back->blocks;
-        char *above_left_front = data.above_left_front->blocks;
-        char *above_right_front = data.above_right_front->blocks;
-        char *above_left_back = data.above_left_back->blocks;
-        char *above_right_back = data.above_right_back->blocks;
-        char *left_front = data.left_front->blocks;
-        char *right_front = data.right_front->blocks;
-        char *left_back = data.left_back->blocks;
-        char *right_back = data.right_back->blocks;
+        BlockData *above = data.above->blocks;
+        BlockData *below = data.below->blocks;
+        BlockData *left = data.left->blocks;
+        BlockData *right = data.right->blocks;
+        BlockData *front = data.front->blocks;
+        BlockData *back = data.back->blocks;
+        BlockData *above_left = data.above_left->blocks;
+        BlockData *above_right = data.above_right->blocks;
+        BlockData *above_front = data.above_front->blocks;
+        BlockData *above_back = data.above_back->blocks;
+        BlockData *above_left_front = data.above_left_front->blocks;
+        BlockData *above_right_front = data.above_right_front->blocks;
+        BlockData *above_left_back = data.above_left_back->blocks;
+        BlockData *above_right_back = data.above_right_back->blocks;
+        BlockData *left_front = data.left_front->blocks;
+        BlockData *right_front = data.right_front->blocks;
+        BlockData *left_back = data.left_back->blocks;
+        BlockData *right_back = data.right_back->blocks;
 
         const char *is_transparent = block_data.is_transparent;
         const char *is_plant = block_data.is_plant;
@@ -231,17 +231,15 @@ namespace konstructs {
         int oy = - CHUNK_SIZE - 1;
         int oz = - CHUNK_SIZE - 1;
 
-
         /* Populate the blocks array with the chunk itself */
-        const char *self = data.self->blocks;
+        const BlockData *self = data.self->blocks;
 
-        CHUNK_FOR_EACH(self, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH(self, ex, ey, ez, eb) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH;
@@ -249,13 +247,12 @@ namespace konstructs {
         /* With the six sides of the chunk */
 
         /* Populate the blocks array with the chunk below */
-        CHUNK_FOR_EACH_XZ(below, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_XZ(below, CHUNK_SIZE - 1, ex, ey, ez, eb) {
             int x = ex - ox;
             int y = ey - CHUNK_SIZE - oy;
             int z = ez - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
@@ -265,64 +262,59 @@ namespace konstructs {
          * The shading requires additional 8 blocks
          */
         for(int i = 0; i < 8; i++) {
-            CHUNK_FOR_EACH_XZ(above, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_XZ(above, i, ex, ey, ez, eb) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
-                int w = ew;
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_2D;
         }
 
         /* Populate the blocks array with the chunk left */
-        CHUNK_FOR_EACH_YZ(left, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_YZ(left, CHUNK_SIZE - 1, ex, ey, ez, eb) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
 
         /* Populate the blocks array with the chunk right */
-        CHUNK_FOR_EACH_YZ(right, 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_YZ(right, 0, ex, ey, ez, eb) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
 
 
         /* Populate the blocks array with the chunk front */
-        CHUNK_FOR_EACH_XY(front, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_XY(front, CHUNK_SIZE - 1, ex, ey, ez, eb) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
 
 
         /* Populate the blocks array with the chunk back */
-        CHUNK_FOR_EACH_XY(back, 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_XY(back, 0, ex, ey, ez, eb) {
             int x = ex - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_2D;
@@ -333,48 +325,44 @@ namespace konstructs {
 
         for(int i = 0; i < 8; i++) {
             /* Populate the blocks array with the chunk above-left */
-            CHUNK_FOR_EACH_Z(above_left, CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_Z(above_left, CHUNK_SIZE - 1, i, ex, ey, ez, eb) {
                 int x = ex - CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
-                int w = ew;
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
 
             /* Populate the blocks array with the chunk above-right */
-            CHUNK_FOR_EACH_Z(above_right, 0, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_Z(above_right, 0, i, ex, ey, ez, eb) {
                 int x = ex + CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - oz;
-                int w = ew;
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
 
             /* Populate the blocks array with the chunk above-front */
-            CHUNK_FOR_EACH_X(above_front, CHUNK_SIZE - 1, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_X(above_front, CHUNK_SIZE - 1, i, ex, ey, ez, eb) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
-                int w = ew;
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
             /* Populate the blocks array with the chunk above-back */
-            CHUNK_FOR_EACH_X(above_back, 0, i, ex, ey, ez, ew) {
+            CHUNK_FOR_EACH_X(above_back, 0, i, ex, ey, ez, eb) {
                 int x = ex - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
-                int w = ew;
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             } END_CHUNK_FOR_EACH_1D;
@@ -387,9 +375,9 @@ namespace konstructs {
                 int x = ex - CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
-                int w = above_left_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                BlockData eb = above_left_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
@@ -402,9 +390,9 @@ namespace konstructs {
                 int x = ex + CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez - CHUNK_SIZE - oz;
-                int w = above_right_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                BlockData eb = above_right_front[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
@@ -417,9 +405,9 @@ namespace konstructs {
                 int x = ex - CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
-                int w = above_left_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                BlockData eb = above_left_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
@@ -432,9 +420,9 @@ namespace konstructs {
                 int x = ex + CHUNK_SIZE - ox;
                 int y = ey + CHUNK_SIZE - oy;
                 int z = ez + CHUNK_SIZE - oz;
-                int w = above_right_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
-                blocks[XYZ(x, y, z)] = w;
-                if (!is_transparent[w]) {
+                BlockData eb = above_right_back[ex+ey*CHUNK_SIZE+ez*CHUNK_SIZE*CHUNK_SIZE];
+                blocks[XYZ(x, y, z)] = eb;
+                if (!is_transparent[eb.type]) {
                     highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
                 }
             }
@@ -444,49 +432,45 @@ namespace konstructs {
         /* Populate the corner cases on the same level */
 
         /* Populate the blocks array with the chunk left-front */
-        CHUNK_FOR_EACH_Y(left_front, CHUNK_SIZE - 1, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(left_front, CHUNK_SIZE - 1, CHUNK_SIZE - 1, ex, ey, ez, eb) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
 
         /* Populate the blocks array with the chunk left-back */
-        CHUNK_FOR_EACH_Y(left_back, CHUNK_SIZE - 1, 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(left_back, CHUNK_SIZE - 1, 0, ex, ey, ez, eb) {
             int x = ex - CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
 
         /* Populate the blocks array with the chunk right-front */
-        CHUNK_FOR_EACH_Y(right_front, 0, CHUNK_SIZE - 1, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(right_front, 0, CHUNK_SIZE - 1, ex, ey, ez, eb) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez - CHUNK_SIZE - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
 
         /* Populate the blocks array with the chunk right-back */
-        CHUNK_FOR_EACH_Y(right_back, 0, 0, ex, ey, ez, ew) {
+        CHUNK_FOR_EACH_Y(right_back, 0, 0, ex, ey, ez, eb) {
             int x = ex + CHUNK_SIZE - ox;
             int y = ey - oy;
             int z = ez + CHUNK_SIZE - oz;
-            int w = ew;
-            blocks[XYZ(x, y, z)] = w;
-            if (!is_transparent[w]) {
+            blocks[XYZ(x, y, z)] = eb;
+            if (!is_transparent[eb.type]) {
                 highest[XZ(x, z)] = std::max((int)highest[XZ(x, z)], y);
             }
         } END_CHUNK_FOR_EACH_1D;
@@ -494,24 +478,24 @@ namespace konstructs {
 
         // count exposed faces
         int faces = 0;
-        CHUNK_FOR_EACH(self, ex, ey, ez, ew) {
-            if (ew <= 0) {
+        CHUNK_FOR_EACH(self, ex, ey, ez, eb) {
+            if (eb.type <= 0) {
                 continue;
             }
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - oz;
-            int f1 = face_visible(ew, blocks[XYZ(x - 1, y, z)], is_transparent, state);
-            int f2 = face_visible(ew, blocks[XYZ(x + 1, y, z)], is_transparent, state);
-            int f3 = face_visible(ew, blocks[XYZ(x, y + 1, z)], is_transparent, state);
-            int f4 = face_visible(ew, blocks[XYZ(x, y - 1, z)], is_transparent, state);
-            int f5 = face_visible(ew, blocks[XYZ(x, y, z - 1)], is_transparent, state);
-            int f6 = face_visible(ew, blocks[XYZ(x, y, z + 1)], is_transparent, state);
+            int f1 = face_visible(eb.type, blocks[XYZ(x - 1, y, z)].type, is_transparent, state);
+            int f2 = face_visible(eb.type, blocks[XYZ(x + 1, y, z)].type, is_transparent, state);
+            int f3 = face_visible(eb.type, blocks[XYZ(x, y + 1, z)].type, is_transparent, state);
+            int f4 = face_visible(eb.type, blocks[XYZ(x, y - 1, z)].type, is_transparent, state);
+            int f5 = face_visible(eb.type, blocks[XYZ(x, y, z - 1)].type, is_transparent, state);
+            int f6 = face_visible(eb.type, blocks[XYZ(x, y, z + 1)].type, is_transparent, state);
             int total = f1 + f2 + f3 + f4 + f5 + f6;
             if (total == 0) {
                 continue;
             }
-            if (is_plant[ew]) {
+            if (is_plant[eb.type]) {
                 total = 4;
             }
             faces += total;
@@ -522,19 +506,19 @@ namespace konstructs {
         GLfloat * vertices = result->data();
         int offset = 0;
 
-        CHUNK_FOR_EACH(self, ex, ey, ez, ew) {
-            if (ew <= 0) {
+        CHUNK_FOR_EACH(self, ex, ey, ez, eb) {
+            if (eb.type <= 0) {
                 continue;
             }
             int x = ex - ox;
             int y = ey - oy;
             int z = ez - oz;
-            int f1 = face_visible(ew, blocks[XYZ(x - 1, y, z)], is_transparent, state);
-            int f2 = face_visible(ew, blocks[XYZ(x + 1, y, z)], is_transparent, state);
-            int f3 = face_visible(ew, blocks[XYZ(x, y + 1, z)], is_transparent, state);
-            int f4 = face_visible(ew, blocks[XYZ(x, y - 1, z)], is_transparent, state);
-            int f5 = face_visible(ew, blocks[XYZ(x, y, z - 1)], is_transparent, state);
-            int f6 = face_visible(ew, blocks[XYZ(x, y, z + 1)], is_transparent, state);
+            int f1 = face_visible(eb.type, blocks[XYZ(x - 1, y, z)].type, is_transparent, state);
+            int f2 = face_visible(eb.type, blocks[XYZ(x + 1, y, z)].type, is_transparent, state);
+            int f3 = face_visible(eb.type, blocks[XYZ(x, y + 1, z)].type, is_transparent, state);
+            int f4 = face_visible(eb.type, blocks[XYZ(x, y - 1, z)].type, is_transparent, state);
+            int f5 = face_visible(eb.type, blocks[XYZ(x, y, z - 1)].type, is_transparent, state);
+            int f6 = face_visible(eb.type, blocks[XYZ(x, y, z + 1)].type, is_transparent, state);
             int total = f1 + f2 + f3 + f4 + f5 + f6;
             if (total == 0) {
                 continue;
@@ -545,11 +529,11 @@ namespace konstructs {
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     for (int dz = -1; dz <= 1; dz++) {
-                        neighbors[index] = !is_transparent[blocks[XYZ(x + dx, y + dy, z + dz)]];
+                        neighbors[index] = !is_transparent[blocks[XYZ(x + dx, y + dy, z + dz)].type];
                         shades[index] = 0;
                         if (y + dy <= highest[XZ(x + dx, z + dz)]) {
                             for (int oy = 0; oy < 8; oy++) {
-                                if (!is_transparent[blocks[XYZ(x + dx, y + dy + oy, z + dz)]]) {
+                                if (!is_transparent[blocks[XYZ(x + dx, y + dy + oy, z + dz)].type]) {
                                     shades[index] = 1.0 - oy * 0.125;
                                     break;
                                 }
@@ -562,7 +546,7 @@ namespace konstructs {
             float ao[6][4];
             float light[6][4];
             occlusion(neighbors, shades, ao, light);
-            if (is_plant[ew]) {
+            if (is_plant[eb.type]) {
                 total = 4;
                 float min_ao = 1;
                 float max_light = 0;
@@ -573,12 +557,12 @@ namespace konstructs {
                 }
                 float rotation = ((float)((ex * ey) % 360)) / 360.0f;
                 make_plant(vertices + offset, min_ao, 0,
-                           ex, ey, ez, 0.5, ew, rotation, block_data.blocks);
+                           ex, ey, ez, 0.5, eb.type, rotation, block_data.blocks);
             }
             else {
                 make_cube(vertices + offset, ao, light,
                           f1, f2, f3, f4, f5, f6,
-                          ex, ey, ez, 0.5, ew, block_data.blocks);
+                          ex, ey, ez, 0.5, eb.type, block_data.blocks);
             }
             offset += total * 60;
         } END_CHUNK_FOR_EACH;

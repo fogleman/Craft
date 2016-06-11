@@ -76,6 +76,7 @@ namespace konstructs {
         std::deque<shared_ptr<ChunkData>> chunks;
         bool connected;
         std::string error_message;
+        char *inflation_buffer;
     };
 };
 

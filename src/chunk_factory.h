@@ -51,7 +51,7 @@ namespace konstructs {
 
     class ChunkModelFactory {
     public:
-        ChunkModelFactory(const BlockData &_block_data);
+        ChunkModelFactory(const BlockTypeInfo &_block_data);
         void create_models(const std::vector<Vector3i> &positions,
                            const World &world);
         std::vector<std::shared_ptr<ChunkModelResult>> fetch_models();
@@ -62,7 +62,7 @@ namespace konstructs {
         std::queue<Vector3i> chunks;
         std::unordered_map<Vector3i, ChunkModelData, matrix_hash<Vector3i>> model_data;
         std::vector<std::shared_ptr<ChunkModelResult>> models;
-        const BlockData &block_data;
+        const BlockTypeInfo &block_data;
     };
 
     std::vector<ChunkModelData> adjacent(const Vector3i position, const World &world);
@@ -71,6 +71,6 @@ namespace konstructs {
     const ChunkModelData create_model_data(const Vector3i &position,
                                            const World &world);
 
-    shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data, const BlockData &block_data);
+    shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data, const BlockTypeInfo &block_data);
 };
 #endif

@@ -15,7 +15,7 @@ namespace konstructs {
     }
 
 
-    PlayerShader::PlayerShader(const int radius, const float fov, const GLuint player_texture,
+    PlayerShader::PlayerShader(const float fov, const GLuint player_texture,
                                const GLuint sky_texture, const float near_distance,
                                tinyobj::shape_t &shape) :
         ShaderProgram(
@@ -82,7 +82,6 @@ namespace konstructs {
         timer(uniformId("timer")),
         daylight(uniformId("daylight")),
         camera(uniformId("camera")),
-        radius(radius),
         fov(fov),
         player_texture(player_texture),
         sky_texture(sky_texture),
@@ -91,7 +90,7 @@ namespace konstructs {
     {}
 
     int PlayerShader::render(const Player &p, const int width, const int height,
-                             const float current_daylight, const float current_timer) {
+                             const float current_daylight, const float current_timer, const int radius) {
         int faces = 0;
         int visible = 0;
         bind([&](Context c) {

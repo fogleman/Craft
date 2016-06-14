@@ -1,3 +1,5 @@
+#include <fstream>
+#include <streambuf>
 #include <nanogui/opengl.h>
 #include "textures.h"
 #include "util.h"
@@ -27,6 +29,10 @@ namespace konstructs {
 
     void model_path(const char *name, char *path, size_t max_len) {
         shtxt_path(name, "models", path, max_len);
+    }
+
+    void shader_path(const char *name, char *path, size_t max_len) {
+        shtxt_path(name, "shaders", path, max_len);
     }
 
     void load_textures() {
@@ -82,5 +88,22 @@ namespace konstructs {
         tinyobj::LoadObj(shapes, materials, err, objpth);
 
         return shapes[0];
+    }
+
+    std::string load_shader(const char* name) {
+        char shader_pth[KONSTRUCTS_PATH_SIZE];
+        shader_path(name, shader_pth, KONSTRUCTS_PATH_SIZE);
+        std::ifstream shader(shader_pth);
+        std::string shader_str((std::istreambuf_iterator<char>(shader)),
+                               std::istreambuf_iterator<char>());
+        return shader_str;
+    }
+
+    std::string load_chunk_vertex_shader() {
+        return load_shader("chunk.vert");
+    }
+
+    std::string load_chunk_fragment_shader() {
+        return load_shader("chunk.frag");
     }
 };

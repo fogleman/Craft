@@ -44,9 +44,9 @@ namespace konstructs {
         const Vector3i position;
         const int size;
         const int faces;
-        GLfloat *data();
+        GLuint *data();
     private:
-        GLfloat *mData;
+        GLuint *mData;
     };
 
     class ChunkModelFactory {
@@ -55,6 +55,7 @@ namespace konstructs {
         void create_models(const std::vector<Vector3i> &positions,
                            const World &world);
         std::vector<std::shared_ptr<ChunkModelResult>> fetch_models();
+        bool queue_empty();
     private:
         void worker();
         std::mutex mutex;

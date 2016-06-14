@@ -337,22 +337,14 @@ namespace konstructs {
     void make_block(int type, float x, float y, float z, float size,
                     float rx, float ry, float rz, float *d,
                     const BlockTypeInfo &blocks) {
-        float ao[6][4] = {0};
-        float light[6][4] = {
-            {0.5, 0.5, 0.5, 0.5},
-            {0.5, 0.5, 0.5, 0.5},
-            {0.5, 0.5, 0.5, 0.5},
-            {0.5, 0.5, 0.5, 0.5},
-            {0.5, 0.5, 0.5, 0.5},
-            {0.5, 0.5, 0.5, 0.5}
-        };
+        char ao[6][4] = {0};
         if(blocks.is_plant[type]) {
-            make_rotated_cube(d, ao, light,
+            make_rotated_cube(d, ao,
                               0, 0, 0, 0, 0, 1,
                               x, y, z, size, 0, 0, 0,
                               type, blocks.blocks);
         } else {
-            make_rotated_cube(d, ao, light,
+            make_rotated_cube(d, ao,
                               1, 1, 1, 1, 1, 1,
                               x, y, z, size, rx, ry, rz,
                               type, blocks.blocks);

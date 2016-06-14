@@ -29,6 +29,7 @@
 #include "textures.h"
 #include "client.h"
 #include "util.h"
+#include "cube.h"
 
 #define KONSTRUCTS_APP_TITLE "Konstructs"
 #define KONSTRUCTS_APP_WIDTH 854
@@ -68,19 +69,22 @@ public:
         px(0), py(0),
         model_factory(blocks),
         client(),
-        radius(10),
+        radius(4),
+        max_radius(10),
         fov(70.0f),
         near_distance(0.125f),
-        sky_shader(radius, fov, SKY_TEXTURE, near_distance),
-        chunk_shader(radius, fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance),
+        sky_shader(fov, SKY_TEXTURE, near_distance),
+        chunk_shader(fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance,
+                     load_chunk_vertex_shader(), load_chunk_fragment_shader()),
         hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE),
-        selection_shader(radius, fov, near_distance, 0.52),
+        selection_shader(fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
         looking_at(nullopt),
         hud(17, 14, 9),
         menu_state(false),
-        debug_mode(debug_mode) {
+        debug_mode(debug_mode),
+        frame(0) {
 
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -97,7 +101,7 @@ public:
         memset(&fps, 0, sizeof(fps));
 
         tinyobj::shape_t shape = load_player();
-        player_shader = new PlayerShader(radius, fov, PLAYER_TEXTURE, SKY_TEXTURE,
+        player_shader = new PlayerShader(fov, PLAYER_TEXTURE, SKY_TEXTURE,
                                          near_distance, shape);
     }
 
@@ -201,26 +205,30 @@ public:
     virtual void drawContents() {
         using namespace nanogui;
         update_fps(&fps);
+        frame++;
         if (client.is_connected()) {
             handle_network();
             handle_keys();
             handle_mouse();
+            update_radius();
             looking_at = player.looking_at(world, blocks);
             glClear(GL_DEPTH_BUFFER_BIT);
             for(auto model : model_factory.fetch_models()) {
                 chunk_shader.add(model);
             }
-            sky_shader.render(player, mSize.x(), mSize.y(), time_of_day());
+            sky_shader.render(player, mSize.x(), mSize.y(), time_of_day(), radius);
             glClear(GL_DEPTH_BUFFER_BIT);
             int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
-                                            daylight(), time_of_day(), world, client);
+                                            daylight(), time_of_day(), world, client, radius);
+            /*if(frame % 60) {
+                cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
+                }*/
             player_shader->render(player, mSize.x(), mSize.y(),
-                                  daylight(), time_of_day());
+                                  daylight(), time_of_day(), radius);
             if(looking_at && !hud.get_interactive() && !menu_state) {
                 selection_shader.render(player, mSize.x(), mSize.y(),
-                                        looking_at->second.position);
+                                        looking_at->second.position, radius);
             }
-            //cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
             glClear(GL_DEPTH_BUFFER_BIT);
             if(!hud.get_interactive() && !menu_state)
                 crosshair_shader.render(mSize.x(), mSize.y());
@@ -249,6 +257,16 @@ private:
         auto model_data = create_model_data(position, world);
         auto result = compute_chunk(model_data, blocks);
         chunk_shader.add(result);
+    }
+
+    void update_radius() {
+        if(frame % 150 == 0) {
+            if(fps.fps < 35 && radius > 2) {
+                radius = radius - 1;
+            } else if(fps.fps > 55 && radius < max_radius && model_factory.queue_empty()){
+                radius = radius + 1;
+            }
+        }
     }
 
     void handle_mouse() {
@@ -301,7 +319,7 @@ private:
         }
         client.position(player.update_position(sz, sx, (float)dt, world,
                                                blocks, near_distance, jump, sneak),
-                        player.rx(), player.ry());
+                                               player.rx(), player.ry());
     }
 
     void close_hud() {
@@ -347,8 +365,8 @@ private:
         } else {
             /* Oh, no need to build models on main thread,
              * let's do bookkeeping! */
-            chunk_shader.delete_unused_models(player.camera(), radius);
-            world.delete_unused_chunks(player.camera(), radius);
+            chunk_shader.delete_unused_models(player.camera(), max_radius);
+            world.delete_unused_chunks(player.camera(), max_radius);
         }
 
     }
@@ -595,6 +613,7 @@ private:
     BlockTypeInfo blocks;
     CrosshairShader crosshair_shader;
     int radius;
+    int max_radius;
     int fov;
     float near_distance;
     int day_length;
@@ -616,6 +635,7 @@ private:
     bool menu_state;
     bool debug_mode;
     nanogui::Window *window;
+    uint32_t frame;
 };
 
 #ifdef WIN32

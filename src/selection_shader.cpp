@@ -35,7 +35,7 @@ namespace konstructs {
         return m;
     }
 
-    SelectionShader::SelectionShader(const int _radius, const float _fov,
+    SelectionShader::SelectionShader(const float _fov,
                                      const float _near_distance, const float scale) :
         ShaderProgram(
         "chunk",
@@ -56,14 +56,13 @@ namespace konstructs {
         position_attr(attributeId("position")),
         matrix(uniformId("matrix")),
         translation(uniformId("translation")),
-        radius(_radius),
         fov(_fov),
         near_distance(_near_distance),
         model(position_attr, wireframe(scale))
     {}
 
     void SelectionShader::render(const Player &p, const int width, const int height,
-                                const Vector3i &selected) {
+                                 const Vector3i &selected, const int radius) {
         bind([&](Context c) {
                 c.enable(GL_DEPTH_TEST);
                 float aspect_ratio = (float)width / (float)height;

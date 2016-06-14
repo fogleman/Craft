@@ -31,7 +31,7 @@ namespace konstructs {
                               sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
     }
 
-    SkyShader::SkyShader(const int _radius, const float _fov, const GLuint _sky_texture,
+    SkyShader::SkyShader(const float _fov, const GLuint _sky_texture,
                          const float _near_distance) :
         ShaderProgram(
         "sky",
@@ -58,14 +58,13 @@ namespace konstructs {
         matrix(uniformId("matrix")),
         sampler(uniformId("sampler")),
         timer(uniformId("timer")),
-        radius(_radius),
         fov(_fov),
         sky_texture(_sky_texture),
         near_distance(_near_distance),
         model(position_attr, uv_attr) {}
 
     void SkyShader::render(const Player &p, const int width, const int height,
-                           const float current_timer) {
+                           const float current_timer, const int radius) {
         bind([&](Context c) {
                 c.enable(GL_DEPTH_TEST);
                 c.enable(GL_CULL_FACE);

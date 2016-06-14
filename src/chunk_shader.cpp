@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include <iostream>
 #include <math.h>
 #include "chunk_shader.h"
@@ -8,15 +9,13 @@ namespace konstructs {
     const Array3i chunk_offset = Vector3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE).array();
     const int NO_CHUNK_FOUND = 0x0FFFFFFF;
     ChunkModel::ChunkModel(const shared_ptr<ChunkModelResult> &data,
-                           GLuint _position_attr, GLuint _normal_attr, GLuint _uv_attr) :
+                           GLuint data_attr) :
         position(data->position),
         faces(data->faces),
-        position_attr(_position_attr),
-        normal_attr(_normal_attr),
-        uv_attr(_uv_attr) {
+        data_attr(data_attr) {
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glBufferData(GL_ARRAY_BUFFER, data->size * sizeof(GLfloat),
+        glBufferData(GL_ARRAY_BUFFER, data->size * sizeof(GLuint),
                      data->data(), GL_STATIC_DRAW);
         Vector3f pos =
             (position.array() * chunk_offset).matrix().cast<float>();
@@ -31,21 +30,14 @@ namespace konstructs {
 
     void ChunkModel::bind() {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glEnableVertexAttribArray(position_attr);
-        glEnableVertexAttribArray(normal_attr);
-        glEnableVertexAttribArray(uv_attr);
-        glVertexAttribPointer(position_attr, 3, GL_FLOAT, GL_FALSE,
-                              sizeof(GLfloat) * 10, 0);
-        glVertexAttribPointer(normal_attr, 3, GL_FLOAT, GL_FALSE,
-                              sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 3));
-        glVertexAttribPointer(uv_attr, 4, GL_FLOAT, GL_FALSE,
-                              sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
+        glEnableVertexAttribArray(data_attr);
+        glVertexAttribIPointer(data_attr, 2, GL_UNSIGNED_INT,
+                              0, 0);
     }
 
     void ChunkShader::add(const shared_ptr<ChunkModelResult> &data) {
         auto it = models.find(data->position);
-        auto model = new ChunkModel(data, position_attr,
-                                    normal_attr, uv_attr);
+        auto model = new ChunkModel(data, data_attr);
         if (it != models.end()) {
             auto second = it->second;
             it->second = model;
@@ -56,83 +48,20 @@ namespace konstructs {
 
     }
 
-    ChunkShader::ChunkShader(const int _radius, const float _fov, const GLuint _block_texture,
-                             const GLuint _sky_texture, const float _near_distance) :
-        ShaderProgram(
-        "chunk",
-        "#version 330\n"
-        "uniform mat4 matrix;\n"
-        "uniform vec3 camera;\n"
-        "uniform float fog_distance;\n"
-        "uniform mat4 translation;\n"
-        "in vec4 position;\n"
-        "in vec3 normal;\n"
-        "in vec4 uv;\n"
-        "out vec2 fragment_uv;\n"
-        "out float fragment_ao;\n"
-        "out float fragment_light;\n"
-        "out float fog_factor;\n"
-        "out float fog_height;\n"
-        "out float diffuse;\n"
-        "const float pi = 3.14159265;\n"
-        "const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));\n"
-        "void main() {\n"
-        "    vec4 global_position = translation * position;\n"
-        "    gl_Position = matrix * global_position;\n"
-        "    fragment_uv = uv.xy;\n"
-        "    fragment_ao = 0.3 + (1.0 - uv.z) * 0.7;\n"
-        "    fragment_light = uv.w;\n"
-        "    diffuse = max(0.0, dot(normal, light_direction));\n"
-        "    float camera_distance = distance(camera, vec3(global_position));\n"
-        "    fog_factor = pow(clamp(camera_distance / fog_distance, 0.0, 1.0), 4.0);\n"
-        "    float dy = global_position.y - camera.y;\n"
-        "    float dx = distance(global_position.xz, camera.xz);\n"
-        "    fog_height = (atan(dy, dx) + pi / 2) / pi;\n"
-        "}\n",
-        "#version 330\n"
-        "uniform sampler2D sampler;\n"
-        "uniform sampler2D sky_sampler;\n"
-        "uniform float timer;\n"
-        "uniform float daylight;\n"
-        "in vec2 fragment_uv;\n"
-        "in float fragment_ao;\n"
-        "in float fragment_light;\n"
-        "in float fog_factor;\n"
-        "in float fog_height;\n"
-        "in float diffuse;\n"
-        "out vec4 frag_color;\n"
-        "const float pi = 3.14159265;\n"
-        "void main() {\n"
-        "    vec3 color = vec3(texture(sampler, fragment_uv));\n"
-        "    if (color == vec3(1.0, 0.0, 1.0)) {\n"
-        "        discard;\n"
-        "    }\n"
-        "    bool cloud = color == vec3(1.0, 1.0, 1.0);\n"
-        "    float df = cloud ? 1.0 - diffuse * 0.2 : diffuse;\n"
-        "    float ao = cloud ? 1.0 - (1.0 - fragment_ao) * 0.2 : fragment_ao;\n"
-        "    ao = min(1.0, ao + fragment_light);\n"
-        "    df = min(1.0, df + fragment_light);\n"
-        "    float value = min(1.0, daylight + fragment_light);\n"
-        "    vec3 light_color = vec3(value * 0.3 + 0.2);\n"
-        "    vec3 ambient = vec3(value * 0.3 + 0.2) + vec3(sin(pi*daylight)/2, sin(pi*daylight)/4, 0.0);\n"
-        "    vec3 light = ambient + light_color * df;\n"
-        "    color = clamp(color * light * ao, vec3(0.0), vec3(1.0));\n"
-        "    vec3 sky_color = vec3(texture(sky_sampler, vec2(timer, fog_height)));\n"
-        "    color = mix(color, sky_color, fog_factor);\n"
-        "    frag_color = vec4(color, 1.0);\n"
-        "}\n"),
-        position_attr(attributeId("position")),
-        normal_attr(attributeId("normal")),
-        uv_attr(attributeId("uv")),
+    ChunkShader::ChunkShader(const float _fov, const GLuint _block_texture,
+                             const GLuint _sky_texture, const float _near_distance, const string &vert_str,
+                             const string &frag_str) :
+        ShaderProgram("chunk", vert_str, frag_str),
+        data_attr(attributeId("data")),
         matrix(uniformId("matrix")),
         translation(uniformId("translation")),
         sampler(uniformId("sampler")),
         sky_sampler(uniformId("sky_sampler")),
         fog_distance(uniformId("fog_distance")),
+        light_color(uniformId("light_color")),
+        ambient_light(uniformId("ambient_light")),
         timer(uniformId("timer")),
-        daylight(uniformId("daylight")),
         camera(uniformId("camera")),
-        radius(_radius),
         fov(_fov),
         block_texture(_block_texture),
         sky_texture(_sky_texture),
@@ -140,7 +69,7 @@ namespace konstructs {
 
     int ChunkShader::render(const Player &player, const int width, const int height,
                             const float current_daylight, const float current_timer,
-                            World &world, Client &client) {
+                            World &world, Client &client, const int radius) {
         int faces = 0;
         int visible = 0;
         bind([&](Context c) {
@@ -153,7 +82,11 @@ namespace konstructs {
                 c.set(sampler, (int)block_texture);
                 c.set(sky_sampler, (int)sky_texture);
                 c.set(fog_distance, max_distance);
-                c.set(daylight, current_daylight);
+                float value = min(1.0f, current_daylight);
+                float v = value * 0.3 + 0.2;
+                c.set(light_color, Vector3f(v, v, v));
+                Vector3f ambient((float)sin(M_PI*current_daylight)/2 + v, (float)sin(M_PI*current_daylight)/4 + v, v);
+                c.set(ambient_light, ambient);
                 c.set(timer, current_timer);
                 c.set(camera, player.camera());
                 float planes[6][4];

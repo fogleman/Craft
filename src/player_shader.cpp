@@ -90,19 +90,18 @@ namespace konstructs {
     {}
 
     int PlayerShader::render(const Player &p, const int width, const int height,
-                             const float current_daylight, const float current_timer, const int radius) {
+                             const float current_daylight, const float current_timer, const float view_distance) {
         int faces = 0;
         int visible = 0;
         bind([&](Context c) {
                 c.enable(GL_DEPTH_TEST);
                 c.enable(GL_CULL_FACE);
                 float aspect_ratio = (float)width / (float)height;
-                float max_distance = (radius - 1) * CHUNK_SIZE;
-                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, max_distance) * p.view();
+                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, view_distance) * p.view();
                 c.set(matrix, m);
                 c.set(sampler, (int)player_texture);
                 c.set(sky_sampler, (int)sky_texture);
-                c.set(fog_distance, max_distance);
+                c.set(fog_distance, view_distance);
                 c.set(daylight, current_daylight);
                 c.set(timer, current_timer);
                 c.set(camera, p.camera());

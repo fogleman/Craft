@@ -41,10 +41,33 @@ namespace konstructs {
     }
 
     ChunkModelFactory::ChunkModelFactory(const BlockTypeInfo &block_data) :
-        block_data(block_data) {
+        block_data(block_data),
+        processed(0),
+        empty(0),
+        created(0) {
         for(int i = 0; i < WORKERS; i++) {
             new std::thread(&ChunkModelFactory::worker, this);
         }
+    }
+
+    int ChunkModelFactory::waiting() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return chunks.size();
+    }
+
+    int ChunkModelFactory::total() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return processed;
+    }
+
+    int ChunkModelFactory::total_empty() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return empty;
+    }
+
+    int ChunkModelFactory::total_created() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return created;
     }
 
     void ChunkModelFactory::create_models(const std::vector<Vector3i> &positions,
@@ -53,18 +76,13 @@ namespace konstructs {
             std::lock_guard<std::mutex> lock(mutex);
             for(auto position: positions) {
                 for(auto m : adjacent(position, world)) {
-                    chunks.push(m.position);
+                    chunks.insert(m.position);
                     model_data.erase(m.position);
                     model_data.insert({m.position, m});
                 }
             }
         }
         chunks_condition.notify_all();
-    }
-
-    bool ChunkModelFactory::queue_empty() {
-        std::lock_guard<std::mutex> lock(mutex);
-        return chunks.size() == 0;
     }
 
     std::vector<ChunkModelData> adjacent(const Vector3i position, const World &world) {
@@ -136,8 +154,9 @@ namespace konstructs {
         while(1) {
             std::unique_lock<std::mutex> ulock(mutex);
             chunks_condition.wait(ulock, [&]{return !chunks.empty();});
-            auto position = chunks.front();
-            chunks.pop();
+            auto it = chunks.begin();
+            auto position = *it;
+            chunks.erase(it);
             auto itr = model_data.find(position);
             if(itr == model_data.end())
                 continue;
@@ -148,6 +167,12 @@ namespace konstructs {
             if(result->size > 0) {
                 std::lock_guard<std::mutex> ulock(mutex);
                 models.push_back(result);
+                created++;
+                processed++;
+            } else {
+                std::lock_guard<std::mutex> ulock(mutex);
+                empty++;
+                processed++;
             }
         }
     }

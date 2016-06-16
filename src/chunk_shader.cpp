@@ -7,7 +7,6 @@
 namespace konstructs {
 
     const Array3i chunk_offset = Vector3i(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE).array();
-    const int NO_CHUNK_FOUND = 0x0FFFFFFF;
     ChunkModel::ChunkModel(const shared_ptr<ChunkModelResult> &data,
                            GLuint data_attr) :
         position(data->position),
@@ -50,7 +49,7 @@ namespace konstructs {
 
     ChunkShader::ChunkShader(const float _fov, const GLuint _block_texture,
                              const GLuint _sky_texture, const float _near_distance, const string &vert_str,
-                             const string &frag_str) :
+                             const string &frag_str, const int max_radius) :
         ShaderProgram("chunk", vert_str, frag_str),
         data_attr(attributeId("data")),
         matrix(uniformId("matrix")),
@@ -65,25 +64,29 @@ namespace konstructs {
         fov(_fov),
         block_texture(_block_texture),
         sky_texture(_sky_texture),
-        near_distance(_near_distance) {}
+        near_distance(_near_distance),
+        max_radius(max_radius) {}
+
+    int ChunkShader::size() const {
+        return models.size();
+    }
 
     int ChunkShader::render(const Player &player, const int width, const int height,
                             const float current_daylight, const float current_timer,
-                            World &world, Client &client, const int radius) {
+                            const int radius, const float view_distance, const Vector3i &player_chunk) {
         int faces = 0;
         int visible = 0;
         bind([&](Context c) {
                 c.enable(GL_DEPTH_TEST);
                 c.enable(GL_CULL_FACE);
                 float aspect_ratio = (float)width / (float)height;
-                float max_distance = (radius - 1) * CHUNK_SIZE;
-                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, max_distance) * player.view();
+                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, view_distance) * player.view();
                 c.set(matrix, m);
                 c.set(sampler, (int)block_texture);
                 c.set(sky_sampler, (int)sky_texture);
-                c.set(fog_distance, max_distance);
+                c.set(fog_distance, view_distance);
                 float value = min(1.0f, current_daylight);
-                float v = value * 0.3 + 0.2;
+                float v = value * 0.3 + 0.15;
                 c.set(light_color, Vector3f(v, v, v));
                 Vector3f ambient((float)sin(M_PI*current_daylight)/2 + v, (float)sin(M_PI*current_daylight)/4 + v, v);
                 c.set(ambient_light, ambient);
@@ -91,82 +94,28 @@ namespace konstructs {
                 c.set(camera, player.camera());
                 float planes[6][4];
                 matrix::ext_frustum_planes(planes, radius, m);
-                Vector3i player_chunk = chunked_vec(player.camera());
-                Vector3i best_chunk;
-                int best_chunk_score = NO_CHUNK_FOUND;
-                for(int p = player_chunk[0] - (radius - 1); p < player_chunk[0] + radius; p++) {
-                    for(int q = player_chunk[1] - (radius - 1); q < player_chunk[1] + radius; q++) {
-                        for(int k = player_chunk[2] - (radius - 1); k < player_chunk[2] + radius; k++) {
-                            Vector3i pos(p, q, k);
-                            int distance = (pos - player_chunk).norm();
-                            int score;
-                            auto it = models.find(pos);
-                            bool is_updated = world.chunk_updated_since_requested(pos);
-                            if(chunk_visible(planes, pos)) {
-                                if(it != models.end()) {
-                                    /* Ok, found the model, let's render it!
-                                     */
-                                    const auto &m = it->second;
-                                    visible++;
-                                    c.set(translation, m->translation);
-                                    c.draw(m);
-                                    faces += m->faces;
-                                    if(is_updated) {
-                                        /* We already have a model of the chunk,
-                                         * but it's outdated, so it needs to be refreshed.
-                                         */
-                                        score = distance / 2;
-                                    } else {
-                                        /* We already have a model of the chunk,
-                                         * it didn't change since last requested,
-                                         * so we really don't need it.
-                                         */
-                                        score = NO_CHUNK_FOUND;
-                                    }
-                                } else {
-                                    /* We wanted to render the model,
-                                     * but we didn't have it, so we really want this chunk!
-                                     */
-                                    score = distance / 2;
-                                }
-                            } else {
-                                /* The player can not see the chunk right now,
-                                 * but if she turns around she might need this chunk
-                                 * so let's fetch it, but not super urgent
-                                 */
-                                if(it != models.end() && !is_updated) {
-                                    /* We already have it and it's not updated */
-                                    score = NO_CHUNK_FOUND;
-                                } else {
-                                    /* We don't have it or it's update*/
-                                    score = distance;
-                                }
-                            }
-                            if(score < best_chunk_score && world.chunk_not_requested(pos)) {
-                                best_chunk_score = score;
-                                best_chunk = pos;
-                            }
+                for(auto it = models.begin(); it != models.end();) {
+                    int distance = (it->second->position - player_chunk).norm();
+                    if ( distance > max_radius) {
+                        it = models.erase(it);
+                    } else if(distance <= radius){
+                        auto pos = it->first;
+                        if(chunk_visible(planes, pos)) {
+                            const auto m = it->second;
+                            visible++;
+                            c.set(translation, m->translation);
+                            c.draw(m);
+                            faces += m->faces;
                         }
+                        ++it;
+                    } else {
+                        ++it;
                     }
-                }
-                if(best_chunk_score != NO_CHUNK_FOUND) {
-                    world.request_chunk(best_chunk, client);
                 }
                 c.disable(GL_CULL_FACE);
                 c.disable(GL_DEPTH_TEST);
             });
         return faces;
-    }
-
-    void ChunkShader::delete_unused_models(const Vector3f position, const int radi) {
-        Vector3i player_chunk = chunked_vec(position);
-        for ( auto it = models.begin(); it != models.end();) {
-            if ((it->second->position - player_chunk).norm() > radi) {
-                it = models.erase(it);
-            } else {
-                ++it;
-            }
-        }
     }
 
     bool chunk_visible(const float planes[6][4], const Vector3i &position) {

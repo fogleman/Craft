@@ -29,12 +29,12 @@ namespace konstructs {
     public:
         ChunkShader(const float _fov, const GLuint _block_texture,
                     const GLuint _sky_texture, const float _near_distance, const string &vert_str,
-                    const string &frag_str);
+                    const string &frag_str, const int max_radius);
+        int size() const;
         void add(const shared_ptr<ChunkModelResult> &data);
         int render(const Player &p, const int width, const int height,
                    const float current_daylight, const float current_timer,
-                   World &world, Client &client, const int radius);
-        void delete_unused_models(const Vector3f position, const int radi);
+                   const int radius, const float view_distance, const Vector3i &player_chunk);
         const GLuint data_attr;
         const GLuint matrix;
         const GLuint translation;
@@ -51,6 +51,7 @@ namespace konstructs {
     private:
         std::unordered_map<Vector3i, ChunkModel *, matrix_hash<Vector3i>> models;
         const float fov;
+        const int max_radius;
     };
 
     bool chunk_visible(const float planes[6][4], const Vector3i &position);

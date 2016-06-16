@@ -1,30 +1,14 @@
 #include "world.h"
 
 namespace konstructs {
-    void World::request_chunk(const Vector3i &pos, Client &client) {
-        /* Keep track of the chunk so we don't request it again */
-        requested.insert(pos);
-        /* Remove requested chunks from updated (we will get the latest update) */
-        updated.erase(pos);
-        client.chunk(pos);
+
+    int World::size() const {
+        return chunks.size();
     }
 
-    void World::set_chunk_updated(const Vector3i &pos) {
-        updated.insert(pos);
-    }
-
-    bool World::chunk_not_requested(const Vector3i &pos) const {
-        return (updated.find(pos) != updated.end() && chunks.find(pos) != chunks.end()) // Updated and exist in the world
-            || (requested.find(pos) == requested.end() && chunks.find(pos) == chunks.end()); // Not requested and not in world
-    }
-
-    bool World::chunk_updated_since_requested(const Vector3i &pos) const {
-        return updated.find(pos) != updated.end();
-    }
-
-    void World::delete_unused_chunks(const Vector3f position, const int radi) {
+    void World::delete_unused_chunks(const Vector3i player_chunk, const int radi) {
         for ( auto it = chunks.begin(); it != chunks.end();) {
-            if ((it->second->position - chunked_vec(position)).norm() > radi) {
+            if ((it->second->position - player_chunk).norm() > radi) {
                 it = chunks.erase(it);
             } else {
                 ++it;
@@ -37,11 +21,6 @@ namespace konstructs {
         const Vector3i pos = data->position;
         chunks.erase(pos);
         chunks.insert({pos, data});
-
-        /* We now have the chunk, so we don't need to keep track of
-         * it being requested.
-         */
-        requested.erase(pos);
     }
 
     const BlockData World::get_block(const Vector3i &block_pos) const {

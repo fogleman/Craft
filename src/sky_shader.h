@@ -22,7 +22,7 @@ namespace konstructs {
         SkyShader(const float _fov, const GLuint _sky_texture,
                   const float _near_distance);
         void render(const Player &p, const int width, const int height,
-                    const float current_timer, const int radius);
+                    const float current_timer, const float view_distance);
         const GLuint position_attr;
         const GLuint uv_attr;
         const GLuint matrix;

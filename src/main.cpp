@@ -68,14 +68,15 @@ public:
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
-        client(),
         radius(4),
         max_radius(10),
+        client(max_radius),
+        view_distance((float)radius*CHUNK_SIZE),
         fov(70.0f),
         near_distance(0.125f),
         sky_shader(fov, SKY_TEXTURE, near_distance),
         chunk_shader(fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance,
-                     load_chunk_vertex_shader(), load_chunk_fragment_shader()),
+                     load_chunk_vertex_shader(), load_chunk_fragment_shader(), max_radius),
         hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE),
         selection_shader(fov, near_distance, 0.52),
         day_length(600),
@@ -210,24 +211,23 @@ public:
             handle_network();
             handle_keys();
             handle_mouse();
-            update_radius();
             looking_at = player.looking_at(world, blocks);
             glClear(GL_DEPTH_BUFFER_BIT);
             for(auto model : model_factory.fetch_models()) {
                 chunk_shader.add(model);
             }
-            sky_shader.render(player, mSize.x(), mSize.y(), time_of_day(), radius);
+            sky_shader.render(player, mSize.x(), mSize.y(), time_of_day(), view_distance);
             glClear(GL_DEPTH_BUFFER_BIT);
-            int faces = chunk_shader.render(player, mSize.x(), mSize.y(),
-                                            daylight(), time_of_day(), world, client, radius);
-            /*if(frame % 60) {
-                cout << "Faces: " << faces << " FPS: " << fps.fps << endl;
-                }*/
+            faces = chunk_shader.render(player, mSize.x(), mSize.y(),
+                                        daylight(), time_of_day(), radius,
+                                        view_distance, player_chunk);
+            if(faces > max_faces)
+                max_faces = faces;
             player_shader->render(player, mSize.x(), mSize.y(),
-                                  daylight(), time_of_day(), radius);
+                                  daylight(), time_of_day(), view_distance);
             if(looking_at && !hud.get_interactive() && !menu_state) {
                 selection_shader.render(player, mSize.x(), mSize.y(),
-                                        looking_at->second.position, radius);
+                                        looking_at->second.position, view_distance);
             }
             glClear(GL_DEPTH_BUFFER_BIT);
             if(!hud.get_interactive() && !menu_state)
@@ -235,6 +235,7 @@ public:
             double mx, my;
             glfwGetCursorPos(mGLFWWindow, &mx, &my);
             hud_shader.render(mSize.x(), mSize.y(), mx, my, hud, blocks);
+            update_radius();
         } else if(!menu_state){
             show_menu(client.get_error_message());
         }
@@ -260,12 +261,22 @@ private:
     }
 
     void update_radius() {
-        if(frame % 150 == 0) {
-            if(fps.fps < 35 && radius > 2) {
-                radius = radius - 1;
-            } else if(fps.fps > 55 && radius < max_radius && model_factory.queue_empty()){
-                radius = radius + 1;
-            }
+        double frame_fps = 1.05 / frame_time;
+        if(frame_fps > 0.0 && frame_fps < 60.0 && radius > 1) {
+            view_distance = view_distance - (float)CHUNK_SIZE * 0.2f * ((60.0f - (float)frame_fps) / 60.0f);
+        } else if(frame_fps >= 60.0 && radius < max_radius && model_factory.waiting() == 0) {
+            view_distance = view_distance + 0.05;
+        }
+        int new_radius = (int)(view_distance / (float)CHUNK_SIZE) + 1;
+        if(new_radius != radius) {
+            radius = new_radius;
+            client.set_radius(radius);
+        }
+
+        if(frame % 6 == 0) {
+            cout << "View distance: " << view_distance << " (" << radius << ") faces: " << faces << "(" << max_faces << ") FPS: " << fps.fps << "(" << frame_fps << ")" << endl;
+            cout << "Chunks: " << world.size() << " models: " << chunk_shader.size() << endl;
+            cout << "Model factory, waiting: " << model_factory.waiting() << " created: " << model_factory.total_created() << " empty: " << model_factory.total_empty() << " total: " <<  model_factory.total() << endl;
         }
     }
 
@@ -295,10 +306,10 @@ private:
         bool sneak = false;
         double now = glfwGetTime();
         double dt = now - last_frame;
+        frame_time = now - last_frame;
         dt = MIN(dt, 0.2);
         dt = MAX(dt, 0.0);
         last_frame = now;
-
         if(glfwGetKey(mGLFWWindow, GLFW_KEY_W)) {
             sz--;
         }
@@ -318,8 +329,13 @@ private:
             sneak = true;
         }
         client.position(player.update_position(sz, sx, (float)dt, world,
-                                               blocks, near_distance, jump, sneak),
-                                               player.rx(), player.ry());
+                                              blocks, near_distance, jump, sneak),
+                       player.rx(), player.ry());
+        Vector3i new_chunk(chunked_vec(player.camera()));
+        if(new_chunk != player_chunk) {
+            player_chunk = new_chunk;
+            client.set_player_chunk(player_chunk);
+        }
     }
 
     void close_hud() {
@@ -362,11 +378,9 @@ private:
             model_factory.create_models({pos}, world);
             /* Force render of prioritized chunk */
             force_render(pos);
-        } else {
-            /* Oh, no need to build models on main thread,
-             * let's do bookkeeping! */
-            chunk_shader.delete_unused_models(player.camera(), max_radius);
-            world.delete_unused_chunks(player.camera(), max_radius);
+        } else if(frame % 7883 == 0) {
+            /* Book keeping */
+            world.delete_unused_chunks(player_chunk, max_radius);
         }
 
     }
@@ -402,9 +416,6 @@ private:
         case 'T':
             handle_time(packet->to_string());
             break;
-        case 'c':
-            handle_chunk_updated(packet->to_string());
-            break;
         default:
             cout << "UNKNOWN: " << packet->type << endl;
             break;
@@ -419,6 +430,10 @@ private:
                   &pid, &x, &y, &z, &rx, &ry) != 6)
             throw std::runtime_error(str);
         player = Player(pid, Vector3f(x, y, z), rx, ry);
+        player_chunk = chunked_vec(player.camera());
+        client.set_player_chunk(player_chunk);
+        client.set_radius(radius);
+        client.set_logged_in(true);
     }
 
     void handle_other_player_packet(const string &str) {
@@ -530,15 +545,6 @@ private:
         glfwSetTime((double)time_value);
     }
 
-    void handle_chunk_updated(const string &str) {
-        int p,q,k;
-        if(sscanf(str.c_str(), ",%d,%d,%d", &p, &q, &k) != 3) {
-            throw std::runtime_error(str);
-        }
-        Vector3i pos(p, q, k);
-        world.set_chunk_updated(pos);
-    }
-
     float time_of_day() {
         if (day_length <= 0) {
             return 0.5;
@@ -614,6 +620,7 @@ private:
     CrosshairShader crosshair_shader;
     int radius;
     int max_radius;
+    float view_distance;
     int fov;
     float near_distance;
     int day_length;
@@ -626,6 +633,7 @@ private:
     ChunkModelFactory model_factory;
     Client client;
     Player player;
+    Vector3i player_chunk;
     optional<pair<konstructs::Block, konstructs::Block>> looking_at;
     Hud hud;
     double px;
@@ -636,6 +644,9 @@ private:
     bool debug_mode;
     nanogui::Window *window;
     uint32_t frame;
+    uint32_t faces;
+    uint32_t max_faces;
+    double frame_time;
 };
 
 #ifdef WIN32
@@ -708,7 +719,6 @@ int main(int argc, char ** argv) {
             }
         }
 
-        //printf("Connecting to %s with user %s\n", server_addr, server_user);
     }
 
     if (init_winsock()) {

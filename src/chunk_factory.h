@@ -2,8 +2,8 @@
 #define __CHUNK_FACTORY_H__
 
 #include <memory>
-#include <queue>
 #include <unordered_map>
+#include <unordered_set>
 #include <mutex>
 #include <condition_variable>
 
@@ -52,15 +52,21 @@ namespace konstructs {
     class ChunkModelFactory {
     public:
         ChunkModelFactory(const BlockTypeInfo &_block_data);
+        int waiting();
+        int total();
+        int total_empty();
+        int total_created();
         void create_models(const std::vector<Vector3i> &positions,
                            const World &world);
         std::vector<std::shared_ptr<ChunkModelResult>> fetch_models();
-        bool queue_empty();
     private:
+        int processed;
+        int empty;
+        int created;
         void worker();
         std::mutex mutex;
         std::condition_variable chunks_condition;
-        std::queue<Vector3i> chunks;
+        std::unordered_set<Vector3i, matrix_hash<Vector3i>> chunks;
         std::unordered_map<Vector3i, ChunkModelData, matrix_hash<Vector3i>> model_data;
         std::vector<std::shared_ptr<ChunkModelResult>> models;
         const BlockTypeInfo &block_data;

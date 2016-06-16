@@ -6,8 +6,10 @@
 #include <string>
 #include <memory>
 #include <queue>
+#include <unordered_set>
 #include <thread>
 #include <Eigen/Geometry>
+#include "matrix.h"
 #include "optional.hpp"
 #include "chunk.h"
 
@@ -40,7 +42,7 @@ namespace konstructs {
 
     class Client {
     public:
-        Client();
+        Client(const int max_radius);
         void open_connection(const string &nick, const string &hash,
                const string &hostname, const int port = DEFAULT_PORT);
         void version(const int version, const string &nick, const string &hash);
@@ -52,31 +54,56 @@ namespace konstructs {
         void close_inventory();
         void talk(const string &text);
         void click_at(const int hit, const Vector3i pos, const int button, const int active);
-        bool is_connected();
         string get_error_message();
         void set_connected(bool state);
+        bool is_connected();
+        void set_logged_in(bool state);
+        bool is_logged_in();
         vector<shared_ptr<Packet>> receive(const int max);
         optional<shared_ptr<ChunkData>> receive_prio_chunk(const Vector3i pos);
         vector<shared_ptr<ChunkData>> receive_chunks(const int max);
+        void set_player_chunk(const Vector3i &chunk);
+        void set_radius(int r);
     private:
         int send_all(const char *data, const int length);
         void send_string(const string &str);
         size_t recv_all(char* out_buf, const size_t size);
         void process_error(Packet *packet);
         void process_chunk(Packet *packet);
+        void process_chunk_updated(Packet *packet);
         void recv_worker();
+        void send_worker();
+        void chunk_worker();
         void force_close();
+        void received_chunk(const Vector3i &pos);
+        void chunk_updated(const Vector3i &pos);
         int bytes_sent;
         int sock;
+        std::mutex mutex_send;
+        std::condition_variable cv_send;
+        std::queue<std::string> send_queue;
         std::mutex packets_mutex;
         std::mutex mutex_connected;
         std::condition_variable cv_connected;
-        std::thread *worker_thread;
+        std::thread *recv_thread;
+        std::thread *send_thread;
+        std::thread *chunk_thread;
         std::queue<shared_ptr<Packet>> packets;
         std::deque<shared_ptr<ChunkData>> chunks;
         bool connected;
+        bool logged_in;
         std::string error_message;
         char *inflation_buffer;
+        /* Chunk worker */
+        Vector3i player_chunk;
+        int max_radius;
+        int radius;
+        std::unordered_set<Vector3i, matrix_hash<Vector3i>> updated;
+        std::unordered_set<Vector3i, matrix_hash<Vector3i>> requested;
+        std::unordered_set<Vector3i, matrix_hash<Vector3i>> received;
+        std::vector<Vector3i> received_queue;
+        std::vector<Vector3i> updated_queue;
+        std::mutex mutex_chunk;
     };
 };
 

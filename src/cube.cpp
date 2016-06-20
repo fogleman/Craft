@@ -145,13 +145,15 @@ void make_cube(
 #define OFF_Y 12
 #define OFF_Z 17
 #define OFF_AO 22
+#define OFF_DAMAGE_U 27
+#define OFF_DAMAGE_V 31
 
 #define OFF_DU 0
 #define OFF_DV 5
 
 void make_cube2(GLuint *data, char ao[6][4],
                 int left, int right, int top, int bottom, int front, int back,
-                int x, int y, int z, int w, const int blocks[256][6]) {
+                int x, int y, int z, int w, int damage, const int blocks[256][6]) {
     static const int corners[6][4] = {
         {0, 1, 2, 5},
         {3, 6, 4, 7},
@@ -193,9 +195,12 @@ void make_cube2(GLuint *data, char ao[6][4],
         int flip = ao[i][0] + ao[i][3] > ao[i][1] + ao[i][2];
         for (int v = 0; v < 6; v++) {
             int j = flip ? flipped[i][v] : indices[i][v];
+            int damage_u = damage + (uvs[i][j][0] ? 1 : 0);
+            int damage_v = uvs[i][j][1] ? 1 : 0;
             GLuint d1 = (i << OFF_NORMAL) + (corners[i][j] << OFF_VERTEX) +
                 (x << OFF_X) + (y << OFF_Y) + (z << OFF_Z) +
-                (ao[i][j] << OFF_AO);
+                (ao[i][j] << OFF_AO) + (damage_u << OFF_DAMAGE_U) +
+                (damage_v << OFF_DAMAGE_V);
             *(d++) = d1;
             int du = (blocks[w][i] % 16) + (uvs[i][j][0] ? 1 : 0);
             int dv = (blocks[w][i] / 16) + (uvs[i][j][1] ? 1 : 0);
@@ -234,7 +239,8 @@ void make_plant(
             int j = indices[i][v];
             GLuint d1 = (normal_index[i] << OFF_NORMAL) + (position_index[i][j] << OFF_VERTEX) +
                 (x << OFF_X) + (y << OFF_Y) + (z << OFF_Z) +
-                (ao << OFF_AO);
+                (ao << OFF_AO) + (0 << OFF_DAMAGE_U) +
+                (0 << OFF_DAMAGE_V);
             *(d++) = d1;
             int du = (blocks[w][i] % 16) + (uvs[i][j][0] ? 1 : 0);
             int dv = (blocks[w][i] / 16) + (uvs[i][j][1] ? 1 : 0);

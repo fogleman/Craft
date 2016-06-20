@@ -47,8 +47,8 @@ namespace konstructs {
 
     }
 
-    ChunkShader::ChunkShader(const float _fov, const GLuint _block_texture,
-                             const GLuint _sky_texture, const float _near_distance, const string &vert_str,
+    ChunkShader::ChunkShader(const float fov, const GLuint block_texture,  const GLuint damage_texture,
+                             const GLuint sky_texture, const float near_distance, const string &vert_str,
                              const string &frag_str, const int max_radius) :
         ShaderProgram("chunk", vert_str, frag_str),
         data_attr(attributeId("data")),
@@ -56,15 +56,17 @@ namespace konstructs {
         translation(uniformId("translation")),
         sampler(uniformId("sampler")),
         sky_sampler(uniformId("sky_sampler")),
+        damage_sampler(uniformId("damage_sampler")),
         fog_distance(uniformId("fog_distance")),
         light_color(uniformId("light_color")),
         ambient_light(uniformId("ambient_light")),
         timer(uniformId("timer")),
         camera(uniformId("camera")),
-        fov(_fov),
-        block_texture(_block_texture),
-        sky_texture(_sky_texture),
-        near_distance(_near_distance),
+        fov(fov),
+        block_texture(block_texture),
+        sky_texture(sky_texture),
+        damage_texture(damage_texture),
+        near_distance(near_distance),
         max_radius(max_radius) {}
 
     int ChunkShader::size() const {
@@ -84,6 +86,7 @@ namespace konstructs {
                 c.set(matrix, m);
                 c.set(sampler, (int)block_texture);
                 c.set(sky_sampler, (int)sky_texture);
+                c.set(damage_sampler, (int)damage_texture);
                 c.set(fog_distance, view_distance);
                 float value = min(1.0f, current_daylight);
                 float v = value * 0.3 + 0.15;

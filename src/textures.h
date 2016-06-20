@@ -9,6 +9,7 @@ namespace konstructs {
     #define FONT_TEXTURE 3
     #define INVENTORY_TEXTURE 4
     #define PLAYER_TEXTURE 6
+    #define DAMAGE_TEXTURE 7
     void load_textures();
     tinyobj::shape_t load_player();
     std::string load_chunk_vertex_shader();

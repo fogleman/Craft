@@ -124,7 +124,7 @@ namespace konstructs {
         Vector3i position(p, q, k);
         received_chunk(position);
         const int blocks_size = packet->size - 3 * sizeof(int);
-        auto chunk = make_shared<ChunkData>(position, pos, blocks_size, inflation_buffer);
+        auto chunk = make_shared<ChunkData>(position, pos, blocks_size, (uint8_t*)inflation_buffer);
         std::lock_guard<std::mutex> lock_packets(packets_mutex);
         chunks.push_back(chunk);
     }

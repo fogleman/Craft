@@ -29,15 +29,15 @@ namespace konstructs {
         return chunked_vec_int(position.cast<int>());
     }
 
-    ChunkData::ChunkData(const Vector3i _position, char *compressed, const int size, char *buffer):
+    ChunkData::ChunkData(const Vector3i _position, char *compressed, const int size, uint8_t *buffer):
         position(_position) {
         blocks = new BlockData[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
         int out_size = inflate_data(compressed + BLOCKS_HEADER_SIZE,
                                     size - BLOCKS_HEADER_SIZE,
-                                    buffer, BLOCK_BUFFER_SIZE);
+                                    (char*)buffer, BLOCK_BUFFER_SIZE);
         for(int i = 0; i < CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE; i++) {
             blocks[i].type = buffer[i * BLOCK_SIZE] + (buffer[i * BLOCK_SIZE + 1] << 8);
-            blocks[i].health = buffer[i * BLOCK_SIZE + 2] + ((buffer[i * BLOCK_SIZE + 3] << 8) & 0x07);
+            blocks[i].health = buffer[i * BLOCK_SIZE + 2] + ((buffer[i * BLOCK_SIZE + 3] & 0x07) << 8);
         }
     }
     ChunkData::ChunkData() {

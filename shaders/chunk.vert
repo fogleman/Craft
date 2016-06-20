@@ -63,9 +63,16 @@ const uint OFF_Y = uint(12);
 const uint OFF_Z = uint(17);
 const uint MASK_POS = uint(0x1F);
 
-/* Lastly the ambient occlusion (0 - 31) encoded in 5 bits. */
+/* Then the ambient occlusion (0 - 31) encoded in 5 bits. */
 const uint OFF_AO = uint(22);
 const uint MASK_AO = uint(0x1F);
+
+/* And lastly the uv coordinates for the block damage, (0 - 8) and (0 - 1) encoded in 4 + 1 bits */
+const uint OFF_DAMAGE_U = uint(27);
+const uint MASK_DAMAGE_U = uint(0x0F);
+
+const uint OFF_DAMAGE_V = uint(31);
+const uint MASK_DAMAGE_V = uint(0x01);
 
 /* y component */
 
@@ -78,6 +85,10 @@ const uint MASK_UV = uint(0x1F);
 
 /* UV stepping */
 const float S = (1.0 / 16.0);
+const float DS = (1.0 / 8.0);
+
+/* Influences how much the damage is mixed into the block */
+const float damage_weight = 0.3;
 
 /* Projection and player translation */
 uniform mat4 matrix;
@@ -98,6 +109,10 @@ in uvec2 data;
 
 /* UV coordinates in texture space */
 out vec2 fragment_uv;
+out vec2 damage_uv;
+
+/* Damage */
+flat out float damage_factor;
 
 /* The real ao value */
 out float fragment_ao;
@@ -123,6 +138,10 @@ void main() {
 
     /* Extract the amount of ambient occlusion */
     uint ao = (d1 >> OFF_AO) & MASK_AO;
+
+    /* Extract block damage UV */
+    uint damage_u = (d1 >> OFF_DAMAGE_U) & MASK_DAMAGE_U;
+    uint damage_v = (d1 >> OFF_DAMAGE_V) & MASK_DAMAGE_V;
 
     /* Extract block position */
     uint x = (d1 >> OFF_X) & MASK_POS;
@@ -159,6 +178,9 @@ void main() {
 
     /* Calculate UV coordinates */
     fragment_uv = vec2(du * S, dv * S);
+    damage_uv = vec2(damage_u * DS, damage_v);
+
+    damage_factor = (damage_u * DS) * damage_weight;
 
     diffuse = min(1.0, max(0.0, dot(normals[normal], light_direction)));
 

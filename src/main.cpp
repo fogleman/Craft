@@ -75,7 +75,7 @@ public:
         fov(70.0f),
         near_distance(0.125f),
         sky_shader(fov, SKY_TEXTURE, near_distance),
-        chunk_shader(fov, BLOCK_TEXTURES, SKY_TEXTURE, near_distance,
+        chunk_shader(fov, BLOCK_TEXTURES, DAMAGE_TEXTURE, SKY_TEXTURE, near_distance,
                      load_chunk_vertex_shader(), load_chunk_fragment_shader(), max_radius),
         hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE),
         selection_shader(fov, near_distance, 0.52),

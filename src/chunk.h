@@ -27,7 +27,7 @@ namespace konstructs {
 
     class ChunkData {
     public:
-        ChunkData(const Vector3i _position, char *compressed, const int size, char *buffer);
+        ChunkData(const Vector3i _position, char *compressed, const int size, uint8_t *buffer);
         ChunkData(const Vector3i position, BlockData *blocks);
         ChunkData();
         ~ChunkData();

@@ -75,6 +75,16 @@ namespace konstructs {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         texture_path("player.png", txtpth, KONSTRUCTS_PATH_SIZE);
         load_png_texture(txtpth);
+
+        GLuint damage_texture;
+        glGenTextures(1, &damage_texture);
+        glActiveTexture(GL_TEXTURE0 + DAMAGE_TEXTURE);
+        glBindTexture(GL_TEXTURE_2D, damage_texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        texture_path("damage.png", txtpth, KONSTRUCTS_PATH_SIZE);
+        load_png_texture(txtpth);
+
     }
 
     tinyobj::shape_t load_player() {

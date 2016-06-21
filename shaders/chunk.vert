@@ -88,7 +88,7 @@ const float S = (1.0 / 16.0);
 const float DS = (1.0 / 8.0);
 
 /* Influences how much the damage is mixed into the block */
-const float damage_weight = 0.3;
+const float damage_weight = 0.6;
 
 /* Projection and player translation */
 uniform mat4 matrix;

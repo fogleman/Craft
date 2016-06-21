@@ -147,7 +147,7 @@ public:
                             world.chunk_at(l.first.position)->set(l.first.position,
                                                                   {selected->type, MAX_HEALTH});
                         world.insert(updated_chunk);
-                        force_render(updated_chunk->position);
+                        model_factory.create_models({updated_chunk->position}, world);
                     }
                     client.click_at(1, l.first.position, translate_button(button), hud.get_selection());
                 } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
@@ -254,12 +254,6 @@ private:
         }
     }
 
-    void force_render(const Vector3i &position) {
-        auto model_data = create_model_data(position, world);
-        auto result = compute_chunk(model_data, blocks);
-        chunk_shader.add(result);
-    }
-
     void update_radius() {
         double frame_fps = 1.05 / frame_time;
         if(frame_fps > 0.0 && frame_fps < 60.0 && radius > 1) {
@@ -359,8 +353,10 @@ private:
 
         auto prio = client.receive_prio_chunk(Vector3i(chunked(pos[0]), chunked(pos[2]), chunked(pos[1])));
         /* Insert prio chunk into world */
-        if(prio)
+        if(prio) {
             world.insert(*prio);
+            model_factory.create_models({(*prio)->position}, world);
+        }
         auto new_chunks = client.receive_chunks(10);
         if(!new_chunks.empty()) {
             std::vector<Vector3i> positions;
@@ -371,14 +367,7 @@ private:
             }
             model_factory.create_models(positions, world);
         }
-        /* Render prio chunk after all other chunks have been inserted */
-        if(prio) {
-            Vector3i pos = (*prio)->position;
-            /* Add for later processing as well */
-            model_factory.create_models({pos}, world);
-            /* Force render of prioritized chunk */
-            force_render(pos);
-        } else if(frame % 7883 == 0) {
+        if(frame % 7883 == 0) {
             /* Book keeping */
             world.delete_unused_chunks(player_chunk, max_radius);
         }

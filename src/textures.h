@@ -11,5 +11,7 @@ namespace konstructs {
     #define PLAYER_TEXTURE 6
     void load_textures();
     tinyobj::shape_t load_player();
+    std::string load_chunk_vertex_shader();
+    std::string load_chunk_fragment_shader();
 };
 #endif

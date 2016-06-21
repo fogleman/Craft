@@ -35,7 +35,7 @@ namespace konstructs {
         return m;
     }
 
-    SelectionShader::SelectionShader(const int _radius, const float _fov,
+    SelectionShader::SelectionShader(const float _fov,
                                      const float _near_distance, const float scale) :
         ShaderProgram(
         "chunk",
@@ -56,19 +56,17 @@ namespace konstructs {
         position_attr(attributeId("position")),
         matrix(uniformId("matrix")),
         translation(uniformId("translation")),
-        radius(_radius),
         fov(_fov),
         near_distance(_near_distance),
         model(position_attr, wireframe(scale))
     {}
 
     void SelectionShader::render(const Player &p, const int width, const int height,
-                                const Vector3i &selected) {
+                                 const Vector3i &selected, const float view_distance) {
         bind([&](Context c) {
                 c.enable(GL_DEPTH_TEST);
                 float aspect_ratio = (float)width / (float)height;
-                float max_distance = (radius - 1) * CHUNK_SIZE;
-                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, max_distance) * p.view();
+                const Matrix4f m = matrix::projection_perspective(fov, aspect_ratio, near_distance, view_distance) * p.view();
                 c.set(matrix, m);
                 c.set(translation, Affine3f(Translation3f(selected.cast<float>())).matrix());
                 c.draw(&model);

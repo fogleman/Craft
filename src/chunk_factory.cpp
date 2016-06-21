@@ -29,22 +29,45 @@ namespace konstructs {
     ChunkModelResult::ChunkModelResult(const Vector3i _position, const int components,
                                        const int _faces):
         position(_position), size(6 * components * _faces), faces(_faces) {
-        mData = new GLfloat[size];
+        mData = new GLuint[size];
     }
 
     ChunkModelResult::~ChunkModelResult() {
         delete[] mData;
     }
 
-    GLfloat *ChunkModelResult::data() {
+    GLuint *ChunkModelResult::data() {
         return mData;
     }
 
     ChunkModelFactory::ChunkModelFactory(const BlockTypeInfo &block_data) :
-        block_data(block_data) {
+        block_data(block_data),
+        processed(0),
+        empty(0),
+        created(0) {
         for(int i = 0; i < WORKERS; i++) {
             new std::thread(&ChunkModelFactory::worker, this);
         }
+    }
+
+    int ChunkModelFactory::waiting() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return chunks.size();
+    }
+
+    int ChunkModelFactory::total() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return processed;
+    }
+
+    int ChunkModelFactory::total_empty() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return empty;
+    }
+
+    int ChunkModelFactory::total_created() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return created;
     }
 
     void ChunkModelFactory::create_models(const std::vector<Vector3i> &positions,
@@ -53,7 +76,7 @@ namespace konstructs {
             std::lock_guard<std::mutex> lock(mutex);
             for(auto position: positions) {
                 for(auto m : adjacent(position, world)) {
-                    chunks.push(m.position);
+                    chunks.insert(m.position);
                     model_data.erase(m.position);
                     model_data.insert({m.position, m});
                 }
@@ -131,8 +154,9 @@ namespace konstructs {
         while(1) {
             std::unique_lock<std::mutex> ulock(mutex);
             chunks_condition.wait(ulock, [&]{return !chunks.empty();});
-            auto position = chunks.front();
-            chunks.pop();
+            auto it = chunks.begin();
+            auto position = *it;
+            chunks.erase(it);
             auto itr = model_data.find(position);
             if(itr == model_data.end())
                 continue;
@@ -143,6 +167,12 @@ namespace konstructs {
             if(result->size > 0) {
                 std::lock_guard<std::mutex> ulock(mutex);
                 models.push_back(result);
+                created++;
+                processed++;
+            } else {
+                std::lock_guard<std::mutex> ulock(mutex);
+                empty++;
+                processed++;
             }
         }
     }
@@ -154,8 +184,8 @@ namespace konstructs {
 #define XZ(x, z) ((x) * XZ_SIZE + (z))
 
     void occlusion(
-                   char neighbors[27], float shades[27],
-                   float ao[6][4], float light[6][4])
+                   char neighbors[27], char shades[27],
+                   char ao[6][4])
     {
         static const int lookup3[6][4][3] = {
             {{0, 1, 3}, {2, 1, 5}, {6, 3, 7}, {8, 5, 7}},
@@ -173,31 +203,25 @@ namespace konstructs {
             {{0, 3, 9, 12}, {3, 6, 12, 15}, {9, 12, 18, 21}, {12, 15, 21, 24}},
             {{2, 5, 11, 14}, {5, 8, 14, 17}, {11, 14, 20, 23}, {14, 17, 23, 26}}
         };
-        static const float curve[4] = {0.0, 0.25, 0.5, 0.75};
+        static const char curve[4] = {0, 8, 16, 24};
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 4; j++) {
                 int corner = neighbors[lookup3[i][j][0]];
                 int side1 = neighbors[lookup3[i][j][1]];
                 int side2 = neighbors[lookup3[i][j][2]];
                 int value = side1 && side2 ? 3 : corner + side1 + side2;
-                float shade_sum = 0;
-                float light_sum = 0;
+                char shade_sum = 0;
                 for (int k = 0; k < 4; k++) {
                     shade_sum += shades[lookup4[i][j][k]];
                 }
-                float total = curve[value] + shade_sum / 4.0;
-                ao[i][j] = std::min(total, 1.0f);
-                light[i][j] = light_sum / 15.0 / 4.0;
+                char total = curve[value] + shade_sum;
+                ao[i][j] = std::min(total, (char)31);
             }
         }
     }
 
     bool face_visible(int self, int neighbour, const char *is_transparent, const char *state) {
         return is_transparent[neighbour] || (self != neighbour && state[neighbour] == STATE_LIQUID);
-    }
-
-    GLfloat *malloc_faces(int components, int faces) {
-        return (GLfloat*)malloc(sizeof(GLfloat) * 6 * components * faces);
     }
 
     shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data,
@@ -492,18 +516,21 @@ namespace konstructs {
             int f5 = face_visible(eb.type, blocks[XYZ(x, y, z - 1)].type, is_transparent, state);
             int f6 = face_visible(eb.type, blocks[XYZ(x, y, z + 1)].type, is_transparent, state);
             int total = f1 + f2 + f3 + f4 + f5 + f6;
+
             if (total == 0) {
                 continue;
             }
+
             if (is_plant[eb.type]) {
                 total = 4;
             }
+
             faces += total;
         } END_CHUNK_FOR_EACH;
 
         // generate geometry
-        auto result = std::make_shared<ChunkModelResult>(data.position, 10, faces);
-        GLfloat * vertices = result->data();
+        auto result = std::make_shared<ChunkModelResult>(data.position, 2, faces);
+        GLuint * vertices = result->data();
         int offset = 0;
 
         CHUNK_FOR_EACH(self, ex, ey, ez, eb) {
@@ -524,7 +551,7 @@ namespace konstructs {
                 continue;
             }
             char neighbors[27] = {0};
-            float shades[27] = {0};
+            char shades[27] = {0};
             int index = 0;
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -534,7 +561,7 @@ namespace konstructs {
                         if (y + dy <= highest[XZ(x + dx, z + dz)]) {
                             for (int oy = 0; oy < 8; oy++) {
                                 if (!is_transparent[blocks[XYZ(x + dx, y + dy + oy, z + dz)].type]) {
-                                    shades[index] = 1.0 - oy * 0.125;
+                                    shades[index] = 8 - oy;
                                     break;
                                 }
                             }
@@ -543,28 +570,25 @@ namespace konstructs {
                     }
                 }
             }
-            float ao[6][4];
-            float light[6][4];
-            occlusion(neighbors, shades, ao, light);
+            char ao[6][4];
+            occlusion(neighbors, shades, ao);
             if (is_plant[eb.type]) {
                 total = 4;
-                float min_ao = 1;
-                float max_light = 0;
+                char min_ao = 1;
                 for (int a = 0; a < 6; a++) {
                     for (int b = 0; b < 4; b++) {
                         min_ao = std::min(min_ao, ao[a][b]);
                     }
                 }
-                float rotation = ((float)((ex * ey) % 360)) / 360.0f;
-                make_plant(vertices + offset, min_ao, 0,
-                           ex, ey, ez, 0.5, eb.type, rotation, block_data.blocks);
+                make_plant(vertices + offset, min_ao,
+                           ex, ey, ez, eb.type, block_data.blocks);
             }
             else {
-                make_cube(vertices + offset, ao, light,
+                make_cube2(vertices + offset, ao,
                           f1, f2, f3, f4, f5, f6,
-                          ex, ey, ez, 0.5, eb.type, block_data.blocks);
+                          ex, ey, ez, eb.type, block_data.blocks);
             }
-            offset += total * 60;
+            offset += total * 12;
         } END_CHUNK_FOR_EACH;
 
         free(blocks);

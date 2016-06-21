@@ -9,17 +9,16 @@ namespace konstructs {
 
     class SelectionShader : public ShaderProgram {
     public:
-        SelectionShader(const int _radius, const float _fov,
+        SelectionShader(const float _fov,
                         const float _near_distance, const float scale);
         void render(const Player &p, const int width, const int height,
-                    const Vector3i &selected);
+                    const Vector3i &selected, const float view_distance);
         const GLuint position_attr;
         const GLuint matrix;
         const GLuint translation;
         const float near_distance;
     private:
         EigenModel model;
-        const int radius;
         const float fov;
     };
 

@@ -1,11 +1,12 @@
 #include <math.h>
+#include "chunk.h"
 #include "cube.h"
 #include "item.h"
 #include "matrix.h"
 #include "util.h"
 
 void make_cube_faces(
-    float *data, float ao[6][4], float light[6][4],
+                     float *data, char ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
     int wleft, int wright, int wtop, int wbottom, int wfront, int wback,
     float n)
@@ -73,13 +74,13 @@ void make_cube_faces(
             *(d++) = normals[i][2];
             *(d++) = du + (uvs[i][j][0] ? b : a);
             *(d++) = dv + (uvs[i][j][1] ? b : a);
-            *(d++) = ao[i][j];
-            *(d++) = light[i][j];
+            *(d++) = (float)ao[i][j] * 0.03125f;
+            *(d++) = 0.0f;
         }
     }
 }
 
-void make_rotated_cube(float *data, float ao[6][4], float light[6][4],
+void make_rotated_cube(float *data, char ao[6][4],
                        int left, int right, int top, int bottom, int front, int back,
                        float x, float y, float z, float n, float rx, float ry, float rz,
                        int w, const int blocks[256][6]) {
@@ -90,7 +91,7 @@ void make_rotated_cube(float *data, float ao[6][4], float light[6][4],
     int wfront = blocks[w][4];
     int wback = blocks[w][5];
     make_cube_faces(
-        data, ao, light,
+        data, ao,
         left, right, top, bottom, front, back,
         wleft, wright, wtop, wbottom, wfront, wback,
         n);
@@ -115,7 +116,7 @@ void make_rotated_cube(float *data, float ao[6][4], float light[6][4],
 }
 
 void make_cube(
-    float *data, float ao[6][4], float light[6][4],
+               float *data, char ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w, const int blocks[256][6])
 {
@@ -126,7 +127,7 @@ void make_cube(
     int wfront = blocks[w][4];
     int wback = blocks[w][5];
     make_cube_faces(
-        data, ao, light,
+        data, ao,
         left, right, top, bottom, front, back,
         wleft, wright, wtop, wbottom, wfront, wback,
         n);
@@ -138,64 +139,109 @@ void make_cube(
     mat_apply(data, ma, (left + right + top + bottom + front + back)*6, 0, 10);
 }
 
-void make_plant(
-    float *data, float ao, float light,
-    float px, float py, float pz, float n, int w, float rotation, const int blocks[256][6])
-{
-    static const float positions[4][4][3] = {
-        {{ 0, -1, -1}, { 0, -1, +1}, { 0, +1, -1}, { 0, +1, +1}},
-        {{ 0, -1, -1}, { 0, -1, +1}, { 0, +1, -1}, { 0, +1, +1}},
-        {{-1, -1,  0}, {-1, +1,  0}, {+1, -1,  0}, {+1, +1,  0}},
-        {{-1, -1,  0}, {-1, +1,  0}, {+1, -1,  0}, {+1, +1,  0}}
-    };
-    static const float normals[4][3] = {
-        {-1, 0, 0},
-        {+1, 0, 0},
-        {0, 0, -1},
-        {0, 0, +1}
-    };
-    static const float uvs[4][4][2] = {
+#define OFF_NORMAL 0
+#define OFF_VERTEX 3
+#define OFF_X 7
+#define OFF_Y 12
+#define OFF_Z 17
+#define OFF_AO 22
+
+#define OFF_DU 0
+#define OFF_DV 5
+
+void make_cube2(GLuint *data, char ao[6][4],
+                int left, int right, int top, int bottom, int front, int back,
+                int x, int y, int z, int w, const int blocks[256][6]) {
+    static const int corners[6][4] = {
+        {0, 1, 2, 5},
+        {3, 6, 4, 7},
+        {2, 5, 4, 7},
+        {0, 1, 3, 6},
+        {0, 2, 3, 4},
+        {1, 5, 6, 7}};
+
+    static const int uvs[6][4][2] = {
         {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
         {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+        {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+        {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
         {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
         {{1, 0}, {1, 1}, {0, 0}, {0, 1}}
     };
-    static const float indices[4][6] = {
+    static const int indices[6][6] = {
+        {0, 3, 2, 0, 1, 3},
+        {0, 3, 1, 0, 2, 3},
         {0, 3, 2, 0, 1, 3},
         {0, 3, 1, 0, 2, 3},
         {0, 3, 2, 0, 1, 3},
         {0, 3, 1, 0, 2, 3}
     };
-    float *d = data;
-    float s = 0.0625;
-    float a = 0;
-    float b = s;
-    float du = (blocks[w][0] % 16) * s;
-    float dv = (blocks[w][0] / 16) * s;
+    static const int flipped[6][6] = {
+        {0, 1, 2, 1, 3, 2},
+        {0, 2, 1, 2, 3, 1},
+        {0, 1, 2, 1, 3, 2},
+        {0, 2, 1, 2, 3, 1},
+        {0, 1, 2, 1, 3, 2},
+        {0, 2, 1, 2, 3, 1}
+    };
+    GLuint *d = data;
+    int faces[6] = {left, right, top, bottom, front, back};
+    for (int i = 0; i < 6; i++) {
+        if (faces[i] == 0) {
+            continue;
+        }
+        int flip = ao[i][0] + ao[i][3] > ao[i][1] + ao[i][2];
+        for (int v = 0; v < 6; v++) {
+            int j = flip ? flipped[i][v] : indices[i][v];
+            GLuint d1 = (i << OFF_NORMAL) + (corners[i][j] << OFF_VERTEX) +
+                (x << OFF_X) + (y << OFF_Y) + (z << OFF_Z) +
+                (ao[i][j] << OFF_AO);
+            *(d++) = d1;
+            int du = (blocks[w][i] % 16) + (uvs[i][j][0] ? 1 : 0);
+            int dv = (blocks[w][i] / 16) + (uvs[i][j][1] ? 1 : 0);
+            GLuint d2 = (du << OFF_DU) + (dv << OFF_DV);
+            *(d++) = d2;
+        }
+    }
+}
+
+void make_plant(
+    GLuint *data, char ao,
+    int x, int y, int z, int w, const int blocks[256][6])
+{
+    static const int position_index[4][4] = {
+        {8, 9, 10, 11},
+        {8, 9, 10, 11},
+        {12, 13, 14, 15},
+        {12, 13, 14, 15}
+    };
+    static const int normal_index[4] = {0, 1, 4, 5};
+    static const int uvs[4][4][2] = {
+        {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+        {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+        {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+        {{1, 0}, {1, 1}, {0, 0}, {0, 1}}
+    };
+    static const int indices[4][6] = {
+        {0, 3, 2, 0, 1, 3},
+        {0, 3, 1, 0, 2, 3},
+        {0, 3, 2, 0, 1, 3},
+        {0, 3, 1, 0, 2, 3}
+    };
+    GLuint *d = data;
     for (int i = 0; i < 4; i++) {
         for (int v = 0; v < 6; v++) {
             int j = indices[i][v];
-            *(d++) = n * positions[i][j][0];
-            *(d++) = n * positions[i][j][1];
-            *(d++) = n * positions[i][j][2];
-            *(d++) = normals[i][0];
-            *(d++) = normals[i][1];
-            *(d++) = normals[i][2];
-            *(d++) = du + (uvs[i][j][0] ? b : a);
-            *(d++) = dv + (uvs[i][j][1] ? b : a);
-            *(d++) = ao;
-            *(d++) = light;
+            GLuint d1 = (normal_index[i] << OFF_NORMAL) + (position_index[i][j] << OFF_VERTEX) +
+                (x << OFF_X) + (y << OFF_Y) + (z << OFF_Z) +
+                (ao << OFF_AO);
+            *(d++) = d1;
+            int du = (blocks[w][i] % 16) + (uvs[i][j][0] ? 1 : 0);
+            int dv = (blocks[w][i] / 16) + (uvs[i][j][1] ? 1 : 0);
+            GLuint d2 = (du << OFF_DU) + (dv << OFF_DV);
+            *(d++) = d2;
         }
     }
-    float ma[16];
-    float mb[16];
-    mat_identity(ma);
-    mat_rotate(mb, 0, 1, 0, RADIANS(rotation));
-    mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 3, 10);
-    mat_translate(mb, px, py, pz);
-    mat_multiply(ma, mb, ma);
-    mat_apply(data, ma, 24, 0, 10);
 }
 
 

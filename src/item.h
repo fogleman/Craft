@@ -5,8 +5,9 @@
 
 namespace konstructs {
     struct ItemStack {
-        int amount;
+        uint32_t amount;
         uint16_t type;
+        uint16_t health;
     };
 };
 

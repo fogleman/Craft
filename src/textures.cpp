@@ -85,6 +85,15 @@ namespace konstructs {
         texture_path("damage.png", txtpth, KONSTRUCTS_PATH_SIZE);
         load_png_texture(txtpth);
 
+        GLuint health_bar_texture;
+        glGenTextures(1, &health_bar_texture);
+        glActiveTexture(GL_TEXTURE0 + HEALTH_BAR_TEXTURE);
+        glBindTexture(GL_TEXTURE_2D, health_bar_texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        texture_path("health_bar.png", txtpth, KONSTRUCTS_PATH_SIZE);
+        load_png_texture(txtpth);
+
     }
 
     tinyobj::shape_t load_player() {

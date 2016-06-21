@@ -29,6 +29,8 @@ namespace konstructs {
 
     vector<float> make_square(const std::unordered_map<Vector2i, int, matrix_hash<Vector2i>> &background);
 
+    vector<float> make_health_bars(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks);
+
     BaseModel::BaseModel(const GLuint position_attr, const GLuint normal_attr,
                          const GLuint uv_attr) :
         position_attr(position_attr), normal_attr(normal_attr),
@@ -116,6 +118,20 @@ namespace konstructs {
         verts = data.size() / 10;
     }
 
+    HealthBarModel::HealthBarModel(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                                   const GLuint position_attr, const GLuint normal_attr,
+                                   const GLuint uv_attr) :
+        BaseModel(position_attr, normal_attr, uv_attr) {
+
+        auto data = make_health_bars(stacks);
+
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat),
+                     data.data(), GL_STATIC_DRAW);
+        verts = data.size() / 10;
+    }
+
     BlockModel::BlockModel(const GLuint position_attr, const GLuint normal_attr,
                            const GLuint uv_attr,
                            const int type, const float x, const float y,
@@ -133,8 +149,9 @@ namespace konstructs {
         delete[] data;
     }
 
-    HudShader::HudShader(const int columns, const int rows, const int texture,
-                         const int block_texture, const int font_texture) :
+    HudShader::HudShader(const int columns, const int rows, const GLuint texture,
+                         const GLuint block_texture, const GLuint font_texture,
+                         const GLuint health_bar_texture) :
         ShaderProgram(
             "hud",
 
@@ -175,6 +192,7 @@ namespace konstructs {
         texture(texture),
         block_texture(block_texture),
         font_texture(font_texture),
+        health_bar_texture(health_bar_texture),
         columns(columns),
         rows(rows),
         screen_area(0.6) {}
@@ -233,10 +251,6 @@ namespace konstructs {
                 ItemStackModel ism(position, normal, uv, hud.stacks(), blocks);
                 c.draw(ism);
 
-                /* Use font texture */
-                c.set(sampler, font_texture);
-
-
                 /* Check for held block*/
                 auto held = hud.held();
                 if(held && hud.get_interactive()) {
@@ -267,6 +281,14 @@ namespace konstructs {
                 c.set(matrix,  hud_translation_matrix(scale, xscale, screen_area));
                 c.set(offset, hud_offset_vector(xscale, screen_area));
 
+
+                /* Use health bar texture */
+                c.set(sampler, health_bar_texture);
+
+                /* Generate and draw health bars */
+                HealthBarModel hbm(hud.stacks(), position, normal, uv);
+                c.draw(hbm);
+
                 /* Use font texture */
                 c.set(sampler, font_texture);
 
@@ -275,6 +297,7 @@ namespace konstructs {
                 c.enable(GL_BLEND);
                 c.draw(am);
                 c.disable(GL_BLEND);
+
             });
     }
 
@@ -364,6 +387,56 @@ namespace konstructs {
                        rx, ry, rz, d + offset, blocks);
             offset += blocks.is_plant[pair.second.type] ? 10 * 6 : 10 * 6 * 6;
         }
+    }
+
+    vector<float> make_health_bars(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks) {
+
+        vector<float> m;
+        float ts = 0.125f;
+        for (const auto &pair: stacks) {
+            if(pair.second.amount == 0) {
+                continue;
+            }
+            int i = pair.first[0];
+            int j = pair.first[1];
+            float offset = 0.11f;
+            float h = (float)pair.second.health / (float)(MAX_HEALTH + 1);
+            int t = (int)(h * 8.0f);
+            float health = h * (1.0f - offset * 2.0f);
+            float bar_bottom = 0.1f;
+            float bar_height = bar_bottom + 0.06f;
+
+            m.push_back(offset+i); m.push_back(bar_height+j); m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(1.0f); m.push_back(0.0f);
+            m.push_back(t*ts); m.push_back(1.0f);
+            m.push_back(0.0f); m.push_back(0.0f);
+
+            m.push_back(offset+health+i);  m.push_back(bar_height+j);  m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(1.0f); m.push_back(0.0f);
+            m.push_back(t*ts + ts); m.push_back(1.0f);
+            m.push_back(0.0f); m.push_back(0.0f);
+
+            m.push_back(offset+i); m.push_back(bar_bottom+j);  m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(1.0f); m.push_back(0.0f);
+            m.push_back(t*ts); m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(0.0f);
+
+            m.push_back(offset+i); m.push_back(bar_bottom+j);  m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(1.0f); m.push_back(0.0f);
+            m.push_back(t*ts); m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(0.0f);
+
+            m.push_back(offset+health+i);  m.push_back(bar_height+j);  m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(1.0f); m.push_back(0.0f);
+            m.push_back(t*ts + ts); m.push_back(1.0f);
+            m.push_back(0.0f); m.push_back(0.0f);
+
+            m.push_back(offset+health+i); m.push_back(bar_bottom+j);  m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(1.0f); m.push_back(0.0f);
+            m.push_back(t*ts + ts); m.push_back(0.0f);
+            m.push_back(0.0f); m.push_back(0.0f);
+        }
+        return m;
     }
 
     void make_stack_amounts(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,

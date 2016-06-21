@@ -125,6 +125,8 @@ namespace konstructs {
         void set(const GLuint name, const Matrix4f &value);
         /** Set a uniform to a integer value */
         void set(const GLuint name, const int value);
+        /** Set a uniform to a GL unsigned integer value */
+        void set(const GLuint name, const GLuint value);
         /** Set a uniform to a Vector2f */
         void set(const GLuint name, const Vector2f &v);
         /** Set a uniform to a Vector3f */

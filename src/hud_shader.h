@@ -34,6 +34,13 @@ namespace konstructs {
                        const BlockTypeInfo &blocks);
     };
 
+    class HealthBarModel : public BaseModel {
+    public:
+        HealthBarModel(const std::unordered_map<Vector2i, ItemStack, matrix_hash<Vector2i>> &stacks,
+                       const GLuint position_attr, const GLuint normal_attr,
+                       const GLuint uv_attr);
+    };
+
     class AmountModel : public BaseModel {
     public:
         AmountModel(const GLuint position_attr, const GLuint normal_attr,
@@ -59,8 +66,9 @@ namespace konstructs {
 
     class HudShader: private ShaderProgram {
     public:
-        HudShader(const int columns, const int rows, const int texture,
-                  const int block_texture, const int font_texture);
+        HudShader(const int columns, const int rows, const GLuint texture,
+                  const GLuint block_texture, const GLuint font_texture,
+                  const GLuint health_bar_texture);
         optional<Vector2i> clicked_at(const double x, const double y,
                                       const int width, const int height);
         void render(const int width, const int height,
@@ -75,9 +83,10 @@ namespace konstructs {
         const GLuint matrix;
         const GLuint offset;
         const GLuint sampler;
-        const int texture;
-        const int block_texture;
-        const int font_texture;
+        const GLuint texture;
+        const GLuint block_texture;
+        const GLuint font_texture;
+        const GLuint health_bar_texture;
         const int columns;
         const int rows;
         const float screen_area;

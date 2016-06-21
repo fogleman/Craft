@@ -77,7 +77,7 @@ public:
         sky_shader(fov, SKY_TEXTURE, near_distance),
         chunk_shader(fov, BLOCK_TEXTURES, DAMAGE_TEXTURE, SKY_TEXTURE, near_distance,
                      load_chunk_vertex_shader(), load_chunk_fragment_shader(), max_radius),
-        hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE),
+        hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE, HEALTH_BAR_TEXTURE),
         selection_shader(fov, near_distance, 0.52),
         day_length(600),
         last_frame(glfwGetTime()),
@@ -145,7 +145,7 @@ public:
                     if(selected) {
                         std::shared_ptr<ChunkData> updated_chunk =
                             world.chunk_at(l.first.position)->set(l.first.position,
-                                                                  {selected->type, MAX_HEALTH});
+                                                                  {selected->type, selected->health});
                         world.insert(updated_chunk);
                         model_factory.create_models({updated_chunk->position}, world);
                     }
@@ -484,25 +484,25 @@ private:
     }
 
     void handle_belt(const string &str) {
-        int column, size, type;
-        if(sscanf(str.c_str(), ",%d,%d,%d",
-                  &column, &size, &type) != 3)
+        uint32_t column, size, type, health;
+        if(sscanf(str.c_str(), ",%u,%u,%u,%u",
+                  &column, &size, &type, &health) != 4)
             throw std::runtime_error(str);
 
         if(size < 1) {
             hud.reset_belt(column);
         } else {
-            hud.set_belt(column, {size, (uint16_t)type});
+            hud.set_belt(column, {size, (uint16_t)type, (uint16_t)health});
         }
     }
 
     void handle_inventory(const string &str) {
-        int index, size, type;
-        if(sscanf(str.c_str(), ",%d,%d,%d",
-                  &index, &size, &type) != 3)
+        uint32_t index, size, type, health;
+        if(sscanf(str.c_str(), ",%u,%u,%u,%u",
+                  &index, &size, &type, &health) != 4)
             throw std::runtime_error(str);
-        int row = index / 17;
-        int column = index % 17;
+        uint32_t row = index / 17;
+        uint32_t column = index % 17;
         Vector2i pos(column, row);
 
         if(type == -1) {
@@ -510,13 +510,13 @@ private:
             hud.reset_stack(pos);
         } else {
             hud.set_background(pos, 2);
-            hud.set_stack(pos, {size, (uint16_t)type});
+            hud.set_stack(pos, {size, (uint16_t)type, (uint16_t)health});
         }
     }
 
     void handle_held_stack(const string &str) {
-        int amount, type;
-        if(sscanf(str.c_str(), ",%d,%d",
+        uint32_t amount, type;
+        if(sscanf(str.c_str(), ",%u,%u",
                   &amount, &type) != 2)
             throw std::runtime_error(str);
         if(type == -1) {

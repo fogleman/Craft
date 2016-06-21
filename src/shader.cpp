@@ -111,6 +111,11 @@ namespace konstructs {
         glUniformMatrix4fv(name, 1, GL_FALSE, value.data());
     }
 
+    void Context::set(const GLuint name, const GLuint value) {
+        glUniform1i(name, value);
+    }
+
+
     void Context::set(const GLuint name, const int value) {
         glUniform1i(name, value);
     }

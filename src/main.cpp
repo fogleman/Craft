@@ -43,6 +43,8 @@
 #define KONSTRUCTS_KEY_FLY GLFW_KEY_TAB
 #define KONSTRUCTS_KEY_SNEAK GLFW_KEY_LEFT_SHIFT
 #define KONSTRUCTS_KEY_INVENTORY 'E'
+#define MOUSE_CLICK_DELAY_IN_FRAMES 15
+
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -85,7 +87,8 @@ public:
         hud(17, 14, 9),
         menu_state(false),
         debug_mode(debug_mode),
-        frame(0) {
+        frame(0),
+        click_delay(0) {
 
         using namespace nanogui;
         performLayout(mNVGContext);
@@ -127,35 +130,13 @@ public:
                     Vector2i pos = *clicked_at;
                     if(hud.active(pos)) {
                         int index = pos[0] + pos[1] * 17;
-
                         client.click_inventory(index, translate_button(button));
                     }
                 }
             }
-        } else if(menu_state) {
-            // menu open
-        } else {
+        } else if(!menu_state) {
+            // Clicking at the window captures the mouse pointer
             glfwSetInputMode(mGLFWWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            if(looking_at) {
-                auto &l = *looking_at;
-                if(button == GLFW_MOUSE_BUTTON_1 && down) {
-                    client.click_at(1, l.second.position, translate_button(button), hud.get_selection());
-                } else if(button == GLFW_MOUSE_BUTTON_2 && down && player.can_place(l.first.position, world, blocks)) {
-                    optional<ItemStack> selected = hud.selected();
-                    if(selected) {
-                        std::shared_ptr<ChunkData> updated_chunk =
-                            world.chunk_at(l.first.position)->set(l.first.position,
-                                                                  {selected->type, selected->health});
-                        world.insert(updated_chunk);
-                        model_factory.create_models({updated_chunk->position}, world);
-                    }
-                    client.click_at(1, l.first.position, translate_button(button), hud.get_selection());
-                } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
-                    client.click_at(1, l.second.position, translate_button(button), hud.get_selection());
-                }
-            } else if(button == GLFW_MOUSE_BUTTON_3 && down) {
-                client.click_at(0, Vector3i::Zero(), translate_button(button), hud.get_selection());
-            }
         }
         return Screen::mouseButtonEvent(p, button, down, modifiers);
     }
@@ -288,6 +269,36 @@ private:
             player.rotate_y(drx);
             px = mx;
             py = my;
+
+            if(click_delay == 0) {
+                if(looking_at) {
+                    auto &l = *looking_at;
+                    if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+                        click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
+                        client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_1), hud.get_selection());
+                    } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS &&
+                              player.can_place(l.first.position, world, blocks)) {
+                        optional<ItemStack> selected = hud.selected();
+                        if(selected) {
+                            std::shared_ptr<ChunkData> updated_chunk =
+                                world.chunk_at(l.first.position)->set(l.first.position,
+                                                                      {selected->type, selected->health});
+                            world.insert(updated_chunk);
+                            model_factory.create_models({updated_chunk->position}, world);
+                        }
+                        click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
+                        client.click_at(1, l.first.position, translate_button(GLFW_MOUSE_BUTTON_2), hud.get_selection());
+                    } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+                        click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
+                        client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection());
+                    }
+                } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
+                        click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
+                    client.click_at(0, Vector3i::Zero(), translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection());
+                }
+            } else {
+                click_delay--;
+            }
         } else {
             glfwGetCursorPos(mGLFWWindow, &px, &py);
         }
@@ -636,6 +647,7 @@ private:
     uint32_t faces;
     uint32_t max_faces;
     double frame_time;
+    uint32_t click_delay;
 };
 
 #ifdef WIN32

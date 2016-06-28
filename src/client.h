@@ -42,7 +42,7 @@ namespace konstructs {
 
     class Client {
     public:
-        Client(const int max_radius);
+        Client();
         void open_connection(const string &nick, const string &hash,
                const string &hostname, const int port = DEFAULT_PORT);
         void version(const int version, const string &nick, const string &hash);
@@ -96,7 +96,6 @@ namespace konstructs {
         char *inflation_buffer;
         /* Chunk worker */
         Vector3i player_chunk;
-        int max_radius;
         int radius;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> updated;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> requested;

@@ -72,13 +72,13 @@ public:
         model_factory(blocks),
         radius(10),
         max_radius(20),
-        client(max_radius),
+        client(),
         view_distance((float)radius*CHUNK_SIZE),
         fov(70.0f),
         near_distance(0.125f),
         sky_shader(fov, SKY_TEXTURE, near_distance),
         chunk_shader(fov, BLOCK_TEXTURES, DAMAGE_TEXTURE, SKY_TEXTURE, near_distance,
-                     load_chunk_vertex_shader(), load_chunk_fragment_shader(), max_radius),
+                     load_chunk_vertex_shader(), load_chunk_fragment_shader()),
         hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE, HEALTH_BAR_TEXTURE),
         selection_shader(fov, near_distance, 0.52),
         day_length(600),
@@ -380,7 +380,7 @@ private:
         }
         if(frame % 7883 == 0) {
             /* Book keeping */
-            world.delete_unused_chunks(player_chunk, max_radius);
+            world.delete_unused_chunks(player_chunk, radius + 2);
         }
 
     }

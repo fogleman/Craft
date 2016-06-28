@@ -684,7 +684,7 @@ void print_usage() {
 }
 
 int main(int argc, char ** argv) {
-    std::string hostname = "";
+    std::string hostname = "play.konstructs.org";
     std::string username = "";
     std::string password = "";
     bool debug_mode = false;

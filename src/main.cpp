@@ -70,7 +70,7 @@ public:
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
-        radius(10),
+        radius(5),
         max_radius(20),
         client(),
         view_distance((float)radius*CHUNK_SIZE),
@@ -248,7 +248,7 @@ private:
             client.set_radius(radius);
         }
 
-        if(frame % 6 == 0 && 0) {
+        if(frame % 6 == 0) {
             cout << "View distance: " << view_distance << " (" << radius << ") faces: " << faces << "(" << max_faces << ") FPS: " << fps.fps << "(" << frame_fps << ")" << endl;
             cout << "Chunks: " << world.size() << " models: " << chunk_shader.size() << endl;
             cout << "Model factory, waiting: " << model_factory.waiting() << " created: " << model_factory.total_created() << " empty: " << model_factory.total_empty() << " total: " <<  model_factory.total() << endl;
@@ -368,7 +368,7 @@ private:
             world.insert(*prio);
             model_factory.create_models({(*prio)->position}, world);
         }
-        auto new_chunks = client.receive_chunks(10);
+        auto new_chunks = client.receive_chunks(1);
         if(!new_chunks.empty()) {
             std::vector<Vector3i> positions;
             positions.reserve(new_chunks.size());
@@ -380,7 +380,7 @@ private:
         }
         if(frame % 7883 == 0) {
             /* Book keeping */
-            world.delete_unused_chunks(player_chunk, radius + 2);
+            world.delete_unused_chunks(player_chunk, radius + KEEP_EXTRA_CHUNKS);
         }
 
     }

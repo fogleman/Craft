@@ -13,6 +13,7 @@
 #include "optional.hpp"
 #include "chunk.h"
 
+#define KEEP_EXTRA_CHUNKS 2
 #define DEFAULT_PORT 4080
 
 namespace konstructs {
@@ -38,6 +39,18 @@ namespace konstructs {
         }
     private:
         char *mBuffer;
+    };
+
+    struct ChunkToFetch {
+        int score;
+        Vector3i chunk;
+    };
+
+    struct LessThanByScore {
+        bool operator()(const ChunkToFetch& lhs, const ChunkToFetch& rhs) const
+        {
+            return lhs.score > rhs.score;
+        }
     };
 
     class Client {
@@ -75,6 +88,7 @@ namespace konstructs {
         void send_worker();
         bool is_empty_chunk(Vector3i pos);
         bool is_updated_chunk(Vector3i pos);
+        bool is_requested_chunk(Vector3i pos);
         void request_chunk_and_sleep(Vector3i pos, int msec);
         void chunk_worker();
         void force_close();

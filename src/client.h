@@ -73,6 +73,9 @@ namespace konstructs {
         void process_chunk_updated(Packet *packet);
         void recv_worker();
         void send_worker();
+        bool is_empty_chunk(Vector3i pos);
+        bool is_updated_chunk(Vector3i pos);
+        void request_chunk_and_sleep(Vector3i pos, int msec);
         void chunk_worker();
         void force_close();
         void received_chunk(const Vector3i &pos);

@@ -369,6 +369,23 @@ namespace konstructs {
         received_queue.push_back(pos);
     }
 
+    /* The chunk is not received, and never requested */
+    bool Client::is_empty_chunk(Vector3i pos) {
+        return received.find(pos) == received.end() && requested.find(pos) == requested.end();
+    }
+
+    /* The chunk is not requested, and has updates */
+    bool Client::is_updated_chunk(Vector3i pos) {
+        return requested.find(pos) == requested.end() && updated.find(pos) != updated.end();
+    }
+
+    /* Ask the server for a chunk, and wait a little while */
+    void Client::request_chunk_and_sleep(Vector3i pos, int msec) {
+        requested.insert(pos);
+        chunk(pos);
+        std::this_thread::sleep_for(std::chrono::milliseconds(msec));
+    }
+
     void Client::chunk_worker() {
         std::cout<<"[Chunk worker]: started"<<std::endl;
         while(1) {
@@ -378,17 +395,26 @@ namespace konstructs {
             cv_connected.wait(ulock_connected, [&]{ return connected && logged_in; });
             ulock_connected.unlock();
             std::cout<<"[Chunk worker]: connection established and user logged in, entering main loop"<<std::endl;
+            int new_chunks_found = true;
+            int r = 1;
+            double idle_time = 1000;
             while(connected && logged_in) {
+                start_of_loop:
+
+                double time_worker_state = glfwGetTime();
                 int sleep_time;
                 Vector3i p_chunk;
-                int r;
+                Vector3i old_p_chunk;
                 int request_chunks;
+
+                old_p_chunk = p_chunk;
+
                 {
                     std::lock_guard<std::mutex> lck_chunk(mutex_chunk);
                     for(auto chunk: updated_queue) {
                         updated.insert(chunk);
                     }
-
+                    updated_queue.clear();
                     for(auto chunk: received_queue) {
                         requested.erase(chunk);
                         updated.erase(chunk);
@@ -396,63 +422,107 @@ namespace konstructs {
                     }
                     received_queue.clear();
                     p_chunk = player_chunk;
+
+                    // Update the new_chunks_found flag if radius increases
+                    if (radius > r) {
+                        new_chunks_found = true;
+                        cout << "Radius has increased to " << radius << ", reset new_chunks_found flag." << endl;
+                    }
+
                     r = radius;
-                    request_chunks = 1;
                 }
+
+                // Request the sorrounding chunks quickly if we are inside a new chunk
+                if (p_chunk != old_p_chunk) {
+                    for (int p = -1; p < 2; p++) {
+                        for (int q = -1; q < 2; q++) {
+                            for (int s = -1; s < 2; s++) {
+                                Vector3i lpos = p_chunk + Vector3i(p, q, s);
+                                if (is_empty_chunk(lpos)) {
+                                    requested.insert(lpos);
+                                    chunk(lpos);
+                                }
+                            }
+                        }
+                    }
+
+                    if (glfwGetTime() - time_worker_state > idle_time * 20) {
+                        cout << "Worker spent " << ( glfwGetTime() - time_worker_state ) * 1000.0f
+                            << " ms to process sorrounding chunks." << endl;
+                    }
+                }
+
+                // Remove blocks in received outside render distance
+                int chunks_removed = 0;
                 for(auto it = received.begin(); it != received.end();) {
-                    if((*it - p_chunk).norm() > r) {
+                    if((*it - p_chunk).norm() >= r + 1) {
+                        chunks_removed = (*it - p_chunk).norm();
                         it = received.erase(it);
                     } else {
                         ++it;
                     }
                 }
+                if (chunks_removed > 0) {
+                    cout << "Remove chunk with distance " << chunks_removed << endl;
+                }
 
-                vector<Vector3i> best_chunks;
+                // Look at the update queue and request the chunk
+                if (!updated.empty()) {
+                    auto it = updated.begin();
+                    Vector3i pos = *it;
+                    updated.erase(*it);
+                    if (glfwGetTime() - time_worker_state > idle_time * 20) {
+                        cout << "Worker spent " << ( glfwGetTime() - time_worker_state ) * 1000.0f
+                            << " ms to process the updated list." << endl;
+                    }
+                    request_chunk_and_sleep(pos, 10);
+                    goto start_of_loop;
 
-                for(int i = 0; i < request_chunks; i++) {
-                    Vector3i best_chunk;
+
+                // Ask the server for the rest, only if there are no updated blocks
+                } else if (new_chunks_found || p_chunk != old_p_chunk) {
                     int best_chunk_distance = NO_CHUNK_FOUND;
-                    for(int p = p_chunk[0] - (r - 1); p < p_chunk[0] + r; p++) {
-                        for(int q = p_chunk[1] - (r - 1); q < p_chunk[1] + r; q++) {
-                            for(int k = p_chunk[2] - (r - 1); k < p_chunk[2] + r; k++) {
+                    Vector3i best_chunk;
+                    for(int p = -r - 1; p < r; p++) {
+                        for(int q = -r - 1; q < r; q++) {
+                            for(int k = -r - 1; k < r; k++) {
+                                Vector3i pos = p_chunk + Vector3i(p, q, k);
 
-                                Vector3i pos(p, q, k);
-                                int distance = (pos - p_chunk).norm();
-                                if(received.find(pos) == received.end()) {
-                                    if(requested.find(pos) == requested.end()) {
-                                        /* We don't have it and didn't request it */
-                                        if(distance < best_chunk_distance) {
-                                            best_chunk_distance = distance;
-                                            best_chunk = pos;
-                                        }
-                                    } else {
-                                        /* Already requested */
-                                    }
-                                } else if(requested.find(pos) == requested.end() && updated.find(pos) != updated.end()) {
-                                    /* we got it, but it was updated and not yet again requested */
-                                    if(distance < best_chunk_distance) {
+                                if(is_empty_chunk(pos) && !is_updated_chunk(pos)) {
+                                    int distance = (pos - p_chunk).norm();
+                                    if(distance < best_chunk_distance && distance <= r) {
                                         best_chunk_distance = distance;
                                         best_chunk = pos;
                                     }
                                 }
-
                             }
                         }
                     }
 
                     if(best_chunk_distance != NO_CHUNK_FOUND) {
-                        best_chunks.push_back(best_chunk);
+                        new_chunks_found = true;
                         requested.insert(best_chunk);
                         updated.erase(best_chunk);
+                        chunk(best_chunk);
+                    } else {
+                        cout << "We have loaded all chunks inside render distance." << endl;
+                        new_chunks_found = false;
+                    }
+
+                    if (glfwGetTime() - time_worker_state > idle_time * 20) {
+                        cout << "Worker spent " << ( glfwGetTime() - time_worker_state ) * 1000.0f
+                            << " ms to process remote chunks." << endl;
+                    }
+
+                // Save the computers idle time w/o the large chunk loop
+                } else {
+                    if (idle_time > (glfwGetTime() - time_worker_state)) {
+                        idle_time = glfwGetTime() - time_worker_state;
+                        cout << "New idle time set to " << idle_time * 1000.0f << endl;
                     }
                 }
-                for(auto best_chunk: best_chunks)
-                    chunk(best_chunk);
-                if(best_chunks.empty()) {
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
-                } else {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(15 * request_chunks));
-                }
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }
     }

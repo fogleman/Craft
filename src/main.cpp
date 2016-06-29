@@ -248,7 +248,7 @@ private:
             client.set_radius(radius);
         }
 
-        if(frame % 6 == 0) {
+        if(frame % 6 == 0 && 0) {
             cout << "View distance: " << view_distance << " (" << radius << ") faces: " << faces << "(" << max_faces << ") FPS: " << fps.fps << "(" << frame_fps << ")" << endl;
             cout << "Chunks: " << world.size() << " models: " << chunk_shader.size() << endl;
             cout << "Model factory, waiting: " << model_factory.waiting() << " created: " << model_factory.total_created() << " empty: " << model_factory.total_empty() << " total: " <<  model_factory.total() << endl;

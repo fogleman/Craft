@@ -44,13 +44,11 @@ set(CMAKE_BUILD_TYPE Debug)
 
 find_package(ZLIB REQUIRED)
 include_directories(
-  ${ZLIB_INCLUDE_DIRS}
   dependencies/nanogui/include
   dependencies/nanogui/ext/glfw/include
   dependencies/nanogui/ext/glew/include
   dependencies/nanogui/ext/eigen
   dependencies/nanogui/ext/nanovg/src
-  dependencies/lodepng
   dependencies/optional-lite
   dependencies/tinyobjloader
   lib/include)

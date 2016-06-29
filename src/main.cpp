@@ -236,7 +236,7 @@ private:
     }
 
     void update_radius() {
-        double frame_fps = 1.05 / frame_time;
+        double frame_fps = 1.15 / frame_time;
         if(frame_fps > 0.0 && frame_fps < 60.0 && radius > 1) {
             view_distance = view_distance - (float)CHUNK_SIZE * 0.2f * ((60.0f - (float)frame_fps) / 60.0f);
         } else if(frame_fps >= 60.0 && radius < max_radius && model_factory.waiting() == 0) {

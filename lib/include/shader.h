@@ -3,8 +3,7 @@
 #include <string>
 #include <memory>
 #include <iostream>
-#include <nanogui/opengl.h>
-#include <nanogui/glutil.h>
+#include <gl_includes.h>
 #include <Eigen/Geometry>
 #include "tiny_obj_loader.h"
 
@@ -61,12 +60,12 @@ namespace konstructs {
         template <typename Matrix> EigenModel(const GLuint name,
                                               const Matrix &m):
             name(name),
-            type((GLuint) nanogui::type_traits <typename Matrix::Scalar>::type),
-            integral((bool) nanogui::type_traits<typename Matrix::Scalar>::integral),
+            type((GLuint) konstructs::type_traits <typename Matrix::Scalar>::type),
+            integral((bool) konstructs::type_traits<typename Matrix::Scalar>::integral),
             dim(m.rows()),
             columns(m.cols()) {
             uint32_t compSize = sizeof(typename Matrix::Scalar);
-            GLuint glType = (GLuint) nanogui::type_traits<typename Matrix::Scalar>::type;
+            GLuint glType = (GLuint) konstructs::type_traits<typename Matrix::Scalar>::type;
 
             glGenBuffers(1, &buffer);
             glBindBuffer(GL_ARRAY_BUFFER, buffer);

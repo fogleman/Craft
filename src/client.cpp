@@ -321,6 +321,12 @@ namespace konstructs {
         send_string(ss.str());
     }
 
+    void Client::update_radius(const int radius) {
+        std::stringstream ss;
+        ss << "D," << radius;
+        send_string(ss.str());
+    }
+
     void Client::set_connected(bool state) {
         std::lock_guard<std::mutex> lck(mutex_connected);
         connected = state;
@@ -361,8 +367,11 @@ namespace konstructs {
     }
 
     void Client::set_radius(int r) {
-        std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
-        radius = r;
+        {
+            std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
+            radius = r;
+        }
+        update_radius(r + KEEP_EXTRA_CHUNKS);
     }
 
     void Client::received_chunk(const Vector3i &pos) {

@@ -66,6 +66,7 @@ namespace konstructs {
         void click_inventory(const int item, const int button);
         void close_inventory();
         void talk(const string &text);
+        void update_radius(const int radius);
         void click_at(const int hit, const Vector3i pos, const int button, const int active);
         string get_error_message();
         void set_connected(bool state);

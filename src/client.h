@@ -13,6 +13,7 @@
 #include "optional.hpp"
 #include "chunk.h"
 
+#define KEEP_EXTRA_CHUNKS 2
 #define DEFAULT_PORT 4080
 
 namespace konstructs {
@@ -40,9 +41,21 @@ namespace konstructs {
         char *mBuffer;
     };
 
+    struct ChunkToFetch {
+        int score;
+        Vector3i chunk;
+    };
+
+    struct LessThanByScore {
+        bool operator()(const ChunkToFetch& lhs, const ChunkToFetch& rhs) const
+        {
+            return lhs.score > rhs.score;
+        }
+    };
+
     class Client {
     public:
-        Client(const int max_radius);
+        Client();
         void open_connection(const string &nick, const string &hash,
                const string &hostname, const int port = DEFAULT_PORT);
         void version(const int version, const string &nick, const string &hash);
@@ -53,6 +66,7 @@ namespace konstructs {
         void click_inventory(const int item, const int button);
         void close_inventory();
         void talk(const string &text);
+        void update_radius(const int radius);
         void click_at(const int hit, const Vector3i pos, const int button, const int active);
         string get_error_message();
         void set_connected(bool state);
@@ -64,6 +78,8 @@ namespace konstructs {
         vector<shared_ptr<ChunkData>> receive_chunks(const int max);
         void set_player_chunk(const Vector3i &chunk);
         void set_radius(int r);
+        void set_loaded_radius(int r);
+        int get_loaded_radius();
     private:
         int send_all(const char *data, const int length);
         void send_string(const string &str);
@@ -73,6 +89,10 @@ namespace konstructs {
         void process_chunk_updated(Packet *packet);
         void recv_worker();
         void send_worker();
+        bool is_empty_chunk(Vector3i pos);
+        bool is_updated_chunk(Vector3i pos);
+        bool is_requested_chunk(Vector3i pos);
+        void request_chunk_and_sleep(Vector3i pos, int msec);
         void chunk_worker();
         void force_close();
         void received_chunk(const Vector3i &pos);
@@ -96,8 +116,8 @@ namespace konstructs {
         char *inflation_buffer;
         /* Chunk worker */
         Vector3i player_chunk;
-        int max_radius;
         int radius;
+        int loaded_radius;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> updated;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> requested;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> received;

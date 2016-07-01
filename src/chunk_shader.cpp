@@ -49,7 +49,7 @@ namespace konstructs {
 
     ChunkShader::ChunkShader(const float fov, const GLuint block_texture,  const GLuint damage_texture,
                              const GLuint sky_texture, const float near_distance, const string &vert_str,
-                             const string &frag_str, const int max_radius) :
+                             const string &frag_str) :
         ShaderProgram("chunk", vert_str, frag_str),
         data_attr(attributeId("data")),
         matrix(uniformId("matrix")),
@@ -66,8 +66,7 @@ namespace konstructs {
         block_texture(block_texture),
         sky_texture(sky_texture),
         damage_texture(damage_texture),
-        near_distance(near_distance),
-        max_radius(max_radius) {}
+        near_distance(near_distance) {}
 
     int ChunkShader::size() const {
         return models.size();
@@ -99,7 +98,7 @@ namespace konstructs {
                 matrix::ext_frustum_planes(planes, radius, m);
                 for(auto it = models.begin(); it != models.end();) {
                     int distance = (it->second->position - player_chunk).norm();
-                    if ( distance > max_radius) {
+                    if (distance > radius + KEEP_EXTRA_CHUNKS) {
                         it = models.erase(it);
                     } else if(distance <= radius){
                         auto pos = it->first;

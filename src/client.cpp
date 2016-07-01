@@ -15,6 +15,7 @@
 #include <sstream>
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include "client.h"
 
 #define PROTOCOL_VERSION 8
@@ -27,9 +28,9 @@ namespace konstructs {
 
     const int NO_CHUNK_FOUND = 0x0FFFFFFF;
 
-    Client::Client(const int max_radius) :
+    Client::Client() :
         connected(false),
-        player_chunk(0,0,0), radius(0), max_radius(max_radius) {
+        player_chunk(0,0,0), radius(0), loaded_radius(0) {
         recv_thread = new std::thread(&Client::recv_worker, this);
         send_thread = new std::thread(&Client::send_worker, this);
         chunk_thread = new std::thread(&Client::chunk_worker, this);
@@ -320,6 +321,12 @@ namespace konstructs {
         send_string(ss.str());
     }
 
+    void Client::update_radius(const int radius) {
+        std::stringstream ss;
+        ss << "D," << radius;
+        send_string(ss.str());
+    }
+
     void Client::set_connected(bool state) {
         std::lock_guard<std::mutex> lck(mutex_connected);
         connected = state;
@@ -360,13 +367,60 @@ namespace konstructs {
     }
 
     void Client::set_radius(int r) {
+        {
+            std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
+            radius = r;
+        }
+        update_radius(r + KEEP_EXTRA_CHUNKS);
+    }
+
+    void Client::set_loaded_radius(int r) {
         std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
-        radius = r;
+
+        if (r > radius || loaded_radius > radius) {
+            // Never set radius outside radius
+
+            loaded_radius = radius;
+        } else if (r > loaded_radius) {
+            // The loaded radius has increased
+
+            loaded_radius = r;
+        } else {
+            // We recevied a chunk closer then the loaded radius
+            // and we never want to reduce the loaded radius.
+        }
+    }
+
+    int Client::get_loaded_radius() {
+        std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
+        return loaded_radius;
     }
 
     void Client::received_chunk(const Vector3i &pos) {
         std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
         received_queue.push_back(pos);
+    }
+
+    /* The chunk is not received, and never requested */
+    bool Client::is_empty_chunk(Vector3i pos) {
+        return received.find(pos) == received.end() && requested.find(pos) == requested.end();
+    }
+
+    /* The chunk is requested */
+    bool Client::is_requested_chunk(Vector3i pos) {
+        return requested.find(pos) != requested.end();
+    }
+
+    /* The chunk is not requested, and has updates */
+    bool Client::is_updated_chunk(Vector3i pos) {
+        return requested.find(pos) == requested.end() && updated.find(pos) != updated.end();
+    }
+
+    /* Ask the server for a chunk, and wait a little while */
+    void Client::request_chunk_and_sleep(Vector3i pos, int msec) {
+        requested.insert(pos);
+        chunk(pos);
+        std::this_thread::sleep_for(std::chrono::milliseconds(msec));
     }
 
     void Client::chunk_worker() {
@@ -378,81 +432,180 @@ namespace konstructs {
             cv_connected.wait(ulock_connected, [&]{ return connected && logged_in; });
             ulock_connected.unlock();
             std::cout<<"[Chunk worker]: connection established and user logged in, entering main loop"<<std::endl;
+
+            int r = 0; // Stores the current radius
+            int old_r = 0; // Stores the previous radius
+            Vector3i p_chunk; // Stores the player chunk
+            bool chunk_changed = false; // Stores if the chunk the player is in changed
+            // Stores the chunks that needs to be fetched in priority order
+            priority_queue<ChunkToFetch, vector<ChunkToFetch>, LessThanByScore> chunks_to_fetch;
+
             while(connected && logged_in) {
-                int sleep_time;
-                Vector3i p_chunk;
-                int r;
-                int request_chunks;
+
                 {
+                    // Locks the chunk mutex and makes local copies of all
+                    // shared variables and empties the updated and received queues
                     std::lock_guard<std::mutex> lck_chunk(mutex_chunk);
+
+                    // Copy all chunks from the updated queue
                     for(auto chunk: updated_queue) {
                         updated.insert(chunk);
                     }
 
+                    // Clear the updated queue
+                    updated_queue.clear();
+
+                    // Copy all chunks from the receive queue
                     for(auto chunk: received_queue) {
+                        // Remove received chunks from requested set
                         requested.erase(chunk);
+                        // Remove received chunks from updated set
                         updated.erase(chunk);
+                        // Insert into received set
                         received.insert(chunk);
                     }
+
+                    // Clear received queue
                     received_queue.clear();
-                    p_chunk = player_chunk;
-                    r = radius;
-                    request_chunks = 1;
-                }
-                for(auto it = received.begin(); it != received.end();) {
-                    if((*it - p_chunk).norm() > max_radius) {
-                        it = received.erase(it);
-                    } else {
-                        ++it;
+
+                    // Check if player chunk changed
+                    if(p_chunk != player_chunk) {
+                        // Update local chunk variable
+                        p_chunk = player_chunk;
+                        // Set chunk_changed true
+                        chunk_changed = true;
                     }
+
+                    // Updated local radius
+                    r = radius;
                 }
 
-                vector<Vector3i> best_chunks;
+                // Chunk changed
+                if (chunk_changed) {
 
-                for(int i = 0; i < request_chunks; i++) {
-                    Vector3i best_chunk;
-                    int best_chunk_distance = NO_CHUNK_FOUND;
-                    for(int p = p_chunk[0] - (r - 1); p < p_chunk[0] + r; p++) {
-                        for(int q = p_chunk[1] - (r - 1); q < p_chunk[1] + r; q++) {
-                            for(int k = p_chunk[2] - (r - 1); k < p_chunk[2] + r; k++) {
+                    // Request the surrounding chunks quickly
+                    for (int p = -1; p < 2; p++) {
+                        for (int q = -1; q < 2; q++) {
+                            for (int s = -1; s < 2; s++) {
 
-                                Vector3i pos(p, q, k);
-                                int distance = (pos - p_chunk).norm();
-                                if(received.find(pos) == received.end()) {
-                                    if(requested.find(pos) == requested.end()) {
-                                        /* We don't have it and didn't request it */
-                                        if(distance < best_chunk_distance) {
-                                            best_chunk_distance = distance;
-                                            best_chunk = pos;
-                                        }
-                                    } else {
-                                        /* Already requested */
-                                    }
-                                } else if(requested.find(pos) == requested.end() && updated.find(pos) != updated.end()) {
-                                    /* we got it, but it was updated and not yet again requested */
-                                    if(distance < best_chunk_distance) {
-                                        best_chunk_distance = distance;
-                                        best_chunk = pos;
-                                    }
+                                Vector3i lpos = p_chunk + Vector3i(p, q, s);
+                                if (is_empty_chunk(lpos)) {
+                                    // Insert into requested set
+                                    requested.insert(lpos);
+
+                                    // Request the chunk
+                                    chunk(lpos);
                                 }
-
                             }
                         }
                     }
 
-                    if(best_chunk_distance != NO_CHUNK_FOUND) {
-                        best_chunks.push_back(best_chunk);
-                        requested.insert(best_chunk);
-                        updated.erase(best_chunk);
+                    // Empty the priority queue
+                    chunks_to_fetch = priority_queue<ChunkToFetch, vector<ChunkToFetch>, LessThanByScore>();
+
+                    // Rebuild the priority queue
+                    for(int p = -r - 1; p < r; p++) {
+                        for(int q = -r - 1; q < r; q++) {
+                            for(int k = -r - 1; k < r; k++) {
+                                Vector3i pos = p_chunk + Vector3i(p, q, k);
+
+                                if(is_empty_chunk(pos)) {
+                                    int distance = (pos - p_chunk).norm();
+                                    // This checks removes edges so that we request a sphere not a cube
+                                    if(distance <= r) {
+                                        // Add chunk to queue
+                                        chunks_to_fetch.push({distance, pos});
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Set chunk change to false,
+                    // no need to rebuild queue until the chunk changes again
+                    chunk_changed = false;
+                }
+
+                // Check if the radius increased
+                if(r - old_r > 0) {
+                    // Extend the priority queue with new chunks due to increased radius
+                    for(int p = -r - 1; p < r; p++) {
+                        for(int q = -r - 1; q < r; q++) {
+                            for(int k = -r - 1; k < r; k++) {
+                                Vector3i pos = p_chunk + Vector3i(p, q, k);
+
+                                if(is_empty_chunk(pos)) {
+                                    int distance = (pos - p_chunk).norm();
+
+                                    // This checks removes edges so that we request a sphere not a cube
+                                    // It also rejects chunks that was already previously added to the queue
+                                    // that is chunks within the old radius
+                                    if(distance <= r && distance >= old_r) {
+                                        chunks_to_fetch.push({distance, pos});
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                for(auto best_chunk: best_chunks)
-                    chunk(best_chunk);
-                if(best_chunks.empty()) {
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
-                } else {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(15 * request_chunks));
+
+                // Update the old radius with the new one
+                old_r = r;
+
+                // Remove old chunks in received set that are outside render distance
+                for(auto it = received.begin(); it != received.end();) {
+                    int distance = (*it - p_chunk).norm();
+                    if(distance >= (r + KEEP_EXTRA_CHUNKS)) {
+                        // Erase increases iterator to the next element
+                        it = received.erase(it);
+                    } else {
+                        // If we didn't erase we need to increase iterator ourselves
+                        ++it;
+                    }
                 }
+
+                // Look at the update queue and add to request queue
+                for(auto it = updated.begin(); it != updated.end();) {
+                    Vector3i pos = *it;
+                    // Erase increases iterator
+                    it = updated.erase(it);
+                    int distance = (pos - p_chunk).norm();
+
+                    // Add to chunk queue
+                    chunks_to_fetch.push({distance, pos});
+
+                    // Remove from requested set, since we need a newer version
+                    requested.erase(pos);
+                }
+
+                if(!chunks_to_fetch.empty()) {
+                    ChunkToFetch c;
+                    c.score = NO_CHUNK_FOUND;
+
+                    // Fetch next chunk in the queue that is within radius
+                    do {
+                        c = chunks_to_fetch.top();
+                        chunks_to_fetch.pop();
+                        // The following check validates before exiting the loop that:
+                        // 1. The chunk is within the radius
+                        // 2. The chunk queue is empty (i.e. no chunk was found)
+                        // 3. The chunk was not already requested
+                    } while((c.chunk - p_chunk).norm() > r &&
+                            !chunks_to_fetch.empty() &&
+                            !is_requested_chunk(c.chunk));
+
+                    // Check that at least one suitable chunk was found
+                    if(c.score != NO_CHUNK_FOUND) {
+                        // Insert into requested
+                        requested.insert(c.chunk);
+                        // Remove from updated
+                        updated.erase(c.chunk);
+                        // Request chunk
+                        chunk(c.chunk);
+                        // Update loaded radius
+                        set_loaded_radius(c.score);
+                    }
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(15));
             }
         }
     }

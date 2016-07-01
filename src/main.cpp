@@ -70,15 +70,15 @@ public:
         player(0, Vector3f(0.0f, 0.0f, 0.0f), 0.0f, 0.0f),
         px(0), py(0),
         model_factory(blocks),
-        radius(4),
-        max_radius(10),
-        client(max_radius),
+        radius(5),
+        max_radius(20),
+        client(),
         view_distance((float)radius*CHUNK_SIZE),
         fov(70.0f),
         near_distance(0.125f),
         sky_shader(fov, SKY_TEXTURE, near_distance),
         chunk_shader(fov, BLOCK_TEXTURES, DAMAGE_TEXTURE, SKY_TEXTURE, near_distance,
-                     load_chunk_vertex_shader(), load_chunk_fragment_shader(), max_radius),
+                     load_chunk_vertex_shader(), load_chunk_fragment_shader()),
         hud_shader(17, 14, INVENTORY_TEXTURE, BLOCK_TEXTURES, FONT_TEXTURE, HEALTH_BAR_TEXTURE),
         selection_shader(fov, near_distance, 0.52),
         day_length(600),
@@ -235,21 +235,33 @@ private:
         }
     }
 
-    void update_radius() {
-        double frame_fps = 1.05 / frame_time;
+    bool update_view_distance() {
+        double frame_fps = 1.15 / frame_time;
+
         if(frame_fps > 0.0 && frame_fps < 60.0 && radius > 1) {
             view_distance = view_distance - (float)CHUNK_SIZE * 0.2f * ((60.0f - (float)frame_fps) / 60.0f);
-        } else if(frame_fps >= 60.0 && radius < max_radius && model_factory.waiting() == 0) {
+            return true;
+        } else if(frame_fps >= 60.0
+                && radius < max_radius
+                && model_factory.waiting() == 0
+                && radius <= client.get_loaded_radius()) {
             view_distance = view_distance + 0.05;
+            return true;
+        } else {
+            return false;
         }
-        int new_radius = (int)(view_distance / (float)CHUNK_SIZE) + 1;
-        if(new_radius != radius) {
+    }
+
+    void update_radius() {
+        if (update_view_distance()) {
+            int new_radius = (int)(view_distance / (float)CHUNK_SIZE) + 1;
             radius = new_radius;
             client.set_radius(radius);
         }
 
         if(frame % 6 == 0) {
-            cout << "View distance: " << view_distance << " (" << radius << ") faces: " << faces << "(" << max_faces << ") FPS: " << fps.fps << "(" << frame_fps << ")" << endl;
+            double frame_fps = 1.15 / frame_time;
+            cout << "View distance: " << view_distance << " (" << radius << "/" << client.get_loaded_radius() << ") faces: " << faces << "(" << max_faces << ") FPS: " << fps.fps << "(" << frame_fps << ")" << endl;
             cout << "Chunks: " << world.size() << " models: " << chunk_shader.size() << endl;
             cout << "Model factory, waiting: " << model_factory.waiting() << " created: " << model_factory.total_created() << " empty: " << model_factory.total_empty() << " total: " <<  model_factory.total() << endl;
         }
@@ -368,7 +380,7 @@ private:
             world.insert(*prio);
             model_factory.create_models({(*prio)->position}, world);
         }
-        auto new_chunks = client.receive_chunks(10);
+        auto new_chunks = client.receive_chunks(1);
         if(!new_chunks.empty()) {
             std::vector<Vector3i> positions;
             positions.reserve(new_chunks.size());
@@ -380,7 +392,7 @@ private:
         }
         if(frame % 7883 == 0) {
             /* Book keeping */
-            world.delete_unused_chunks(player_chunk, max_radius);
+            world.delete_unused_chunks(player_chunk, radius + KEEP_EXTRA_CHUNKS);
         }
 
     }

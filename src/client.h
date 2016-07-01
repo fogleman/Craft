@@ -78,6 +78,8 @@ namespace konstructs {
         vector<shared_ptr<ChunkData>> receive_chunks(const int max);
         void set_player_chunk(const Vector3i &chunk);
         void set_radius(int r);
+        void set_loaded_radius(int r);
+        int get_loaded_radius();
     private:
         int send_all(const char *data, const int length);
         void send_string(const string &str);
@@ -115,6 +117,7 @@ namespace konstructs {
         /* Chunk worker */
         Vector3i player_chunk;
         int radius;
+        int loaded_radius;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> updated;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> requested;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> received;

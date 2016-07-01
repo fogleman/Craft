@@ -235,21 +235,33 @@ private:
         }
     }
 
-    void update_radius() {
+    bool update_view_distance() {
         double frame_fps = 1.15 / frame_time;
+
         if(frame_fps > 0.0 && frame_fps < 60.0 && radius > 1) {
             view_distance = view_distance - (float)CHUNK_SIZE * 0.2f * ((60.0f - (float)frame_fps) / 60.0f);
-        } else if(frame_fps >= 60.0 && radius < max_radius && model_factory.waiting() == 0) {
+            return true;
+        } else if(frame_fps >= 60.0
+                && radius < max_radius
+                && model_factory.waiting() == 0
+                && radius <= client.get_loaded_radius()) {
             view_distance = view_distance + 0.05;
+            return true;
+        } else {
+            return false;
         }
-        int new_radius = (int)(view_distance / (float)CHUNK_SIZE) + 1;
-        if(new_radius != radius) {
+    }
+
+    void update_radius() {
+        if (update_view_distance()) {
+            int new_radius = (int)(view_distance / (float)CHUNK_SIZE) + 1;
             radius = new_radius;
             client.set_radius(radius);
         }
 
         if(frame % 6 == 0) {
-            cout << "View distance: " << view_distance << " (" << radius << ") faces: " << faces << "(" << max_faces << ") FPS: " << fps.fps << "(" << frame_fps << ")" << endl;
+            double frame_fps = 1.15 / frame_time;
+            cout << "View distance: " << view_distance << " (" << radius << "/" << client.get_loaded_radius() << ") faces: " << faces << "(" << max_faces << ") FPS: " << fps.fps << "(" << frame_fps << ")" << endl;
             cout << "Chunks: " << world.size() << " models: " << chunk_shader.size() << endl;
             cout << "Model factory, waiting: " << model_factory.waiting() << " created: " << model_factory.total_created() << " empty: " << model_factory.total_empty() << " total: " <<  model_factory.total() << endl;
         }

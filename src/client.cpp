@@ -30,7 +30,7 @@ namespace konstructs {
 
     Client::Client() :
         connected(false),
-        player_chunk(0,0,0), radius(0) {
+        player_chunk(0,0,0), radius(0), loaded_radius(0) {
         recv_thread = new std::thread(&Client::recv_worker, this);
         send_thread = new std::thread(&Client::send_worker, this);
         chunk_thread = new std::thread(&Client::chunk_worker, this);
@@ -374,6 +374,28 @@ namespace konstructs {
         update_radius(r + KEEP_EXTRA_CHUNKS);
     }
 
+    void Client::set_loaded_radius(int r) {
+        std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
+
+        if (r > radius || loaded_radius > radius) {
+            // Never set radius outside radius
+
+            loaded_radius = radius;
+        } else if (r > loaded_radius) {
+            // The loaded radius has increased
+
+            loaded_radius = r;
+        } else {
+            // We recevied a chunk closer then the loaded radius
+            // and we never want to reduce the loaded radius.
+        }
+    }
+
+    int Client::get_loaded_radius() {
+        std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
+        return loaded_radius;
+    }
+
     void Client::received_chunk(const Vector3i &pos) {
         std::lock_guard<std::mutex> ulck_chunk(mutex_chunk);
         received_queue.push_back(pos);
@@ -579,6 +601,8 @@ namespace konstructs {
                         updated.erase(c.chunk);
                         // Request chunk
                         chunk(c.chunk);
+                        // Update loaded radius
+                        set_loaded_radius(c.score);
                     }
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(15));

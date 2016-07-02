@@ -32,6 +32,11 @@ option(NANOGUI_BUILD_SHARED OFF)
 add_subdirectory(dependencies/nanogui)
 
 #-----------------------------------------------------------------------
+# Konstructs lib
+#-----------------------------------------------------------------------
+add_subdirectory(lib)
+
+#-----------------------------------------------------------------------
 # Misc
 #-----------------------------------------------------------------------
 
@@ -39,32 +44,30 @@ set(CMAKE_BUILD_TYPE Debug)
 
 find_package(ZLIB REQUIRED)
 include_directories(
-  ${ZLIB_INCLUDE_DIRS}
   dependencies/nanogui/include
   dependencies/nanogui/ext/glfw/include
   dependencies/nanogui/ext/glew/include
   dependencies/nanogui/ext/eigen
   dependencies/nanogui/ext/nanovg/src
-  dependencies/lodepng
   dependencies/optional-lite
-  dependencies/tinyobjloader)
+  dependencies/tinyobjloader
+  lib/include)
 
 FILE(
   GLOB SOURCE_FILES
-  src/*.cpp
-  dependencies/lodepng/lodepng.cpp
-  src/noise/*.cpp
-  dependencies/tinyobjloader/tiny_obj_loader.cc)
+  src/*.cpp)
 
 add_executable(konstructs ${SOURCE_FILES})
 
 if(MINGW)
   target_link_libraries(konstructs
+    konstructs-lib
     ws2_32.lib
     ${ZLIB_LIBRARIES}
     nanogui ${NANOGUI_EXTRA_LIBS})
 else()
   target_link_libraries(konstructs
+    konstructs-lib
     ${ZLIB_LIBRARIES}
     nanogui ${NANOGUI_EXTRA_LIBS}
     glfw)

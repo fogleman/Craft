@@ -1,6 +1,6 @@
 #include <fstream>
 #include <streambuf>
-#include <nanogui/opengl.h>
+#include <gl_includes.h>
 #include "textures.h"
 #include "util.h"
 #define KONSTRUCTS_PATH_SIZE 256

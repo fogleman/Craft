@@ -1,7 +1,7 @@
 #ifndef _cube_h_
 #define _cube_h_
 
-#include<nanogui/opengl.h>
+#include<gl_includes.h>
 
 void make_cube_faces(
     float *data, char ao[6][4],

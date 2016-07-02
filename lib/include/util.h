@@ -1,7 +1,6 @@
 #ifndef _util_h_
 #define _util_h_
-#include<nanogui/opengl.h>
-#include<nanogui/nanogui.h>
+#include<gl_includes.h>
 
 #define PI 3.14159265359
 #define DEGREES(radians) ((radians) * 180 / PI)

@@ -1,6 +1,5 @@
 #include <math.h>
 #include <stdio.h>
-#include <nanogui/glutil.h>
 #include "matrix.h"
 #include "util.h"
 
@@ -11,7 +10,6 @@
 namespace konstructs {
     namespace matrix {
         using namespace Eigen;
-        using namespace nanogui;
 
         Matrix4f projection(int width, int height) {
             float aspect_ratio = (float)width / (float)height;
@@ -57,7 +55,7 @@ namespace konstructs {
             float ymax, xmax;
             ymax = znear * tanf(fov * PI / 360.0);
             xmax = ymax * aspect;
-            return frustum(-xmax, xmax, -ymax, ymax, znear, zfar);
+            return projection_frustum(-xmax, xmax, -ymax, ymax, znear, zfar);
         }
 
         void ext_frustum_planes(float planes[6][4], int radius, const Matrix4f &m) {

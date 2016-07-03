@@ -32,26 +32,34 @@ namespace konstructs {
         return chunked_vec_int(position.cast<int>());
     }
 
-    ChunkData::ChunkData(const Vector3i _position, char *compressed, const int size, uint8_t *buffer):
-        position(_position) {
+    ChunkData::ChunkData(const Vector3i position, char *compressed, const int size, uint8_t *buffer):
+        position(position) {
         blocks = new BlockData[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
         int out_size = inflate_data(compressed + BLOCKS_HEADER_SIZE,
                                     size - BLOCKS_HEADER_SIZE,
                                     (char*)buffer, BLOCK_BUFFER_SIZE);
+        revision =
+            buffer[2] +
+            (buffer[2 + 1] << 8) +
+            (buffer[2 + 2] << 16) +
+            (buffer[2 + 3] << 24);
+
         for(int i = 0; i < CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE; i++) {
             blocks[i].type = buffer[i * BLOCK_SIZE] + (buffer[i * BLOCK_SIZE + 1] << 8);
             blocks[i].health = buffer[i * BLOCK_SIZE + 2] + ((buffer[i * BLOCK_SIZE + 3] & 0x07) << 8);
         }
     }
-    ChunkData::ChunkData(const uint16_t type) {
+
+    ChunkData::ChunkData(const uint16_t type) : revision(0) {
         blocks = new BlockData[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
         for(int i = 0; i < CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE; i++) {
             blocks[i].type = type;
             blocks[i].health = MAX_HEALTH;
         }
     }
-    ChunkData::ChunkData(const Vector3i position, BlockData *blocks) :
-        position(position), blocks(blocks) {}
+
+    ChunkData::ChunkData(const Vector3i position, const uint32_t revision, BlockData *blocks) :
+        position(position), revision(revision), blocks(blocks) {}
 
     ChunkData::~ChunkData() {
         delete[] blocks;
@@ -82,7 +90,9 @@ namespace konstructs {
 
         new_blocks[lx+ly*CHUNK_SIZE+lz*CHUNK_SIZE*CHUNK_SIZE] = data;
 
-        return std::make_shared<ChunkData>(position, new_blocks);
+        // A chunk that we altered ourselves is treated as invalid
+
+        return std::make_shared<ChunkData>(position, 0, new_blocks);
     }
 
     /**

@@ -38,6 +38,8 @@ namespace konstructs {
         for(int i = 0; i < CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE; i++) {
             blocks[i].type = buffer[i * BLOCK_SIZE] + (buffer[i * BLOCK_SIZE + 1] << 8);
             blocks[i].health = buffer[i * BLOCK_SIZE + 2] + ((buffer[i * BLOCK_SIZE + 3] & 0x07) << 8);
+            blocks[i].direction = (buffer[i * BLOCK_SIZE + 3] & 0xE0) >> 5;
+            blocks[i].rotation = (buffer[i * BLOCK_SIZE + 3] & 0x18) >> 3;
         }
     }
     ChunkData::ChunkData() {
@@ -45,6 +47,8 @@ namespace konstructs {
         for(int i = 0; i < CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE; i++) {
             blocks[i].type = SOLID_TYPE;
             blocks[i].health = MAX_HEALTH;
+            blocks[i].direction = DIRECTION_UP;
+            blocks[i].rotation = ROTATION_IDENTITY;
         }
     }
     ChunkData::ChunkData(const Vector3i position, BlockData *blocks) :

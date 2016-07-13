@@ -153,7 +153,10 @@ void make_cube(
 
 void make_cube2(GLuint *data, char ao[6][4],
                 int left, int right, int top, int bottom, int front, int back,
-                int x, int y, int z, int w, int damage, const int blocks[256][6]) {
+                int x, int y, int z, const BlockData block, int damage, const int blocks[256][6]) {
+    /*
+     * For each corner of the cube, which vertex should be used (see vertex shader)
+     */
     static const int corners[6][4] = {
         {0, 1, 2, 5},
         {3, 6, 4, 7},
@@ -162,14 +165,265 @@ void make_cube2(GLuint *data, char ao[6][4],
         {0, 2, 3, 4},
         {1, 5, 6, 7}};
 
-    static const int uvs[6][4][2] = {
-        {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
-        {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
-        {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
-        {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
-        {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
-        {{1, 0}, {1, 1}, {0, 0}, {0, 1}}
+    /*
+     * Texture coordinate map for each vertices in each direction and rotation.
+     * When the direction is changed or a rotation occurs (or both), the direction
+     * and rotation in which the texture is drawn needs to be changed.
+     * This map contains this information for each direction, rotation and vertex.
+     */
+    static const int uvs[6][4][6][4][2] = {
+        { // Direction UP
+            { // Rotation IDENTITY (none)
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}}
+            },
+            { // Rotation LEFT
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}}
+            },
+            { // Rotation RIGHT
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}}
+            },
+            { // Rotation HALF (180 degree)
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}}
+            }
+        },
+        { // Direction DOWN
+            { // Rotation IDENTITY (none)
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}}
+            },
+            { // Rotation LEFT
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}}
+            },
+            { // Rotation RIGHT
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}}
+            },
+            { // Rotation HALF (180 degree)
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}}
+            }
+        },
+        { // Direction RIGHT
+            { // Rotation IDENTITY (none)
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}}
+            },
+            { // Rotation LEFT
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}}
+            },
+            { // Rotation RIGHT
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}}
+            },
+            { // Rotation HALF (180 degree)
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}}
+            }
+        },
+        { // Direction LEFT
+            { // Rotation IDENTITY (none)
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}}
+            },
+            { // Rotation LEFT
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}}
+            },
+            { // Rotation RIGHT
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}}
+            },
+            { // Rotation HALF (180 degree)
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}}
+            }
+        },
+        { // Direction FORWARD
+            { // Rotation IDENTITY (none)
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}}
+            },
+            { // Rotation LEFT
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}}
+            },
+            { // Rotation RIGHT
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}}
+            },
+            { // Rotation HALF (180 degree)
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}}
+            }
+        },
+        { // Direction BACKWARD
+            { // Rotation IDENTITY (none)
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 1}, {0, 0}, {1, 1}, {1, 0}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}}
+            },
+            { // Rotation LEFT
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{0, 0}, {1, 0}, {0, 1}, {1, 1}},
+                {{0, 1}, {1, 1}, {0, 0}, {1, 0}}
+            },
+            { // Rotation RIGHT
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 1}, {0, 1}, {1, 0}, {0, 0}},
+                {{1, 0}, {0, 0}, {1, 1}, {0, 1}}
+            },
+            { // Rotation HALF (180 degree)
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 0}, {1, 1}, {0, 0}, {0, 1}},
+                {{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+                {{1, 1}, {1, 0}, {0, 1}, {0, 0}}
+            }
+        }
     };
+
+
+    /*
+     * Texture map for different directions and rotations.
+     * For each direction depending on the rotation, different textures should
+     * be used for different faces. This map contain this information for all
+     * directions and rotations.
+     */
+    static const int tex[6][4][6] = {
+        { // Direction UP
+            {0, 1, 2, 3, 4, 5}, // Rotation IDENTITY (none)
+            {5, 4, 2, 3, 0, 1}, // Rotation LEFT
+            {4, 5, 2, 3, 1, 0}, // Rotation RIGHT
+            {1, 0, 2, 3, 5, 4}  // Rotation HALF (180 degree)
+        },
+        {  // Direction DOWN
+            {1, 0, 3, 2, 4, 5}, // Rotation IDENTITY (none)
+            {5, 4, 3, 2, 1, 0}, // Rotation LEFT
+            {4, 5, 3, 2, 0, 1}, // Rotation RIGHT
+            {0, 1, 3, 2, 5, 4}  // Rotation HALF (180 degree)
+        },
+        { // Direction RIGHT
+            {3, 2, 0, 1, 4, 5}, // Rotation IDENTITY (none)
+            {3, 2, 4, 5, 1, 0}, // Rotation LEFT
+            {3, 2, 5, 4, 0, 1}, // Rotation RIGHT
+            {3, 2, 1, 0, 5, 4}  // Rotation HALF (180 degree)
+        },
+        {  // Direction LEFT
+            {2, 3, 1, 0, 4, 5}, // Rotation IDENTITY (none)
+            {2, 3, 5, 4, 1, 0}, // Rotation LEFT
+            {2, 3, 4, 5, 0, 1}, // Rotation RIGHT
+            {2, 3, 0, 1, 5, 4}  // Rotation HALF (180 degree)
+        },
+        { // Direction FORWARD
+            {0, 1, 5, 4, 2, 3}, // Rotation IDENTITY (none)
+            {5, 4, 1, 0, 2, 3}, // Rotation LEFT
+            {4, 5, 0, 1, 2, 3}, // Rotation RIGHT
+            {1, 0, 4, 5, 2, 3}  // Rotation HALF (180 degree)
+        },
+        { // Direction BACKWARD
+            {0, 1, 4, 5, 3, 2}, // Rotation IDENTITY (none)
+            {4, 5, 1, 0, 3, 2}, // Rotation LEFT
+            {5, 4, 0, 1, 3, 2}, // Rotation RIGHT
+            {1, 0, 5, 4, 3, 2}  // Rotation HALF (180 degree)
+        }
+     };
+
     static const int indices[6][6] = {
         {0, 3, 2, 0, 1, 3},
         {0, 3, 1, 0, 2, 3},
@@ -188,6 +442,8 @@ void make_cube2(GLuint *data, char ao[6][4],
     };
     GLuint *d = data;
     int faces[6] = {left, right, top, bottom, front, back};
+    int dir = block.direction;
+    int rot = block.rotation;
     for (int i = 0; i < 6; i++) {
         if (faces[i] == 0) {
             continue;
@@ -195,15 +451,15 @@ void make_cube2(GLuint *data, char ao[6][4],
         int flip = ao[i][0] + ao[i][3] > ao[i][1] + ao[i][2];
         for (int v = 0; v < 6; v++) {
             int j = flip ? flipped[i][v] : indices[i][v];
-            int damage_u = damage + (uvs[i][j][0] ? 1 : 0);
-            int damage_v = uvs[i][j][1] ? 1 : 0;
+            int damage_u = damage + (uvs[dir][rot][i][j][0] ? 1 : 0);
+            int damage_v = uvs[dir][rot][i][j][1] ? 1 : 0;
             GLuint d1 = (i << OFF_NORMAL) + (corners[i][j] << OFF_VERTEX) +
                 (x << OFF_X) + (y << OFF_Y) + (z << OFF_Z) +
                 (ao[i][j] << OFF_AO) + (damage_u << OFF_DAMAGE_U) +
                 (damage_v << OFF_DAMAGE_V);
             *(d++) = d1;
-            int du = (blocks[w][i] % 16) + (uvs[i][j][0] ? 1 : 0);
-            int dv = (blocks[w][i] / 16) + (uvs[i][j][1] ? 1 : 0);
+            int du = (blocks[block.type][tex[dir][rot][i]] % 16) + (uvs[dir][rot][i][j][0] ? 1 : 0);
+            int dv = (blocks[block.type][tex[dir][rot][i]] / 16) + (uvs[dir][rot][i][j][1] ? 1 : 0);
             GLuint d2 = (du << OFF_DU) + (dv << OFF_DV);
             *(d++) = d2;
         }
@@ -212,7 +468,7 @@ void make_cube2(GLuint *data, char ao[6][4],
 
 void make_plant(
     GLuint *data, char ao,
-    int x, int y, int z, int w, const int blocks[256][6])
+    int x, int y, int z, const BlockData block, const int blocks[256][6])
 {
     static const int position_index[4][4] = {
         {8, 9, 10, 11},
@@ -242,8 +498,8 @@ void make_plant(
                 (ao << OFF_AO) + (0 << OFF_DAMAGE_U) +
                 (0 << OFF_DAMAGE_V);
             *(d++) = d1;
-            int du = (blocks[w][i] % 16) + (uvs[i][j][0] ? 1 : 0);
-            int dv = (blocks[w][i] / 16) + (uvs[i][j][1] ? 1 : 0);
+            int du = (blocks[block.type][i] % 16) + (uvs[i][j][0] ? 1 : 0);
+            int dv = (blocks[block.type][i] / 16) + (uvs[i][j][1] ? 1 : 0);
             GLuint d2 = (du << OFF_DU) + (dv << OFF_DV);
             *(d++) = d2;
         }

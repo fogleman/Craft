@@ -1,7 +1,11 @@
 #ifndef _cube_h_
 #define _cube_h_
 
-#include<gl_includes.h>
+#include <gl_includes.h>
+
+#include "block.h"
+
+using namespace konstructs;
 
 void make_cube_faces(
     float *data, char ao[6][4],
@@ -17,7 +21,7 @@ void make_cube(
 void make_cube2(
     GLuint *data, char ao[6][4],
     int left, int right, int top, int bottom, int front, int back,
-    int x, int y, int z, int w, int damage, const int blocks[256][6]);
+    int x, int y, int z, const BlockData block, int damage, const int blocks[256][6]);
 
 void make_rotated_cube(float *data, char ao[6][4],
                        int left, int right, int top, int bottom, int front, int back,
@@ -26,7 +30,7 @@ void make_rotated_cube(float *data, char ao[6][4],
 
 void make_plant(
     GLuint *data, char ao,
-    int x, int y, int z, int w, const int blocks[256][6]);
+    int x, int y, int z, const BlockData block, const int blocks[256][6]);
 
 void make_sphere(float *data, float r, int detail);
 

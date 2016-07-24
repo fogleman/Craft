@@ -24,7 +24,6 @@ namespace konstructs {
     static Vector3i RIGHT_FRONT(1, -1, 0);
     static Vector3i LEFT_BACK(-1, 1, 0);
     static Vector3i RIGHT_BACK(1, 1, 0);
-    static std::shared_ptr<ChunkData> SOLID_CHUNK(std::make_shared<ChunkData>());
 
     ChunkModelResult::ChunkModelResult(const Vector3i _position, const int components,
                                        const int _faces):
@@ -106,11 +105,14 @@ namespace konstructs {
 
     const std::shared_ptr<ChunkData>  get_chunk(const Vector3i &position,
                                                 const World &world) {
-        try {
-            return world.chunk(position);
-        } catch(std::out_of_range e) {
+        auto chunk = world.chunk_opt(position);
+
+        if(chunk) {
+            return chunk.value();
+        } else {
             return SOLID_CHUNK;
         }
+
     }
 
     const ChunkModelData create_model_data(const Vector3i &position,

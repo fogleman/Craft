@@ -29,7 +29,7 @@ namespace konstructs {
     public:
         ChunkData(const Vector3i _position, char *compressed, const int size, uint8_t *buffer);
         ChunkData(const Vector3i position, BlockData *blocks);
-        ChunkData();
+        ChunkData(const uint16_t type);
         ~ChunkData();
         BlockData get(const Vector3i &pos) const;
         std::shared_ptr<ChunkData> set(const Vector3i &pos, const BlockData &data) const;
@@ -40,6 +40,10 @@ namespace konstructs {
         const Vector3i position;
         BlockData *blocks;
     };
+
+    extern std::shared_ptr<ChunkData> SOLID_CHUNK;
+    extern std::shared_ptr<ChunkData> VACUUM_CHUNK;
+
 };
 
 #define CHUNK_FOR_EACH(blocks, ex, ey, ez, eb) \

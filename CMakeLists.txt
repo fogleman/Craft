@@ -22,6 +22,10 @@ if(MINGW)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 endif()
 
+if(MSVC)
+	add_definitions(-DNOMINMAX)
+endif()
+
 #-----------------------------------------------------------------------
 # Nano GUI
 #-----------------------------------------------------------------------
@@ -59,16 +63,15 @@ FILE(
 
 add_executable(konstructs ${SOURCE_FILES})
 
-if(MINGW)
-  target_link_libraries(konstructs
-    konstructs-lib
-    ws2_32.lib
-    ${ZLIB_LIBRARIES}
-    nanogui ${NANOGUI_EXTRA_LIBS})
-else()
-  target_link_libraries(konstructs
+set(konstructs_LIBS 
     konstructs-lib
     ${ZLIB_LIBRARIES}
     nanogui ${NANOGUI_EXTRA_LIBS}
-    glfw)
+	glfw
+)
+
+if(WIN32 OR MINGW)
+    set(konstructs_LIBS ${konstructs_LIBS} ws2_32.lib)
 endif()
+
+target_link_libraries(konstructs ${konstructs_LIBS})

@@ -1,6 +1,7 @@
 
 #include <nanogui/nanogui.h>
 #if defined(WIN32)
+#define _WINSOCKAPI_ 
 #include <windows.h>
 #include <winsock2.h>
 #else
@@ -711,6 +712,7 @@ int main(int argc, char ** argv) {
                     print_usage();
                 } else {
                     hostname = argv[i+1];
+                    ++i;
                 }
             }
             if (strcmp(argv[i], "--username") == 0 || strcmp(argv[i], "-u") == 0) {
@@ -718,6 +720,7 @@ int main(int argc, char ** argv) {
                     print_usage();
                 } else {
                     username = argv[i+1];
+                    ++i;
                 }
             }
             if (strcmp(argv[i], "--password") == 0 || strcmp(argv[i], "-p") == 0) {
@@ -725,6 +728,7 @@ int main(int argc, char ** argv) {
                     print_usage();
                 } else {
                     password = argv[i+1];
+                    ++i;
                 }
             }
             if (strcmp(argv[i], "--debug") == 0 || strcmp(argv[i], "-d") == 0) {

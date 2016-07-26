@@ -226,8 +226,9 @@ namespace konstructs {
 
     shared_ptr<ChunkModelResult> compute_chunk(const ChunkModelData &data,
                                                const BlockTypeInfo &block_data) {
-        BlockData *blocks = (BlockData *)calloc(XZ_SIZE * XZ_SIZE * XZ_SIZE, sizeof(BlockData));
-        char *highest = (char *)calloc(XZ_SIZE * XZ_SIZE, sizeof(char));
+        std::vector<BlockData> blocks(XZ_SIZE * XZ_SIZE * XZ_SIZE);
+        std::vector<char> highest(XZ_SIZE * XZ_SIZE);
+
         BlockData *above = data.above->blocks;
         BlockData *below = data.below->blocks;
         BlockData *left = data.left->blocks;
@@ -592,8 +593,6 @@ namespace konstructs {
             offset += total * 12;
         } END_CHUNK_FOR_EACH;
 
-        free(blocks);
-        free(highest);
         return result;
     }
 };

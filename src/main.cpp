@@ -169,9 +169,10 @@ public:
                 if(looking_at) {
                     auto &l = *looking_at;
                     uint8_t direction = direction_from_vector(l.first.position, l.second.position);
-                    client.click_at(1, l.second.position, 3, hud.get_selection(), direction);
+                    uint8_t rotation = rotation_from_vector(direction, player.camera_direction());
+                    client.click_at(1, l.second.position, 3, hud.get_selection(), direction, rotation);
                 } else {
-                    client.click_at(0, Vector3i::Zero(), 3, hud.get_selection(), 0);
+                    client.click_at(0, Vector3i::Zero(), 3, hud.get_selection(), 0, 0);
                 }
             }
         } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
@@ -287,36 +288,37 @@ private:
             if(click_delay == 0) {
                 if(looking_at) {
                     auto &l = *looking_at;
-                    cout<<"FROM: " << l.first.position << " TO: " << l.second.position << endl;
-                    cout<<"DIFF: " << (l.first.position - l.second.position) << endl;
                     uint8_t direction = direction_from_vector(l.first.position, l.second.position);
-                    cout<<"DIR: " << (int)direction << endl;
+                    uint8_t rotation = rotation_from_vector(direction, player.camera_direction());
                     if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
                         client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_1), hud.get_selection(),
-                                        direction);
+                                        direction, rotation);
                     } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS &&
                               player.can_place(l.first.position, world, blocks)) {
                         optional<ItemStack> selected = hud.selected();
                         if(selected) {
                             std::shared_ptr<ChunkData> updated_chunk =
                                 world.chunk_at(l.first.position)->set(l.first.position,
-                                                                      {selected->type, selected->health, direction});
+                                                                      {selected->type, selected->health,
+                                                                              direction,
+                                                                              rotation}
+                                                                      );
                             world.insert(updated_chunk);
                             model_factory.create_models({updated_chunk->position}, world);
                         }
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
                         client.click_at(1, l.first.position, translate_button(GLFW_MOUSE_BUTTON_2), hud.get_selection(),
-                                        direction);
+                                        direction, rotation);
                     } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
                         client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection(),
-                                        direction);
+                                        direction, rotation);
                     }
                 } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
                         client.click_at(0, Vector3i::Zero(), translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection(),
-                                        0);
+                                        0, 0);
                 }
             } else {
                 click_delay--;

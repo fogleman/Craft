@@ -36,6 +36,7 @@ namespace konstructs {
         char is_plant[BLOCK_TYPES];
         char is_obstacle[BLOCK_TYPES];
         char is_transparent[BLOCK_TYPES];
+        char is_orientable[BLOCK_TYPES];
         char state[BLOCK_TYPES];
     };
 

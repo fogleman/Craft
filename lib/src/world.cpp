@@ -2,6 +2,8 @@
 
 namespace konstructs {
 
+    using nonstd::nullopt;
+
     int World::size() const {
         return chunks.size();
     }
@@ -24,15 +26,24 @@ namespace konstructs {
     }
 
     const BlockData World::get_block(const Vector3i &block_pos) const {
-        return chunks.at(chunked_vec_int(block_pos))->get(block_pos);
+        return chunk_at(block_pos)->get(block_pos);
     }
 
     const std::shared_ptr<ChunkData> World::chunk_at(const Vector3i &block_pos) const {
-        return chunks.at(chunked_vec_int(block_pos));
+        try {
+            return chunks.at(chunked_vec_int(block_pos));
+        } catch(std::out_of_range e) {
+            return VACUUM_CHUNK;
+        }
+
     }
 
-    const std::shared_ptr<ChunkData> World::chunk(const Vector3i &chunk_pos) const {
-        return chunks.at(chunk_pos);
+    const optional<std::shared_ptr<ChunkData>> World::chunk_opt(const Vector3i &chunk_pos) const {
+        try {
+            return chunks.at(chunk_pos);
+        } catch(std::out_of_range e)  {
+            return nullopt;
+        }
     }
 
     const std::vector<std::shared_ptr<ChunkData>> World::atAndAround(const Vector3i &pos) const {

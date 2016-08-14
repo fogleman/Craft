@@ -3,7 +3,7 @@
 
 #include <Eigen/Geometry>
 
-#define VOID_BLOCK 0
+#define VACUUM_TYPE 0
 #define SOLID_TYPE 65535
 #define BLOCK_TYPES 65536
 #define MAX_HEALTH 2047

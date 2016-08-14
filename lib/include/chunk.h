@@ -10,7 +10,7 @@
 #define BLOCK_SIZE 4
 #define CHUNK_SIZE 32
 #define BLOCK_BUFFER_SIZE (CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*BLOCK_SIZE)
-#define BLOCKS_HEADER_SIZE 2
+#define BLOCKS_HEADER_SIZE 6
 
 namespace konstructs {
     using namespace Eigen;
@@ -28,7 +28,7 @@ namespace konstructs {
     class ChunkData {
     public:
         ChunkData(const Vector3i _position, char *compressed, const int size, uint8_t *buffer);
-        ChunkData(const Vector3i position, BlockData *blocks);
+        ChunkData(const Vector3i position, const uint32_t revision, BlockData *blocks);
         ChunkData(const uint16_t type);
         ~ChunkData();
         BlockData get(const Vector3i &pos) const;
@@ -38,6 +38,7 @@ namespace konstructs {
                                          const float max_distance,
                                          const BlockTypeInfo &blocks) const;
         const Vector3i position;
+        uint32_t revision;
         BlockData *blocks;
     };
 

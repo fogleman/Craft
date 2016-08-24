@@ -67,7 +67,8 @@ namespace konstructs {
         void close_inventory();
         void talk(const string &text);
         void update_radius(const int radius);
-        void click_at(const int hit, const Vector3i pos, const int button, const int active);
+        void click_at(const int hit, const Vector3i pos, const int button, const int active,
+                      const uint8_t direction, const uint8_t rotation);
         string get_error_message();
         void set_connected(bool state);
         bool is_connected();

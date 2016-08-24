@@ -168,9 +168,11 @@ public:
             } else if (client.is_connected()){
                 if(looking_at) {
                     auto &l = *looking_at;
-                    client.click_at(1, l.second.position, 3, hud.get_selection());
+                    uint8_t direction = direction_from_vector(l.first.position, l.second.position);
+                    uint8_t rotation = rotation_from_vector(direction, player.camera_direction());
+                    client.click_at(1, l.second.position, 3, hud.get_selection(), direction, rotation);
                 } else {
-                    client.click_at(0, Vector3i::Zero(), 3, hud.get_selection());
+                    client.click_at(0, Vector3i::Zero(), 3, hud.get_selection(), 0, 0);
                 }
             }
         } else if(key > 48 && key < 58 && action == GLFW_PRESS) {
@@ -286,28 +288,40 @@ private:
             if(click_delay == 0) {
                 if(looking_at) {
                     auto &l = *looking_at;
+                    uint8_t direction = direction_from_vector(l.first.position, l.second.position);
+                    uint8_t rotation = rotation_from_vector(direction, player.camera_direction());
                     if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
-                        client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_1), hud.get_selection());
+                        client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_1), hud.get_selection(),
+                                        direction, rotation);
                     } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS &&
                               player.can_place(l.first.position, world, blocks)) {
                         optional<ItemStack> selected = hud.selected();
                         if(selected) {
+                            BlockData block = { selected->type, selected->health,
+                                                DIRECTION_UP,
+                                               ROTATION_IDENTITY };
+                            if(blocks.is_orientable[block.type]) {
+                                block.direction = direction;
+                                block.rotation = rotation;
+                            }
                             std::shared_ptr<ChunkData> updated_chunk =
-                                world.chunk_at(l.first.position)->set(l.first.position,
-                                                                      {selected->type, selected->health});
+                                world.chunk_at(l.first.position)->set(l.first.position, block);
                             world.insert(updated_chunk);
                             model_factory.create_models({updated_chunk->position}, world);
                         }
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
-                        client.click_at(1, l.first.position, translate_button(GLFW_MOUSE_BUTTON_2), hud.get_selection());
+                        client.click_at(1, l.first.position, translate_button(GLFW_MOUSE_BUTTON_2), hud.get_selection(),
+                                        direction, rotation);
                     } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
-                        client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection());
+                        client.click_at(1, l.second.position, translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection(),
+                                        direction, rotation);
                     }
                 } else if(glfwGetMouseButton(mGLFWWindow, GLFW_MOUSE_BUTTON_3) == GLFW_PRESS) {
                         click_delay = MOUSE_CLICK_DELAY_IN_FRAMES;
-                    client.click_at(0, Vector3i::Zero(), translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection());
+                        client.click_at(0, Vector3i::Zero(), translate_button(GLFW_MOUSE_BUTTON_3), hud.get_selection(),
+                                        0, 0);
                 }
             } else {
                 click_delay--;
@@ -468,12 +482,12 @@ private:
     }
 
     void handle_block_type(const string &str) {
-        int w, obstacle, transparent, left, right, top, bottom, front, back;
+        int w, obstacle, transparent, left, right, top, bottom, front, back, orientable;
         char shape[16];
         char state[16];
-        if(sscanf(str.c_str(), ",%d,%15[^,],%15[^,],%d,%d,%d,%d,%d,%d,%d,%d",
+        if(sscanf(str.c_str(), ",%d,%15[^,],%15[^,],%d,%d,%d,%d,%d,%d,%d,%d,%d",
                   &w, shape, state, &obstacle, &transparent, &left, &right,
-                  &top, &bottom, &front, &back) != 11)
+                  &top, &bottom, &front, &back, &orientable) != 12)
             throw std::runtime_error(str);
         blocks.is_plant[w] = strncmp(shape, "plant", 16) == 0;
         if(strncmp(state, "solid", 16) == 0) {
@@ -489,6 +503,7 @@ private:
         }
         blocks.is_obstacle[w] = obstacle;
         blocks.is_transparent[w] = transparent;
+        blocks.is_orientable[w] = orientable;
         blocks.blocks[w][0] = left;
         blocks.blocks[w][1] = right;
         blocks.blocks[w][2] = top;

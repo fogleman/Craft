@@ -584,13 +584,13 @@ namespace konstructs {
                     }
                 }
                 make_plant(vertices + offset, min_ao,
-                           ex, ey, ez, eb.type, block_data.blocks);
+                           ex, ey, ez, eb, block_data.blocks);
             }
             else {
                 int damage = (int)(8.0f - ((float)eb.health / (float)(MAX_HEALTH + 1)) * 8.0f);
                 make_cube2(vertices + offset, ao,
                            f1, f2, f3, f4, f5, f6,
-                           ex, ey, ez, eb.type, damage, block_data.blocks);
+                           ex, ey, ez, eb, damage, block_data.blocks);
             }
             offset += total * 12;
         } END_CHUNK_FOR_EACH;

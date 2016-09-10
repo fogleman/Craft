@@ -75,3 +75,8 @@ if(WIN32 OR MINGW)
 endif()
 
 target_link_libraries(konstructs ${konstructs_LIBS})
+
+install(TARGETS konstructs DESTINATION .)
+install(DIRECTORY textures/ DESTINATION textures)
+install(DIRECTORY models/ DESTINATION models)
+install(DIRECTORY shaders/ DESTINATION shaders)

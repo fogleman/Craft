@@ -7,7 +7,7 @@ grade: devel
 
 apps:
   konstructs-client:
-    command: konstructs
+    command: konstructs.sh
     plugs:
       - x11
       - network

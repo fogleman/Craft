@@ -22,11 +22,8 @@ parts:
     build-packages:
       - gcc-4.8
       - g++-4.8
-      - libglfw3-dev
       - xorg-dev
-      - libglew-dev
       - cmake
-      - libglu1-mesa-dev
       - libx11-dev
       - zlib1g-dev
     stage-packages:

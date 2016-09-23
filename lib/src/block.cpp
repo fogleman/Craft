@@ -82,9 +82,9 @@ namespace konstructs {
         case DIRECTION_LEFT:
             if(fabs(vector(1)) > fabs(vector(2))) {
                 if(vector(1) > 0) {
-                    return ROTATION_LEFT;
-                } else {
                     return ROTATION_RIGHT;
+                } else {
+                    return ROTATION_LEFT;
                 }
 
             } else {
@@ -97,9 +97,9 @@ namespace konstructs {
         case DIRECTION_RIGHT:
             if(fabs(vector(1)) > fabs(vector(2))) {
                 if(vector(1) <= 0) {
-                    return ROTATION_LEFT;
-                } else {
                     return ROTATION_RIGHT;
+                } else {
+                    return ROTATION_LEFT;
                 }
             } else {
                 if(vector(2) <= 0) {

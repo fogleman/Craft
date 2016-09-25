@@ -116,7 +116,7 @@ namespace konstructs {
     }
 
     const ChunkModelData create_model_data(const Vector3i &position,
-                                                              const World &world) {
+                                           const World &world) {
         const ChunkModelData data = {
             position,
             get_chunk(position + BELOW, world),

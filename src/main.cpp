@@ -1,7 +1,7 @@
 
 #include <nanogui/nanogui.h>
 #if defined(WIN32)
-#define _WINSOCKAPI_ 
+#define _WINSOCKAPI_
 #include <windows.h>
 #include <winsock2.h>
 #else

@@ -68,15 +68,15 @@ namespace konstructs {
         case DIRECTION_DOWN:
             if(fabs(vector(0)) > fabs(vector(2))) {
                 if(vector(0) <= 0) {
-                    return ROTATION_RIGHT;
-                } else {
                     return ROTATION_LEFT;
+                } else {
+                    return ROTATION_RIGHT;
                 }
             } else {
                 if(vector(2) <= 0) {
-                    return ROTATION_IDENTITY;
-                } else {
                     return ROTATION_HALF;
+                } else {
+                    return ROTATION_IDENTITY;
                 }
             }
         case DIRECTION_LEFT:

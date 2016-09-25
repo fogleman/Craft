@@ -388,8 +388,11 @@ private:
             handle_packet(packet.get());
         }
         Vector3f pos = player.position;
+        Vector3i player_chunk(chunked(pos[0]), chunked(pos[2]), chunked(pos[1]));
 
-        auto prio = client.receive_prio_chunk(Vector3i(chunked(pos[0]), chunked(pos[2]), chunked(pos[1])));
+        auto prio = client.receive_prio_chunk(player_chunk);
+
+        model_factory.update_player_chunk(player_chunk);
         /* Insert prio chunk into world */
         if(prio) {
             world.insert(*prio);

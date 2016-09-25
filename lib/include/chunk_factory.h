@@ -56,6 +56,7 @@ namespace konstructs {
         int total();
         int total_empty();
         int total_created();
+        void update_player_chunk(const Vector3i &chunk);
         void create_models(const std::vector<Vector3i> &positions,
                            const World &world);
         std::vector<std::shared_ptr<ChunkModelResult>> fetch_models();
@@ -66,6 +67,7 @@ namespace konstructs {
         void worker();
         std::mutex mutex;
         std::condition_variable chunks_condition;
+        Vector3i player_chunk;
         std::unordered_set<Vector3i, matrix_hash<Vector3i>> chunks;
         std::unordered_map<Vector3i, ChunkModelData, matrix_hash<Vector3i>> model_data;
         std::vector<std::shared_ptr<ChunkModelResult>> models;

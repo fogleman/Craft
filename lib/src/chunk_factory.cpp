@@ -43,7 +43,8 @@ namespace konstructs {
         block_data(block_data),
         processed(0),
         empty(0),
-        created(0) {
+        created(0),
+        player_chunk(0, 0, 0) {
         for(int i = 0; i < WORKERS; i++) {
             new std::thread(&ChunkModelFactory::worker, this);
         }
@@ -67,6 +68,11 @@ namespace konstructs {
     int ChunkModelFactory::total_created() {
         std::lock_guard<std::mutex> lock(mutex);
         return created;
+    }
+
+    void ChunkModelFactory::update_player_chunk(const Vector3i &chunk) {
+        std::lock_guard<std::mutex> lock(mutex);
+        player_chunk = chunk;
     }
 
     void ChunkModelFactory::create_models(const std::vector<Vector3i> &positions,
@@ -116,7 +122,7 @@ namespace konstructs {
     }
 
     const ChunkModelData create_model_data(const Vector3i &position,
-                                                              const World &world) {
+                                           const World &world) {
         const ChunkModelData data = {
             position,
             get_chunk(position + BELOW, world),
@@ -156,7 +162,10 @@ namespace konstructs {
         while(1) {
             std::unique_lock<std::mutex> ulock(mutex);
             chunks_condition.wait(ulock, [&]{return !chunks.empty();});
-            auto it = chunks.begin();
+            auto cmp = [&](const Vector3i &a, const Vector3i &b){
+                return (a - player_chunk).norm() < (b - player_chunk).norm();
+            };
+            auto it = std::min_element(chunks.begin(), chunks.end(), cmp);
             auto position = *it;
             chunks.erase(it);
             auto itr = model_data.find(position);

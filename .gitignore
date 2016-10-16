@@ -1,6 +1,9 @@
 /build
 /package/build/
 /package/build-windows/
+/package/parts/
+/package/stage/
+/package/prime/
 /docs/html
 /docs/latex
 /docs/*.db

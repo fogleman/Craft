@@ -7,7 +7,7 @@ grade: devel
 
 apps:
   konstructs-client:
-    command: konstructs-snap-wrapper
+    command: desktop-launch $SNAP/konstructs-snap-wrapper
     plugs:
       - x11
       - network
@@ -19,6 +19,9 @@ parts:
     plugin: dump
     source: .
     snap: [ "konstructs-snap-wrapper" ]
+  gui:
+    plugin: nil
+    after: [desktop-gtk3]
   client:
     plugin: cmake
     source: ..

@@ -7,7 +7,7 @@ grade: devel
 
 apps:
   konstructs-client:
-    command: konstructs.sh
+    command: konstructs-snap-wrapper
     plugs:
       - x11
       - network
@@ -15,6 +15,10 @@ apps:
       - unity7
 
 parts:
+  launcher:
+    plugin: dump
+    source: .
+    snap: [ "konstructs-snap-wrapper" ]
   client:
     plugin: cmake
     source: ..

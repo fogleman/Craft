@@ -63,7 +63,7 @@ FILE(
 
 add_executable(konstructs ${SOURCE_FILES})
 
-set(konstructs_LIBS 
+set(konstructs_LIBS
     konstructs-lib
     ${ZLIB_LIBRARIES}
     nanogui ${NANOGUI_EXTRA_LIBS}
@@ -75,3 +75,8 @@ if(WIN32 OR MINGW)
 endif()
 
 target_link_libraries(konstructs ${konstructs_LIBS})
+
+install(TARGETS konstructs DESTINATION .)
+install(DIRECTORY textures/ DESTINATION textures)
+install(DIRECTORY models/ DESTINATION models)
+install(DIRECTORY shaders/ DESTINATION shaders)

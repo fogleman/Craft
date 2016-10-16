@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Konstructs
+GenericName=Konstructs Client
+Comment=Konstructs Game Client
+Exec=konstructs-client
+Icon=${SNAP}/meta/gui/konstructs-client.png
+Terminal=false
+Type=Application
+StartupNotify=false
+Categories=Application;Game

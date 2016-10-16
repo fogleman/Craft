@@ -7,6 +7,11 @@ PROJECT_DIR=$$PWD/..
 linux: build/konstructs
 tar: konstructs-client.tar.bz2
 
+snap:
+	sed -i "s/version: 0/version: $(shell git describe --abbrev=0 --tags | tr -d v)/" snapcraft.yaml
+	snapcraft clean
+	snapcraft snap
+	sed -i "s/version: $(shell git describe --abbrev=0 --tags | tr -d v)/version: 0/" snapcraft.yaml
 
 build/konstructs:
 	@echo -e "\033[1m"

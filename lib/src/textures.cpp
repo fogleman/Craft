@@ -12,17 +12,17 @@ namespace konstructs {
         snprintf(path, max_len, "%s/%s", type, name);
 
         if (!file_exist(path)) {
+            if(const char* env_p = std::getenv("SNAP")) {
+                snprintf(path, max_len, "%s/%s/%s", env_p, type, name);
+            }
+        }
+
+        if (!file_exist(path)) {
             snprintf(path, max_len, "../%s/%s", type, name);
         }
 
         if (!file_exist(path)) {
             snprintf(path, max_len, "/usr/local/share/konstructs-client/%s/%s", type, name);
-        }
-
-        if (!file_exist(path)) {
-            if(const char* env_p = std::getenv("SNAP")) {
-                snprintf(path, max_len, "%s/%s/%s", env_p, type, name);
-            }
         }
 
         if (!file_exist(path)) {

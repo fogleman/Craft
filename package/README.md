@@ -41,12 +41,4 @@ make zip
 ## Build Linux install packages
 This build produces a `.deb` or a `.rpm`. We uses this to build packages on Travis for Bintray.
 
-```
-make deb
-```
-
-or
-
-```
-make rpm
-```
+`make deb`, `make rpm` or `make snap`

@@ -21,9 +21,13 @@ matrix:
       env: MAKE_COMMAND="osx"
     - os: linux
       compiler: gcc
-      env: MAKE_COMMAND="linux tar deb rpm upload-tar upload-deb"
+      env:
+        - MAKE_COMMAND="linux tar deb rpm"
+        - UPLOAD_TO_GH=yes
     - os: linux
-      env: MAKE_COMMAND="windows zip upload-zip"
+      env:
+        - MAKE_COMMAND="windows zip"
+        - UPLOAD_TO_GH=yes
     - os: linux
       env: MAKE_COMMAND="docs upload-docs"
 
@@ -44,3 +48,19 @@ notifications:
 
 script:
   - make $MAKE_COMMAND -C package
+
+before_deploy:
+  - "mkdir -p upload"
+  - "mv package/*.tar.bz2 package/*.deb package/*.rpm package/*.zip upload || true"
+  - "rm -f upload/*source*"
+
+deploy:
+  provider: releases
+  api_key:
+    secure: fJMRmWSoBrm2hy6FDwhp7flHJhcXPZWE7gPluYT/G4K4uGf/QaFS0yKiTEXYEPWzBPUdidZxOKX427/rlmXyrl7ZfrUfn5k/cctc1aYpV5khtVWFCxlTbltzPefq8B7DkSDlQSnh9qB8e6J4E7xQd8zak6spjRntFBXafdvHM5E=
+  file: "upload/*"
+  file_glob: true
+  on:
+    repo: konstructs/client
+    tags: true
+    condition: "$UPLOAD_TO_GH = yes"

@@ -230,18 +230,6 @@ docker-zip: /tmp/build-deps/zlib-bin
 	chown $$HOST_UID *.zip
 	rm -rf konstructs-client
 
-upload-tar: export MAKE_TAR = true
-upload-tar:
-	./bintray
-
-upload-deb: export MAKE_DEB = true
-upload-deb:
-	./bintray
-
-upload-zip: export MAKE_ZIP = true
-upload-zip:
-	./bintray
-
 upload-docs: docs
 	@echo -e "\033[1m"
 	@echo "# Upload docs to doc.konstructs.org"
@@ -264,8 +252,9 @@ clean:
 		konstructs-client_*_amd64.deb \
 		konstructs-client-*.x86_64.rpm \
 		konstructs-client.zip
+	type snapcraft >/dev/null 2>&1 && snapcraft clean
 
 .PHONY: linux osx window clean docs tar zip deb rpm
 .PHONY: docker-deb docker-linux docker-package-prep docker-rpm docker-windows docker-zip
 .PHONY: package-prep
-.PHONY: upload-deb upload-tar upload-zip
+.PHONY: upload-docs

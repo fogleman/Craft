@@ -18,7 +18,7 @@
 #include <functional>
 #include "client.h"
 
-#define PROTOCOL_VERSION 8
+#define PROTOCOL_VERSION 9
 #define MAX_RECV_SIZE 4096*1024
 #define PACKETS (MAX_PENDING_CHUNKS * 2)
 #define HEADER_SIZE 4

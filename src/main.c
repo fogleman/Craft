@@ -2634,7 +2634,9 @@ int main(int argc, char **argv) {
 
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
+#ifndef __EMSCRIPTEN__ // TODO: remove, what is replacement? glLogicOp not in >=GLES2: https://github.com/kripken/emscripten/issues/1416
     glLogicOp(GL_INVERT);
+#endif
     glClearColor(0, 0, 0, 1);
 
     // LOAD TEXTURES //

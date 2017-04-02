@@ -45,8 +45,12 @@ if(MINGW)
         "C:/Program Files/CURL/include" "C:/Program Files (x86)/CURL/include")
 endif()
 
-find_package(CURL REQUIRED)
-include_directories(${CURL_INCLUDE_DIR})
+if (NOT EMSCRIPTEN)
+    find_package(CURL REQUIRED)
+    include_directories(${CURL_INCLUDE_DIR})
+else ()
+    set(CURL_LIBRARIES "")
+endif ()
 
 if(APPLE)
     target_link_libraries(craft glfw

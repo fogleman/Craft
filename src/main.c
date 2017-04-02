@@ -1,6 +1,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#ifndef __EMSCRIPTEN__
 #include <curl/curl.h>
+#endif
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2585,7 +2587,9 @@ void reset_model() {
 
 int main(int argc, char **argv) {
     // INITIALIZATION //
+#ifndef __EMSCRIPTEN__
     curl_global_init(CURL_GLOBAL_DEFAULT);
+#endif
     srand(time(NULL));
     rand();
 
@@ -2958,6 +2962,8 @@ int main(int argc, char **argv) {
     }
 
     glfwTerminate();
+#ifndef __EMSCRIPTEN__
     curl_global_cleanup();
+#endif
     return 0;
 }

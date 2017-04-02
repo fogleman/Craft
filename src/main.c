@@ -2585,6 +2585,21 @@ void reset_model() {
     g->time_changed = 1;
 }
 
+void one_iter();
+static FPS fps = {0, 0, 0};
+static double last_commit;
+static double last_update;
+static double previous;
+static State *s;
+static Player *me;
+static Attrib block_attrib = {0};
+static Attrib line_attrib = {0};
+static Attrib text_attrib = {0};
+static Attrib sky_attrib = {0};
+static GLuint sky_buffer;
+static int g_running;
+static int g_inner_break;
+
 int main(int argc, char **argv) {
     // INITIALIZATION //
 #ifndef __EMSCRIPTEN__
@@ -2656,10 +2671,6 @@ int main(int argc, char **argv) {
     load_png_texture("textures/sign.png");
 
     // LOAD SHADERS //
-    Attrib block_attrib = {0};
-    Attrib line_attrib = {0};
-    Attrib text_attrib = {0};
-    Attrib sky_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -2731,8 +2742,8 @@ int main(int argc, char **argv) {
     }
 
     // OUTER LOOP //
-    int running = 1;
-    while (running) {
+    g_running = 1;
+    while (g_running) {
         // DATABASE INITIALIZATION //
         if (g->mode == MODE_OFFLINE || USE_CACHE) {
             db_enable();
@@ -2756,13 +2767,13 @@ int main(int argc, char **argv) {
 
         // LOCAL VARIABLES //
         reset_model();
-        FPS fps = {0, 0, 0};
-        double last_commit = glfwGetTime();
-        double last_update = glfwGetTime();
-        GLuint sky_buffer = gen_sky_buffer();
+        //FPS fps = {0, 0, 0};
+        last_commit = glfwGetTime();
+        last_update = glfwGetTime();
+        sky_buffer = gen_sky_buffer();
 
-        Player *me = g->players;
-        State *s = &g->players->state;
+        me = g->players;
+        s = &g->players->state;
         me->id = 0;
         me->name[0] = '\0';
         me->buffer = 0;
@@ -2776,8 +2787,32 @@ int main(int argc, char **argv) {
         }
 
         // BEGIN MAIN LOOP //
-        double previous = glfwGetTime();
+        previous = glfwGetTime();
+        g_inner_break = 0;
         while (1) {
+            one_iter();
+            if (g_inner_break) break;
+        }
+
+        // SHUTDOWN //
+        db_save_state(s->x, s->y, s->z, s->rx, s->ry);
+        db_close();
+        db_disable();
+        client_stop();
+        client_disable();
+        del_buffer(sky_buffer);
+        delete_all_chunks();
+        delete_all_players();
+    }
+
+    glfwTerminate();
+#ifndef __EMSCRIPTEN__
+    curl_global_cleanup();
+#endif
+    return 0;
+}
+
+void one_iter() {
             // WINDOW SIZE AND SCALE //
             g->scale = get_scale_factor();
             glfwGetFramebufferSize(g->window, &g->width, &g->height);
@@ -2941,29 +2976,12 @@ int main(int argc, char **argv) {
             glfwSwapBuffers(g->window);
             glfwPollEvents();
             if (glfwWindowShouldClose(g->window)) {
-                running = 0;
-                break;
+                g_running = 0;
+                g_inner_break = 1;
             }
             if (g->mode_changed) {
                 g->mode_changed = 0;
-                break;
+                g_inner_break = 1;
             }
-        }
-
-        // SHUTDOWN //
-        db_save_state(s->x, s->y, s->z, s->rx, s->ry);
-        db_close();
-        db_disable();
-        client_stop();
-        client_disable();
-        del_buffer(sky_buffer);
-        delete_all_chunks();
-        delete_all_players();
-    }
-
-    glfwTerminate();
-#ifndef __EMSCRIPTEN__
-    curl_global_cleanup();
-#endif
-    return 0;
 }
+

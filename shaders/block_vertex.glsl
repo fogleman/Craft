@@ -1,4 +1,4 @@
-#version 120
+
 
 uniform mat4 matrix;
 uniform vec3 camera;
@@ -17,7 +17,7 @@ varying float fog_height;
 varying float diffuse;
 
 const float pi = 3.14159265;
-const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
+vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
 
 void main() {
     gl_Position = matrix * position;
@@ -34,6 +34,6 @@ void main() {
         fog_factor = pow(clamp(camera_distance / fog_distance, 0.0, 1.0), 4.0);
         float dy = position.y - camera.y;
         float dx = distance(position.xz, camera.xz);
-        fog_height = (atan(dy, dx) + pi / 2) / pi;
+        fog_height = (atan(dy, dx) + pi / 2.0) / pi;
     }
 }

@@ -63,6 +63,10 @@ terminal.
     make
     ./craft
 
+To build for the web (experimental), install [Emscripten](http://emscripten.org) and instead run:
+
+    cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake .
+
 ### Multiplayer
 
 Register for an account!

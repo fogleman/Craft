@@ -59,13 +59,16 @@ terminal.
 
     git clone https://github.com/fogleman/Craft.git
     cd Craft
-    cmake .
+    mkdir build
+    pushd build
+    cmake ..
     make
-    ./craft
+    popd
+    ./build/craft
 
 To build for the web (experimental), install [Emscripten](http://emscripten.org) and instead run:
 
-    cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake .
+    cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake ..
 
 ### Multiplayer
 

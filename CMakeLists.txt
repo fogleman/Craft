@@ -28,7 +28,7 @@ add_definitions(-std=c99 -O3)
 
 if (EMSCRIPTEN)
     # Emscripten default is GLFW 2.x but we use GLFW 3.x, also include data files
-    set_target_properties(craft PROPERTIES LINK_FLAGS "-s USE_GLFW=3 --embed-file ../shaders/")
+    set_target_properties(craft PROPERTIES LINK_FLAGS "-s USE_GLFW=3 --embed-file ../shaders/ --embed-file ../textures/")
 endif ()
 
 if (NOT EMSCRIPTEN)

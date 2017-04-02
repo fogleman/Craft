@@ -13,6 +13,8 @@ if (EMSCRIPTEN)
         deps/noise/noise.c
         deps/sqlite/sqlite3.c
         deps/tinycthread/tinycthread.c)
+    # Generate HTML file wrapper in addition to .js
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
 else ()
     add_executable(
         craft

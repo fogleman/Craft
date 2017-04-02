@@ -1,4 +1,6 @@
-
+#ifdef GL_ES
+precision mediump float;
+#endif
 
 uniform sampler2D sampler;
 uniform bool is_sign;

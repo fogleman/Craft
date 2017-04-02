@@ -3,6 +3,9 @@
 #ifndef __EMSCRIPTEN__
 #include <curl/curl.h>
 #endif
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2788,11 +2791,15 @@ int main(int argc, char **argv) {
 
         // BEGIN MAIN LOOP //
         previous = glfwGetTime();
+#ifdef __EMSCRIPTEN__
+        emscripten_set_main_loop(one_iter, 60, 1);
+#else
         g_inner_break = 0;
         while (1) {
             one_iter();
             if (g_inner_break) break;
         }
+#endif
 
         // SHUTDOWN //
         db_save_state(s->x, s->y, s->z, s->rx, s->ry);

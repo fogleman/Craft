@@ -26,6 +26,11 @@ endif ()
 
 add_definitions(-std=c99 -O3)
 
+if (EMSCRIPTEN)
+    # Emscripten default is GLFW 2.x but we use GLFW 3.x
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3")
+endif ()
+
 if (NOT EMSCRIPTEN)
     # Emscripten includes its own GLFW and GLEW ports
     add_subdirectory(deps/glfw)

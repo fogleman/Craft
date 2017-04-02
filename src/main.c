@@ -2622,7 +2622,6 @@ int main(int argc, char **argv) {
     }
 
     glfwMakeContextCurrent(g->window);
-    glfwSwapInterval(VSYNC);
     glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(g->window, on_key);
     glfwSetCharCallback(g->window, on_char);
@@ -2794,6 +2793,7 @@ int main(int argc, char **argv) {
 #ifdef __EMSCRIPTEN__
         emscripten_set_main_loop(one_iter, 60, 1);
 #else
+        glfwSwapInterval(VSYNC);
         g_inner_break = 0;
         while (1) {
             one_iter();

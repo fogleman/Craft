@@ -1,6 +1,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <errno.h>
 #include "lodepng.h"
 #include "matrix.h"
 #include "util.h"
@@ -28,6 +30,7 @@ void update_fps(FPS *fps) {
 
 char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");
+    if (!file) return NULL;
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
@@ -62,6 +65,7 @@ GLuint gen_faces(int components, int faces, GLfloat *data) {
 }
 
 GLuint make_shader(GLenum type, const char *source) {
+    assert(source);
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
@@ -79,7 +83,12 @@ GLuint make_shader(GLenum type, const char *source) {
 }
 
 GLuint load_shader(GLenum type, const char *path) {
+    assert(path);
     char *data = load_file(path);
+    if (!data) {
+        fprintf(stderr, "error %u: unable to load shader %s; %s\n", errno, path, strerror(errno));
+        return 0;
+    }
     GLuint result = make_shader(type, data);
     free(data);
     return result;
@@ -134,7 +143,8 @@ void load_png_texture(const char *file_name) {
     unsigned int width, height;
     error = lodepng_decode32_file(&data, &width, &height, file_name);
     if (error) {
-        fprintf(stderr, "error %u: %s\n", error, lodepng_error_text(error));
+        fprintf(stderr, "error %u: unable to load texture %s; %s\n", error, file_name, lodepng_error_text(error));
+        return;
     }
     flip_image_vertical(data, width, height);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,

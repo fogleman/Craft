@@ -2370,6 +2370,16 @@ void create_window() {
         const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
         window_width = modes[mode_count - 1].width;
         window_height = modes[mode_count - 1].height;
+
+        g->window = glfwCreateWindow(
+            window_width, window_height, "Craft", monitor, NULL);
+        g->scale = get_scale_factor();
+        glfwDestroyWindow(g->window);
+        if (g->scale != 1) {
+            window_width /= g->scale;
+            window_height /= g->scale;
+        }
+
     }
     g->window = glfwCreateWindow(
         window_width, window_height, "Craft", monitor, NULL);

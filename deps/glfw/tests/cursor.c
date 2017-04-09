@@ -1,6 +1,6 @@
 //========================================================================
 // Cursor & input mode tests
-// Copyright (c) Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) Camilla Berglund <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -30,11 +30,13 @@
 //
 //========================================================================
 
+#include <glad/glad.h>
+
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
  #define _USE_MATH_DEFINES
-#elif __GNUC__
- #define _GNU_SOURCE
+ #elif __GNUC__
+  #define _GNU_SOURCE
 #endif
 
 #include <GLFW/glfw3.h>
@@ -48,9 +50,9 @@
 static double cursor_x;
 static double cursor_y;
 static int swap_interval = 1;
-static GLboolean wait_events = GL_FALSE;
-static GLboolean animate_cursor = GL_FALSE;
-static GLboolean track_cursor = GL_FALSE;
+static int wait_events = GLFW_TRUE;
+static int animate_cursor = GLFW_FALSE;
+static int track_cursor = GLFW_FALSE;
 static GLFWcursor* standard_cursors[6];
 
 static void error_callback(int error, const char* description)
@@ -124,7 +126,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         {
             if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
             {
-                glfwSetWindowShouldClose(window, GL_TRUE);
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
                 break;
             }
 
@@ -196,6 +198,7 @@ int main(void)
     int i;
     GLFWwindow* window;
     GLFWcursor* star_cursors[CURSOR_FRAME_COUNT];
+    GLFWcursor* current_frame = NULL;
 
     glfwSetErrorCallback(error_callback);
 
@@ -239,6 +242,7 @@ int main(void)
     }
 
     glfwMakeContextCurrent(window);
+    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
 
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
     printf("Cursor position: %f %f\n", cursor_x, cursor_y);
@@ -279,11 +283,22 @@ int main(void)
         if (animate_cursor)
         {
             const int i = (int) (glfwGetTime() * 30.0) % CURSOR_FRAME_COUNT;
-            glfwSetCursor(window, star_cursors[i]);
+            if (current_frame != star_cursors[i])
+            {
+                glfwSetCursor(window, star_cursors[i]);
+                current_frame = star_cursors[i];
+            }
         }
+        else
+            current_frame = NULL;
 
         if (wait_events)
-            glfwWaitEvents();
+        {
+            if (animate_cursor)
+                glfwWaitEventsTimeout(1.0 / 30.0);
+            else
+                glfwWaitEvents();
+        }
         else
             glfwPollEvents();
 

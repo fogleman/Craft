@@ -9,11 +9,15 @@
 // (If the code seems a little bit strange here and there, it may be
 //  because I am not a friend of orthogonal projections)
 //========================================================================
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
  #define _USE_MATH_DEFINES
-#elif __GNUC__
- #define _GNU_SOURCE
+ #elif __GNUC__
+  #define _GNU_SOURCE
 #endif
 
 #define GLFW_INCLUDE_GLEXT
@@ -474,7 +478,7 @@ static void mouseButtonFun(GLFWwindow* window, int button, int action, int mods)
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 
@@ -514,14 +518,11 @@ int main(void)
 
     // Enable vsync
     glfwMakeContextCurrent(window);
+    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    if (glfwExtensionSupported("GL_ARB_multisample") ||
-        glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR) >= 2 ||
-        glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR) >= 3)
-    {
+    if (GLAD_GL_ARB_multisample || GLAD_GL_VERSION_1_3)
         glEnable(GL_MULTISAMPLE_ARB);
-    }
 
     glfwGetFramebufferSize(window, &width, &height);
     framebufferSizeFun(window, width, height);

@@ -2437,6 +2437,11 @@ void handle_movement(double dt) {
                 dy = 8;
             }
         }
+        if (glfwGetKey(g->window, CRAFT_KEY_CROUCH)) {
+            if (g->flying) {
+                vy = -1;
+            }
+        }
     }
     float speed = g->flying ? 20 : 5;
     int estimate = roundf(sqrtf(

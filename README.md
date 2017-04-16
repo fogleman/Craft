@@ -108,6 +108,7 @@ the client.
 - Backquote (`) to write text on any block (signs).
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.
+- F11 to toggle fullscreen/windowed mode.
 
 ### Chat Commands
 

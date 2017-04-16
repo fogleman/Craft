@@ -42,6 +42,8 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+#define CRAFT_KEY_DEBUG GLFW_KEY_F3
+#define CRAFT_KEY_UI GLFW_KEY_F1
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

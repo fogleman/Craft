@@ -108,6 +108,8 @@ the client.
 - Backquote (`) to write text on any block (signs).
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.
+- F3 to toggle debug info text.
+- F1 to toggle all user interface elements.
 
 ### Chat Commands
 

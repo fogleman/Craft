@@ -195,7 +195,7 @@ int get_scale_factor(GLFWwindow *window) {
     int buffer_width, buffer_height;
     glfwGetWindowSize(window, &window_width, &window_height);
     if (window_width <= 0 || window_height <= 0) {
-        return 0;
+        return 1;
     }
     glfwGetFramebufferSize(window, &buffer_width, &buffer_height);
     int result = buffer_width / window_width;

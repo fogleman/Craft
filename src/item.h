@@ -26,7 +26,7 @@ typedef enum {
     Item_SUN_FLOWER,
     Item_WHITE_FLOWER,
     Item_BLUE_FLOWER,
-    Item_COLOR_00,
+    Item_COLOR_00 = 32,
     Item_COLOR_01,
     Item_COLOR_02,
     Item_COLOR_03,
@@ -57,7 +57,8 @@ typedef enum {
     Item_COLOR_28,
     Item_COLOR_29,
     Item_COLOR_30,
-    Item_COLOR_31
+    Item_COLOR_31,
+    Item_NYANCAT
 } Item;
 
 extern const int items[];
@@ -65,9 +66,16 @@ extern const int item_count;
 extern const int blocks[256][6];
 extern const int plants[256];
 
-int is_plant(Item w);
-int is_obstacle(Item w);
-int is_transparent(Item w);
-int is_destructable(Item w);
+int is_plant(int w);
+int is_obstacle(int w);
+int is_transparent(int w);
+int is_destructable(int w);
+
+typedef struct {
+    #define ITEMSPEC_NAME_LEN 32
+    #define ITEMSPEC_NAME_FORMAT "%32s"
+    char name[32];
+    int obstacle;
+} ItemSpec;
 
 #endif

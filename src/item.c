@@ -56,7 +56,8 @@ const int items[] = {
     Item_COLOR_28,
     Item_COLOR_29,
     Item_COLOR_30,
-    Item_COLOR_31
+    Item_COLOR_31,
+    Item_NYANCAT
 };
 
 const int item_count = sizeof(items) / sizeof(int);
@@ -127,6 +128,7 @@ const int blocks[256][6] = {
     {205, 205, 205, 205, 205, 205}, // 61
     {206, 206, 206, 206, 206, 206}, // 62
     {207, 207, 207, 207, 207, 207}, // 63
+    {208, 208, 208, 208, 208, 208} // 64
 };
 
 const int plants[256] = {
@@ -141,7 +143,7 @@ const int plants[256] = {
     54, // 23 - blue flower
 };
 
-int is_plant(Item w) {
+int is_plant(int w) {
     switch (w) {
         case Item_TALL_GRASS:
         case Item_YELLOW_FLOWER:
@@ -156,7 +158,7 @@ int is_plant(Item w) {
     }
 }
 
-int is_obstacle(Item w) {
+int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
         return 0;
@@ -170,7 +172,7 @@ int is_obstacle(Item w) {
     }
 }
 
-int is_transparent(Item w) {
+int is_transparent(int w) {
     if (w == Item_EMPTY) {
         return 1;
     }
@@ -188,7 +190,7 @@ int is_transparent(Item w) {
     }
 }
 
-int is_destructable(Item w) {
+int is_destructable(int w) {
     switch (w) {
         case Item_EMPTY:
         case Item_CLOUD:

@@ -15,6 +15,7 @@
 #include "map.h"
 #include "matrix.h"
 #include "noise.h"
+#include "parser.h"
 #include "sign.h"
 #include "tinycthread.h"
 #include "util.h"
@@ -2615,6 +2616,8 @@ int main(int argc, char **argv) {
     glEnable(GL_DEPTH_TEST);
     glLogicOp(GL_INVERT);
     glClearColor(0, 0, 0, 1);
+
+    parser_parse_all();
 
     // LOAD TEXTURES //
     GLuint texture;

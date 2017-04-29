@@ -23,7 +23,7 @@ The design of CraftNG is intended to make the game more flexible and even more f
 Planned features include:
 * More items.
 * Inventory with item count to make the game more challenging.
-* Abilty to upgrade items. For example, sand can be compacted into bricks.
+* Abilty to upgrade items. For example, sand could be compacted into bricks.
 * More unique worlds with psuedo-random seeds rather than position-based seeds.
 * Biomes and variable height of terrain.
 * Non-cube blocks. The world would ideally be more smooth than other sandboxes, with modeled voxels for terrain slopes and steps.

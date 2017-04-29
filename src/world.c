@@ -14,19 +14,48 @@ void create_world(int p, int q, world_func func, void *arg) {
             int z = q * CHUNK_SIZE + dz;
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
             float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
-            int mh = g * 32 + 16;
+            //printf("%f, %f\n", simplex2(x * 0.01, z * 0.01, 4, 0.5, 2), simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2));
+            int mh = g * simplex2(-x * 0.001, -z * 0.001, 2, 16.0, 2);
+            
+            //float mountains = simplex2(-x * 0.0005, -z * 0.0005, 2, 16.0, 2) > 0.5;
+            //mh += mountains ? 32 : 128;
+            mh += simplex2(-x * 0.0005, -z * 0.0005, 2, 16.0, 2) * simplex2(-x * 0.005, -z * 0.005, 2, 16.0, 2) * 100;
+            
+            mh += 16;
             int h = f * mh;
-            int w = 1;
-            int t = 12;
+            /*
+            int t = 2;
             if (h <= t) {
                 h = t;
                 w = 2;
             }
+            */
+            
+            float biomen = simplex3(-x * 0.001, -z * 0.001, q * 0.001, 2, 16.0, 1);
+            int biome = 0;
+			int w = 0;
+            if(biomen > (1.0f/4.0f)) {
+            	biome = 1; //temperate
+            	w = 1;
+            }
+            if(biomen > (2.0f/4.0f)) {
+            	biome = 2; //desert
+            	w = 2;
+            }
+            if(biomen > (3.0f/4.0f)) {
+            	biome = 3; //rainforest
+            	w = 1;
+            }
+            if(!biome) {
+            	biome = 4; //taiga
+            	w = 9;
+            }
+            
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
                 func(x, y, z, w * flag, arg);
             }
-            if (w == 1) {
+            if (biome == 1) { //temperate
                 if (SHOW_PLANTS) {
                     // grass
                     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
@@ -59,6 +88,161 @@ void create_world(int p, int q, world_func func, void *arg) {
                     }
                     for (int y = h; y < h + 7; y++) {
                         func(x, y, z, 5, arg);
+                    }
+                }
+            } else if(biome == 2) { //desert
+            	if (SHOW_PLANTS) {
+                    if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.8) {
+                        func(x, h, z, 18 * flag, arg);
+                    }
+                }
+                // 34
+                int ok = SHOW_TREES;
+                if (dx - 4 < 0 || dz - 4 < 0 ||
+                    dx + 4 >= CHUNK_SIZE || dz + 4 >= CHUNK_SIZE)
+                {
+                    ok = 0;
+                }
+                if (ok && simplex2(x * 4, z * 4, 6, 0.45, 2) > 0.88) {
+                    /* for (int y = h + 3; y < h + 8; y++) {
+                        for (int ox = -3; ox <= 3; ox++) {
+                            for (int oz = -3; oz <= 3; oz++) {
+                                int d = (ox * ox) + (oz * oz) +
+                                    (y - (h + 4)) * (y - (h + 4));
+                                if (d < 11) {
+                                    func(x + ox, y, z + oz, 15, arg);
+                                }
+                            }
+                        }
+                    } */
+                    int height = simplex2(x, z, 6, 0.5, 2) * 16;
+                    for (int y = h; y < h + height; y++) {
+                        func(x, y, z, 34, arg);
+                    }
+                    
+                    int oz = z % 3;
+					//printf("oz: %d\n", oz);
+                    
+					if(x % 2) {
+                    	func(x + 1, h + height - 4 - oz, z, 34, arg);
+                    	func(x - 1, h + height - 4 + oz, z, 34, arg);
+                    	
+                        func(x + 2, h + height - 4 - oz, z, 34, arg);
+                    	func(x - 2, h + height - 4 + oz, z, 34, arg);
+                    	
+                        func(x + 2, h + height - 3 - oz, z, 34, arg);
+                    	func(x - 2, h + height - 3 + oz, z, 34, arg);
+                    } else {
+                    	//printf("test world.c !(x % 2)\n");				
+                    	func(x, h + height - 4 - oz, z + 1, 34, arg);
+                    	func(x, h + height - 4 + oz, z - 1, 34, arg);
+                    	
+                        func(x, h + height - 4 - oz, z + 2, 34, arg);
+                    	func(x, h + height - 4 + oz, z - 2, 34, arg);
+                    	
+                        func(x, h + height - 3 - oz, z + 2, 34, arg);
+                    	func(x, h + height - 3 + oz, z - 2, 34, arg);
+                    }
+                }
+            } else if(biome == 3) { //rainforest
+            	for (int y = 0; y < h; y++) {
+                    func(x, y, z, w * flag, arg);
+                }
+                if (SHOW_PLANTS) {
+                    // grass
+                    if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
+                        func(x, h, z, 17 * flag, arg);
+                    }
+                    // flowers
+                    if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                        int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
+                        func(x, h, z, w * flag, arg);
+                    }
+                }
+                // trees
+                int ok = SHOW_TREES;
+                if (dx - 4 < 0 || dz - 4 < 0 ||
+                    dx + 4 >= CHUNK_SIZE || dz + 4 >= CHUNK_SIZE)
+                {
+                    ok = 0;
+                }
+                if (ok && simplex2(x, z, 6, 0.5, 2) > 0.82) {
+	                for (int y = h + 46; y < h + 54; y++) {
+	                    for (int ox = -6; ox <= 6; ox++) {
+	                        for (int oz = -6; oz <= 6; oz++) {
+	                            int d = (ox * ox) + (oz * oz) +
+	                                (y - (h + 46)) * (y - (h + 46));
+	                            if (d < 22) {
+	                                func(x + ox, y, z + oz, 15, arg);
+	                                func(x + ox, y - (15 + (x % 2) * 2 + (z % 2) * 2), z + oz, 15, arg);
+	                            }
+	                        }
+	                    }
+	                }
+                    for (int y = h; y < h + 46; y++) {
+                        for (int ox = -1; ox < 1; ox++) {
+                            for (int oz = -1; oz < 1; oz++) {
+                                func(x + ox, y, z + oz, 5, arg);
+                            }
+                        }
+                    }
+                }
+                if (ok && simplex2(x, z, 6, 0.5, 2) > 0.7) {
+                    for (int y = h + 6; y < h + 16; y++) {
+                        for (int ox = -6; ox <= 6; ox++) {
+                            for (int oz = -6; oz <= 6; oz++) {
+                                int d = (ox * ox) + (oz * oz) +
+                                    (y - (h + 6)) * (y - (h + 6));
+                                if (d < 11) {
+                                    func(x + ox, y, z + oz, 15, arg);
+                                }
+                            }
+                        }
+                    }
+                    for (int y = h; y < h + 6; y++) {
+                        func(x, y, z, 5, arg);
+                    }
+                }
+            } else if(biome == 4) { //taiga
+            	for (int y = 0; y < h; y++) {
+                    func(x, y, z, w * flag, arg);
+                }
+                if (SHOW_PLANTS) {
+                    // grass
+                    if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.7) {
+                        func(x, h, z, 17 * flag, arg);
+                    }
+                    // flowers: disabled by FMMC for this ecosystem.
+                    /* if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
+                        int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
+                        func(x, h, z, w * flag, arg);
+                    } */
+                }
+                // trees
+                int ok = SHOW_TREES;
+                if (dx - 4 < 0 || dz - 4 < 0 ||
+                    dx + 4 >= CHUNK_SIZE || dz + 4 >= CHUNK_SIZE)
+                {
+                    ok = 0;
+                }
+                if (ok && simplex2(x, z, 6, 0.5, 2) > 0.8) {
+                    for (int y = h + 1; y < h + 29; y += 4) {
+                        for (int ox = -3; ox <= 3; ox++) {
+                            for (int oz = -3; oz <= 3; oz++) {
+                                int d = (ox * ox) + (oz * oz) +
+                                    (y - 20 - (h + 4)) * (y - 20 - (h + 4));
+                                if (d < 400) {
+                                    func(x + ox, y, z + oz, 15, arg);
+                                }
+                            }
+                        }
+                    }
+                    for (int y = h; y < h + 26; y++) {
+                        for (int ox = -1; ox < 1; ox++) {
+                            for (int oz = -1; oz < 1; oz++) {
+                                func(x + ox, y, z + oz, 5, arg);
+                            }
+                        }
                     }
                 }
             }

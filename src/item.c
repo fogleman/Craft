@@ -181,7 +181,7 @@ int is_transparent(int w) {
     switch (w) {
         case EMPTY:
         case GLASS:
-        case LEAVES:
+        //case LEAVES:
             return 1;
         default:
             return 0;

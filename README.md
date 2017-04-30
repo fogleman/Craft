@@ -4,7 +4,7 @@ Fork of Michael Fogleman's Minecraft clone for Windows, Mac OS X and Linux. Just
 
 http://www.michaelfogleman.com/craft/
 
-![Screenshot](https://twetzel59.github.io/craftng.github.io/CraftNG.png)
+![Screenshot](https://twetzel59.github.io/craftng.github.io/CraftNG_new.png)
 
 ### Features
 

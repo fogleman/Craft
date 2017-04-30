@@ -264,7 +264,7 @@ void create_world(int p, int q, world_func func, void *arg) {
 }
 
 Biome biome_at_pos(int q, int x, int z) {
-    float biomen = simplex3(-x * 0.001, -z * 0.001, q * 0.001, 2, 16.0, 1);
+    float biomen = simplex3(-x * 0.0005 * (1 / BIOME_SIZE), -z * 0.0005 * (1 / BIOME_SIZE), q * 0.001, 2, 16.0, 1);
     Biome biome = Biome_max;
 
     if(biomen > (1.0f/4.0f)) {

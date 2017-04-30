@@ -161,6 +161,7 @@ typedef struct {
     Block copy1;
     SkyColor sky_color;
     SkyColor last_sky_color;
+    //int is_fullscreen;
 } Model;
 
 static Model model;
@@ -208,8 +209,8 @@ void get_sky_tint(Biome biome, SkyColor *c) {
             c->b = 1.0f;
             break;
         case Biome_TAIGA:
-            c->r = 0.6f;
-            c->g = 0.7f,
+            c->r = 0.7f;
+            c->g = 0.8f,
             c->b = 0.9f;
             break;
         default:
@@ -1812,22 +1813,36 @@ void render_crosshairs(Attrib *attrib) {
 
 void render_item(Attrib *attrib) {
     float matrix[16];
-    set_matrix_item(matrix, g->width, g->height, g->scale);
     glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    set_matrix_item(matrix, g->width, g->height, g->scale + 1);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, time_of_day());
-    int w = items[g->item_index];
-    if (is_plant(w)) {
-        GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
-        draw_plant(attrib, buffer);
-        del_buffer(buffer);
-    }
-    else {
-        GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
-        draw_cube(attrib, buffer);
-        del_buffer(buffer);
+    for(int i = 0; i < NUM_INVENTORY_VISIBLE; ++i) {
+        if(g->item_index + i >= item_count) {
+            break;
+        }
+
+        glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+
+        int w = items[g->item_index + i];
+        if (is_plant(w)) {
+            GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
+            draw_plant(attrib, buffer);
+            del_buffer(buffer);
+        }
+        else {
+            GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
+            draw_cube(attrib, buffer);
+            del_buffer(buffer);
+        }
+
+        if(!i) {
+            set_matrix_item(matrix, g->width, g->height, g->scale);
+            matrix[13] += 0.1f;
+        }
+
+        matrix[13] += 0.25f;
     }
 }
 
@@ -2178,7 +2193,7 @@ void on_light() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_destructable(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_destructable(hw)) {
         toggle_light(hx, hy, hz);
     }
 }
@@ -2187,7 +2202,7 @@ void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_destructable(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_destructable(hw)) {
         set_block(hx, hy, hz, 0);
         record_block(hx, hy, hz, 0);
         if (is_plant(get_block(hx, hy + 1, hz))) {
@@ -2200,7 +2215,7 @@ void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_obstacle(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_obstacle(hw)) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
             set_block(hx, hy, hz, items[g->item_index]);
             record_block(hx, hy, hz, items[g->item_index]);
@@ -2318,6 +2333,23 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             g->observe2 = (g->observe2 + 1) % g->player_count;
         }
     }
+
+    /*
+    if(key == GLFW_KEY_F11) {
+        if(g->is_fullscreen) {
+            GLFWmonitor *monitor = NULL;
+            int mode_count;
+            monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
+            int width = modes[mode_count - 1].width;
+            int height = modes[mode_count - 1].height;
+
+            glfwSetWindowMonitor(g->window, monitor, 0, 0, width, height, GLFW_DONT_CARE);
+        } else {
+            glfwSetWindowMonitor(g->window, NULL, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GLFW_DONT_CARE);
+        }
+    }
+    */
 }
 
 void on_char(GLFWwindow *window, unsigned int u) {
@@ -2419,6 +2451,8 @@ void create_window() {
     }
     g->window = glfwCreateWindow(
         window_width, window_height, "Craft", monitor, NULL);
+
+    //g->is_fullscreen = FULLSCREEN;
 }
 
 void handle_mouse_input() {
@@ -2484,7 +2518,7 @@ void handle_movement(double dt) {
             }
         }
     }
-    float speed = g->flying ? 20 : 5;
+    float speed = g->flying ? FLY_SPEED : WALK_SPEED;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

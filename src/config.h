@@ -1,6 +1,16 @@
 #ifndef _config_h_
 #define _config_h_
 
+//game
+#define FLY_SPEED 70
+#define WALK_SPEED 5
+#define BUILD_HEIGHT_LIMIT 1024
+#define NUM_INVENTORY_VISIBLE 7
+
+//mapgen
+#define BIOME_SIZE 1.0 //should be small, or you won't see any variety!
+//#define ALTITUDE_Y_INT 256
+
 // app parameters
 #define DEBUG 0
 #define FULLSCREEN 0

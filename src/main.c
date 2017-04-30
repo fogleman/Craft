@@ -160,6 +160,7 @@ typedef struct {
     Block copy0;
     Block copy1;
     SkyColor sky_color;
+    SkyColor last_sky_color;
 } Model;
 
 static Model model;
@@ -192,29 +193,29 @@ float get_daylight() {
     }
 }
 
-void get_sky_tint(Biome biome, GLfloat *r, GLfloat *g, GLfloat *b) {
+void get_sky_tint(Biome biome, SkyColor *c) {
     switch(biome) {
         //Not needed
         //case Biome_TEMPERATE:
         case Biome_DESERT:
-            *r = 1.4f;
-            *g = 1.2f,
-            *b = 1.0f;
+            c->r = 1.4f;
+            c->g = 1.2f,
+            c->b = 1.0f;
             break;
         case Biome_RAINFOREST:
-            *r = 1.3f;
-            *g = 1.3f,
-            *b = 1.0f;
+            c->r = 1.3f;
+            c->g = 1.3f,
+            c->b = 1.0f;
             break;
         case Biome_TAIGA:
-            *r = 0.6f;
-            *g = 0.7f,
-            *b = 0.9f;
+            c->r = 0.6f;
+            c->g = 0.7f,
+            c->b = 0.9f;
             break;
         default:
-            *r = 1.0f;
-            *g = 1.0f,
-            *b = 1.0f;
+            c->r = 1.0f;
+            c->g = 1.0f,
+            c->b = 1.0f;
             break;
     }
 }
@@ -2612,6 +2613,7 @@ void parse_buffer(char *buffer) {
 
 void update_sky_tint() {
     SkyColor *c = &g->sky_color;
+    g->last_sky_color = *c;
 
     State *s = &g->players->state;
     int p = chunked(s->x);
@@ -2619,7 +2621,16 @@ void update_sky_tint() {
     int x = p * CHUNK_SIZE;
     int z = q * CHUNK_SIZE;
 
-    get_sky_tint(biome_at_pos(q, x, z), &c->r, &c->g, &c->b);
+    SkyColor new_color;
+    get_sky_tint(biome_at_pos(q, x, z), &new_color);
+
+    //Interpolate sky color to get close to the actual value gradually.
+    // Technically, it won't arrive, but rather achieve an extremely close color.
+    c->r += 0.0625 * (new_color.r - c->r);
+    c->g += 0.0625 * (new_color.g - c->g);
+    c->b += 0.0625 * (new_color.b - c->b);
+
+    //printf("c: %f last: %f\n", c->r, g->last_sky_color.r);
 }
 
 void reset_model() {
@@ -2638,6 +2649,9 @@ void reset_model() {
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
+
+    g->sky_color = (SkyColor){1.0f, 1.0f, 1.0f};
+    g->last_sky_color = g->sky_color;
 }
 
 int main(int argc, char **argv) {

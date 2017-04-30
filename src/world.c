@@ -1,6 +1,7 @@
 #include "config.h"
 #include "noise.h"
 #include "world.h"
+#include <math.h>
 
 void create_world(int p, int q, world_func func, void *arg) {
     int pad = 1;
@@ -16,11 +17,11 @@ void create_world(int p, int q, world_func func, void *arg) {
             float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
             //printf("%f, %f\n", simplex2(x * 0.01, z * 0.01, 4, 0.5, 2), simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2));
             int mh = g * simplex2(-x * 0.001, -z * 0.001, 2, 16.0, 2);
-            
+
             //float mountains = simplex2(-x * 0.0005, -z * 0.0005, 2, 16.0, 2) > 0.5;
             //mh += mountains ? 32 : 128;
             mh += simplex2(-x * 0.0005, -z * 0.0005, 2, 16.0, 2) * simplex2(-x * 0.005, -z * 0.005, 2, 16.0, 2) * 100;
-            
+
             mh += 16;
             int h = f * mh;
             /*
@@ -30,32 +31,34 @@ void create_world(int p, int q, world_func func, void *arg) {
                 w = 2;
             }
             */
-            
-            float biomen = simplex3(-x * 0.001, -z * 0.001, q * 0.001, 2, 16.0, 1);
-            int biome = 0;
+
+            Biome biome = biome_at_pos(q, x, z);
+
 			int w = 0;
-            if(biomen > (1.0f/4.0f)) {
-            	biome = 1; //temperate
-            	w = 1;
-            }
-            if(biomen > (2.0f/4.0f)) {
-            	biome = 2; //desert
-            	w = 2;
-            }
-            if(biomen > (3.0f/4.0f)) {
-            	biome = 3; //rainforest
-            	w = 1;
-            }
-            if(!biome) {
-            	biome = 4; //taiga
-            	w = 9;
-            }
-            
+			switch(biome) {
+                case Biome_TEMPERATE:
+                    w = 1;
+                    break;
+                case Biome_DESERT:
+                    w = 2;
+                    break;
+                case Biome_RAINFOREST:
+                    w = 1;
+                    break;
+                case Biome_TAIGA:
+                    w = 9;
+                    break;
+                default:
+                    // Should never happen!
+                    biome = Biome_TEMPERATE;
+                    break;
+			}
+
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
                 func(x, y, z, w * flag, arg);
             }
-            if (biome == 1) { //temperate
+            if (biome == Biome_TEMPERATE) {
                 if (SHOW_PLANTS) {
                     // grass
                     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
@@ -90,7 +93,7 @@ void create_world(int p, int q, world_func func, void *arg) {
                         func(x, y, z, 5, arg);
                     }
                 }
-            } else if(biome == 2) { //desert
+            } else if(biome == Biome_DESERT) {
             	if (SHOW_PLANTS) {
                     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.8) {
                         func(x, h, z, 18 * flag, arg);
@@ -119,32 +122,32 @@ void create_world(int p, int q, world_func func, void *arg) {
                     for (int y = h; y < h + height; y++) {
                         func(x, y, z, 34, arg);
                     }
-                    
+
                     int oz = z % 3;
 					//printf("oz: %d\n", oz);
-                    
+
 					if(x % 2) {
                     	func(x + 1, h + height - 4 - oz, z, 34, arg);
                     	func(x - 1, h + height - 4 + oz, z, 34, arg);
-                    	
+
                         func(x + 2, h + height - 4 - oz, z, 34, arg);
                     	func(x - 2, h + height - 4 + oz, z, 34, arg);
-                    	
+
                         func(x + 2, h + height - 3 - oz, z, 34, arg);
                     	func(x - 2, h + height - 3 + oz, z, 34, arg);
                     } else {
-                    	//printf("test world.c !(x % 2)\n");				
+                    	//printf("test world.c !(x % 2)\n");
                     	func(x, h + height - 4 - oz, z + 1, 34, arg);
                     	func(x, h + height - 4 + oz, z - 1, 34, arg);
-                    	
+
                         func(x, h + height - 4 - oz, z + 2, 34, arg);
                     	func(x, h + height - 4 + oz, z - 2, 34, arg);
-                    	
+
                         func(x, h + height - 3 - oz, z + 2, 34, arg);
                     	func(x, h + height - 3 + oz, z - 2, 34, arg);
                     }
                 }
-            } else if(biome == 3) { //rainforest
+            } else if(biome == Biome_RAINFOREST) {
             	for (int y = 0; y < h; y++) {
                     func(x, y, z, w * flag, arg);
                 }
@@ -203,7 +206,7 @@ void create_world(int p, int q, world_func func, void *arg) {
                         func(x, y, z, 5, arg);
                     }
                 }
-            } else if(biome == 4) { //taiga
+            } else if(biome == Biome_TAIGA) {
             	for (int y = 0; y < h; y++) {
                     func(x, y, z, w * flag, arg);
                 }
@@ -258,4 +261,24 @@ void create_world(int p, int q, world_func func, void *arg) {
             }
         }
     }
+}
+
+Biome biome_at_pos(int q, int x, int z) {
+    float biomen = simplex3(-x * 0.001, -z * 0.001, q * 0.001, 2, 16.0, 1);
+    Biome biome = Biome_max;
+
+    if(biomen > (1.0f/4.0f)) {
+        biome = Biome_TEMPERATE;
+    }
+    if(biomen > (2.0f/4.0f)) {
+        biome = Biome_DESERT;
+    }
+    if(biomen > (3.0f/4.0f)) {
+        biome = Biome_RAINFOREST;
+    }
+    if(biome == Biome_max) {
+        biome = Biome_TAIGA;
+    }
+
+    return biome;
 }

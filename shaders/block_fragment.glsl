@@ -5,6 +5,7 @@ uniform sampler2D sky_sampler;
 uniform float timer;
 uniform float daylight;
 uniform int ortho;
+uniform vec3 sky_tint;
 
 varying vec2 fragment_uv;
 varying float fragment_ao;
@@ -33,7 +34,7 @@ void main() {
     vec3 ambient = vec3(value * 0.3 + 0.2);
     vec3 light = ambient + light_color * df;
     color = clamp(color * light * ao, vec3(0.0), vec3(1.0));
-    vec3 sky_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height)));
+    vec3 sky_color = vec3(texture2D(sky_sampler, vec2(timer, fog_height))) * sky_tint;
     color = mix(color, sky_color, fog_factor);
     gl_FragColor = vec4(color, 1.0);
 }

@@ -114,7 +114,14 @@ typedef struct {
     GLuint extra2;
     GLuint extra3;
     GLuint extra4;
+    GLuint extra5;
 } Attrib;
+
+typedef struct {
+    float r;
+    float g;
+    float b;
+} SkyColor;
 
 typedef struct {
     GLFWwindow *window;
@@ -152,6 +159,7 @@ typedef struct {
     Block block1;
     Block copy0;
     Block copy1;
+    SkyColor sky_color;
 } Model;
 
 static Model model;
@@ -181,6 +189,33 @@ float get_daylight() {
     else {
         float t = (timer - 0.85) * 100;
         return 1 - 1 / (1 + powf(2, -t));
+    }
+}
+
+void get_sky_tint(Biome biome, GLfloat *r, GLfloat *g, GLfloat *b) {
+    switch(biome) {
+        //Not needed
+        //case Biome_TEMPERATE:
+        case Biome_DESERT:
+            *r = 1.4f;
+            *g = 1.2f,
+            *b = 1.0f;
+            break;
+        case Biome_RAINFOREST:
+            *r = 1.3f;
+            *g = 1.3f,
+            *b = 1.0f;
+            break;
+        case Biome_TAIGA:
+            *r = 0.6f;
+            *g = 0.7f,
+            *b = 0.9f;
+            break;
+        default:
+            *r = 1.0f;
+            *g = 1.0f,
+            *b = 1.0f;
+            break;
     }
 }
 
@@ -1629,6 +1664,10 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
+
+    SkyColor *c = &g->sky_color;
+    glUniform3f(attrib->extra5, c->r, c->g, c->b);
+
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
         if (chunk_distance(chunk, p, q) > g->render_radius) {
@@ -1729,6 +1768,11 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, time_of_day());
+    glUniform3f(attrib->extra1, 1.0f,  1.0f, 1.0f);
+
+    SkyColor *c = &g->sky_color;
+    glUniform3f(attrib->extra1, c->r, c->g, c->b);
+
     draw_triangles_3d(attrib, buffer, 512 * 3);
 }
 
@@ -2566,6 +2610,18 @@ void parse_buffer(char *buffer) {
     }
 }
 
+void update_sky_tint() {
+    SkyColor *c = &g->sky_color;
+
+    State *s = &g->players->state;
+    int p = chunked(s->x);
+    int q = chunked(s->z);
+    int x = p * CHUNK_SIZE;
+    int z = q * CHUNK_SIZE;
+
+    get_sky_tint(biome_at_pos(q, x, z), &c->r, &c->g, &c->b);
+}
+
 void reset_model() {
     memset(g->chunks, 0, sizeof(Chunk) * MAX_CHUNKS);
     g->chunk_count = 0;
@@ -2675,6 +2731,7 @@ int main(int argc, char **argv) {
     block_attrib.extra4 = glGetUniformLocation(program, "ortho");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
+    block_attrib.extra5 = glGetUniformLocation(program, "sky_tint");
 
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
@@ -2700,6 +2757,7 @@ int main(int argc, char **argv) {
     sky_attrib.matrix = glGetUniformLocation(program, "matrix");
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
+    sky_attrib.extra1 = glGetUniformLocation(program, "sky_tint");
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {
@@ -2822,6 +2880,7 @@ int main(int argc, char **argv) {
             }
 
             // PREPARE TO RENDER //
+            update_sky_tint();
             g->observe1 = g->observe1 % g->player_count;
             g->observe2 = g->observe2 % g->player_count;
             delete_chunks();

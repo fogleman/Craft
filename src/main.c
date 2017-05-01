@@ -1875,7 +1875,7 @@ void render_item_count(Attrib *attrib, float ts) {
         }
 
         char buf[buf_len];
-        //snprintf(buf, buf_len, "%d\n", Inventory_getCount(&g->inventory, items[g->item_index + i]));
+        snprintf(buf, buf_len, "%d\n", Inventory_getCount(&g->inventory, items[g->item_index + i]));
         //snprintf(buf, buf_len, "%d\n", g->inventory.count[items[g->item_index]]);
 
         render_text(attrib, ALIGN_CENTER, g->width - 20.0f, pos, ts, buf);

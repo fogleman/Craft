@@ -11,6 +11,7 @@
 #include "config.h"
 #include "cube.h"
 #include "db.h"
+#include "inventory.h"
 #include "item.h"
 #include "map.h"
 #include "matrix.h"
@@ -162,6 +163,7 @@ typedef struct {
     SkyColor sky_color;
     SkyColor last_sky_color;
     //int is_fullscreen;
+    Inventory inventory;
 } Model;
 
 static Model model;
@@ -1633,7 +1635,7 @@ int get_block(int x, int y, int z) {
 }
 
 void builder_block(int x, int y, int z, int w) {
-    if (y <= 0 || y >= 256) {
+    if (y <= 0 || y >= BUILD_HEIGHT_LIMIT) {
         return;
     }
     if (is_destructable(get_block(x, y, z))) {
@@ -1839,6 +1841,7 @@ void render_item(Attrib *attrib) {
 
         if(!i) {
             set_matrix_item(matrix, g->width, g->height, g->scale);
+            matrix[12] += 0.08f;
             matrix[13] += 0.1f;
         }
 
@@ -1860,6 +1863,31 @@ void render_text(
     GLuint buffer = gen_text_buffer(x, y, n, text);
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
+}
+
+void render_item_count(Attrib *attrib, float ts) {
+    const int buf_len = 4;
+
+    float pos = 15.0f;
+    for(int i = 0; i < NUM_INVENTORY_VISIBLE; ++i) {
+        if(g->item_index + i >= item_count) {
+            break;
+        }
+
+        char buf[buf_len];
+        //snprintf(buf, buf_len, "%d\n", Inventory_getCount(&g->inventory, items[g->item_index + i]));
+        //snprintf(buf, buf_len, "%d\n", g->inventory.count[items[g->item_index]]);
+
+        render_text(attrib, ALIGN_CENTER, g->width - 20.0f, pos, ts, buf);
+        //printf("%d\n", g->width);
+
+        float ratio_to_hardcoded = (g->height / 768.0f);
+        if(i) {
+            pos += 96.0f * ratio_to_hardcoded;
+        } else {
+            pos += 140.0f * ratio_to_hardcoded;
+        }
+    }
 }
 
 void add_message(const char *text) {
@@ -2202,7 +2230,7 @@ void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_destructable(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_destructable(hw) && Inventory_collect(&g->inventory, hw)) {
         set_block(hx, hy, hz, 0);
         record_block(hx, hy, hz, 0);
         if (is_plant(get_block(hx, hy + 1, hz))) {
@@ -2215,7 +2243,7 @@ void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_obstacle(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_obstacle(hw) && Inventory_use(&g->inventory, items[g->item_index])) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
             set_block(hx, hy, hz, items[g->item_index]);
             record_block(hx, hy, hz, items[g->item_index]);
@@ -2684,8 +2712,9 @@ void reset_model() {
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
 
-    g->sky_color = (SkyColor){1.0f, 1.0f, 1.0f};
+    g->sky_color = (SkyColor){0.0f, 0.0f, 0.0f};
     g->last_sky_color = g->sky_color;
+    Inventory_reset(&g->inventory);
 }
 
 int main(int argc, char **argv) {
@@ -2721,7 +2750,7 @@ int main(int argc, char **argv) {
     glLogicOp(GL_INVERT);
     glClearColor(0, 0, 0, 1);
 
-    parser_parse_all();
+    //parser_parse_all();
 
     // LOAD TEXTURES //
     GLuint texture;
@@ -2883,6 +2912,8 @@ int main(int argc, char **argv) {
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
         while (1) {
+            //printf("%d %d\n", items[g->item_index], (int) g->inventory.count[items[g->item_index]]);
+
             // WINDOW SIZE AND SCALE //
             g->scale = get_scale_factor();
             glfwGetFramebufferSize(g->window, &g->width, &g->height);
@@ -2957,15 +2988,16 @@ int main(int argc, char **argv) {
             if (SHOW_CROSSHAIRS) {
                 render_crosshairs(&line_attrib);
             }
-            if (SHOW_ITEM) {
-                render_item(&block_attrib);
-            }
-
-            // RENDER TEXT //
             char text_buffer[1024];
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
+            if (SHOW_ITEM) {
+                render_item(&block_attrib);
+                render_item_count(&text_attrib, ts);
+            }
+
+            // RENDER TEXT //
             if (SHOW_INFO_TEXT) {
                 int hour = time_of_day() * 24;
                 char am_pm = hour < 12 ? 'a' : 'p';

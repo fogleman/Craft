@@ -58,7 +58,8 @@ typedef enum {
     Item_COLOR_29,
     Item_COLOR_30,
     Item_COLOR_31,
-    Item_NYANCAT
+    Item_NYANCAT,
+    Item_max
 } Item;
 
 extern const int items[];

@@ -52,7 +52,9 @@ GLuint gen_buffer(GLsizei size, GLfloat *data) {
 }
 
 void del_buffer(GLuint buffer) {
-    glDeleteBuffers(1, &buffer);
+    if(buffer) {
+        glDeleteBuffers(1, &buffer);
+    }
 }
 
 GLfloat *malloc_faces(int components, int faces) {

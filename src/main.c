@@ -1299,6 +1299,7 @@ void delete_all_chunks() {
         map_free(&chunk->map);
         map_free(&chunk->lights);
         sign_list_free(&chunk->signs);
+        //printf("deleting: %d, %d\n", (int) chunk->buffer, (int) chunk->sign_buffer);
         del_buffer(chunk->buffer);
         del_buffer(chunk->sign_buffer);
     }

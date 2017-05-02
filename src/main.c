@@ -169,10 +169,6 @@ typedef struct {
 static Model model;
 static Model *g = &model;
 
-int chunked(float x) {
-    return floorf(roundf(x) / CHUNK_SIZE);
-}
-
 float time_of_day() {
     if (g->day_length <= 0) {
         return 0.5;
@@ -2913,6 +2909,7 @@ int main(int argc, char **argv) {
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
         while (1) {
+            g->inventory.count[items[g->item_index]] = 16;
             //printf("%d %d\n", items[g->item_index], (int) g->inventory.count[items[g->item_index]]);
 
             // WINDOW SIZE AND SCALE //

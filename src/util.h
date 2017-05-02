@@ -25,6 +25,7 @@ typedef struct {
     double since;
 } FPS;
 
+int chunked(float x);
 int rand_int(int n);
 double rand_double();
 void update_fps(FPS *fps);

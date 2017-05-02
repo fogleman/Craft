@@ -59,6 +59,8 @@ typedef enum {
     Item_COLOR_30,
     Item_COLOR_31,
     Item_NYANCAT,
+    Item_CACTUS,
+    Item_VINE,
     Item_max
 } Item;
 

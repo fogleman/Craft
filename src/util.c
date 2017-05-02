@@ -6,6 +6,10 @@
 #include "matrix.h"
 #include "util.h"
 
+int chunked(float x) {
+    return floorf(roundf(x) / CHUNK_SIZE);
+}
+
 int rand_int(int n) {
     int result;
     while (n <= (result = rand() / (RAND_MAX / n)));

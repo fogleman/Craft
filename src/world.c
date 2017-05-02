@@ -1,5 +1,7 @@
 #include "config.h"
+#include "item.h"
 #include "noise.h"
+#include "util.h"
 #include "world.h"
 #include <math.h>
 
@@ -120,31 +122,31 @@ void create_world(int p, int q, world_func func, void *arg) {
                     } */
                     int height = simplex2(x, z, 6, 0.5, 2) * 16;
                     for (int y = h; y < h + height; y++) {
-                        func(x, y, z, 34, arg);
+                        func(x, y, z, Item_CACTUS, arg);
                     }
 
                     int oz = z % 3;
 					//printf("oz: %d\n", oz);
 
 					if(x % 2) {
-                    	func(x + 1, h + height - 4 - oz, z, 34, arg);
-                    	func(x - 1, h + height - 4 + oz, z, 34, arg);
+                    	func(x + 1, h + height - 4 - oz, z, Item_CACTUS, arg);
+                    	func(x - 1, h + height - 4 + oz, z, Item_CACTUS, arg);
 
-                        func(x + 2, h + height - 4 - oz, z, 34, arg);
-                    	func(x - 2, h + height - 4 + oz, z, 34, arg);
+                        func(x + 2, h + height - 4 - oz, z, Item_CACTUS, arg);
+                    	func(x - 2, h + height - 4 + oz, z, Item_CACTUS, arg);
 
-                        func(x + 2, h + height - 3 - oz, z, 34, arg);
-                    	func(x - 2, h + height - 3 + oz, z, 34, arg);
+                        func(x + 2, h + height - 3 - oz, z, Item_CACTUS, arg);
+                    	func(x - 2, h + height - 3 + oz, z, Item_CACTUS, arg);
                     } else {
                     	//printf("test world.c !(x % 2)\n");
-                    	func(x, h + height - 4 - oz, z + 1, 34, arg);
-                    	func(x, h + height - 4 + oz, z - 1, 34, arg);
+                    	func(x, h + height - 4 - oz, z + 1, Item_CACTUS, arg);
+                    	func(x, h + height - 4 + oz, z - 1, Item_CACTUS, arg);
 
-                        func(x, h + height - 4 - oz, z + 2, 34, arg);
-                    	func(x, h + height - 4 + oz, z - 2, 34, arg);
+                        func(x, h + height - 4 - oz, z + 2, Item_CACTUS, arg);
+                    	func(x, h + height - 4 + oz, z - 2, Item_CACTUS, arg);
 
-                        func(x, h + height - 3 - oz, z + 2, 34, arg);
-                    	func(x, h + height - 3 + oz, z - 2, 34, arg);
+                        func(x, h + height - 3 - oz, z + 2, Item_CACTUS, arg);
+                    	func(x, h + height - 3 + oz, z - 2, Item_CACTUS, arg);
                     }
                 }
             } else if(biome == Biome_RAINFOREST) {
@@ -163,6 +165,8 @@ void create_world(int p, int q, world_func func, void *arg) {
                     }
                 }
                 // trees
+                /** TODO **/
+                // Is removing this ok?
                 int ok = SHOW_TREES;
                 if (dx - 4 < 0 || dz - 4 < 0 ||
                     dx + 4 >= CHUNK_SIZE || dz + 4 >= CHUNK_SIZE)
@@ -170,6 +174,7 @@ void create_world(int p, int q, world_func func, void *arg) {
                     ok = 0;
                 }
                 if (ok && simplex2(x, z, 6, 0.5, 2) > 0.82) {
+                    //Leaves
 	                for (int y = h + 46; y < h + 54; y++) {
 	                    for (int ox = -6; ox <= 6; ox++) {
 	                        for (int oz = -6; oz <= 6; oz++) {
@@ -182,6 +187,28 @@ void create_world(int p, int q, world_func func, void *arg) {
 	                        }
 	                    }
 	                }
+	                //Vines
+	                for (int y = h + 35; y < h + 46; y++) {
+	                    for (int ox = -6; ox <= 6; ox++) {
+	                        for (int oz = -6; oz <= 6; oz++) {
+	                            if (y >= h + 43) {
+                                    int d = (ox * ox) + (oz * oz) +
+                                        (y - (h + 46)) * (y - (h + 46));
+                                    if (d < 12) {
+                                        func(x + ox, y, z + oz, Item_VINE, arg);
+                                        func(x + ox, y - (15 + (x % 2) * 2 + (z % 2) * 2), z + oz, Item_VINE, arg);
+                                    }
+	                            }
+
+	                            int d = (ox * ox) + (oz * oz);
+                                if (d > 15 && d < 22 && ox % 4 && oz % 4) {
+                                    func(x + ox, y, z + oz, Item_VINE, arg);
+                                    func(x + ox, y - (15 + (x % 2) * 2 + (z % 2) * 2), z + oz, Item_VINE, arg);
+                                }
+	                        }
+	                    }
+	                }
+	                //Trunk
                     for (int y = h; y < h + 46; y++) {
                         for (int ox = -1; ox < 1; ox++) {
                             for (int oz = -1; oz < 1; oz++) {
@@ -190,22 +217,42 @@ void create_world(int p, int q, world_func func, void *arg) {
                         }
                     }
                 }
-                if (ok && simplex2(x, z, 6, 0.5, 2) > 0.7) {
+                //Generate large normal trees as well.
+                if (simplex2(x, z, 6, 0.5, 2) > 0.72) {
                     for (int y = h + 6; y < h + 16; y++) {
-                        for (int ox = -6; ox <= 6; ox++) {
-                            for (int oz = -6; oz <= 6; oz++) {
+                        for (int ox = -8; ox <= 8; ox++) {
+                            for (int oz = -8; oz <= 8; oz++) {
                                 int d = (ox * ox) + (oz * oz) +
                                     (y - (h + 6)) * (y - (h + 6));
                                 if (d < 11) {
-                                    func(x + ox, y, z + oz, 15, arg);
+                                    if((dx + ox >= 0) && (dz + oz >= 0) &&
+                                            (dx + ox < CHUNK_SIZE) && (dz + oz < CHUNK_SIZE)) {
+                                        func(x + ox, y, z + oz, 15, arg);
+                                    }
                                 }
                             }
                         }
                     }
                     for (int y = h; y < h + 6; y++) {
-                        func(x, y, z, 5, arg);
+                        if((dx >= 0) && (dz >= 0) &&
+                                (dx < CHUNK_SIZE) && (dz < CHUNK_SIZE)) {
+                            func(x, y, z, 5, arg);
+                        }
                     }
                 }
+                /* else {
+                    if(ok) {
+                        //printf("simplex2: %d %d %f\n", x, z, (double) simplex2(x, z, 6, 0.5, 2));
+                    }
+                }
+                for(int i = 0; i < (simplex2(x, z, 6, 0.5, 2) * 10); ++i) {
+                    if(simplex2(x, z, 6, 0.5, 2) < 0.2) {
+                        printf("\033[0;31m\033[1m");
+                    }
+                    printf("%c\033[0m", '#');
+                }
+                puts("");
+                */
             } else if(biome == Biome_TAIGA) {
             	for (int y = 0; y < h; y++) {
                     func(x, y, z, w * flag, arg);

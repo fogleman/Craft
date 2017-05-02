@@ -18,6 +18,8 @@ const int items[] = {
     Item_DARK_STONE,
     Item_CHEST,
     Item_LEAVES,
+    Item_CACTUS,
+    Item_NYANCAT,
     Item_TALL_GRASS,
     Item_YELLOW_FLOWER,
     Item_RED_FLOWER,
@@ -25,6 +27,7 @@ const int items[] = {
     Item_SUN_FLOWER,
     Item_WHITE_FLOWER,
     Item_BLUE_FLOWER,
+    Item_VINE,
     Item_COLOR_00,
     Item_COLOR_01,
     Item_COLOR_02,
@@ -56,8 +59,7 @@ const int items[] = {
     Item_COLOR_28,
     Item_COLOR_29,
     Item_COLOR_30,
-    Item_COLOR_31,
-    Item_NYANCAT
+    Item_COLOR_31
 };
 
 const int item_count = sizeof(items) / sizeof(int);
@@ -128,7 +130,9 @@ const int blocks[256][6] = {
     {205, 205, 205, 205, 205, 205}, // 61
     {206, 206, 206, 206, 206, 206}, // 62
     {207, 207, 207, 207, 207, 207}, // 63
-    {208, 208, 208, 208, 208, 208} // 64
+    {208, 208, 208, 208, 208, 208}, // 64
+    {210, 210, 210, 210, 210, 210}, // 65
+    {0, 0, 0, 0, 0, 0} // 66
 };
 
 const int plants[256] = {
@@ -141,6 +145,12 @@ const int plants[256] = {
     52, // 21 - sun flower
     53, // 22 - white flower
     54, // 23 - blue flower
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, // 24 - 65
+    55 // 66 - vine
 };
 
 int is_plant(int w) {
@@ -152,6 +162,7 @@ int is_plant(int w) {
         case Item_SUN_FLOWER:
         case Item_WHITE_FLOWER:
         case Item_BLUE_FLOWER:
+        case Item_VINE:
             return 1;
         default:
             return 0;
@@ -161,7 +172,12 @@ int is_plant(int w) {
 int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
-        return 0;
+        switch(w) {
+            case Item_VINE:
+                return 1;
+            default:
+                return 0;
+        }
     }
     switch (w) {
         case Item_EMPTY:

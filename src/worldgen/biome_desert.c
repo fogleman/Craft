@@ -3,8 +3,8 @@
 #include "../config.h"
 #include "../item.h"
 
-void generateDesert(int dx, int dz, int x, int z, int h, int flag, world_func func, void *arg) {
-    for (int y = 0; y < h; y++) {
+void generateDesert(int dx, int dz, int x, int z, int start_h, int h, int flag, world_func func, void *arg) {
+    for (int y = start_h; y < h; y++) {
         func(x, y, z, 2 * flag, arg);
     }
 

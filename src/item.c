@@ -5,10 +5,10 @@ const int items[] = {
     // items the user can build
     Item_GRASS,
     Item_SAND,
-    Item_STONE,
+    Item_STONEBRICK,
     Item_BRICK,
     Item_WOOD,
-    Item_CEMENT,
+    Item_STONE,
     Item_DIRT,
     Item_PLANK,
     Item_SNOW,
@@ -69,10 +69,10 @@ const int blocks[256][6] = {
     {0, 0, 0, 0, 0, 0}, // 0 - empty
     {16, 16, 32, 0, 16, 16}, // 1 - grass
     {1, 1, 1, 1, 1, 1}, // 2 - sand
-    {2, 2, 2, 2, 2, 2}, // 3 - stone
+    {2, 2, 2, 2, 2, 2}, // 3 - stonebrick
     {3, 3, 3, 3, 3, 3}, // 4 - brick
     {20, 20, 36, 4, 20, 20}, // 5 - wood
-    {5, 5, 5, 5, 5, 5}, // 6 - cement
+    {5, 5, 5, 5, 5, 5}, // 6 - stone
     {6, 6, 6, 6, 6, 6}, // 7 - dirt
     {7, 7, 7, 7, 7, 7}, // 8 - plank
     {24, 24, 40, 8, 24, 24}, // 9 - snow

@@ -3,16 +3,12 @@
 #include "noise.h"
 #include "../util.h"
 #include "world.h"
+#include "base_terrain.h"
 #include "biome_temperate.h"
 #include "biome_desert.h"
 #include "biome_rainforest.h"
 #include "biome_taiga.h"
 #include <math.h>
-
-//void generateTemperate(int dx, int dz, int x, int z, int h, int flag, world_func func, void *arg);
-//void generateDesert(int dx, int dz, int x, int z, int h, int flag, world_func func, void *arg);
-//void generateRainforest(int dx, int dz, int x, int z, int h, int flag, world_func func, void *arg);
-//void generateTaiga(int dx, int dz, int x, int z, int h, int flag, world_func func, void *arg);
 
 void create_world(int p, int q, world_func func, void *arg) {
     int pad = 1;
@@ -34,20 +30,23 @@ void create_world(int p, int q, world_func func, void *arg) {
             mh += 16;
             int h = f * mh;
 
+            generateBaseTerrain(dx, dz, x, z, 0, 32, flag, func, arg);
+            //generateBaseTerrain(dx, dz, x, z, 32, 32 + h, flag, func, arg);
+
             Biome biome = biome_at_pos(q, x, z);
 
             if (biome == Biome_TEMPERATE) {
-                generateTemperate(dx, dz, x, z, h, flag, func, arg);
+                generateTemperate(dx, dz, x, z, 32, 32 + h, flag, func, arg);
             } else if(biome == Biome_DESERT) {
-                generateDesert(dx, dz, x, z, h, flag, func, arg);
+                generateDesert(dx, dz, x, z, 32, 32 + h, flag, func, arg);
             } else if(biome == Biome_RAINFOREST) {
-                generateRainforest(dx, dz, x, z, h, flag, func, arg);
+                generateRainforest(dx, dz, x, z, 32, 32 + h, flag, func, arg);
             } else if(biome == Biome_TAIGA) {
-                generateTaiga(dx, dz, x, z, h, flag, func, arg);
+                generateTaiga(dx, dz, x, z, 32, 32 + h, flag, func, arg);
             }
 
             // clouds
-            for (int y = 64; y < 72; y++) {
+            for (int y = 128; y < 132; y++) {
                 if (simplex3(
                     x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                 {

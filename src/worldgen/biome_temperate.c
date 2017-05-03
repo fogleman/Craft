@@ -3,8 +3,8 @@
 #include "../config.h"
 #include "../item.h"
 
-void generateTemperate(int dx, int dz, int x, int z, int h, int flag, world_func func, void *arg) {
-    for (int y = 0; y < h; y++) {
+void generateTemperate(int dx, int dz, int x, int z, int start_h, int h, int flag, world_func func, void *arg) {
+    for (int y = start_h; y < h; y++) {
         func(x, y, z, 1 * flag, arg);
     }
 
@@ -25,7 +25,7 @@ void generateTemperate(int dx, int dz, int x, int z, int h, int flag, world_func
     {
         ok = 0;
     }
-    
+
     if (ok && simplex2(x, z, 6, 0.5, 2) > 0.84) {
         for (int y = h + 3; y < h + 8; y++) {
             for (int ox = -3; ox <= 3; ox++) {

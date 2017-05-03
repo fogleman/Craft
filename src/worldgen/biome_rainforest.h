@@ -3,6 +3,6 @@
 
 #include "world.h"
 
-void generateRainforest(int dx, int dz, int x, int z, int h, int flag, world_func func, void *arg);
+void generateRainforest(int dx, int dz, int x, int z, int start_h, int h, int flag, world_func func, void *arg);
 
 #endif // _biome_rainforest_h_

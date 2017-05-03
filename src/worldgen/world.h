@@ -14,4 +14,4 @@ typedef void (*world_func)(int, int, int, int, void *);
 void create_world(int p, int q, world_func func, void *arg);
 Biome biome_at_pos(int q, int x, int z);
 
-#endif
+#endif // _world_h_

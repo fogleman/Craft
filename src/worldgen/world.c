@@ -1,7 +1,7 @@
-#include "config.h"
-#include "item.h"
+#include "../config.h"
+#include "../item.h"
 #include "noise.h"
-#include "util.h"
+#include "../util.h"
 #include "world.h"
 #include <math.h>
 

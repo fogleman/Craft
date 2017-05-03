@@ -20,7 +20,7 @@
 #include "sign.h"
 #include "tinycthread.h"
 #include "util.h"
-#include "world.h"
+#include "worldgen/world.h"
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128

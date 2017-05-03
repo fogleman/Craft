@@ -4,9 +4,10 @@
 #include "../item.h"
 
 void generateTaiga(int dx, int dz, int x, int z, int start_h, int h, int flag, world_func func, void *arg) {
-    for (int y = start_h; y < h; y++) {
-        func(x, y, z, 9 * flag, arg);
+    for (int y = start_h; y < h - 1; y++) {
+        func(x, y, z, Item_DIRT * flag, arg);
     }
+    func(x, h - 1, z, Item_SNOW * flag, arg);
 
     // grass
     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.7) {

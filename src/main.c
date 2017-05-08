@@ -2154,7 +2154,11 @@ void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_obstacle(hw)) {
+    if (hy > 0 && hy < 256) {
+        if (!is_obstacle(hw)) {
+            hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
+        }
+
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
             set_block(hx, hy, hz, items[g->item_index]);
             record_block(hx, hy, hz, items[g->item_index]);

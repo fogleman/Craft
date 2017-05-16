@@ -173,8 +173,6 @@ int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
         switch(w) {
-            case Item_VINE:
-                return 1;
             default:
                 return 0;
         }
@@ -213,5 +211,14 @@ int is_destructable(int w) {
             return 0;
         default:
             return 1;
+    }
+}
+
+int is_climbable(int w) {
+    switch(w) {
+        case Item_VINE:
+            return 1;
+        default:
+            return 0;
     }
 }

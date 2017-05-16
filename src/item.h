@@ -73,6 +73,7 @@ int is_plant(int w);
 int is_obstacle(int w);
 int is_transparent(int w);
 int is_destructable(int w);
+int is_climbable(int w);
 
 typedef struct {
     #define ITEMSPEC_NAME_LEN 32

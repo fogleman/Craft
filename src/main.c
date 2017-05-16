@@ -2533,13 +2533,25 @@ void handle_movement(double dt) {
     }
     float vx, vy, vz;
     get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    int w = get_block(s->x, s->y, s->z);
+    int is_jump_pressed = glfwGetKey(g->window, CRAFT_KEY_JUMP);
+    int is_descend_pressed = glfwGetKey(g->window, CRAFT_KEY_DECSEND);
     if (!g->typing) {
-        if (glfwGetKey(g->window, CRAFT_KEY_JUMP)) {
+        if (is_jump_pressed) {
             if (g->flying) {
                 vy = 1;
             }
             else if (dy == 0) {
-                dy = 8;
+                if (is_climbable(w)) {
+                    dy = CLIMB_SPEED;
+                } else {
+                    dy = 8;
+                }
+            }
+        }
+        else if (is_descend_pressed) {
+            if (is_climbable(w)) {
+                dy = -CLIMB_SPEED;
             }
         }
     }
@@ -2556,10 +2568,26 @@ void handle_movement(double dt) {
     for (int i = 0; i < step; i++) {
         if (g->flying) {
             dy = 0;
+
+            if (is_descend_pressed) {
+                vy = -0.05f;
+            }
         }
         else {
-            dy -= ut * 25;
-            dy = MAX(dy, -250);
+            if (is_climbable(w)) {
+                if (!is_jump_pressed) {
+                    if (dy > 0) {
+                        dy = 0.0f;
+                    }
+                    else if (!is_descend_pressed) {
+                        dy = 0.0f;
+                    }
+                }
+            }
+            else {
+                dy -= ut * 25;
+                dy = MAX(dy, -250);
+            }
         }
         s->x += vx;
         s->y += vy + dy * ut;

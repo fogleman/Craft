@@ -27,9 +27,9 @@ typedef union {
 } MapEntry;
 
 typedef struct {
-    int dx;
-    int dy;
-    int dz;
+    short dx;
+    short dy;
+    short dz;
     unsigned int mask;
     unsigned int size;
     MapEntry *data;

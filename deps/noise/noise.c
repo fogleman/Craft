@@ -1,4 +1,6 @@
 /*
+https://github.com/fogleman/Craft
+
 noise.h and noise.c are derived from this project:
 
 https://github.com/caseman/noise

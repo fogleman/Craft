@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include "auth.h"
+#include "chunk.h"
 #include "client.h"
 #include "config.h"
 #include "cube.h"
@@ -40,21 +41,6 @@
 #define WORKER_IDLE 0
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
-
-typedef struct {
-    Map map;
-    Map lights;
-    SignList signs;
-    int p;
-    int q;
-    int faces;
-    int sign_faces;
-    int dirty;
-    int miny;
-    int maxy;
-    GLuint buffer;
-    GLuint sign_buffer;
-} Chunk;
 
 typedef struct {
     int p;

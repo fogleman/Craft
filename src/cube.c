@@ -8,7 +8,7 @@ void make_cube_faces(
     float *data, float ao[6][4], float light[6][4],
     int left, int right, int top, int bottom, int front, int back,
     int wleft, int wright, int wtop, int wbottom, int wfront, int wback,
-    float x, float y, float z, float n)
+    float x, float y, float z, float scale, NonCubeType noncube)
 {
     static const float positions[6][4][3] = {
         {{-1, -1, -1}, {-1, -1, +1}, {-1, +1, -1}, {-1, +1, +1}},
@@ -60,19 +60,45 @@ void make_cube_faces(
         if (faces[i] == 0) {
             continue;
         }
+
         float du = (tiles[i] % 16) * s;
         float dv = (tiles[i] / 16) * s;
         int flip = ao[i][0] + ao[i][3] > ao[i][1] + ao[i][2];
+        float y_multiplier = (noncube == NonCubeType_SLAB_LOWER) ? 0.0f : 1.0f;
         for (int v = 0; v < 6; v++) {
             int j = flip ? flipped[i][v] : indices[i][v];
-            *(d++) = x + n * positions[i][j][0];
-            *(d++) = y + n * positions[i][j][1];
-            *(d++) = z + n * positions[i][j][2];
+            *(d++) = x + scale * positions[i][j][0];
+            //The origin of the cube is its center.
+            //If we are rendering a slab, the top vertices of the cube are not multiplied by the offsets,
+            // so that the top of the slab is the origin, at the center. This makes slabs half-height.
+
+            //Only the vertices on the top should be 0, or the slab would be a paperlike
+            // horizontal billboard. If the y position is positive, we are above the XZ plane of the
+            // cube and are about to determine the top vertices.
+            if (noncube == NonCubeType_SLAB_LOWER && positions[i][j][1] > 0) {
+                *(d++) = y;
+            }
+            else {
+                *(d++) = y + scale * positions[i][j][1];
+            }
+
+            *(d++) = z + scale * positions[i][j][2];
             *(d++) = normals[i][0];
             *(d++) = normals[i][1];
             *(d++) = normals[i][2];
             *(d++) = du + (uvs[i][j][0] ? b : a);
-            *(d++) = dv + (uvs[i][j][1] ? b : a);
+
+            //If we have have a slab, are rendering the top vertices, and are on the side --
+            // (i == 2) and (i == 3) are for the top and bottom, see faces and tiles arrays above --
+            // we must subtract half a texture tile to only use the lower half of the texture.
+            // Otherwise, the texture of a full block will be sqeezed onto the slab.
+            if (positions[i][j][1] > 0 && i != 2 && i != 3 && noncube == NonCubeType_SLAB_LOWER) {
+                *(d++) = (dv - (1.0f / 32.0f)) + (uvs[i][j][1] ? b : a);
+            }
+            else {
+                *(d++) = dv + (uvs[i][j][1] ? b : a);
+            }
+
             *(d++) = ao[i][j];
             *(d++) = light[i][j];
         }
@@ -94,7 +120,7 @@ void make_cube(
         data, ao, light,
         left, right, top, bottom, front, back,
         wleft, wright, wtop, wbottom, wfront, wback,
-        x, y, z, n);
+        x, y, z, n, noncube_type(w));
 }
 
 void make_plant(
@@ -174,7 +200,7 @@ void make_player(
         data, ao, light,
         1, 1, 1, 1, 1, 1,
         226, 224, 241, 209, 225, 227,
-        0, 0, 0, 0.4);
+        0, 0, 0, 0.4, NonCubeType_NOT_NONCUBE);
     float ma[16];
     float mb[16];
     mat_identity(ma);

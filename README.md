@@ -1,10 +1,10 @@
-## Craft
+## CraftNG
 
-Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
+Fork of Michael Fogleman's Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
 
 http://www.michaelfogleman.com/craft/
 
-![Screenshot](http://i.imgur.com/SH7wcas.png)
+![Screenshot](https://twetzel59.github.io/craftng.github.io/CraftNG3.png)
 
 ### Features
 
@@ -15,6 +15,21 @@ http://www.michaelfogleman.com/craft/
 * Day / night cycles and a textured sky dome.
 * World changes persisted in a sqlite3 database.
 * Multiplayer support!
+
+### Changes from Craft
+
+The design of CraftNG is intended to make the game more flexible and even more fun to play. Unlike Craft, CraftNG does not intend to clone Minecraft, but rather to break off and add original and unique ideas specific to the project.
+
+Planned features include:
+* More items.
+* Inventory with item count to make the game more challenging.
+* Abilty to upgrade items. For example, sand could be compacted into bricks.
+* More unique worlds with psuedo-random seeds rather than position-based seeds.
+* Biomes and variable height of terrain.
+* Non-cube blocks. The world would ideally be more smooth than other sandboxes, with modeled voxels for terrain slopes and steps.
+* Water?
+* Reliable binary/compressed UDP networking?
+* C99 or C11 multiplayer server?
 
 ### Download
 
@@ -85,7 +100,7 @@ You can run your own server or connect to mine. The server is written in Python
 but requires a compiled DLL so it can perform the terrain generation just like
 the client.
 
-    gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
+    gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/worldgen/*
     python server.py [HOST [PORT]]
 
 ### Controls

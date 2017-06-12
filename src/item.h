@@ -1,62 +1,74 @@
 #ifndef _item_h_
 #define _item_h_
 
-#define EMPTY 0
-#define GRASS 1
-#define SAND 2
-#define STONE 3
-#define BRICK 4
-#define WOOD 5
-#define CEMENT 6
-#define DIRT 7
-#define PLANK 8
-#define SNOW 9
-#define GLASS 10
-#define COBBLE 11
-#define LIGHT_STONE 12
-#define DARK_STONE 13
-#define CHEST 14
-#define LEAVES 15
-#define CLOUD 16
-#define TALL_GRASS 17
-#define YELLOW_FLOWER 18
-#define RED_FLOWER 19
-#define PURPLE_FLOWER 20
-#define SUN_FLOWER 21
-#define WHITE_FLOWER 22
-#define BLUE_FLOWER 23
-#define COLOR_00 32
-#define COLOR_01 33
-#define COLOR_02 34
-#define COLOR_03 35
-#define COLOR_04 36
-#define COLOR_05 37
-#define COLOR_06 38
-#define COLOR_07 39
-#define COLOR_08 40
-#define COLOR_09 41
-#define COLOR_10 42
-#define COLOR_11 43
-#define COLOR_12 44
-#define COLOR_13 45
-#define COLOR_14 46
-#define COLOR_15 47
-#define COLOR_16 48
-#define COLOR_17 49
-#define COLOR_18 50
-#define COLOR_19 51
-#define COLOR_20 52
-#define COLOR_21 53
-#define COLOR_22 54
-#define COLOR_23 55
-#define COLOR_24 56
-#define COLOR_25 57
-#define COLOR_26 58
-#define COLOR_27 59
-#define COLOR_28 60
-#define COLOR_29 61
-#define COLOR_30 62
-#define COLOR_31 63
+typedef enum {
+    Item_EMPTY,
+    Item_GRASS,
+    Item_SAND,
+    Item_STONEBRICK,
+    Item_BRICK,
+    Item_WOOD,
+    Item_STONE,
+    Item_DIRT,
+    Item_PLANK,
+    Item_SNOW,
+    Item_GLASS,
+    Item_COBBLE,
+    Item_LIGHT_STONE,
+    Item_DARK_STONE,
+    Item_CHEST,
+    Item_LEAVES,
+    Item_CLOUD,
+    Item_TALL_GRASS,
+    Item_YELLOW_FLOWER,
+    Item_RED_FLOWER,
+    Item_PURPLE_FLOWER,
+    Item_SUN_FLOWER,
+    Item_WHITE_FLOWER,
+    Item_BLUE_FLOWER,
+    Item_COLOR_00 = 32,
+    Item_COLOR_01,
+    Item_COLOR_02,
+    Item_COLOR_03,
+    Item_COLOR_04,
+    Item_COLOR_05,
+    Item_COLOR_06,
+    Item_COLOR_07,
+    Item_COLOR_08,
+    Item_COLOR_09,
+    Item_COLOR_10,
+    Item_COLOR_11,
+    Item_COLOR_12,
+    Item_COLOR_13,
+    Item_COLOR_14,
+    Item_COLOR_15,
+    Item_COLOR_16,
+    Item_COLOR_17,
+    Item_COLOR_18,
+    Item_COLOR_19,
+    Item_COLOR_20,
+    Item_COLOR_21,
+    Item_COLOR_22,
+    Item_COLOR_23,
+    Item_COLOR_24,
+    Item_COLOR_25,
+    Item_COLOR_26,
+    Item_COLOR_27,
+    Item_COLOR_28,
+    Item_COLOR_29,
+    Item_COLOR_30,
+    Item_COLOR_31,
+    Item_NYANCAT,
+    Item_CACTUS,
+    Item_VINE,
+    Item_SLAB_LOWER_STONEBRICK,
+    Item_max
+} Item;
+
+typedef enum {
+    NonCubeType_NOT_NONCUBE,
+    NonCubeType_SLAB_LOWER
+} NonCubeType;
 
 extern const int items[];
 extern const int item_count;
@@ -67,5 +79,16 @@ int is_plant(int w);
 int is_obstacle(int w);
 int is_transparent(int w);
 int is_destructable(int w);
+int is_climbable(int w);
+int is_noncube(int w);
+
+NonCubeType noncube_type(int w);
+
+typedef struct {
+    #define ITEMSPEC_NAME_LEN 32
+    #define ITEMSPEC_NAME_FORMAT "%32s"
+    char name[32];
+    int obstacle;
+} ItemSpec;
 
 #endif

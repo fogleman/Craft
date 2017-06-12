@@ -6,6 +6,10 @@
 #include "matrix.h"
 #include "util.h"
 
+int chunked(float x) {
+    return floorf(roundf(x) / CHUNK_SIZE);
+}
+
 int rand_int(int n) {
     int result;
     while (n <= (result = rand() / (RAND_MAX / n)));
@@ -52,7 +56,9 @@ GLuint gen_buffer(GLsizei size, GLfloat *data) {
 }
 
 void del_buffer(GLuint buffer) {
-    glDeleteBuffers(1, &buffer);
+    if(buffer) {
+        glDeleteBuffers(1, &buffer);
+    }
 }
 
 GLfloat *malloc_faces(int components, int faces) {

@@ -241,7 +241,7 @@ void set_matrix_item(float *matrix, int width, int height, int scale) {
     float a[16];
     float b[16];
     float aspect = (float)width / height;
-    float size = 64 * scale;
+    float size = 32 * scale;
     float box = height / size / 2;
     float xoffset = 1 - size / width * 2;
     float yoffset = 1 - size / height * 2;
@@ -252,7 +252,7 @@ void set_matrix_item(float *matrix, int width, int height, int scale) {
     mat_multiply(a, b, a);
     mat_ortho(b, -box * aspect, box * aspect, -box, box, -1, 1);
     mat_multiply(a, b, a);
-    mat_translate(b, -xoffset, -yoffset, 0);
+    mat_translate(b, -xoffset + 1.75f, -yoffset, 0);
     mat_multiply(a, b, a);
     mat_identity(matrix);
     mat_multiply(matrix, a, matrix);

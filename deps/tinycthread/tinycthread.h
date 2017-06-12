@@ -104,6 +104,7 @@ freely, subject to the following restrictions:
 #endif
 
 /* Workaround for missing clock_gettime (most Windows compilers, afaik) */
+struct timespec; /* Prevent warnings all platforms */
 #if defined(_TTHREAD_WIN32_) || defined(__APPLE_CC__)
 #define _TTHREAD_EMULATE_CLOCK_GETTIME_
 /* Emulate struct timespec */

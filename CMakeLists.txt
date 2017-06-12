@@ -3,10 +3,12 @@ cmake_minimum_required(VERSION 2.8)
 project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.c)
+FILE(GLOB SOURCE_WORLDGEN_FILES src/worldgen/*.c)
 
 add_executable(
     craft
     ${SOURCE_FILES}
+    ${SOURCE_WORLDGEN_FILES}    
     deps/glew/src/glew.c
     deps/lodepng/lodepng.c
     deps/noise/noise.c
@@ -47,3 +49,4 @@ if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
+

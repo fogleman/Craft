@@ -7,18 +7,21 @@
 #include <string.h>
 #include <time.h>
 #include "auth.h"
+#include "chunk.h"
 #include "client.h"
 #include "config.h"
 #include "cube.h"
 #include "db.h"
+#include "inventory.h"
 #include "item.h"
 #include "map.h"
 #include "matrix.h"
 #include "noise.h"
+#include "parser.h"
 #include "sign.h"
 #include "tinycthread.h"
 #include "util.h"
-#include "world.h"
+#include "worldgen/world.h"
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
@@ -38,21 +41,6 @@
 #define WORKER_IDLE 0
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
-
-typedef struct {
-    Map map;
-    Map lights;
-    SignList signs;
-    int p;
-    int q;
-    int faces;
-    int sign_faces;
-    int dirty;
-    int miny;
-    int maxy;
-    GLuint buffer;
-    GLuint sign_buffer;
-} Chunk;
 
 typedef struct {
     int p;
@@ -113,7 +101,14 @@ typedef struct {
     GLuint extra2;
     GLuint extra3;
     GLuint extra4;
+    GLuint extra5;
 } Attrib;
+
+typedef struct {
+    float r;
+    float g;
+    float b;
+} SkyColor;
 
 typedef struct {
     GLFWwindow *window;
@@ -151,14 +146,14 @@ typedef struct {
     Block block1;
     Block copy0;
     Block copy1;
+    SkyColor sky_color;
+    SkyColor last_sky_color;
+    //int is_fullscreen;
+    Inventory inventory;
 } Model;
 
 static Model model;
 static Model *g = &model;
-
-int chunked(float x) {
-    return floorf(roundf(x) / CHUNK_SIZE);
-}
 
 float time_of_day() {
     if (g->day_length <= 0) {
@@ -180,6 +175,33 @@ float get_daylight() {
     else {
         float t = (timer - 0.85) * 100;
         return 1 - 1 / (1 + powf(2, -t));
+    }
+}
+
+void get_sky_tint(Biome biome, SkyColor *c) {
+    switch(biome) {
+        //Not needed
+        //case Biome_TEMPERATE:
+        case Biome_DESERT:
+            c->r = 1.4f;
+            c->g = 1.2f,
+            c->b = 1.0f;
+            break;
+        case Biome_RAINFOREST:
+            c->r = 1.3f;
+            c->g = 1.3f,
+            c->b = 1.0f;
+            break;
+        case Biome_TAIGA:
+            c->r = 0.7f;
+            c->g = 0.8f,
+            c->b = 0.9f;
+            break;
+        default:
+            c->r = 1.0f;
+            c->g = 1.0f,
+            c->b = 1.0f;
+            break;
     }
 }
 
@@ -1114,6 +1136,12 @@ void compute_chunk(WorkerItem *item) {
                 data + offset, min_ao, max_light,
                 ex, ey, ez, 0.5, ew, rotation);
         }
+        else if (is_noncube(ew) && noncube_type(ew) == NonCubeType_SLAB_LOWER) {
+            make_cube(
+                data + offset, ao, light,
+                f1, f2, f3, f4, f5, f6,
+                ex, ey, ez, 0.5, ew);
+        }
         else {
             make_cube(
                 data + offset, ao, light,
@@ -1259,6 +1287,7 @@ void delete_all_chunks() {
         map_free(&chunk->map);
         map_free(&chunk->lights);
         sign_list_free(&chunk->signs);
+        //printf("deleting: %d, %d\n", (int) chunk->buffer, (int) chunk->sign_buffer);
         del_buffer(chunk->buffer);
         del_buffer(chunk->sign_buffer);
     }
@@ -1595,7 +1624,7 @@ int get_block(int x, int y, int z) {
 }
 
 void builder_block(int x, int y, int z, int w) {
-    if (y <= 0 || y >= 256) {
+    if (y <= 0 || y >= BUILD_HEIGHT_LIMIT) {
         return;
     }
     if (is_destructable(get_block(x, y, z))) {
@@ -1628,6 +1657,10 @@ int render_chunks(Attrib *attrib, Player *player) {
     glUniform1f(attrib->extra3, g->render_radius * CHUNK_SIZE);
     glUniform1i(attrib->extra4, g->ortho);
     glUniform1f(attrib->timer, time_of_day());
+
+    SkyColor *c = &g->sky_color;
+    glUniform3f(attrib->extra5, c->r, c->g, c->b);
+
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
         if (chunk_distance(chunk, p, q) > g->render_radius) {
@@ -1728,6 +1761,11 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, time_of_day());
+    glUniform3f(attrib->extra1, 1.0f,  1.0f, 1.0f);
+
+    SkyColor *c = &g->sky_color;
+    glUniform3f(attrib->extra1, c->r, c->g, c->b);
+
     draw_triangles_3d(attrib, buffer, 512 * 3);
 }
 
@@ -1766,22 +1804,37 @@ void render_crosshairs(Attrib *attrib) {
 
 void render_item(Attrib *attrib) {
     float matrix[16];
-    set_matrix_item(matrix, g->width, g->height, g->scale);
     glUseProgram(attrib->program);
-    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    set_matrix_item(matrix, g->width, g->height, g->scale + 1);
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, time_of_day());
-    int w = items[g->item_index];
-    if (is_plant(w)) {
-        GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
-        draw_plant(attrib, buffer);
-        del_buffer(buffer);
-    }
-    else {
-        GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
-        draw_cube(attrib, buffer);
-        del_buffer(buffer);
+    for(int i = 0; i < NUM_INVENTORY_VISIBLE; ++i) {
+        if(g->item_index + i >= item_count) {
+            break;
+        }
+
+        glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+
+        int w = items[g->item_index + i];
+        if (is_plant(w)) {
+            GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
+            draw_plant(attrib, buffer);
+            del_buffer(buffer);
+        }
+        else {
+            GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
+            draw_cube(attrib, buffer);
+            del_buffer(buffer);
+        }
+
+        if(!i) {
+            set_matrix_item(matrix, g->width, g->height, g->scale);
+            matrix[12] += 0.08f;
+            matrix[13] += 0.1f;
+        }
+
+        matrix[13] += 0.25f;
     }
 }
 
@@ -1799,6 +1852,31 @@ void render_text(
     GLuint buffer = gen_text_buffer(x, y, n, text);
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
+}
+
+void render_item_count(Attrib *attrib, float ts) {
+    const int buf_len = 4;
+
+    float pos = 15.0f;
+    for(int i = 0; i < NUM_INVENTORY_VISIBLE; ++i) {
+        if(g->item_index + i >= item_count) {
+            break;
+        }
+
+        char buf[buf_len];
+        snprintf(buf, buf_len, "%d\n", Inventory_getCount(&g->inventory, items[g->item_index + i]));
+        //snprintf(buf, buf_len, "%d\n", g->inventory.count[items[g->item_index]]);
+
+        render_text(attrib, ALIGN_CENTER, g->width - 20.0f, pos, ts, buf);
+        //printf("%d\n", g->width);
+
+        float ratio_to_hardcoded = (g->height / 768.0f);
+        if(i) {
+            pos += 96.0f * ratio_to_hardcoded;
+        } else {
+            pos += 140.0f * ratio_to_hardcoded;
+        }
+    }
 }
 
 void add_message(const char *text) {
@@ -2132,7 +2210,7 @@ void on_light() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_destructable(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_destructable(hw)) {
         toggle_light(hx, hy, hz);
     }
 }
@@ -2141,7 +2219,7 @@ void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_destructable(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_destructable(hw) && Inventory_collect(&g->inventory, hw)) {
         set_block(hx, hy, hz, 0);
         record_block(hx, hy, hz, 0);
         if (is_plant(get_block(hx, hy + 1, hz))) {
@@ -2154,7 +2232,7 @@ void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(1, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
-    if (hy > 0 && hy < 256 && is_obstacle(hw)) {
+    if (hy > 0 && hy < BUILD_HEIGHT_LIMIT && is_obstacle(hw) && Inventory_use(&g->inventory, items[g->item_index])) {
         if (!player_intersects_block(2, s->x, s->y, s->z, hx, hy, hz)) {
             set_block(hx, hy, hz, items[g->item_index]);
             record_block(hx, hy, hz, items[g->item_index]);
@@ -2272,6 +2350,23 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             g->observe2 = (g->observe2 + 1) % g->player_count;
         }
     }
+
+    /*
+    if(key == GLFW_KEY_F11) {
+        if(g->is_fullscreen) {
+            GLFWmonitor *monitor = NULL;
+            int mode_count;
+            monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode *modes = glfwGetVideoModes(monitor, &mode_count);
+            int width = modes[mode_count - 1].width;
+            int height = modes[mode_count - 1].height;
+
+            glfwSetWindowMonitor(g->window, monitor, 0, 0, width, height, GLFW_DONT_CARE);
+        } else {
+            glfwSetWindowMonitor(g->window, NULL, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GLFW_DONT_CARE);
+        }
+    }
+    */
 }
 
 void on_char(GLFWwindow *window, unsigned int u) {
@@ -2373,6 +2468,8 @@ void create_window() {
     }
     g->window = glfwCreateWindow(
         window_width, window_height, "Craft", monitor, NULL);
+
+    //g->is_fullscreen = FULLSCREEN;
 }
 
 void handle_mouse_input() {
@@ -2428,17 +2525,29 @@ void handle_movement(double dt) {
     }
     float vx, vy, vz;
     get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    int w = get_block(s->x, s->y, s->z);
+    int is_jump_pressed = glfwGetKey(g->window, CRAFT_KEY_JUMP);
+    int is_descend_pressed = glfwGetKey(g->window, CRAFT_KEY_DECSEND);
     if (!g->typing) {
-        if (glfwGetKey(g->window, CRAFT_KEY_JUMP)) {
+        if (is_jump_pressed) {
             if (g->flying) {
                 vy = 1;
             }
             else if (dy == 0) {
-                dy = 8;
+                if (is_climbable(w)) {
+                    dy = CLIMB_SPEED;
+                } else {
+                    dy = 8;
+                }
+            }
+        }
+        else if (is_descend_pressed) {
+            if (is_climbable(w)) {
+                dy = -CLIMB_SPEED;
             }
         }
     }
-    float speed = g->flying ? 20 : 5;
+    float speed = g->flying ? FLY_SPEED : WALK_SPEED;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +
@@ -2451,10 +2560,26 @@ void handle_movement(double dt) {
     for (int i = 0; i < step; i++) {
         if (g->flying) {
             dy = 0;
+
+            if (is_descend_pressed) {
+                vy = -0.05f;
+            }
         }
         else {
-            dy -= ut * 25;
-            dy = MAX(dy, -250);
+            if (is_climbable(w)) {
+                if (!is_jump_pressed) {
+                    if (dy > 0) {
+                        dy = 0.0f;
+                    }
+                    else if (!is_descend_pressed) {
+                        dy = 0.0f;
+                    }
+                }
+            }
+            else {
+                dy -= ut * 25;
+                dy = MAX(dy, -250);
+            }
         }
         s->x += vx;
         s->y += vy + dy * ut;
@@ -2565,6 +2690,28 @@ void parse_buffer(char *buffer) {
     }
 }
 
+void update_sky_tint() {
+    SkyColor *c = &g->sky_color;
+    g->last_sky_color = *c;
+
+    State *s = &g->players->state;
+    int p = chunked(s->x);
+    int q = chunked(s->z);
+    int x = p * CHUNK_SIZE;
+    int z = q * CHUNK_SIZE;
+
+    SkyColor new_color;
+    get_sky_tint(biome_at_pos(q, x, z), &new_color);
+
+    //Interpolate sky color to get close to the actual value gradually.
+    // Technically, it won't arrive, but rather achieve an extremely close color.
+    c->r += 0.0625 * (new_color.r - c->r);
+    c->g += 0.0625 * (new_color.g - c->g);
+    c->b += 0.0625 * (new_color.b - c->b);
+
+    //printf("c: %f last: %f\n", c->r, g->last_sky_color.r);
+}
+
 void reset_model() {
     memset(g->chunks, 0, sizeof(Chunk) * MAX_CHUNKS);
     g->chunk_count = 0;
@@ -2581,6 +2728,10 @@ void reset_model() {
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
+
+    g->sky_color = (SkyColor){0.0f, 0.0f, 0.0f};
+    g->last_sky_color = g->sky_color;
+    Inventory_reset(&g->inventory);
 }
 
 int main(int argc, char **argv) {
@@ -2615,6 +2766,8 @@ int main(int argc, char **argv) {
     glEnable(GL_DEPTH_TEST);
     glLogicOp(GL_INVERT);
     glClearColor(0, 0, 0, 1);
+
+    //parser_parse_all();
 
     // LOAD TEXTURES //
     GLuint texture;
@@ -2672,6 +2825,7 @@ int main(int argc, char **argv) {
     block_attrib.extra4 = glGetUniformLocation(program, "ortho");
     block_attrib.camera = glGetUniformLocation(program, "camera");
     block_attrib.timer = glGetUniformLocation(program, "timer");
+    block_attrib.extra5 = glGetUniformLocation(program, "sky_tint");
 
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
@@ -2697,6 +2851,7 @@ int main(int argc, char **argv) {
     sky_attrib.matrix = glGetUniformLocation(program, "matrix");
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
+    sky_attrib.extra1 = glGetUniformLocation(program, "sky_tint");
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {
@@ -2774,6 +2929,9 @@ int main(int argc, char **argv) {
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
         while (1) {
+            g->inventory.count[items[g->item_index]] = 16;
+            //printf("%d %d\n", items[g->item_index], (int) g->inventory.count[items[g->item_index]]);
+
             // WINDOW SIZE AND SCALE //
             g->scale = get_scale_factor();
             glfwGetFramebufferSize(g->window, &g->width, &g->height);
@@ -2819,6 +2977,7 @@ int main(int argc, char **argv) {
             }
 
             // PREPARE TO RENDER //
+            update_sky_tint();
             g->observe1 = g->observe1 % g->player_count;
             g->observe2 = g->observe2 % g->player_count;
             delete_chunks();
@@ -2847,15 +3006,16 @@ int main(int argc, char **argv) {
             if (SHOW_CROSSHAIRS) {
                 render_crosshairs(&line_attrib);
             }
-            if (SHOW_ITEM) {
-                render_item(&block_attrib);
-            }
-
-            // RENDER TEXT //
             char text_buffer[1024];
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
+            if (SHOW_ITEM) {
+                render_item(&block_attrib);
+                render_item_count(&text_attrib, ts);
+            }
+
+            // RENDER TEXT //
             if (SHOW_INFO_TEXT) {
                 int hour = time_of_day() * 24;
                 char am_pm = hour < 12 ? 'a' : 'p';

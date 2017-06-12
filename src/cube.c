@@ -1,5 +1,4 @@
 #include <math.h>
-#include <stdio.h>
 #include "cube.h"
 #include "item.h"
 #include "matrix.h"

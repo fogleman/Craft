@@ -197,6 +197,9 @@ int is_transparent(int w) {
     if (is_plant(w)) {
         return 1;
     }
+    if(is_noncube(w)) {
+        return 1;
+    }
     switch (w) {
         case Item_EMPTY:
         case Item_GLASS:

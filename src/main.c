@@ -1136,6 +1136,13 @@ void compute_chunk(WorkerItem *item) {
                 data + offset, min_ao, max_light,
                 ex, ey, ez, 0.5, ew, rotation);
         }
+        else if (is_noncube(ew) && noncube_type(ew) == NonCubeType_SLAB_LOWER) {
+            /** TODO: make_slab() once face occlusion is ready **/
+            make_cube(
+                data + offset, ao, light,
+                f1, f2, f3, f4, f5, f6,
+                ex, ey, ez, 0.5, ew);
+        }
         else {
             make_cube(
                 data + offset, ao, light,

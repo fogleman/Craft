@@ -20,6 +20,7 @@ const int items[] = {
     Item_LEAVES,
     Item_CACTUS,
     Item_NYANCAT,
+    Item_SLAB_LOWER_STONEBRICK,
     Item_TALL_GRASS,
     Item_YELLOW_FLOWER,
     Item_RED_FLOWER,
@@ -132,7 +133,8 @@ const int blocks[256][6] = {
     {207, 207, 207, 207, 207, 207}, // 63
     {208, 208, 208, 208, 208, 208}, // 64
     {210, 210, 210, 210, 210, 210}, // 65
-    {0, 0, 0, 0, 0, 0} // 66
+    {0, 0, 0, 0, 0, 0}, // 66
+    {2, 2, 2, 2, 2, 2}
 };
 
 const int plants[256] = {
@@ -150,7 +152,8 @@ const int plants[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, // 24 - 65
-    55 // 66 - vine
+    55, // 66 - vine
+    0 // 67
 };
 
 int is_plant(int w) {
@@ -220,5 +223,18 @@ int is_climbable(int w) {
             return 1;
         default:
             return 0;
+    }
+}
+
+int is_noncube(int w) {
+    return noncube_type(w) != NonCubeType_NOT_NONCUBE;
+}
+
+NonCubeType noncube_type(int w) {
+    switch(w) {
+        case Item_SLAB_LOWER_STONEBRICK:
+            return NonCubeType_SLAB_LOWER;
+        default:
+            return NonCubeType_NOT_NONCUBE;
     }
 }

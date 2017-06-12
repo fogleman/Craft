@@ -61,8 +61,14 @@ typedef enum {
     Item_NYANCAT,
     Item_CACTUS,
     Item_VINE,
+    Item_SLAB_LOWER_STONEBRICK,
     Item_max
 } Item;
+
+typedef enum {
+    NonCubeType_NOT_NONCUBE,
+    NonCubeType_SLAB_LOWER
+} NonCubeType;
 
 extern const int items[];
 extern const int item_count;
@@ -74,6 +80,9 @@ int is_obstacle(int w);
 int is_transparent(int w);
 int is_destructable(int w);
 int is_climbable(int w);
+int is_noncube(int w);
+
+NonCubeType noncube_type(int w);
 
 typedef struct {
     #define ITEMSPEC_NAME_LEN 32

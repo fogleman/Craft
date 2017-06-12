@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 #include "cube.h"
 #include "item.h"
 #include "matrix.h"
@@ -84,6 +85,25 @@ void make_cube(
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
+    int wleft = blocks[w][0];
+    int wright = blocks[w][1];
+    int wtop = blocks[w][2];
+    int wbottom = blocks[w][3];
+    int wfront = blocks[w][4];
+    int wback = blocks[w][5];
+    make_cube_faces(
+        data, ao, light,
+        left, right, top, bottom, front, back,
+        wleft, wright, wtop, wbottom, wfront, wback,
+        x, y, z, n);
+}
+
+void make_slab(float *data, float ao[6][4], float light[6][4],
+    int left, int right, int top, int bottom, int front, int back,
+    float x, float y, float z, float n, int w)
+{
+    puts("make_slab()");
+
     int wleft = blocks[w][0];
     int wright = blocks[w][1];
     int wtop = blocks[w][2];

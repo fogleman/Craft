@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(craft)
 
+add_subdirectory(doc)
+
 FILE(GLOB SOURCE_FILES src/*.c)
 
 add_executable(

@@ -42,10 +42,20 @@ the installation:
 #### Windows
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
-and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
+and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`. This is
+required to run craft, not just to build it.
 
 Download and install [cURL](http://curl.haxx.se/download.html) so that
-CURL/lib and CURL/include are in your Program Files directory.
+CURL/lib and CURL/include are in your Program Files directory. Make sure
+libcurl.dll is in CURL/lib (not true for all binary distributions of curl for
+windows), and CURL/lib is in your path.
+
+Because there is no standard binary distribution of curl, it may be easiest to
+build it yourself, especially if you run into odd incompatibilities or link
+errors during your build.
+
+Unpack the source archive or get it via git (use the latest released tag)
+and read doc/Install.md. The instructions may require slight modifications.
 
 Use the following commands in place of the ones described in the next section.
 

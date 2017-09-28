@@ -55,7 +55,7 @@ build it yourself, especially if you run into odd incompatibilities or link
 errors during your build.
 
 Unpack the source archive or get it via git (use the latest released tag)
-and read doc/Install.md. The instructions may require slight modifications.
+and read doc/Install.md (and GIT-INFO if building from git). The instructions may require slight modifications.
 
 Use the following commands in place of the ones described in the next section.
 

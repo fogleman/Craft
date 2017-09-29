@@ -1,7 +1,7 @@
 from math import floor
 from world import World
-import Queue
-import SocketServer
+import queue
+import socketserver
 import datetime
 import random
 import re
@@ -59,7 +59,7 @@ except ImportError:
 def log(*args):
     now = datetime.datetime.utcnow()
     line = ' '.join(map(str, (now,) + args))
-    print line
+    print(line)
     with open(LOG_PATH, 'a') as fp:
         fp.write('%s\n' % line)
 
@@ -90,11 +90,11 @@ class RateLimiter(object):
             self.allowance -= 1
             return False # okay
 
-class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-class Handler(SocketServer.BaseRequestHandler):
+class Handler(socketserver.BaseRequestHandler):
     def setup(self):
         self.position_limiter = RateLimiter(100, 5)
         self.limiter = RateLimiter(1000, 10)
@@ -102,7 +102,7 @@ class Handler(SocketServer.BaseRequestHandler):
         self.client_id = None
         self.user_id = None
         self.nick = None
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.running = True
         self.start()
     def handle(self):
@@ -114,7 +114,7 @@ class Handler(SocketServer.BaseRequestHandler):
                 data = self.request.recv(BUFFER_SIZE)
                 if not data:
                     break
-                buf.extend(data.replace('\r\n', '\n'))
+                buf.extend(data.decode().replace('\r\n', '\n'))
                 while '\n' in buf:
                     index = buf.index('\n')
                     line = ''.join(buf[:index])
@@ -151,12 +151,12 @@ class Handler(SocketServer.BaseRequestHandler):
                     try:
                         while True:
                             buf.append(self.queue.get(False))
-                    except Queue.Empty:
+                    except queue.Empty:
                         pass
-                except Queue.Empty:
+                except queue.Empty:
                     continue
                 data = ''.join(buf)
-                self.request.sendall(data)
+                self.request.sendall(data.encode())
             except Exception:
                 self.request.close()
                 raise
@@ -170,7 +170,7 @@ class Model(object):
     def __init__(self, seed):
         self.world = World(seed)
         self.clients = []
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.commands = {
             AUTHENTICATE: self.on_authenticate,
             CHUNK: self.on_chunk,
@@ -210,7 +210,7 @@ class Model(object):
         try:
             func, args, kwargs = self.queue.get(timeout=5)
             func(*args, **kwargs)
-        except Queue.Empty:
+        except queue.Empty:
             pass
     def execute(self, *args, **kwargs):
         return self.connection.execute(*args, **kwargs)
@@ -338,7 +338,7 @@ class Model(object):
         self.send_talk('%s has joined the game.' % client.nick)
     def on_chunk(self, client, p, q, key=0):
         packets = []
-        p, q, key = map(int, (p, q, key))
+        p, q, key = list(map(int, (p, q, key)))
         query = (
             'select rowid, x, y, z, w from block where '
             'p = :p and q = :q and rowid > :key;'
@@ -375,7 +375,7 @@ class Model(object):
         packets.append(packet(CHUNK, p, q))
         client.send_raw(''.join(packets))
     def on_block(self, client, x, y, z, w):
-        x, y, z, w = map(int, (x, y, z, w))
+        x, y, z, w = list(map(int, (x, y, z, w)))
         p, q = chunked(x), chunked(z)
         previous = self.get_block(x, y, z)
         message = None
@@ -432,7 +432,7 @@ class Model(object):
             )
             self.execute(query, dict(x=x, y=y, z=z))
     def on_light(self, client, x, y, z, w):
-        x, y, z, w = map(int, (x, y, z, w))
+        x, y, z, w = list(map(int, (x, y, z, w)))
         p, q = chunked(x), chunked(z)
         block = self.get_block(x, y, z)
         message = None
@@ -458,7 +458,7 @@ class Model(object):
             client.send(TALK, 'Only logged in users are allowed to build.')
             return
         text = ','.join(args)
-        x, y, z, face = map(int, (x, y, z, face))
+        x, y, z, face = list(map(int, (x, y, z, face)))
         if y <= 0 or y > 255:
             return
         if face < 0 or face > 7:
@@ -481,7 +481,7 @@ class Model(object):
             self.execute(query, dict(x=x, y=y, z=z, face=face))
         self.send_sign(client, p, q, x, y, z, face, text)
     def on_position(self, client, x, y, z, rx, ry):
-        x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
+        x, y, z, rx, ry = list(map(float, (x, y, z, rx, ry)))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
     def on_talk(self, client, *args):
@@ -531,7 +531,7 @@ class Model(object):
             client.send(YOU, client.client_id, *client.position)
             self.send_position(client)
     def on_pq(self, client, p, q):
-        p, q = map(int, (p, q))
+        p, q = list(map(int, (p, q)))
         if abs(p) > 1000 or abs(q) > 1000:
             return
         client.position = (p * CHUNK_SIZE, 0, q * CHUNK_SIZE, 0, 0)
@@ -636,7 +636,7 @@ def cleanup():
     count = 0
     total = 0
     delete_query = 'delete from block where x = %d and y = %d and z = %d;'
-    print 'begin;'
+    print('begin;')
     for p, q in chunks:
         chunk = world.create_chunk(p, q)
         query = 'select x, y, z, w from block where p = :p and q = :q;'
@@ -650,10 +650,10 @@ def cleanup():
             original = chunk.get((x, y, z), 0)
             if w == original or original in INDESTRUCTIBLE_ITEMS:
                 count += 1
-                print delete_query % (x, y, z)
+                print(delete_query % (x, y, z))
     conn.close()
-    print 'commit;'
-    print >> sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
+    print('commit;')
+    print('%d of %d blocks will be cleaned up' % (count, total), file=sys.stderr)
 
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':

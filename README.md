@@ -98,6 +98,10 @@ the client.
     gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
     python server.py [HOST [PORT]]
 
+On windows with mingw use the following to build the DLL:
+
+    gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
+
 ### Controls
 
 - WASD to move forward, left, backward, right.

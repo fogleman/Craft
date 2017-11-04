@@ -15,6 +15,11 @@ add_executable(
 
 add_definitions(-std=c99 -O3)
 
+if(CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
+    find_package(OpenGL REQUIRED)
+    include_directories(${OPENGL_INCLUDE_DIR})
+endif()
+
 add_subdirectory(deps/glfw)
 include_directories(deps/glew/include)
 include_directories(deps/glfw/include)
@@ -25,9 +30,9 @@ include_directories(deps/tinycthread)
 
 if(MINGW)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}
-        "C:/Program Files/CURL/lib" "C:/Program Files (x86)/CURL/lib")
+	"C:/Program Files/CURL/lib" "C:/Program Files (x86)/CURL/lib")
     set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH}
-        "C:/Program Files/CURL/include" "C:/Program Files (x86)/CURL/include")
+	"C:/Program Files/CURL/include" "C:/Program Files (x86)/CURL/include")
 endif()
 
 find_package(CURL REQUIRED)
@@ -35,15 +40,20 @@ include_directories(${CURL_INCLUDE_DIR})
 
 if(APPLE)
     target_link_libraries(craft glfw
-        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+	${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
-if(UNIX)
-    target_link_libraries(craft dl glfw
-        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+if(CMAKE_SYSTEM_NAME STREQUAL Linux)
+        target_link_libraries(craft dl glfw
+	${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
+        target_link_libraries(craft glfw
+	${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
 if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
-        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+	${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()

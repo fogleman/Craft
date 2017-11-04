@@ -6,6 +6,8 @@
 #else
     #include <netdb.h>
     #include <unistd.h>
+    #include <netinet/in.h>
+    #include <sys/socket.h>
 #endif
 
 #include <stdio.h>

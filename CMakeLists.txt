@@ -18,6 +18,10 @@ add_definitions(-std=c99 -O3)
 if(CMAKE_SYSTEM_NAME STREQUAL FreeBSD)
     find_package(OpenGL REQUIRED)
     include_directories(${OPENGL_INCLUDE_DIR})
+
+    # 600 - X/Open 6, incorporating POSIX 2004
+    # This is for fix sqlite3 error: use of undeclared identifier 'fchmod'
+    add_definitions("-D_XOPEN_SOURCE=600")
 endif()
 
 add_subdirectory(deps/glfw)

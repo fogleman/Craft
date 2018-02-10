@@ -18,10 +18,7 @@ http://www.michaelfogleman.com/craft/
 
 ### Download
 
-Mac and Windows binaries are available on the website.
-
-http://www.michaelfogleman.com/craft/
-
+Mac and Windows binaries are available on the website: http://www.michaelfogleman.com/craft/.
 See below to run from source.
 
 ### Install Dependencies

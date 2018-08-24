@@ -50,5 +50,6 @@
 #define DELETE_CHUNK_RADIUS 14
 #define CHUNK_SIZE 32
 #define COMMIT_INTERVAL 5
+#define MAX_BLOCK_HEIGHT 65536
 
 #endif

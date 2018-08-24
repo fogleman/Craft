@@ -25,6 +25,10 @@
 //
 //========================================================================
 
+#ifdef __GNUC__
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "internal.h"
 
 #if defined(__linux__)

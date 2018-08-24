@@ -28,6 +28,10 @@
 //
 //========================================================================
 
+#ifdef __GNUC__
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>

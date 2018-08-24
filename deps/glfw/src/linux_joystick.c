@@ -244,14 +244,14 @@ int _glfwInitJoysticks(void)
             if (asprintf(&path, "%s/%s", dirname, entry->d_name) < 0)
             {
                 _glfwInputError(GLFW_PLATFORM_ERROR,
-				"Linux: Failed to construct device path: %s",
-				strerror(errno));
-		continue;
+                                "Linux: Failed to construct device path: %s",
+                                strerror(errno));
+                continue;
 
-	    }
+            }
 
             openJoystickDevice(path);
-	    free(path);
+            free(path);
         }
 
         closedir(dir);

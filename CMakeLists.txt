@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.c)
+FILE(GLOB TEST_FILES test/*.c)
 
 add_executable(
     craft
@@ -13,15 +14,25 @@ add_executable(
     deps/sqlite/sqlite3.c
     deps/tinycthread/tinycthread.c)
 
+add_executable(craft-test 
+	${TEST_FILES}
+	)
+target_link_libraries(craft-test
+	cunit
+	)
+
+
 add_definitions(-std=c99 -O3)
 
 add_subdirectory(deps/glfw)
+add_subdirectory(deps/CUnit)
 include_directories(deps/glew/include)
 include_directories(deps/glfw/include)
 include_directories(deps/lodepng)
 include_directories(deps/noise)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
+include_directories(deps/CUnit)
 
 if(MINGW)
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH}

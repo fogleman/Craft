@@ -5,6 +5,7 @@ CMakeFiles
 cmake_install.cmake
 config.py
 craft
+craft-test
 world
 env
 log.txt
@@ -21,4 +22,6 @@ deps/glfw/tests/cursor
 deps/glfw/tests/empty
 deps/glfw/tests/monitors
 deps/glfw/tests/msaa
-
+CPackConfig.cmake
+CPackSourceConfig.cmake
+*.swp

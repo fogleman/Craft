@@ -10,6 +10,7 @@
 void AddAllTests() {
 	TestTest_AddTests();
 	AuthTest_AddTests();
+    MatrixTest_AddTests();
 }
 
 int main(int argc, char** argv) {

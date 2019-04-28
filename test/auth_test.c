@@ -16,7 +16,7 @@ static void handles_valid_user() {
 	char buffer[2048];
 
 	int result_code = get_access_token(buffer, strlen(test_user_name), test_user_name, test_identity_token);
-	
+
 	CU_ASSERT(result_code);
 } 
 

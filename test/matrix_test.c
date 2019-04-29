@@ -178,6 +178,44 @@ static void matrix_matrix_product() {
     }
 }
 
+static void invalid_vector_size() {
+    float matrix[16];
+    mat_identity(matrix);
+
+    float vector[3];
+
+    vector[0] = 1;
+    vector[1] = 5;
+    vector[2] = -90;
+
+    float result[3];
+
+    mat_vec_multiply(result, matrix, vector);
+    
+    CU_ASSERT_FALSE(float_equals(result[0], vector[0]));
+    CU_ASSERT_FALSE(float_equals(result[1], vector[1]));
+    CU_ASSERT_FALSE(float_equals(result[2], vector[2]));
+
+    CU_FAIL("no handling of invalid parameters");
+}
+
+static void invalid_matrix_dimension() {
+    float matrix[14];
+    mat_identity(matrix);
+
+    float expected[16] = {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    };
+
+    for(int i = 0; i < 16; i++) 
+        CU_ASSERT(float_equals(expected[i], matrix[i]));
+
+    CU_FAIL("no handling of invalid parameters");
+}
+
 static CU_TestInfo normalization_tests[] = {
     {"normalization works for non zero vectors", properly_normalizes_non_zero_vector3},
     {"normalization handles zero vector", properly_handles_zero_vector3},
@@ -197,10 +235,17 @@ static CU_TestInfo matrix_product_tests[] = {
     CU_TEST_INFO_NULL
 };
 
+static CU_TestInfo matrix_parameter_tests[] = {
+    {"invalid vector size", invalid_vector_size},
+    {"invalid matrix dimension", invalid_matrix_dimension},
+    CU_TEST_INFO_NULL
+};
+
 static CU_SuiteInfo suites[] = {
     {"normalization suite", NULL, NULL, NULL, NULL, normalization_tests},
     {"matrix transforms suite", NULL, NULL, NULL, NULL, matrix_transform_tests},
     {"matrix product suite", NULL, NULL, NULL, NULL, matrix_product_tests},
+    {"operations handle invalid parameter inputs", NULL, NULL, NULL, NULL, matrix_parameter_tests},
     CU_SUITE_INFO_NULL
 };
 

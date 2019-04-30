@@ -39,12 +39,17 @@ static void handleInvalidDestructable(){
 }
 
 static void handleValidPlant(){
-
+    for (int i = 17; i<24; i++){
+        CU_ASSERT(is_plant(i));
+    }
 
 }
 
 static void handleInvalidPlant(){
-
+    for (int i = 0; i<64; i++){
+        if(i<17 || i>23)
+            CU_ASSERT_false(is_plant(i));
+    }
 
 
 }

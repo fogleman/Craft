@@ -9,32 +9,45 @@
 #include "item_test.h"
 
 static void handleValidTransparent(){
-    
+    CU_ASSERT(is_transparent(0));
+    CU_ASSERT(is_transparent(10));
+    CU_ASSERT(is_transparent(15));
 
 }
 
 static void handleInvalidTransparent(){
-
+    for (int i = 1; i<64; i++){                
+        if(i!=10 && i!=15 && i!=17 && i!=19 && i!=20 && i!=21 && i!=22  && i!=23 ) //apparently plants are transparent
+            CU_ASSERT_FALSE(is_transparent(i));           
+    }
 
 }
 
 static void handleValidObstacle(){
-
-
+    for (int i = 1; i<64; i++){                
+        if( i<16 || i>23 ) //apparently plants are transparent
+            CU_ASSERT(is_obstacle(i));
+    }
 }
 
 static void handleInvalidObstacle(){
-
+    for (int i = 16; i<24; i++){
+        CU_ASSERT_FALSE(is_obstacle(i));
+    }
     
 }
 
 static void handleValidDestructable(){
-
+    for (int i = 1; i<64; i++){ 
+        if(i != 16)
+            CU_ASSERT(is_destructable(i));
+    }
 
 }
 
 static void handleInvalidDestructable(){
-
+    CU_ASSERT_FALSE(is_destructable(0));
+    CU_ASSERT_FALSE(is_destructable(16));
 
 }
 
@@ -48,10 +61,8 @@ static void handleValidPlant(){
 static void handleInvalidPlant(){
     for (int i = 0; i<64; i++){
         if(i<17 || i>23)
-            CU_ASSERT_false(is_plant(i));
+            CU_ASSERT_FALSE(is_plant(i));
     }
-
-
 }
 
 

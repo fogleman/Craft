@@ -713,25 +713,53 @@ int collide(int height, float *x, float *y, float *z) {
     float pz = *z - nz;
     float pad = 0.25;
     for (int dy = 0; dy < height; dy++) {
-        if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
+        if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {//px < -pad && 
             *x = nx - pad;
         }
-        if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {
+        if (px > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz))) {//px > pad && 
             *x = nx + pad;
         }
-        if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {
+        if (py < -pad && is_obstacle(map_get(map, nx, ny - dy - 1, nz))) {//py < -pad && 
             *y = ny - pad;
             result = 1;
         }
-        if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {
+        if (py > pad && is_obstacle(map_get(map, nx, ny - dy + 1, nz))) {//py > pad && 
             *y = ny + pad;
             result = 1;
         }
-        if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {
+        if (pz < -pad && is_obstacle(map_get(map, nx, ny - dy, nz - 1))) {//pz < -pad && 
             *z = nz - pad;
         }
-        if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
+        if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {//pz > pad && 
             *z = nz + pad;
+        }
+        if (px < -pad && pz > pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz + 1))) {//px < -pad && 
+            if(ABS(px) < ABS(pz)){
+		        *x = nx - pad;
+            } else {
+	            *z = nz + pad;
+            }
+        }
+        if (px > pad && pz > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz + 1))) {//px > pad && 
+            if(ABS(px) < ABS(pz)){            
+                *x = nx + pad;//revert x dir and go z dir
+            } else {
+	            *z = nz + pad;
+            }
+        }
+	    if (px < -pad && pz < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz - 1))) {//px < -pad && 
+            if(ABS(px) < ABS(pz)){ 
+                *x = nx - pad;
+            } else {
+	            *z = nz - pad;
+            }
+        }
+        if (px > pad && pz < -pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz - 1))) {//px > pad && 
+            if(ABS(px) < ABS(pz)){             
+                *x = nx + pad;
+            } else {
+	            *z = nz - pad;
+            }
         }
     }
     return result;
@@ -2446,6 +2474,7 @@ void handle_movement(double dt) {
     int step = MAX(8, estimate);
     float ut = dt / step;
     vx = vx * ut * speed;
+	//printf("ut:%f, dt:%f, step:%d, vx:%f\n", ut, dt, step, vx);
     vy = vy * ut * speed;
     vz = vz * ut * speed;
     for (int i = 0; i < step; i++) {
@@ -2460,6 +2489,7 @@ void handle_movement(double dt) {
         s->y += vy + dy * ut;
         s->z += vz;
         if (collide(2, &s->x, &s->y, &s->z)) {
+	//printf("collide\n");
             dy = 0;
         }
     }

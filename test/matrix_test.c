@@ -216,6 +216,15 @@ static void invalid_matrix_dimension() {
     CU_FAIL("no handling of invalid parameters");
 }
 
+static void builds_correct_frustum() {
+    float expeceted_planes[6][4] = {
+        // plane 1
+    };
+
+    
+
+}
+
 static CU_TestInfo normalization_tests[] = {
     {"normalization works for non zero vectors", properly_normalizes_non_zero_vector3},
     {"normalization handles zero vector", properly_handles_zero_vector3},
@@ -238,6 +247,11 @@ static CU_TestInfo matrix_product_tests[] = {
 static CU_TestInfo matrix_parameter_tests[] = {
     {"invalid vector size", invalid_vector_size},
     {"invalid matrix dimension", invalid_matrix_dimension},
+    CU_TEST_INFO_NULL
+};
+
+static CU_TestInfo matrix_frustum_tests[] = {
+    {"Correctly Builds Frustum Planes", builds_correct_frustum},
     CU_TEST_INFO_NULL
 };
 

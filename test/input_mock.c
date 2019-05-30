@@ -216,7 +216,7 @@ static int Teardown() {
 }
 
 static void handles_lateral_movement() {
-    int sz = 1;
+    int sz = 2;
     int sx = -1;
     float dy = 0;
     float vx, vy, vz;

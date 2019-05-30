@@ -11,6 +11,8 @@
 #define EPSILON 0.0001
 #define M_PI 3.14159265358979323846
 
+// 64 percent coverage
+
 static int float_equals(float a, float b) { return abs(a - b) < EPSILON; }
 
 static void properly_normalizes_non_zero_vector3() {
@@ -216,14 +218,88 @@ static void invalid_matrix_dimension() {
     CU_FAIL("no handling of invalid parameters");
 }
 
-static void builds_correct_frustum() {
-    float expeceted_planes[6][4] = {
-        // plane 1
+static void frustum_correctly_checks_in_points() {
+    float planes[6][4];
+    float matrix[16];
+    float fov = 70.0f;
+    float aspect = 1.0f;
+    float znear = 0.1f;
+    float zfar = 1000.0f;
+
+    mat_perspective(matrix, fov, aspect, znear, zfar);
+    frustum_planes(planes, 0, matrix);
+
+    float test_points[2][3] = {
+        {0, 0, -1},
+        {3, 40, -100}
     };
 
-    
+    for(int i = 0; i < 6; i++) {
+        int in = 0;
+        int out = 0;
+        for(int j = 0; j < 2; j++) {
+            float dot = planes[i][0] * test_points[j][0] 
+                      + planes[i][1] * test_points[j][1]
+                      + planes[i][2] * test_points[j][2]
+                      + planes[i][3];
 
+            if(dot < 0) 
+                out++;
+            else
+                in++;
+            if(in && out) 
+                break;
+        }
+
+        if(in == 0)
+            CU_FAIL("Point Not In Frustum");
+    }
+    
+    CU_PASS("All Points In Frustum");
 }
+
+static void frustum_correctly_checks_out_points() {
+    float planes[6][4];
+    float matrix[16];
+    float fov = 70.0f;
+    float aspect = 1.0f;
+    float znear = 0.1f;
+    float zfar = 1000.0f;
+
+    mat_perspective(matrix, fov, aspect, znear, zfar);
+    frustum_planes(planes, 0, matrix);
+
+    float test_points[2][3] = {
+        {0, 0, 1},
+        {3, 40, 100}
+    };
+
+    int failures = 0;
+    for(int i = 0; i < 6; i++) {
+        int in = 0;
+        int out = 0;
+        for(int j = 0; j < 2; j++) {
+            float dot = planes[i][0] * test_points[j][0] 
+                      + planes[i][1] * test_points[j][1]
+                      + planes[i][2] * test_points[j][2]
+                      + planes[i][3];
+
+            if(dot < 0) 
+                out++;
+            else
+                in++;
+            if(in && out) 
+                break;
+        }
+
+        if(in == 1) {
+            CU_FAIL("Failure, point in frustum");
+        } 
+    }
+    
+    CU_PASS("All Points Out of Frustum");
+}
+
 
 static CU_TestInfo normalization_tests[] = {
     {"normalization works for non zero vectors", properly_normalizes_non_zero_vector3},
@@ -251,7 +327,8 @@ static CU_TestInfo matrix_parameter_tests[] = {
 };
 
 static CU_TestInfo matrix_frustum_tests[] = {
-    {"Correctly Builds Frustum Planes", builds_correct_frustum},
+    {"Correctly builds frustum part 1", frustum_correctly_checks_in_points},
+    {"Correctly builds frustum part 2", frustum_correctly_checks_out_points},
     CU_TEST_INFO_NULL
 };
 
@@ -260,6 +337,7 @@ static CU_SuiteInfo suites[] = {
     {"matrix transforms suite", NULL, NULL, NULL, NULL, matrix_transform_tests},
     {"matrix product suite", NULL, NULL, NULL, NULL, matrix_product_tests},
     {"operations handle invalid parameter inputs", NULL, NULL, NULL, NULL, matrix_parameter_tests},
+    {"Frustum suite", NULL, NULL, NULL, NULL, matrix_frustum_tests},
     CU_SUITE_INFO_NULL
 };
 

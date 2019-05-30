@@ -5,14 +5,18 @@
 #include "CUnit/Basic.h"
 #include "test_test.h"
 #include "auth_test.h"
+
 #include "item_test.h"
 #include "item_test_mutant.h"
+#include "ring_test.h"
+
 
 
 void AddAllTests() {
 	TestTest_AddTests();
 	AuthTest_AddTests();
-    MatrixTest_AddTests();
+  MatrixTest_AddTests();
+  RingTest_AddTests();
 	ItemTest_AddTests();
 	ItemTestMutant_AddTests();
 }

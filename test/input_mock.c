@@ -15,6 +15,13 @@ Player* me;
 State* s;
 GLuint sky_buffer;
 
+#define EPSILON 0.0001
+#define M_PI 3.14159265358979323846
+
+// 64 percent coverage
+
+static int float_equals(float a, float b) { return abs(a - b) < EPSILON; }
+
 static int Setup() {
 
 
@@ -210,31 +217,70 @@ static int Teardown() {
 
 static void handles_lateral_movement() {
     int sz = 1;
-    int sx = 0;
-    float dy;
+    int sx = -1;
+    float dy = 0;
     float vx, vy, vz;
 
     State* cs = &g->players->state;
-    get_motion_vector(0, sz, sx, cs->rx, cs->ry, &vx, &vy, &vz);
 
+	int base_x, base_y, base_z;
+	base_x = cs->x;
+	base_y = cs->y;
+	base_z = cs->z;
+
+    get_motion_vector(0, sz, sx, cs->rx, cs->ry, &vx, &vy, &vz);
+	
     float speed = 5;
 
     vx = vx * speed;
     vy = vy * speed;
     vz = vz * speed;
 
-    s->x += vx;
-    s->y += vy + dy;
-    s->z += vz;
+    cs->x += vx;
+    cs->y += vy + dy;
+    cs->z += vz;
 
 
-    assert(g->players->state.x);
-    assert(g->players->state.y);
-    assert(g->players->state.z);
-};
+    CU_ASSERT(!float_equals(g->players->state.x, base_x));
+    CU_ASSERT(float_equals(g->players->state.y, base_y));
+    CU_ASSERT(!float_equals(g->players->state.z, base_z));
+}
+
+static void handles_jumping() {
+	int sz = 0;	
+	int sx = 0;
+
+	float dy = 1;	
+	float vx, vy, vz;
+
+	State* cs = &g->players->state;
+
+	int base_x, base_y, base_z;
+	base_x = cs->x;
+	base_y = cs->y;
+	base_z = cs->z;
+
+    get_motion_vector(0, sz, sx, cs->rx, cs->ry, &vx, &vy, &vz);
+	
+    float speed = 5;
+
+    vx = vx * speed;
+    vy = vy * speed;
+    vz = vz * speed;
+
+    cs->x += vx;
+    cs->y += vy + dy;
+    cs->z += vz;
+
+	CU_ASSERT(float_equals(g->players->state.x, base_x));
+    CU_ASSERT(!float_equals(g->players->state.y, base_y));
+    CU_ASSERT(float_equals(g->players->state.z, base_z));
+
+}
 
 static CU_TestInfo test_wasd[] = {
     {"handles lateral movement", handles_lateral_movement},
+	{"handles jumping", handles_jumping},
     CU_TEST_INFO_NULL
 };
 

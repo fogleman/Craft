@@ -5,6 +5,8 @@
 #include "CUnit/Basic.h"
 #include "test_test.h"
 #include "auth_test.h"
+#include "item_test.h"
+#include "item_test_mutant.h"
 
 
 void AddAllTests() {
@@ -12,6 +14,7 @@ void AddAllTests() {
 	AuthTest_AddTests();
     MatrixTest_AddTests();
 	ItemTest_AddTests();
+	ItemTestMutant_AddTests();
 }
 
 int main(int argc, char** argv) {

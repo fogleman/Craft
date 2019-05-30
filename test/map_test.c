@@ -67,16 +67,13 @@ static void properly_copy_map_struct(){
     CU_ASSERT(temp1.dz ==temp2.dz);
     CU_ASSERT(temp1.mask == temp2.mask);
    
-   //CU_ASSERT(temp1.data == temp2.data);        //This fails
-    /*if(temp1.data == temp2.data){
-        CU_ASSERT(1);
-    }else{
-        CU_ASSERT(0);
-    }
-    ///////////////////    
     for(int i = 0; i<=temp1.mask;i++ ){
-        CU_ASSERT(temp1.data[i] == temp2.data[i]);
-    }*/
+        CU_ASSERT(temp1.data[i].value == temp2.data[i].value);
+        CU_ASSERT(temp1.data[i].e.x == temp2.data[i].e.x);
+        CU_ASSERT(temp1.data[i].e.y == temp2.data[i].e.y);
+        CU_ASSERT(temp1.data[i].e.z == temp2.data[i].e.z);
+        CU_ASSERT(temp1.data[i].e.w == temp2.data[i].e.w);
+    }
     
 
 
@@ -95,12 +92,18 @@ static CU_TestInfo init_map_tests[] = {
     {"Properly handles copying a map struct", properly_copy_map_struct},
     CU_TEST_INFO_NULL
 };
+/*
+static CU_TestInfo set_map_tests[] = {
+    {"1", properly_hashes_number},
+    CU_TEST_INFO_NULL
+};*/
 
 
 
 static CU_SuiteInfo suites[] = {
     {"hash suite", NULL, NULL, NULL, NULL, hash_tests},
-    {"map suite", NULL, NULL, NULL, NULL, init_map_tests},
+    {"init map suite", NULL, NULL, NULL, NULL, init_map_tests},
+   // {"set map suite", NULL, NULL, NULL, NULL, set_map_tests},
     CU_SUITE_INFO_NULL
 };
 

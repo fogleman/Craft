@@ -3,14 +3,20 @@
 #include <string.h>
 
 #include "CUnit/Basic.h"
+#include "ring_test.h"
+#include "ring_test_mutate.h"
 #include "test_test.h"
 #include "auth_test.h"
+#include "world_test.h"
+#include "util_test.h"
 
 
 void AddAllTests() {
 	TestTest_AddTests();
 	AuthTest_AddTests();
-    MatrixTest_AddTests();
+	WorldTest_AddTests();
+	UtilTest_AddTests();
+   	MatrixTest_AddTests();
 }
 
 int main(int argc, char** argv) {

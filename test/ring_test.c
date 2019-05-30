@@ -83,12 +83,12 @@ static CU_TestInfo ring_analysis_tests[] = {
     {"checking empty ring works", properly_checks_ring_empty},
     {"checking full ring works", properly_checks_ring_full},
     {"checking ring size works", properly_checks_ring_size},
-    {"checking zero length ring", properly_handles_zero_length}
+    {"checking zero length ring", properly_handles_zero_length},
     CU_TEST_INFO_NULL
 };
 
 static CU_SuiteInfo suites[] = {
-    {"ring analysis suite", NULL, NULL, NULL, NULL, ring_analysis_tests}
+    {"ring analysis suite", NULL, NULL, NULL, NULL, ring_analysis_tests},
     CU_SUITE_INFO_NULL
 };
 

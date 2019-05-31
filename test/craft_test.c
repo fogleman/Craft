@@ -9,15 +9,17 @@
 #include "item_test.h"
 #include "item_test_mutant.h"
 #include "ring_test.h"
+#include "sign_test.h"
 
 
 
 void AddAllTests() {
 	TestTest_AddTests();
 	AuthTest_AddTests();
-  	MatrixTest_AddTests();
-  	RingTest_AddTests();
+  MatrixTest_AddTests();
+  RingTest_AddTests();
 	ItemTest_AddTests();
+	SignTest_AddTests();
 	ItemTestMutant_AddTests();
 	MapTest_AddTests();
 }

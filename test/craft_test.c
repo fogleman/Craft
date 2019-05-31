@@ -14,6 +14,9 @@
 
 
 void AddAllTests() {
+   
+  InputMock_AddTests();
+
 	TestTest_AddTests();
 	AuthTest_AddTests();
   MatrixTest_AddTests();
@@ -28,15 +31,15 @@ int main(int argc, char** argv) {
 
 
 
-	if(CU_initialize_registry()) {
-		printf("\nInitialization of test registry failed.\n");
-	} else {
-		AddAllTests();
-		CU_basic_set_mode(CU_BRM_VERBOSE);
-		CU_set_error_action(CUEA_IGNORE);
-		printf("\ntests completed with return value %d. \n", CU_basic_run_tests());
-		CU_cleanup_registry();
-	}
+    if(CU_initialize_registry()) {
+        printf("\nInitialization of test registry failed.\n");
+    } else {
+        AddAllTests();
+        CU_basic_set_mode(CU_BRM_VERBOSE);
+        CU_set_error_action(CUEA_IGNORE);
+        printf("\ntests completed with return value %d. \n", CU_basic_run_tests());
+        CU_cleanup_registry();
+    }
 
-	return 0;
+    return 0;
 }

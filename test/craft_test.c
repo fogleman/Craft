@@ -5,8 +5,12 @@
 #include "CUnit/Basic.h"
 #include "test_test.h"
 #include "auth_test.h"
+
+#include "item_test.h"
+#include "item_test_mutant.h"
 #include "ring_test.h"
 #include "sign_test.h"
+
 
 
 void AddAllTests() {
@@ -16,6 +20,7 @@ void AddAllTests() {
 	RingTest_AddTests();
 	ItemTest_AddTests();
 	SignTest_AddTests();
+	ItemTestMutant_AddTests();
 }
 
 int main(int argc, char** argv) {

@@ -79,6 +79,106 @@ static void properly_gets_ring() {
 
 }
 
+static void properly_grows_ring() {
+
+    Ring ring;
+    int cap = 8;
+    ring_alloc(&ring, cap);
+
+    ring_grow(&ring);
+
+    CU_ASSERT(ring.capacity > 8);
+}
+
+static void properly_puts_block() {
+
+    Ring ring;
+    int cap = 8;
+    ring_alloc(&ring, cap);
+
+    int p, q, x, y, z, w;
+    p = q = x = y = z = w = 1;
+
+    ring_put_block(&ring, p, q, x, y, z, w);
+
+    CU_ASSERT(ring.data->type == BLOCK);
+    CU_ASSERT(ring.data->p);
+    CU_ASSERT(ring.data->q);
+    CU_ASSERT(ring.data->x);
+    CU_ASSERT(ring.data->y);
+    CU_ASSERT(ring.data->z);
+    CU_ASSERT(ring.data->w);
+
+    ring_free(&ring);
+}
+
+static void properly_puts_light() {
+
+    Ring ring;
+    int cap = 8;
+    ring_alloc(&ring, cap);
+
+    int p, q, x, y, z, w;
+    p = q = x = y = z = w = 1;
+
+    ring_put_light(&ring, p, q, x, y, z, w);
+
+    CU_ASSERT(ring.data->type == LIGHT);
+    CU_ASSERT(ring.data->p);
+    CU_ASSERT(ring.data->q);
+    CU_ASSERT(ring.data->x);
+    CU_ASSERT(ring.data->y);
+    CU_ASSERT(ring.data->z);
+    CU_ASSERT(ring.data->w);
+
+    ring_free(&ring);
+}
+
+static void properly_puts_key() {
+
+    Ring ring;
+    int cap = 8;
+    ring_alloc(&ring, cap);
+
+    int p, q, key;
+    p = q = key = 1;
+
+    ring_put_key(&ring, p, q, key);
+
+    CU_ASSERT(ring.data->type == KEY);
+    CU_ASSERT(ring.data->p);
+    CU_ASSERT(ring.data->q);
+    CU_ASSERT(ring.data->key);
+
+    ring_free(&ring);
+}
+
+static void properly_puts_commit() {
+
+    Ring ring;
+    int cap = 8;
+    ring_alloc(&ring, cap);
+
+    ring_put_commit(&ring);
+
+    CU_ASSERT(ring.data->type == COMMIT);
+
+    ring_free(&ring);
+}
+
+static void properly_puts_exit() {
+
+    Ring ring;
+    int cap = 8;
+    ring_alloc(&ring, cap);
+
+    ring_put_exit(&ring);
+
+    CU_ASSERT(ring.data->type == EXIT);
+
+    ring_free(&ring);
+}
+
 static CU_TestInfo ring_analysis_tests[] = {
     {"checking empty ring works", properly_checks_ring_empty},
     {"checking full ring works", properly_checks_ring_full},
@@ -87,8 +187,22 @@ static CU_TestInfo ring_analysis_tests[] = {
     CU_TEST_INFO_NULL
 };
 
+
 static CU_SuiteInfo suites[] = {
     {"ring analysis suite", NULL, NULL, NULL, NULL, ring_analysis_tests},
+
+static CU_TestInfo ring_put_tests[] = {
+    {"checking block put", properly_puts_block},
+    {"checking light put", properly_puts_light},
+    {"checking key put", properly_puts_key},
+    {"checking commit put", properly_puts_commit},
+    {"checking exit put", properly_puts_exit},
+    CU_TEST_INFO_NULL
+};
+
+static CU_SuiteInfo suites[] = {
+    {"ring analysis suite", NULL, NULL, NULL, NULL, ring_analysis_tests},
+    {"ring put suite", NULL, NULL, NULL, NULL, ring_put_tests},
     CU_SUITE_INFO_NULL
 };
 

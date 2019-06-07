@@ -1,6 +1,6 @@
-#version 140
+#version 420
 
-layout (std140) uniform BlockUbo {
+layout (std140, binding = 2) uniform BlockUbo {
   mat4 matrix;
   vec3 camera;
   float timer;
@@ -9,16 +9,16 @@ layout (std140) uniform BlockUbo {
   bool ortho;
 };
 
-attribute vec4 position;
-attribute vec3 normal;
-attribute vec4 uv;
+layout (location = 0) in vec4 position;
+layout (location = 2) in vec4 uv;
+layout (location = 1) in vec3 normal;
 
-varying vec2 fragment_uv;
-varying float fragment_ao;
-varying float fragment_light;
-varying float fog_factor;
-varying float fog_height;
-varying float diffuse;
+layout (location = 0) out vec2 fragment_uv;
+layout (location = 1) out float fragment_ao;
+layout (location = 2) out float fragment_light;
+layout (location = 3) out float fog_factor;
+layout (location = 4) out float fog_height;
+layout (location = 5) out float diffuse;
 
 const float pi = 3.14159265;
 const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));

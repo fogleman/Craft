@@ -1572,7 +1572,7 @@ int render_chunks(Attrib *attrib, Uniform uniform, Player *player) {
         {
             continue;
         }
-        draw_chunk(attrib, chunk->buffer, chunk->faces);
+        draw_chunk(chunk->buffer, chunk->faces);
         result += chunk->faces;
     }
     return result;
@@ -1606,7 +1606,7 @@ void render_signs(Attrib *attrib, Uniform uniform, Player *player) {
         {
             continue;
         }
-        draw_signs(attrib, chunk->sign_buffer, chunk->sign_faces);
+        draw_signs(chunk->sign_buffer, chunk->sign_faces);
     }
 } // render_signs()
 
@@ -1635,7 +1635,7 @@ void render_sign(Attrib *attrib, Uniform uniform, Player *player) {
     float *data = malloc_faces(5, strlen(text));
     int length = _gen_sign_buffer(data, x, y, z, face, text);
     Buffer buffer = gen_faces(5, length, data);
-    draw_sign(attrib, buffer, length);
+    draw_sign(buffer, length);
     del_buffer(buffer);
 } // render_sign()
 
@@ -1658,7 +1658,7 @@ void render_players(Attrib *attrib, Uniform uniform, Player *player) {
     for (int i = 0; i < g->player_count; i++) {
         Player *other = g->players + i;
         if (other != player) {
-            draw_player(attrib, other->buffer);
+            draw_player(other->buffer);
         }
     }
 } // render_players()
@@ -1674,7 +1674,7 @@ void render_sky(Attrib *attrib, Uniform uniform, Player *player, Buffer buffer) 
         ubo_body.matrix, g->width, g->height,
         0, 0, 0, s->rx, s->ry, g->fov, 0, g->render_radius);
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    draw_sky(attrib, buffer);
+    draw_sky(buffer);
 } // render_sky()
 
 // Render a wire box around the chunk currently targetted by <player>
@@ -1692,7 +1692,7 @@ void render_wireframe(Attrib *attrib, Uniform uniform, Player *player) {
         glEnable(GL_COLOR_LOGIC_OP);
         bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
         Buffer wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
-        draw_lines(attrib, wireframe_buffer, 3, 24);
+        draw_lines(wireframe_buffer, 3, 24);
         del_buffer(wireframe_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
     }
@@ -1707,7 +1707,7 @@ void render_crosshairs(Attrib *attrib, Uniform uniform) {
     glLineWidth(4 * g->scale);
     glEnable(GL_COLOR_LOGIC_OP);
     Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
-    draw_lines(attrib, crosshair_buffer, 2, 4);
+    draw_lines(crosshair_buffer, 2, 4);
     del_buffer(crosshair_buffer);
     glDisable(GL_COLOR_LOGIC_OP);
 } // render_crosshairs()
@@ -1730,12 +1730,12 @@ void render_item(Attrib *attrib, Uniform uniform) {
     int w = items[g->item_index];
     if (is_plant(w)) {
         Buffer buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
-        draw_plant(attrib, buffer);
+        draw_plant(buffer);
         del_buffer(buffer);
     }
     else {
         Buffer buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
-        draw_cube(attrib, buffer);
+        draw_cube(buffer);
         del_buffer(buffer);
     }
 } // render_item()
@@ -1753,7 +1753,7 @@ void render_text(
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     Buffer buffer = gen_text_buffer(x, y, n, text);
-    draw_text(attrib, buffer, length);
+    draw_text(buffer, length);
     del_buffer(buffer);
 } // render_text()
 
@@ -2602,35 +2602,18 @@ int main(int argc, char **argv) {
     program = load_program(
         "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     block_attrib.program = program;
-    block_attrib.position = glGetAttribLocation(program, "position");
-    block_attrib.normal = glGetAttribLocation(program, "normal");
-    block_attrib.uv = glGetAttribLocation(program, "uv");
-    block_attrib.sampler = glGetUniformLocation(program, "sampler");
-    block_attrib.sampler2 = glGetUniformLocation(program, "sky_sampler");
-    block_attrib.ubo = glGetUniformBlockIndex(program, "BlockUbo");
 
     program = load_program(
         "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
     line_attrib.program = program;
-    line_attrib.position = glGetAttribLocation(program, "position");
-    line_attrib.ubo = glGetUniformBlockIndex(program, "LineUbo");
 
     program = load_program(
         "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
     text_attrib.program = program;
-    text_attrib.position = glGetAttribLocation(program, "position");
-    text_attrib.uv = glGetAttribLocation(program, "uv");
-    text_attrib.sampler = glGetUniformLocation(program, "sampler");
-    text_attrib.ubo = glGetUniformBlockIndex(program, "TextUbo");
 
     program = load_program(
         "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
     sky_attrib.program = program;
-    sky_attrib.position = glGetAttribLocation(program, "position");
-    sky_attrib.normal = glGetAttribLocation(program, "normal");
-    sky_attrib.uv = glGetAttribLocation(program, "uv");
-    sky_attrib.sampler = glGetUniformLocation(program, "sampler");
-    sky_attrib.ubo = glGetUniformBlockIndex(program, "SkyUbo");
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {

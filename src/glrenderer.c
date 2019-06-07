@@ -125,193 +125,183 @@ GLuint load_program(const char *path1, const char *path2) {
 } // load_program()
 
 // Draw triangles consisting of <count> 3D vertices with 10 components
-// taken from vertex buffer <buffer> using rendering state <attrib>
+// taken from vertex buffer <buffer>
 // This is used to draw omnipresent cube shapes as well as plants.
 // The expected components are 3D position coords, 3D normals,
 // 2D tex coords and 2 components used for ambient occlusion.
 // The <buffer> is bound and used for vertex attribs
-// The <attrib> is used to determine the attrib indices to be enabled
 // and pointers specified. <count> is used for the number of vertices in the draw call
 // Everything is unbound before exit.
-static void draw_triangles_3d_ao(Attrib *attrib, Buffer buffer, int count) {
+static void draw_triangles_3d_ao(Buffer buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->normal);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 10, 0);
-    glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 4, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->normal);
-    glDisableVertexAttribArray(attrib->uv);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 } // draw_triangles_3d_ao()
 
 // Draw triangles consisting of <count> 3D vertices with 5 components
-// taken from vertex buffer <buffer> using rendering state <attrib>
+// taken from vertex buffer <buffer>
 // Intended for use rendering sign text onto cubes
 // The expected components are 3D position coords and 2D tex coords
 // The <buffer> is bound and used for vertex attribs
-// The <attrib> is used to determine the attrib indices to be enabled
 // and pointers specified. <count> is used for the number of vertices in the draw call
 // Everything is unbound before exit.
-static void draw_triangles_3d_text(Attrib *attrib, Buffer buffer, int count) {
+static void draw_triangles_3d_text(Buffer buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 5, 0);
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 5, (GLvoid *)(sizeof(GLfloat) * 3));
     glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->uv);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 } // draw_triangles_3d_text()
 
 // Draw triangles consisting of <count> 3D vertices with 8 components
-// taken from vertex buffer <buffer> using rendering state <attrib>
+// taken from vertex buffer <buffer>
 // Intended for use rendering the chunk to be applied in the UI
 // Differs only from draw_triangles_3d_ao in that there is no ambient occlusion
 // The expected components are 3D position coords, 3D normals, and 2D tex coords
 // The <buffer> is bound and used for vertex attribs
-// The <attrib> is used to determine the attrib indices to be enabled
 // and pointers specified. <count> is used for the number of vertices in the draw call
 // Everything is unbound before exit.
-static void draw_triangles_3d(Attrib *attrib, Buffer buffer, int count) {
+static void draw_triangles_3d(Buffer buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->normal);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 8, 0);
-    glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
     glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->normal);
-    glDisableVertexAttribArray(attrib->uv);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 } // draw_triangles_3d()
 
 // Draw triangles consisting of <count> 2D vertices with 4 components
-// taken from vertex buffer <buffer> using rendering state <attrib>
+// taken from vertex buffer <buffer>
 // Intended for use rendering UI text as character textured quads
 // The expected components are 2D position coords and 2D tex coords
 // The <buffer> is bound and used for vertex attribs
-// The <attrib> is used to determine the attrib indices to be enabled
 // and pointers specified. <count> is used for the number of vertices in the draw call
 // Everything is unbound before exit.
-static void draw_triangles_2d(Attrib *attrib, Buffer buffer, int count) {
+static void draw_triangles_2d(Buffer buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 2, GL_FLOAT, GL_FALSE,
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 4, 0);
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
         sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
     glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->uv);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 } // draw_triangles_2d()
 
 // Draw lines consisting of <count> 2D or 3D vertices with <components> components
-// taken from vertex buffer <buffer> using rendering state <attrib>
+// taken from vertex buffer <buffer>
 // Intended for use rendering 3D highlights or 2D UI elements
 // The expected components are 2D or 3D position coords and 2D tex coords
 // The <buffer> is bound and used for vertex attribs
-// The <attrib> is used to determine the attrib indices to be enabled
 // and pointers specified. <components> determines how many attribs there are
 // depending on whether the lines are 2D or 3D <count> is used for the number of
 // vertices in the draw call. Everything is unbound before exit.
-void draw_lines(Attrib *attrib, Buffer buffer, int components, int count) {
+void draw_lines(Buffer buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
-    glEnableVertexAttribArray(attrib->position);
+    glEnableVertexAttribArray(0);
     glVertexAttribPointer(
-        attrib->position, components, GL_FLOAT, GL_FALSE, 0, 0);
+        0, components, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_LINES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
+    glDisableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 } // draw_lines()
 
-// Draw landscape chunk using vertex buffer <buffer> consisting of <faces>
-// quads using rendering state <attrib>
-void draw_chunk(Attrib *attrib, Buffer buffer, int faces) {
+// Draw landscape chunk using vertex buffer <buffer> consisting of <faces> quads
+void draw_chunk(Buffer buffer, int faces) {
     if (!faces) return;
-    draw_triangles_3d_ao(attrib, buffer, faces * 6);
+    draw_triangles_3d_ao(buffer, faces * 6);
 } // draw_chunk()
 
 // Draw UI placement option represented by vertex buffer <buffer>
-// consisting of <count> vertices using rendering state <attrib>
+// consisting of <count> vertices
 // This is the cube or plant in the bottom left that will be placed next
-void draw_item(Attrib *attrib, Buffer buffer, int count) {
-    draw_triangles_3d_ao(attrib, buffer, count);
+void draw_item(Buffer buffer, int count) {
+    draw_triangles_3d_ao(buffer, count);
 } // draw_item()
 
 // Draw UI text represented by vertex buffer <buffer> of <length> characters
-// using rendering state <attrib>
 // Unlike draw_signs, this is strictly 2D.
-void draw_text(Attrib *attrib, Buffer buffer, int length) {
+void draw_text(Buffer buffer, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_2d(attrib, buffer, length * 6);
+    draw_triangles_2d(buffer, length * 6);
     glDisable(GL_BLEND);
 } // draw_text()
 
 // Draw text placed on landscape chunks represented by vertex buffer <buffer>
-// of <faces> characters using rendering state <attrib>
+// of <faces> characters
 // Unlike draw_text, this is strictly 3D.
-void draw_signs(Attrib *attrib, Buffer buffer, int faces) {
+void draw_signs(Buffer buffer, int faces) {
     if (!faces) return;
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-8, -1024);
-    draw_triangles_3d_text(attrib, buffer, faces * 6);
+    draw_triangles_3d_text(buffer, faces * 6);
     glDisable(GL_POLYGON_OFFSET_FILL);
 } // draw_signs()
 
 // Draw text currently being applied to a chunk represented by vertex buffer <buffer>
-// of <length> characters using rendering state <attrib>
+// of <length> characters
 // Unlike draw_signs, this renders only the sign being currently typed.
 // Once typing is complete, it will be represented by draw_signs
-void draw_sign(Attrib *attrib, Buffer buffer, int length) {
+void draw_sign(Buffer buffer, int length) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-8, -1024);
-    draw_triangles_3d_text(attrib, buffer, length * 6);
+    draw_triangles_3d_text(buffer, length * 6);
     glDisable(GL_POLYGON_OFFSET_FILL);
 } // draw_sign()
 
 // Draw UI landscape chunk placement option represented by vertex buffer <buffer>
-// using rendering state <attrib>
 // This is exclusively the UI element representing the next item that would be placed
-void draw_cube(Attrib *attrib, Buffer buffer) {
-    draw_item(attrib, buffer, 36);
+void draw_cube(Buffer buffer) {
+    draw_item(buffer, 36);
 } // draw_cube()
 
 // Draw UI plant placement option represented by vertex buffer <buffer>
-// using rendering state <attrib>
 // This is exclusively the UI element representing the next item that would be placed
-void draw_plant(Attrib *attrib, Buffer buffer) {
-    draw_item(attrib, buffer, 24);
+void draw_plant(Buffer buffer) {
+    draw_item(buffer, 24);
 } // draw_plant()
 
-// Draw player cube represented by vertex buffer <buffer> using rendering state <attrib>
+// Draw player cube represented by vertex buffer <buffer>
 // This is only visible during online multiplayer play
-void draw_player(Attrib *attrib, Buffer buffer) {
-    draw_cube(attrib, buffer);
+void draw_player(Buffer buffer) {
+    draw_cube(buffer);
 } // draw_player()
 
 // Draw large sphere around origin represented by vertex buffer <buffer>
-// using rendering state <attrib>
 // This is rendered such that it never moves and always surrounds the player
-void draw_sky(Attrib *attrib, Buffer buffer) {
-    draw_triangles_3d(attrib, buffer, 512 * 3);
+void draw_sky(Buffer buffer) {
+    draw_triangles_3d(buffer, 512 * 3);
 } // draw_sky()
 
 // Create a uniform interface object containing a ubo of size <ubo_size>
@@ -384,21 +374,23 @@ void del_image(Image image) {
 // This involves binding the program, ubo, and the non-null textures
 void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data) {
 
+    int binding = 0;
     glUseProgram(attrib->program);
-    glBindBuffer(GL_UNIFORM_BUFFER, uniform->ubo);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, size, data);
-    glBindBufferBase(GL_UNIFORM_BUFFER, attrib->ubo, uniform->ubo);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
     if (uniform->textures[0]) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, uniform->textures[0]->id);
-        glUniform1i(attrib->sampler, 0);
+        binding++;
     }
     if (uniform->textures[1]) {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, uniform->textures[1]->id);
-        glUniform1i(attrib->sampler2, 1);
+        binding++;
     }
     glActiveTexture(GL_TEXTURE0);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, uniform->ubo);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, size, data);
+    glBindBufferBase(GL_UNIFORM_BUFFER, binding, uniform->ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 } // bind_pipeline()

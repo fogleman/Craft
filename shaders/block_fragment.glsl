@@ -1,10 +1,16 @@
-#version 120
+#version 140
 
 uniform sampler2D sampler;
 uniform sampler2D sky_sampler;
-uniform float timer;
-uniform float daylight;
-uniform int ortho;
+
+layout (std140) uniform BlockUbo {
+  mat4 matrix;
+  vec3 camera;
+  float timer;
+  float daylight;
+  float fog_distance;
+  bool ortho;
+};
 
 varying vec2 fragment_uv;
 varying float fragment_ao;
@@ -21,7 +27,7 @@ void main() {
         discard;
     }
     bool cloud = color == vec3(1.0, 1.0, 1.0);
-    if (cloud && bool(ortho)) {
+    if (cloud && ortho) {
         discard;
     }
     float df = cloud ? 1.0 - diffuse * 0.2 : diffuse;

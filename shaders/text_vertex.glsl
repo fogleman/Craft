@@ -1,6 +1,9 @@
-#version 120
+#version 140
 
-uniform mat4 matrix;
+layout (std140) uniform TextUbo {
+  mat4 matrix;
+  bool is_sign;
+};
 
 attribute vec4 position;
 attribute vec2 uv;

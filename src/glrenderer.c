@@ -12,6 +12,11 @@ struct BufferObj {
     GLuint id;
 };
 
+// For GL, the uniform consists of between 0 and 2 texture images
+struct UniformObj {
+    GLuint ubo;
+};
+
 // Generate a buffer object of <size> bytes and initialize with <data>
 Buffer gen_buffer(int32_t size, float *data) {
     Buffer buffer = malloc(sizeof(struct BufferObj));
@@ -302,3 +307,39 @@ void draw_player(Attrib *attrib, Buffer buffer) {
 void draw_sky(Attrib *attrib, Buffer buffer) {
     draw_triangles_3d(attrib, buffer, 512 * 3);
 } // draw_sky()
+
+// Create a uniform interface object containing a ubo of size <ubo_size>
+// and return the handle.
+Uniform gen_uniform(uint32_t ubo_size) {
+
+    GLuint buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+    glBufferData(GL_UNIFORM_BUFFER, ubo_size, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    Uniform ret_uniform = malloc(sizeof(struct UniformObj));
+    ret_uniform->ubo = buffer;
+
+    return ret_uniform;
+
+} // gen_uniform()
+
+// Destroy <uniform> and free any associated memory.
+void del_uniform(Uniform uniform) {
+    glDeleteBuffers(1, &uniform->ubo);
+    free(uniform);
+} // del_uniform()
+
+// Bind the <attrib> and <uniform> interfaces for rendering
+// For now, this just involves binding the program and ubo
+// containing all the uniform info.
+void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data) {
+
+    glUseProgram(attrib->program);
+    glBindBuffer(GL_UNIFORM_BUFFER, uniform->ubo);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, size, data);
+    glBindBufferBase(GL_UNIFORM_BUFFER, attrib->ubo, uniform->ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+} // bind_pipeline()

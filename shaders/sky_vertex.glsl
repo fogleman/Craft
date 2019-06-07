@@ -1,6 +1,9 @@
-#version 120
+#version 140
 
-uniform mat4 matrix;
+layout (std140) uniform SkyUbo {
+  mat4 matrix;
+  float timer;
+};
 
 attribute vec4 position;
 attribute vec3 normal;

@@ -8,19 +8,19 @@
 struct BufferObj;
 typedef struct BufferObj *Buffer;
 
+// Uniform represents the uniform interface to the pipeline shaders
+// Maximum allowable textures is 2.
+struct UniformObj;
+typedef struct UniformObj *Uniform;
+
 typedef struct {
     GLuint program;
     GLuint position;
     GLuint normal;
     GLuint uv;
-    GLuint matrix;
     GLuint sampler;
-    GLuint camera;
-    GLuint timer;
-    GLuint extra1;
-    GLuint extra2;
-    GLuint extra3;
-    GLuint extra4;
+    GLuint sampler2;
+    GLuint ubo;
 } Attrib;
 
 // Generate a buffer object of <size> bytes and initialize with <data> and return its handle
@@ -64,5 +64,12 @@ void draw_player(Attrib *attrib, Buffer buffer);
 // Draw large sphere around origin represented by vertex buffer <buffer>
 // using rendering state <attrib>
 void draw_sky(Attrib *attrib, Buffer buffer);
+// Create a uniform interface object containing a ubo of size <ubo_size>
+// and return the handle.
+Uniform gen_uniform(uint32_t ubo_size);
+// Destroy <uniform> and free any associated memory.
+void del_uniform(Uniform uniform);
+// Bind the <attrib> and <uniform> interfaces for rendering
+void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data);
 
 #endif // _glrenderer_

@@ -1,7 +1,11 @@
-#version 120
+#version 140
 
 uniform sampler2D sampler;
-uniform float timer;
+
+layout (std140) uniform SkyUbo {
+  mat4 matrix;
+  float timer;
+};
 
 varying vec2 fragment_uv;
 

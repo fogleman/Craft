@@ -1,7 +1,11 @@
-#version 120
+#version 140
 
 uniform sampler2D sampler;
-uniform bool is_sign;
+
+layout (std140) uniform TextUbo {
+  mat4 matrix;
+  bool is_sign;
+};
 
 varying vec2 fragment_uv;
 

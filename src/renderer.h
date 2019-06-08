@@ -1,8 +1,8 @@
 #ifndef _glrenderer_h_
 #define _glrenderer_h_
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#define CLEAR_COLOR_BIT 0x1
+#define CLEAR_DEPTH_BIT 0x2
 
 // Image represents texture and framebuffer image information
 // It includes whatever is needed to bind it for rendering
@@ -22,6 +22,15 @@ typedef struct UniformObj *Uniform;
 struct PipelineObj;
 typedef struct PipelineObj *Pipeline;
 
+// Initialize persistent global state for the renderer. returns 0 on success
+int init_renderer();
+// Clear the full framebuffer for the attachments indicated by the <bitfield>
+void clear_frame(uint32_t bitfield);
+// Clear the a portion of the  framebuffer indicated by <x,y,width,height>
+// for the attachments indicated by the <bitfield>
+void subclear_frame(uint32_t bitfield, int32_t x, int32_t y, int32_t width, int32_t height);
+// set viewport for the framebuffer limited to <x,y,width,height>
+void set_viewport(int32_t x, int32_t y, int32_t width, int32_t height);
 // Generate a buffer object of <size> bytes and initialize with <data> and return its handle
 Buffer gen_buffer(int32_t size, float *data);
 // Delete the buffer object represented by <buffer>
@@ -32,8 +41,8 @@ float *malloc_faces(int components, int faces);
 // consisting of <components> attributes using <data>  and return its handle
 Buffer gen_faces(int components, int faces, float *data);
 // Draw lines consisting of <count> 2D or 3D vertices with <components> components
-// taken from vertex buffer <buffer>
-void draw_lines(Buffer buffer, int components, int count);
+// taken from vertex buffer <buffer> at <width> pixels
+void draw_lines(Buffer buffer, int components, int count, float width);
 // Draw landscape chunk using vertex buffer <buffer> consisting of <faces> quads
 void draw_chunk(Buffer buffer, int faces);
 // Draw UI placement option represented by vertex buffer <buffer>

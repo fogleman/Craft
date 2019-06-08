@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <curl/curl.h>
 #include <math.h>
@@ -286,7 +285,7 @@ Buffer gen_sky_buffer() {
 // The first 2 components of the texcoord are standard tex coordinates,
 // The last two are used for ambient occlusion.
 Buffer gen_cube_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_faces(10, 6);
+    float *data = malloc_faces(10, 6);
     float ao[6][4] = {0};
     float light[6][4] = {
         {0.5, 0.5, 0.5, 0.5},
@@ -307,7 +306,7 @@ Buffer gen_cube_buffer(float x, float y, float z, float n, int w) {
 // The first 2 components of the texcoord are standard tex coordinates,
 // The last two are theoretically used for ambient occlusion, but not for plants.
 Buffer gen_plant_buffer(float x, float y, float z, float n, int w) {
-    GLfloat *data = malloc_faces(10, 4);
+    float *data = malloc_faces(10, 4);
     float ao = 0;
     float light = 1;
     make_plant(data, ao, light, x, y, z, n, w, 45);
@@ -321,7 +320,7 @@ Buffer gen_plant_buffer(float x, float y, float z, float n, int w) {
 // The first 2 components of the texcoord are standard tex coordinates,
 // The last two are theoretically used for ambient occlusion, but not for plants.
 Buffer gen_player_buffer(float x, float y, float z, float rx, float ry) {
-    GLfloat *data = malloc_faces(10, 6);
+    float *data = malloc_faces(10, 6);
     make_player(data, x, y, z, rx, ry);
     return gen_faces(10, 6, data);
 } // gen_player_buffer()
@@ -332,7 +331,7 @@ Buffer gen_player_buffer(float x, float y, float z, float rx, float ry) {
 // 2D position coords and 2D tex coords are included.
 Buffer gen_text_buffer(float x, float y, float n, char *text) {
     int length = strlen(text);
-    GLfloat *data = malloc_faces(4, length);
+    float *data = malloc_faces(4, length);
     for (int i = 0; i < length; i++) {
         make_character(data + i * 24, x, y, n / 2, n, text[i]);
         x += n;
@@ -1688,13 +1687,10 @@ void render_wireframe(Pipeline pipeline, Uniform uniform, Player *player) {
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {
-        glLineWidth(1);
-        glEnable(GL_COLOR_LOGIC_OP);
         bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
         Buffer wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
-        draw_lines(wireframe_buffer, 3, 24);
+        draw_lines(wireframe_buffer, 3, 24, 1.0);
         del_buffer(wireframe_buffer);
-        glDisable(GL_COLOR_LOGIC_OP);
     }
 } // render_wireframe()
 
@@ -1704,12 +1700,9 @@ void render_crosshairs(Pipeline pipeline, Uniform uniform) {
     MatUbo ubo_body;
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
     bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
-    glLineWidth(4 * g->scale);
-    glEnable(GL_COLOR_LOGIC_OP);
     Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
-    draw_lines(crosshair_buffer, 2, 4);
+    draw_lines(crosshair_buffer, 2, 4, 4 * g->scale);
     del_buffer(crosshair_buffer);
-    glDisable(GL_COLOR_LOGIC_OP);
 } // render_crosshairs()
 
 // Render the 3D UI element representing the chunk that will be placed
@@ -2570,14 +2563,8 @@ int main(int argc, char **argv) {
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
     glfwSetScrollCallback(g->window, on_scroll);
 
-    if (glewInit() != GLEW_OK) {
+    if (init_renderer())
         return -1;
-    }
-
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    glLogicOp(GL_INVERT);
-    glClearColor(0, 0, 0, 1);
 
     // LOAD TEXTURES //
     Image texture = load_tex_image("textures/texture.png", 0, 0);
@@ -2679,7 +2666,7 @@ int main(int argc, char **argv) {
             // WINDOW SIZE AND SCALE //
             g->scale = get_scale_factor();
             glfwGetFramebufferSize(g->window, &g->width, &g->height);
-            glViewport(0, 0, g->width, g->height);
+            set_viewport(0, 0, g->width, g->height);
 
             // FRAME RATE //
             if (g->time_changed) {
@@ -2732,10 +2719,9 @@ int main(int argc, char **argv) {
             Player *player = g->players + g->observe1;
 
             // RENDER 3-D SCENE //
-            glClear(GL_COLOR_BUFFER_BIT);
-            glClear(GL_DEPTH_BUFFER_BIT);
+            clear_frame(CLEAR_COLOR_BIT|CLEAR_DEPTH_BIT);
             render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
-            glClear(GL_DEPTH_BUFFER_BIT);
+            clear_frame(CLEAR_DEPTH_BIT);
             int face_count = render_chunks(block_pipeline, block_uniform, player);
             render_signs(text_pipeline, sign_uniform, player);
             render_sign(text_pipeline, sign_uniform, player);
@@ -2745,7 +2731,7 @@ int main(int argc, char **argv) {
             }
 
             // RENDER HUD //
-            glClear(GL_DEPTH_BUFFER_BIT);
+            clear_frame(CLEAR_DEPTH_BIT);
             if (SHOW_CROSSHAIRS) {
                 render_crosshairs(line_pipeline, line_uniform);
             }
@@ -2811,12 +2797,9 @@ int main(int argc, char **argv) {
                 int sw = pw + pad * 2;
                 int sh = ph + pad * 2;
 
-                glEnable(GL_SCISSOR_TEST);
-                glScissor(g->width - sw - offset + pad, offset - pad, sw, sh);
-                glClear(GL_COLOR_BUFFER_BIT);
-                glDisable(GL_SCISSOR_TEST);
-                glClear(GL_DEPTH_BUFFER_BIT);
-                glViewport(g->width - pw - offset, offset, pw, ph);
+                subclear_frame(CLEAR_COLOR_BIT, g->width - sw - offset + pad, offset - pad, sw, sh);
+                clear_frame(CLEAR_DEPTH_BIT);
+                set_viewport(g->width - pw - offset, offset, pw, ph);
 
                 g->width = pw;
                 g->height = ph;
@@ -2824,11 +2807,11 @@ int main(int argc, char **argv) {
                 g->fov = 65;
 
                 render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
-                glClear(GL_DEPTH_BUFFER_BIT);
+                clear_frame(CLEAR_DEPTH_BIT);
                 render_chunks(block_pipeline, block_uniform, player);
                 render_signs(text_pipeline, sign_uniform, player);
                 render_players(block_pipeline, block_uniform, player);
-                glClear(GL_DEPTH_BUFFER_BIT);
+                clear_frame(CLEAR_DEPTH_BIT);
                 if (SHOW_PLAYER_NAMES) {
                     render_text(text_pipeline, text_uniform, ALIGN_CENTER,
                         pw / 2, ts, ts, player->name);

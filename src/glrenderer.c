@@ -1,3 +1,4 @@
+#include <GL/glew.h> // for extension function initializations
 #include <stdio.h>   // for printf and fam
 #include <stdlib.h>  // for malloc/free
 #include "cube.h"
@@ -27,6 +28,47 @@ struct UniformObj {
 struct PipelineObj {
     GLuint program;
 };
+
+
+// Initialize persistent global state for the renderer
+// For GL this involves enabling depth testing, face culling,
+// and settng the clear color. returns 0 on success.
+int init_renderer() {
+    if (glewInit() != GLEW_OK) {
+        return -1;
+    }
+
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glLogicOp(GL_INVERT);
+    glClearColor(0, 0, 0, 1);
+
+    return 0;
+
+} // init_renderer()
+
+// Clear the full framebuffer for the attachments indicated by the <bitfield>
+void clear_frame(uint32_t bitfield) {
+    if (bitfield & CLEAR_COLOR_BIT)
+        glClear(GL_COLOR_BUFFER_BIT);
+    if (bitfield & CLEAR_DEPTH_BIT)
+        glClear(GL_DEPTH_BUFFER_BIT);
+} // clear_frame()
+
+// Clear the a portion of the  framebuffer indicated by <x,y,width,height>
+// for the attachments indicated by the <bitfield>
+void subclear_frame(uint32_t bitfield, int32_t x, int32_t y, int32_t width, int32_t height) {
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(x, y, width, height);
+    clear_frame(bitfield);
+    glDisable(GL_SCISSOR_TEST);
+
+} // subclear_frame()
+
+// set viewport for the framebuffer limited to <x,y,width,height>
+void set_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
+    glViewport(x, y, width, height);
+} // set_viewport()
 
 // Generate a buffer object of <size> bytes and initialize with <data>
 Buffer gen_buffer(int32_t size, float *data) {
@@ -224,14 +266,16 @@ static void draw_triangles_2d(Buffer buffer, int count) {
 } // draw_triangles_2d()
 
 // Draw lines consisting of <count> 2D or 3D vertices with <components> components
-// taken from vertex buffer <buffer>
+// taken from vertex buffer <buffer> at <width> pixels wide.
 // Intended for use rendering 3D highlights or 2D UI elements
 // The expected components are 2D or 3D position coords and 2D tex coords
 // The <buffer> is bound and used for vertex attribs
 // and pointers specified. <components> determines how many attribs there are
 // depending on whether the lines are 2D or 3D <count> is used for the number of
 // vertices in the draw call. Everything is unbound before exit.
-void draw_lines(Buffer buffer, int components, int count) {
+void draw_lines(Buffer buffer, int components, int count, float width) {
+    glLineWidth(width);
+    glEnable(GL_COLOR_LOGIC_OP);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(
@@ -239,6 +283,7 @@ void draw_lines(Buffer buffer, int components, int count) {
     glDrawArrays(GL_LINES, 0, count);
     glDisableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDisable(GL_COLOR_LOGIC_OP);
 } // draw_lines()
 
 // Draw landscape chunk using vertex buffer <buffer> consisting of <faces> quads

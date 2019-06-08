@@ -1,8 +1,7 @@
 #ifndef _util_h_
 #define _util_h_
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "stdint.h"
 #include "config.h"
 
 #define PI 3.14159265359

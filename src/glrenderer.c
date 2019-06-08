@@ -105,10 +105,10 @@ Buffer gen_faces(int components, int faces, float *data) {
 // <source> is expected to be a null terminated string pointing to valid GLSL
 // the source is compiled and a shader is created. If compilation fails, an error message
 // is printed and the returned handle is invalid
-GLuint make_shader(GLenum type, const char *source) {
+GLuint make_shader(GLenum type, const char *source, int length) {
     GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, NULL);
-    glCompileShader(shader);
+    glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, source, length);
+    glSpecializeShader(shader, "main", 0, NULL, NULL);
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
@@ -116,7 +116,7 @@ GLuint make_shader(GLenum type, const char *source) {
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
         GLchar *info = calloc(length, sizeof(GLchar));
         glGetShaderInfoLog(shader, length, NULL, info);
-        fprintf(stderr, "glCompileShader failed:\n%s\n", info);
+        fprintf(stderr, "glSpecializeShader failed:\n%s\n", info);
         free(info);
     }
     return shader;
@@ -127,8 +127,9 @@ GLuint make_shader(GLenum type, const char *source) {
 // the file occurs, an error message is printed. The contents of the file is used to create
 // a new shader. Returns shader handle regardless of success.
 static GLuint load_shader(GLenum type, const char *path) {
-    char *data = load_file(path);
-    GLuint result = make_shader(type, data);
+    int len;
+    void *data = load_file(path, &len);
+    GLuint result = make_shader(type, data, len);
     free(data);
     return result;
 } // load_shader()

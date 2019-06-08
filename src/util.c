@@ -28,22 +28,22 @@ void update_fps(FPS *fps) {
     }
 }
 
-char *load_file(const char *path) {
+void *load_file(const char *path, int *length) {
     FILE *file = fopen(path, "rb");
     if (!file) {
         fprintf(stderr, "fopen %s failed: %d %s\n", path, errno, strerror(errno));
         exit(1);
     }
     fseek(file, 0, SEEK_END);
-    int length = ftell(file);
+    *length = ftell(file);
     rewind(file);
-    char *data = calloc(length + 1, sizeof(char));
-    size_t rv = fread(data, 1, length, file);
-    if (rv != length) {
-        fprintf(stderr, "fread %s failed: %d %s\n", path, errno, strerror(errno));
-        exit(1);
-    }
+    void *data = malloc(*length);
+    size_t rv = fread(data, 1, *length, file);
     fclose(file);
+    if (rv != *length) {
+        fprintf(stderr, "fread %s failed: %d %s\n", path, errno, strerror(errno));
+        return NULL;
+    }
     return data;
 }
 

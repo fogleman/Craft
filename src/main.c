@@ -2569,11 +2569,11 @@ int main(int argc, char **argv) {
     Uniform sky_uniform = gen_uniform(sizeof(SkyUbo), sky, NULL);
 
     // LOAD SHADERS //
-    Pipeline block_pipeline = gen_pipeline("shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
-    Pipeline line_pipeline = gen_pipeline("shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
-    Pipeline text_pipeline = gen_pipeline("shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
-    Pipeline sign_pipeline = gen_pipeline("shaders/sign_vertex.glsl", "shaders/sign_fragment.glsl");
-    Pipeline sky_pipeline = gen_pipeline("shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
+    Pipeline block_pipeline = gen_pipeline("shaders/block_vertex.spv", "shaders/block_fragment.spv");
+    Pipeline line_pipeline = gen_pipeline("shaders/line_vertex.spv", "shaders/line_fragment.spv");
+    Pipeline text_pipeline = gen_pipeline("shaders/text_vertex.spv", "shaders/text_fragment.spv");
+    Pipeline sign_pipeline = gen_pipeline("shaders/sign_vertex.spv", "shaders/sign_fragment.spv");
+    Pipeline sky_pipeline = gen_pipeline("shaders/sky_vertex.spv", "shaders/sky_fragment.spv");
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {

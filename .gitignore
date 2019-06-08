@@ -13,4 +13,4 @@ log.txt
 *.exe
 *.dll
 *.pyc
-
+*.spv

@@ -7,7 +7,6 @@ FILE(GLOB SOURCE_FILES src/*.c)
 add_executable(
     craft
     ${SOURCE_FILES}
-    deps/glew/src/glew.c
     deps/lodepng/lodepng.c
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
@@ -15,9 +14,6 @@ add_executable(
 
 add_definitions(-std=c99 -O3)
 
-add_subdirectory(deps/glfw)
-include_directories(deps/glew/include)
-include_directories(deps/glfw/include)
 include_directories(deps/lodepng)
 include_directories(deps/noise)
 include_directories(deps/sqlite)
@@ -34,16 +30,16 @@ find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
 if(APPLE)
-    target_link_libraries(craft glfw
+    target_link_libraries(craft glfw GLEW
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
 if(UNIX)
-    target_link_libraries(craft dl glfw
+    target_link_libraries(craft dl glfw GLEW
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
 if(MINGW)
-    target_link_libraries(craft ws2_32.lib glfw
+    target_link_libraries(craft ws2_32.lib glfw GLEW
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()

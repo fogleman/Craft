@@ -115,11 +115,6 @@ typedef struct {
 
 typedef struct {
     float matrix[16];
-    int is_sign;
-} TextUbo;
-
-typedef struct {
-    float matrix[16];
     float timer;
 } SkyUbo;
 
@@ -1583,9 +1578,7 @@ void render_signs(Pipeline pipeline, Uniform uniform, Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
     int q = chunked(s->z);
-    TextUbo ubo_body = {
-        .is_sign = 1
-    };
+    MatUbo ubo_body;
     set_matrix_3d(
         ubo_body.matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
@@ -1620,9 +1613,7 @@ void render_sign(Pipeline pipeline, Uniform uniform, Player *player) {
         return;
     }
     State *s = &player->state;
-    TextUbo ubo_body = {
-        .is_sign = 1
-    };
+    MatUbo ubo_body;
     set_matrix_3d(
         ubo_body.matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
@@ -1738,9 +1729,7 @@ void render_item(Pipeline pipeline, Uniform uniform) {
 void render_text(
     Pipeline pipeline, Uniform uniform, int justify, float x, float y, float n, char *text)
 {
-    TextUbo ubo_body = {
-        .is_sign = 0
-    };
+    MatUbo ubo_body;
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
     bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
     int length = strlen(text);
@@ -2575,14 +2564,15 @@ int main(int argc, char **argv) {
     // CREATE UNIFORMS //
     Uniform block_uniform = gen_uniform(sizeof(BlockUbo), texture, sky);
     Uniform line_uniform = gen_uniform(sizeof(MatUbo), NULL, NULL);
-    Uniform text_uniform = gen_uniform(sizeof(TextUbo), font, NULL);
-    Uniform sign_uniform = gen_uniform(sizeof(TextUbo), sign, NULL);
+    Uniform text_uniform = gen_uniform(sizeof(MatUbo), font, NULL);
+    Uniform sign_uniform = gen_uniform(sizeof(MatUbo), sign, NULL);
     Uniform sky_uniform = gen_uniform(sizeof(SkyUbo), sky, NULL);
 
     // LOAD SHADERS //
     Pipeline block_pipeline = gen_pipeline("shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
     Pipeline line_pipeline = gen_pipeline("shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
     Pipeline text_pipeline = gen_pipeline("shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
+    Pipeline sign_pipeline = gen_pipeline("shaders/sign_vertex.glsl", "shaders/sign_fragment.glsl");
     Pipeline sky_pipeline = gen_pipeline("shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
 
     // CHECK COMMAND LINE ARGUMENTS //
@@ -2723,8 +2713,8 @@ int main(int argc, char **argv) {
             render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
             clear_frame(CLEAR_DEPTH_BIT);
             int face_count = render_chunks(block_pipeline, block_uniform, player);
-            render_signs(text_pipeline, sign_uniform, player);
-            render_sign(text_pipeline, sign_uniform, player);
+            render_signs(sign_pipeline, sign_uniform, player);
+            render_sign(sign_pipeline, sign_uniform, player);
             render_players(block_pipeline, block_uniform, player);
             if (SHOW_WIREFRAME) {
                 render_wireframe(line_pipeline, line_uniform, player);
@@ -2809,7 +2799,7 @@ int main(int argc, char **argv) {
                 render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
                 clear_frame(CLEAR_DEPTH_BIT);
                 render_chunks(block_pipeline, block_uniform, player);
-                render_signs(text_pipeline, sign_uniform, player);
+                render_signs(sign_pipeline, sign_uniform, player);
                 render_players(block_pipeline, block_uniform, player);
                 clear_frame(CLEAR_DEPTH_BIT);
                 if (SHOW_PLAYER_NAMES) {

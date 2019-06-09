@@ -51,8 +51,8 @@ typedef struct {
     int dirty;
     int miny;
     int maxy;
-    GLuint buffer;
-    GLuint sign_buffer;
+    Buffer buffer;
+    Buffer sign_buffer;
 } Chunk;
 
 typedef struct {
@@ -64,7 +64,7 @@ typedef struct {
     int miny;
     int maxy;
     int faces;
-    GLfloat *data;
+    float *data;
 } WorkerItem;
 
 typedef struct {
@@ -98,7 +98,7 @@ typedef struct {
     State state;
     State state1;
     State state2;
-    GLuint buffer;
+    Buffer buffer;
 } Player;
 
 typedef struct {
@@ -221,7 +221,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
 // dimensions taken from the current screen size and return its handle
 // The crosshair is positioned exactly in the center of the screen
 // and is represented by crossed lines.
-GLuint gen_crosshair_buffer() {
+Buffer gen_crosshair_buffer() {
     int x = g->width / 2;
     int y = g->height / 2;
     int p = 10 * g->scale;
@@ -237,7 +237,7 @@ GLuint gen_crosshair_buffer() {
 // The wireframe cube is just a little larger than the usual landscape cubes.
 // It is represented by 3D lines.
 // Only position coords are included.
-GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
+Buffer gen_wireframe_buffer(float x, float y, float z, float n) {
     float data[72];
     make_cube_wireframe(data, x, y, z, n);
     return gen_buffer(sizeof(data), data);
@@ -248,7 +248,7 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
 // The sphere is expected to be viewed only from the inside and the winding reflects that.
 // 3D Position coords and 2D texture coords are included.
 // 3D normals are included as well, but are unused in practice.
-GLuint gen_sky_buffer() {
+Buffer gen_sky_buffer() {
     float data[12288];
     make_sphere(data, 1, 3);
     return gen_buffer(sizeof(data), data);
@@ -262,7 +262,7 @@ GLuint gen_sky_buffer() {
 // 3D position coords, 3D normals, and a 4-component texcoord is included.
 // The first 2 components of the texcoord are standard tex coordinates,
 // The last two are used for ambient occlusion.
-GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
+Buffer gen_cube_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 6);
     float ao[6][4] = {0};
     float light[6][4] = {
@@ -283,7 +283,7 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
 // 3D position coords, 3D normals, and a 4-component texcoord is included.
 // The first 2 components of the texcoord are standard tex coordinates,
 // The last two are theoretically used for ambient occlusion, but not for plants.
-GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
+Buffer gen_plant_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 4);
     float ao = 0;
     float light = 1;
@@ -297,7 +297,7 @@ GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
 // 3D position coords, 3D normals, and a 4-component texcoord is included.
 // The first 2 components of the texcoord are standard tex coordinates,
 // The last two are theoretically used for ambient occlusion, but not for plants.
-GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
+Buffer gen_player_buffer(float x, float y, float z, float rx, float ry) {
     GLfloat *data = malloc_faces(10, 6);
     make_player(data, x, y, z, rx, ry);
     return gen_faces(10, 6, data);
@@ -307,7 +307,7 @@ GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
 // and scaled by a factor of <n> representing <text> and return its handle
 // Each character is represented as a textured quad with transparency around the letter.
 // 2D position coords and 2D tex coords are included.
-GLuint gen_text_buffer(float x, float y, float n, char *text) {
+Buffer gen_text_buffer(float x, float y, float n, char *text) {
     int length = strlen(text);
     GLfloat *data = malloc_faces(4, length);
     for (int i = 0; i < length; i++) {
@@ -663,7 +663,7 @@ int player_intersects_block(
 }
 
 int _gen_sign_buffer(
-    GLfloat *data, float x, float y, float z, int face, const char *text)
+    float *data, float x, float y, float z, int face, const char *text)
 {
     static const int glyph_dx[8] = {0, 0, -1, 1, 1, 0, -1, 0};
     static const int glyph_dz[8] = {1, -1, 0, 0, 0, -1, 0, 1};
@@ -738,7 +738,7 @@ void gen_sign_buffer(Chunk *chunk) {
     }
 
     // second pass - generate geometry
-    GLfloat *data = malloc_faces(5, max_faces);
+    float *data = malloc_faces(5, max_faces);
     int faces = 0;
     for (int i = 0; i < signs->size; i++) {
         Sign *e = signs->data + i;
@@ -966,7 +966,7 @@ void compute_chunk(WorkerItem *item) {
     } END_MAP_FOR_EACH;
 
     // generate geometry
-    GLfloat *data = malloc_faces(10, faces);
+    float *data = malloc_faces(10, faces);
     int offset = 0;
     MAP_FOR_EACH(map, ex, ey, ez, ew) {
         if (ew <= 0) {
@@ -1609,9 +1609,9 @@ void render_sign(Attrib *attrib, Player *player) {
     char text[MAX_SIGN_LENGTH];
     strncpy(text, g->typing_buffer + 1, MAX_SIGN_LENGTH);
     text[MAX_SIGN_LENGTH - 1] = '\0';
-    GLfloat *data = malloc_faces(5, strlen(text));
+    float *data = malloc_faces(5, strlen(text));
     int length = _gen_sign_buffer(data, x, y, z, face, text);
-    GLuint buffer = gen_faces(5, length, data);
+    Buffer buffer = gen_faces(5, length, data);
     draw_sign(attrib, buffer, length);
     del_buffer(buffer);
 } // render_sign()
@@ -1639,7 +1639,7 @@ void render_players(Attrib *attrib, Player *player) {
 
 // Render the sphere that surrounds <player> using the vertices in
 // <buffer> and the other rendering information in <attrib>
-void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
+void render_sky(Attrib *attrib, Player *player, Buffer buffer) {
     State *s = &player->state;
     float matrix[16];
     set_matrix_3d(
@@ -1667,7 +1667,7 @@ void render_wireframe(Attrib *attrib, Player *player) {
         glLineWidth(1);
         glEnable(GL_COLOR_LOGIC_OP);
         glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-        GLuint wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
+        Buffer wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
         draw_lines(attrib, wireframe_buffer, 3, 24);
         del_buffer(wireframe_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
@@ -1683,7 +1683,7 @@ void render_crosshairs(Attrib *attrib) {
     glLineWidth(4 * g->scale);
     glEnable(GL_COLOR_LOGIC_OP);
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
-    GLuint crosshair_buffer = gen_crosshair_buffer();
+    Buffer crosshair_buffer = gen_crosshair_buffer();
     draw_lines(attrib, crosshair_buffer, 2, 4);
     del_buffer(crosshair_buffer);
     glDisable(GL_COLOR_LOGIC_OP);
@@ -1702,12 +1702,12 @@ void render_item(Attrib *attrib) {
     glUniform1f(attrib->timer, time_of_day());
     int w = items[g->item_index];
     if (is_plant(w)) {
-        GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
+        Buffer buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
         draw_plant(attrib, buffer);
         del_buffer(buffer);
     }
     else {
-        GLuint buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
+        Buffer buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
         draw_cube(attrib, buffer);
         del_buffer(buffer);
     }
@@ -1726,7 +1726,7 @@ void render_text(
     glUniform1i(attrib->extra1, 0);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
-    GLuint buffer = gen_text_buffer(x, y, n, text);
+    Buffer buffer = gen_text_buffer(x, y, n, text);
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
 } // render_text()
@@ -2557,7 +2557,7 @@ int main(int argc, char **argv) {
     GLuint texture;
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("textures/texture.png");
@@ -2565,7 +2565,7 @@ int main(int argc, char **argv) {
     GLuint font;
     glGenTextures(1, &font);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, font);
+    glBindTexture(GL_TEXTURE_2D, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     load_png_texture("textures/font.png");
@@ -2573,7 +2573,7 @@ int main(int argc, char **argv) {
     GLuint sky;
     glGenTextures(1, &sky);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, sky);
+    glBindTexture(GL_TEXTURE_2D, 2);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -2583,7 +2583,7 @@ int main(int argc, char **argv) {
     GLuint sign;
     glGenTextures(1, &sign);
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, sign);
+    glBindTexture(GL_TEXTURE_2D, 3);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("textures/sign.png");
@@ -2694,7 +2694,7 @@ int main(int argc, char **argv) {
         FPS fps = {0, 0, 0};
         double last_commit = glfwGetTime();
         double last_update = glfwGetTime();
-        GLuint sky_buffer = gen_sky_buffer();
+        Buffer sky_buffer = gen_sky_buffer();
 
         Player *me = g->players;
         State *s = &g->players->state;

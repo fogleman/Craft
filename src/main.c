@@ -249,14 +249,14 @@ Buffer gen_crosshair_buffer() {
     return gen_buffer(sizeof(data), data);
 } // gen_crosshair_buffer()
 
-// Generate a vertex buffer representing a wireframe box at location <x>, <y>, and <z>
-// scaled by a factor of <n> and return its handle
+// Generate a vertex buffer representing a wireframe box scaled by a factor of <n>
+// and return its handle
 // The wireframe cube is just a little larger than the usual landscape cubes.
 // It is represented by 3D lines.
 // Only position coords are included.
-Buffer gen_wireframe_buffer(float x, float y, float z, float n) {
+Buffer gen_wireframe_buffer(float n) {
     float data[72];
-    make_cube_wireframe(data, x, y, z, n);
+    make_cube_wireframe(data, 0, 0, 0, n);
     return gen_buffer(sizeof(data), data);
 } // gen_wireframe_buffer()
 
@@ -1602,16 +1602,28 @@ void render_signs(Pipeline pipeline, Uniform uniform, Player *player) {
     }
 } // render_signs()
 
-// Render the sign currently being typed on the chunk targetted by <player>
-// according to the render info in <attrib>
-void render_sign(Pipeline pipeline, Uniform uniform, Player *player) {
-    if (!g->typing || g->typing_buffer[0] != CRAFT_KEY_SIGN) {
-        return;
+// Generate and return a buffer for the sign currently being typed.
+// Return the <length> through the pointer
+Buffer gen_type_buffer(Player *player, int *length) {
+    if (!g->typing || g->typing_buffer[0] != CRAFT_KEY_SIGN || !g->typing_buffer[1]) {
+        return NULL;
     }
     int x, y, z, face;
     if (!hit_test_face(player, &x, &y, &z, &face)) {
-        return;
+        return NULL;
     }
+    char text[MAX_SIGN_LENGTH];
+    strncpy(text, g->typing_buffer + 1, MAX_SIGN_LENGTH);
+    text[MAX_SIGN_LENGTH - 1] = '\0';
+    float *data = malloc_faces(5, strlen(text));
+    *length = _gen_sign_buffer(data, x, y, z, face, text);
+    return gen_faces(5, *length, data);
+} // gen_type_buffer()
+
+// Render the sign currently being typed on the chunk targetted by <player>
+// according to the render info in <attrib>
+void render_sign(Pipeline pipeline, Uniform uniform, Player *player, int length, Buffer buffer) {
+    if (!length) return;
     State *s = &player->state;
     MatUbo ubo_body;
     set_matrix_3d(
@@ -1619,15 +1631,8 @@ void render_sign(Pipeline pipeline, Uniform uniform, Player *player) {
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
 
-    char text[MAX_SIGN_LENGTH];
-    strncpy(text, g->typing_buffer + 1, MAX_SIGN_LENGTH);
-    text[MAX_SIGN_LENGTH - 1] = '\0';
-    float *data = malloc_faces(5, strlen(text));
-    int length = _gen_sign_buffer(data, x, y, z, face, text);
-    Buffer buffer = gen_faces(5, length, data);
     draw_sign(buffer, length);
-    del_buffer(buffer);
-} // render_sign()
+} //render_sign()
 
 // Render the cube representing the players near <player>
 // according to render info in <attrib>
@@ -1669,37 +1674,33 @@ void render_sky(Pipeline pipeline, Uniform uniform, Player *player, Buffer buffe
 
 // Render a wire box around the chunk currently targetted by <player>
 // according to the rendering information in <attrib>
-void render_wireframe(Pipeline pipeline, Uniform uniform, Player *player) {
+void render_wireframe(Pipeline pipeline, Uniform uniform, Player *player, Buffer buffer) {
     State *s = &player->state;
-    MatUbo ubo_body;
-    set_matrix_3d(
-        ubo_body.matrix, g->width, g->height,
-        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (is_obstacle(hw)) {
+        MatUbo ubo_body;
+        set_matrix_3d(
+                      ubo_body.matrix, g->width, g->height,
+                      s->x - hx, s->y - hy, s->z - hz, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
         bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
-        Buffer wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
-        draw_lines(wireframe_buffer, 3, 24, 1.0);
-        del_buffer(wireframe_buffer);
+        draw_lines(buffer, 3, 24, 1.0);
     }
 } // render_wireframe()
 
 // Render the targetting crosshair in the middle of the screen
 // according to the rendering information in <attrib>
-void render_crosshairs(Pipeline pipeline, Uniform uniform) {
+void render_crosshairs(Pipeline pipeline, Uniform uniform, Buffer buffer) {
     MatUbo ubo_body;
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
     bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
-    Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
-    draw_lines(crosshair_buffer, 2, 4, 4 * g->scale);
-    del_buffer(crosshair_buffer);
-} // render_crosshairs()
+    draw_lines(buffer, 2, 4, 4 * g->scale);
+}
 
 // Render the 3D UI element representing the chunk that will be placed
 // next if the user presses the right mouse button.
 // according to the rendering information in <attrib>
-void render_item(Pipeline pipeline, Uniform uniform) {
+void render_item(Pipeline pipeline, Uniform uniform, Buffer buffer) {
     BlockUbo ubo_body = {
         .daylight = get_daylight(),
         .camera = {0,0,5},
@@ -1712,16 +1713,10 @@ void render_item(Pipeline pipeline, Uniform uniform) {
     bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
 
     int w = items[g->item_index];
-    if (is_plant(w)) {
-        Buffer buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
+    if (is_plant(w))
         draw_plant(buffer);
-        del_buffer(buffer);
-    }
-    else {
-        Buffer buffer = gen_cube_buffer(0, 0, 0, 0.5, w);
+    else
         draw_cube(buffer);
-        del_buffer(buffer);
-    }
 } // render_item()
 
 // Render UI <text> in 2D at screen depth located at <x,y> scaled by <n>
@@ -2634,8 +2629,20 @@ int main(int argc, char **argv) {
         FPS fps = {0, 0, 0};
         double last_commit = glfwGetTime();
         double last_update = glfwGetTime();
+        glfwGetFramebufferSize(g->window, &g->width, &g->height);
+        g->scale = get_scale_factor();
         Buffer sky_buffer = gen_sky_buffer();
-
+        Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
+        Buffer wireframe_buffer = gen_wireframe_buffer(0.53);
+        Buffer type_buffer = NULL;
+        Buffer *item_buffers = malloc(sizeof(Buffer) * item_count);
+        for(int i = 0; i < item_count; i++) {
+            int w = items[i];
+            if (is_plant(w))
+                item_buffers[i] = gen_plant_buffer(0, 0, 0, 0.5, w);
+            else
+                item_buffers[i] = gen_cube_buffer(0, 0, 0, 0.5, w);
+        }
         Player *me = g->players;
         State *s = &g->players->state;
         me->id = 0;
@@ -2714,19 +2721,22 @@ int main(int argc, char **argv) {
             clear_frame(CLEAR_DEPTH_BIT);
             int face_count = render_chunks(block_pipeline, block_uniform, player);
             render_signs(sign_pipeline, sign_uniform, player);
-            render_sign(sign_pipeline, sign_uniform, player);
+            int type_len = 0;
+            del_buffer(type_buffer);
+            type_buffer = gen_type_buffer(player, &type_len);
+            render_sign(sign_pipeline, sign_uniform, player, type_len, type_buffer);
             render_players(block_pipeline, block_uniform, player);
             if (SHOW_WIREFRAME) {
-                render_wireframe(line_pipeline, line_uniform, player);
+                render_wireframe(line_pipeline, line_uniform, player, wireframe_buffer);
             }
 
             // RENDER HUD //
             clear_frame(CLEAR_DEPTH_BIT);
             if (SHOW_CROSSHAIRS) {
-                render_crosshairs(line_pipeline, line_uniform);
+                render_crosshairs(line_pipeline, line_uniform, crosshair_buffer);
             }
             if (SHOW_ITEM) {
-                render_item(block_pipeline, block_uniform);
+                render_item(block_pipeline, block_uniform, item_buffers[g->item_index]);
             }
 
             // RENDER TEXT //
@@ -2827,6 +2837,8 @@ int main(int argc, char **argv) {
         db_disable();
         client_stop();
         client_disable();
+        del_buffer(wireframe_buffer);
+        del_buffer(crosshair_buffer);
         del_buffer(sky_buffer);
         del_uniform(block_uniform);
         del_uniform(line_uniform);

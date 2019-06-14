@@ -320,19 +320,20 @@ Buffer gen_player_buffer(float x, float y, float z, float rx, float ry) {
     return gen_faces(10, 6, data);
 } // gen_player_buffer()
 
-// Generate a vertex buffer representing UI text at location <x>,<y> on the screen
-// and scaled by a factor of <n> representing <text> and return its handle
+// Make a sequence of vertices representing UI text at location <x>,<y> on the screen
+// and scaled by a factor of <n> representing <text> and copy them into <data>
+// Returning the ending pointer.
 // Each character is represented as a textured quad with transparency around the letter.
 // 2D position coords and 2D tex coords are included.
-Buffer gen_text_buffer(float x, float y, float n, char *text) {
-    int length = strlen(text);
-    float *data = malloc_faces(4, length);
-    for (int i = 0; i < length; i++) {
-        make_character(data + i * 24, x, y, n / 2, n, text[i]);
+float *make_text(float *data, float x, float y, float n, char *text) {
+    for (int i = 0; i < strlen(text); i++) {
+        make_character(data, x, y, n / 2, n, text[i]);
         x += n;
+        data += 24;
     }
-    return gen_faces(4, length, data);
-} // gen_text_buffer()
+    return data;
+} // make_text()
+
 
 Player *find_player(int id) {
     for (int i = 0; i < g->player_count; i++) {
@@ -1721,17 +1722,11 @@ void render_item(Pipeline pipeline, Uniform uniform, Buffer buffer) {
 
 // Render UI <text> in 2D at screen depth located at <x,y> scaled by <n>
 // aligned by <justify> and according to render info in <attrib>
-void render_text(
-    Pipeline pipeline, Uniform uniform, int justify, float x, float y, float n, char *text)
-{
+void render_text(Pipeline pipeline, Uniform uniform, int length, Buffer buffer) {
     MatUbo ubo_body;
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
     bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
-    int length = strlen(text);
-    x -= n * justify * (length - 1) / 2;
-    Buffer buffer = gen_text_buffer(x, y, n, text);
     draw_text(buffer, length);
-    del_buffer(buffer);
 } // render_text()
 
 void add_message(const char *text) {
@@ -2635,6 +2630,7 @@ int main(int argc, char **argv) {
         Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
         Buffer wireframe_buffer = gen_wireframe_buffer(0.53);
         Buffer type_buffer = NULL;
+        Buffer text_buffer = NULL;
         Buffer *item_buffers = malloc(sizeof(Buffer) * item_count);
         for(int i = 0; i < item_count; i++) {
             int w = items[i];
@@ -2740,50 +2736,69 @@ int main(int argc, char **argv) {
             }
 
             // RENDER TEXT //
-            char text_buffer[1024];
+            char info_buffer[1024];
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
+            // determine full length
+            int length = 0;
             if (SHOW_INFO_TEXT) {
                 int hour = time_of_day() * 24;
                 char am_pm = hour < 12 ? 'a' : 'p';
                 hour = hour % 12;
                 hour = hour ? hour : 12;
-                snprintf(
-                    text_buffer, 1024,
-                    "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z,
-                    g->player_count, g->chunk_count,
-                    face_count * 2, hour, am_pm, fps.fps);
-                render_text(text_pipeline, text_uniform, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                length = snprintf(
+                                  info_buffer, 1024,
+                                  "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
+                                  chunked(s->x), chunked(s->z), s->x, s->y, s->z,
+                                  g->player_count, g->chunk_count,
+                                  face_count * 2, hour, am_pm, fps.fps);
+            }
+            if (SHOW_CHAT_TEXT) {
+                for (int i = 0; i < MAX_MESSAGES; i++)
+                    length += strlen(g->messages[i]);
+            }
+            if (g->typing)
+                length += strlen(g->typing_buffer) + 2;
+            if (player != me)
+                length += strlen(player->name);
+            Player *other = player_crosshair(player);
+            if (other)
+                length += strlen(other->name);
+            float *data = malloc_faces(4, length);
+            float *data_ptr = data;
+            if (SHOW_INFO_TEXT) {
+                data_ptr = make_text(data_ptr, tx, ty, ts, info_buffer);
                 ty -= ts * 2;
             }
             if (SHOW_CHAT_TEXT) {
                 for (int i = 0; i < MAX_MESSAGES; i++) {
                     int index = (g->message_index + i) % MAX_MESSAGES;
-                    if (strlen(g->messages[index])) {
-                        render_text(text_pipeline, text_uniform, ALIGN_LEFT, tx, ty, ts,
-                            g->messages[index]);
+                    char *text = g->messages[index];
+                    if (text[0]) {
+                        data_ptr = make_text(data_ptr, tx, ty, ts, text);
                         ty -= ts * 2;
                     }
                 }
             }
             if (g->typing) {
-                snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
-                render_text(text_pipeline, text_uniform, ALIGN_LEFT, tx, ty, ts, text_buffer);
-                ty -= ts * 2;
+                make_character(data_ptr, tx, ty, ts / 2, ts, '>');
+                data_ptr += 24;
+                make_character(data_ptr, tx + ts, ty, ts / 2, ts, ' ');
+                data_ptr += 24;
+                data_ptr = make_text(data_ptr, tx + 2*ts, ty, ts, g->typing_buffer);
             }
+            del_buffer(text_buffer);
+            text_buffer = NULL;
             if (SHOW_PLAYER_NAMES) {
-                if (player != me) {
-                    render_text(text_pipeline, text_uniform, ALIGN_CENTER,
-                        g->width / 2, ts, ts, player->name);
-                }
-                Player *other = player_crosshair(player);
-                if (other) {
-                    render_text(text_pipeline, text_uniform, ALIGN_CENTER,
-                        g->width / 2, g->height / 2 - ts - 24, ts,
-                        other->name);
-                }
+                if (player != me)
+                    data_ptr = make_text(data_ptr, g->width/2, ts, ts, player->name);
+                if (other)
+                    make_text(data_ptr, g->width/2, g->height / 2 - ts - 24, ts, other->name);
+            }
+            if (length) {
+                text_buffer = gen_faces(4, length, data);
+                render_text(text_pipeline, text_uniform, length, text_buffer);
             }
 
             // RENDER PICTURE IN PICTURE //
@@ -2813,8 +2828,13 @@ int main(int argc, char **argv) {
                 render_players(block_pipeline, block_uniform, player);
                 clear_frame(CLEAR_DEPTH_BIT);
                 if (SHOW_PLAYER_NAMES) {
-                    render_text(text_pipeline, text_uniform, ALIGN_CENTER,
-                        pw / 2, ts, ts, player->name);
+                    int length = strlen(player->name);
+                    float x = pw / 2 - ts * ALIGN_CENTER * (length - 1)/2;
+                    float *data = malloc_faces(4, length);
+                    make_text(data, x, ts, ts, player->name);
+                    Buffer name_buffer = gen_faces(4, length, data);
+                    render_text(text_pipeline, text_uniform, length, name_buffer);
+                    del_buffer(name_buffer);
                 }
             }
 

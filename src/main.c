@@ -217,6 +217,10 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     }
 }
 
+// Generate a vertex buffer representing a crosshair for a frame of
+// dimensions taken from the current screen size and return its handle
+// The crosshair is positioned exactly in the center of the screen
+// and is represented by crossed lines.
 GLuint gen_crosshair_buffer() {
     int x = g->width / 2;
     int y = g->height / 2;
@@ -226,20 +230,38 @@ GLuint gen_crosshair_buffer() {
         x - p, y, x + p, y
     };
     return gen_buffer(sizeof(data), data);
-}
+} // gen_crosshair_buffer()
 
+// Generate a vertex buffer representing a wireframe box at location <x>, <y>, and <z>
+// scaled by a factor of <n> and return its handle
+// The wireframe cube is just a little larger than the usual landscape cubes.
+// It is represented by 3D lines.
+// Only position coords are included.
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     float data[72];
     make_cube_wireframe(data, x, y, z, n);
     return gen_buffer(sizeof(data), data);
-}
+} // gen_wireframe_buffer()
 
+// Generate a vertex buffer representing the sky sphere and return its handle
+// The sky has no position so all positions are represented relative to the origin.
+// The sphere is expected to be viewed only from the inside and the winding reflects that.
+// 3D Position coords and 2D texture coords are included.
+// 3D normals are included as well, but are unused in practice.
 GLuint gen_sky_buffer() {
     float data[12288];
     make_sphere(data, 1, 3);
     return gen_buffer(sizeof(data), data);
-}
+} // gen_sky_buffer()
 
+// Generate a vertex buffer representing a cube at location <x>, <y>, and <z>
+// of material type <w> and return its handle
+// Cubes/blocks/chunks make up the landscape and clouds. They have a variety of textures,
+// but all have the same geometry. The vertex buffer created includes location
+// data directly instead of translating or instancing.
+// 3D position coords, 3D normals, and a 4-component texcoord is included.
+// The first 2 components of the texcoord are standard tex coordinates,
+// The last two are used for ambient occlusion.
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 6);
     float ao[6][4] = {0};
@@ -253,22 +275,38 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     };
     make_cube(data, ao, light, 1, 1, 1, 1, 1, 1, x, y, z, n, w);
     return gen_faces(10, 6, data);
-}
+} // gen_cube_buffer()
 
+// Generate a vertex buffer representing a plant at location <x>, <y>, and <z>
+// of type <w> and return its handle
+// Plants consist of intersecting quads with heavy use of transparency to simulate foliage
+// 3D position coords, 3D normals, and a 4-component texcoord is included.
+// The first 2 components of the texcoord are standard tex coordinates,
+// The last two are theoretically used for ambient occlusion, but not for plants.
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     GLfloat *data = malloc_faces(10, 4);
     float ao = 0;
     float light = 1;
     make_plant(data, ao, light, x, y, z, n, w, 45);
     return gen_faces(10, 4, data);
-}
+} // gen_plant_buffer()
 
+// Generate a vertex buffer representing a player at location <x>, <y>, and <z>
+// and rotation <rx> and <ry> and return its handle
+// A player is represented as a single floating cube with a face and clothes texture
+// 3D position coords, 3D normals, and a 4-component texcoord is included.
+// The first 2 components of the texcoord are standard tex coordinates,
+// The last two are theoretically used for ambient occlusion, but not for plants.
 GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
     GLfloat *data = malloc_faces(10, 6);
     make_player(data, x, y, z, rx, ry);
     return gen_faces(10, 6, data);
-}
+} // gen_player_buffer()
 
+// Generate a vertex buffer representing UI text at location <x>,<y> on the screen
+// and scaled by a factor of <n> representing <text> and return its handle
+// Each character is represented as a textured quad with transparency around the letter.
+// 2D position coords and 2D tex coords are included.
 GLuint gen_text_buffer(float x, float y, float n, char *text) {
     int length = strlen(text);
     GLfloat *data = malloc_faces(4, length);
@@ -277,7 +315,7 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
         x += n;
     }
     return gen_faces(4, length, data);
-}
+} // gen_text_buffer()
 
 Player *find_player(int id) {
     for (int i = 0; i < g->player_count; i++) {
@@ -687,6 +725,8 @@ int _gen_sign_buffer(
     return count;
 }
 
+// Using the information from <chunk> generate a vertex buffer
+// for rendering 3D text on the appropriate cube faces
 void gen_sign_buffer(Chunk *chunk) {
     SignList *signs = &chunk->signs;
 
@@ -709,7 +749,7 @@ void gen_sign_buffer(Chunk *chunk) {
     del_buffer(chunk->sign_buffer);
     chunk->sign_buffer = gen_faces(5, faces, data);
     chunk->sign_faces = faces;
-}
+} // gen_sign_buffer()
 
 int has_lights(Chunk *chunk) {
     if (!SHOW_LIGHTS) {
@@ -1477,6 +1517,8 @@ void builder_block(int x, int y, int z, int w) {
     }
 }
 
+// Render all chunks making up the landscape within range and visible to <player>
+// according to render info in <attrib>
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;
@@ -1513,8 +1555,10 @@ int render_chunks(Attrib *attrib, Player *player) {
         result += chunk->faces;
     }
     return result;
-}
+} // render_chunks()
 
+// Render signs on chunks within range and visible to <player>
+// according to render info in <attrib>
 void render_signs(Attrib *attrib, Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
@@ -1541,8 +1585,10 @@ void render_signs(Attrib *attrib, Player *player) {
         }
         draw_signs(attrib, chunk->sign_buffer, chunk->sign_faces);
     }
-}
+} // render_signs()
 
+// Render the sign currently being typed on the chunk targetted by <player>
+// according to the render info in <attrib>
 void render_sign(Attrib *attrib, Player *player) {
     if (!g->typing || g->typing_buffer[0] != CRAFT_KEY_SIGN) {
         return;
@@ -1568,8 +1614,10 @@ void render_sign(Attrib *attrib, Player *player) {
     GLuint buffer = gen_faces(5, length, data);
     draw_sign(attrib, buffer, length);
     del_buffer(buffer);
-}
+} // render_sign()
 
+// Render the cube representing the players near <player>
+// according to render info in <attrib>
 void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -1587,8 +1635,10 @@ void render_players(Attrib *attrib, Player *player) {
             draw_player(attrib, other->buffer);
         }
     }
-}
+} // render_players()
 
+// Render the sphere that surrounds <player> using the vertices in
+// <buffer> and the other rendering information in <attrib>
 void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
@@ -1600,8 +1650,10 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, time_of_day());
     draw_sky(attrib, buffer);
-}
+} // render_sky()
 
+// Render a wire box around the chunk currently targetted by <player>
+// according to the rendering information in <attrib>
 void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -1620,8 +1672,10 @@ void render_wireframe(Attrib *attrib, Player *player) {
         del_buffer(wireframe_buffer);
         glDisable(GL_COLOR_LOGIC_OP);
     }
-}
+} // render_wireframe()
 
+// Render the targetting crosshair in the middle of the screen
+// according to the rendering information in <attrib>
 void render_crosshairs(Attrib *attrib) {
     float matrix[16];
     set_matrix_2d(matrix, g->width, g->height);
@@ -1633,8 +1687,11 @@ void render_crosshairs(Attrib *attrib) {
     draw_lines(attrib, crosshair_buffer, 2, 4);
     del_buffer(crosshair_buffer);
     glDisable(GL_COLOR_LOGIC_OP);
-}
+} // render_crosshairs()
 
+// Render the 3D UI element representing the chunk that will be placed
+// next if the user presses the right mouse button.
+// according to the rendering information in <attrib>
 void render_item(Attrib *attrib) {
     float matrix[16];
     set_matrix_item(matrix, g->width, g->height, g->scale);
@@ -1654,8 +1711,10 @@ void render_item(Attrib *attrib) {
         draw_cube(attrib, buffer);
         del_buffer(buffer);
     }
-}
+} // render_item()
 
+// Render UI <text> in 2D at screen depth located at <x,y> scaled by <n>
+// aligned by <justify> and according to render info in <attrib>
 void render_text(
     Attrib *attrib, int justify, float x, float y, float n, char *text)
 {
@@ -1670,7 +1729,7 @@ void render_text(
     GLuint buffer = gen_text_buffer(x, y, n, text);
     draw_text(attrib, buffer, length);
     del_buffer(buffer);
-}
+} // render_text()
 
 void add_message(const char *text) {
     printf("%s\n", text);
@@ -2459,6 +2518,8 @@ void reset_model() {
     g->time_changed = 1;
 }
 
+// Read in configuration information from database and args
+// perform inner loop processing user input and rendering the current scene.
 int main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);

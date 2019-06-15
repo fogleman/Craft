@@ -11,6 +11,7 @@
 #include "config.h"
 #include "cube.h"
 #include "db.h"
+#include "renderer.h"
 #include "item.h"
 #include "map.h"
 #include "matrix.h"
@@ -99,21 +100,6 @@ typedef struct {
     State state2;
     GLuint buffer;
 } Player;
-
-typedef struct {
-    GLuint program;
-    GLuint position;
-    GLuint normal;
-    GLuint uv;
-    GLuint matrix;
-    GLuint sampler;
-    GLuint camera;
-    GLuint timer;
-    GLuint extra1;
-    GLuint extra2;
-    GLuint extra3;
-    GLuint extra4;
-} Attrib;
 
 typedef struct {
     GLFWwindow *window;
@@ -291,121 +277,6 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
         x += n;
     }
     return gen_faces(4, length, data);
-}
-
-void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->normal);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 10, 0);
-    glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 4, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 10, (GLvoid *)(sizeof(GLfloat) * 6));
-    glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->normal);
-    glDisableVertexAttribArray(attrib->uv);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void draw_triangles_3d_text(Attrib *attrib, GLuint buffer, int count) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 5, 0);
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 5, (GLvoid *)(sizeof(GLfloat) * 3));
-    glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->uv);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->normal);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, 0);
-    glVertexAttribPointer(attrib->normal, 3, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 3));
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 8, (GLvoid *)(sizeof(GLfloat) * 6));
-    glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->normal);
-    glDisableVertexAttribArray(attrib->uv);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(attrib->position);
-    glEnableVertexAttribArray(attrib->uv);
-    glVertexAttribPointer(attrib->position, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 4, 0);
-    glVertexAttribPointer(attrib->uv, 2, GL_FLOAT, GL_FALSE,
-        sizeof(GLfloat) * 4, (GLvoid *)(sizeof(GLfloat) * 2));
-    glDrawArrays(GL_TRIANGLES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glDisableVertexAttribArray(attrib->uv);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glEnableVertexAttribArray(attrib->position);
-    glVertexAttribPointer(
-        attrib->position, components, GL_FLOAT, GL_FALSE, 0, 0);
-    glDrawArrays(GL_LINES, 0, count);
-    glDisableVertexAttribArray(attrib->position);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void draw_chunk(Attrib *attrib, Chunk *chunk) {
-    draw_triangles_3d_ao(attrib, chunk->buffer, chunk->faces * 6);
-}
-
-void draw_item(Attrib *attrib, GLuint buffer, int count) {
-    draw_triangles_3d_ao(attrib, buffer, count);
-}
-
-void draw_text(Attrib *attrib, GLuint buffer, int length) {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    draw_triangles_2d(attrib, buffer, length * 6);
-    glDisable(GL_BLEND);
-}
-
-void draw_signs(Attrib *attrib, Chunk *chunk) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-8, -1024);
-    draw_triangles_3d_text(attrib, chunk->sign_buffer, chunk->sign_faces * 6);
-    glDisable(GL_POLYGON_OFFSET_FILL);
-}
-
-void draw_sign(Attrib *attrib, GLuint buffer, int length) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-8, -1024);
-    draw_triangles_3d_text(attrib, buffer, length * 6);
-    glDisable(GL_POLYGON_OFFSET_FILL);
-}
-
-void draw_cube(Attrib *attrib, GLuint buffer) {
-    draw_item(attrib, buffer, 36);
-}
-
-void draw_plant(Attrib *attrib, GLuint buffer) {
-    draw_item(attrib, buffer, 24);
-}
-
-void draw_player(Attrib *attrib, Player *player) {
-    draw_cube(attrib, player->buffer);
 }
 
 Player *find_player(int id) {
@@ -1638,7 +1509,7 @@ int render_chunks(Attrib *attrib, Player *player) {
         {
             continue;
         }
-        draw_chunk(attrib, chunk);
+        draw_chunk(attrib, chunk->buffer, chunk->faces);
         result += chunk->faces;
     }
     return result;
@@ -1668,7 +1539,7 @@ void render_signs(Attrib *attrib, Player *player) {
         {
             continue;
         }
-        draw_signs(attrib, chunk);
+        draw_signs(attrib, chunk->sign_buffer, chunk->sign_faces);
     }
 }
 
@@ -1713,7 +1584,7 @@ void render_players(Attrib *attrib, Player *player) {
     for (int i = 0; i < g->player_count; i++) {
         Player *other = g->players + i;
         if (other != player) {
-            draw_player(attrib, other);
+            draw_player(attrib, other->buffer);
         }
     }
 }
@@ -1728,7 +1599,7 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
     glUniform1i(attrib->sampler, 2);
     glUniform1f(attrib->timer, time_of_day());
-    draw_triangles_3d(attrib, buffer, 512 * 3);
+    draw_sky(attrib, buffer);
 }
 
 void render_wireframe(Attrib *attrib, Player *player) {

@@ -6,15 +6,21 @@
 #include "matrix.h"
 #include "util.h"
 
+// For GL, the image need only be represented by an integer ID
+struct ImageObj {
+    GLuint id;
+};
+
 // Buffer is a wrapper object for the API elements of a buffer object
 // For GL it just contains an integer ID
 struct BufferObj {
     GLuint id;
 };
 
-// For GL, the uniform consists of between 0 and 2 texture images
+// For GL, the uniform consists a ubo and between 0 and 2 texture images
 struct UniformObj {
     GLuint ubo;
+    Image textures[2];
 };
 
 // Generate a buffer object of <size> bytes and initialize with <data>
@@ -309,8 +315,8 @@ void draw_sky(Attrib *attrib, Buffer buffer) {
 } // draw_sky()
 
 // Create a uniform interface object containing a ubo of size <ubo_size>
-// and return the handle.
-Uniform gen_uniform(uint32_t ubo_size) {
+// and textures <texture0> and <texture1> then return the handle.
+Uniform gen_uniform(uint32_t ubo_size, Image texture0, Image texture1) {
 
     GLuint buffer;
     glGenBuffers(1, &buffer);
@@ -320,6 +326,8 @@ Uniform gen_uniform(uint32_t ubo_size) {
 
     Uniform ret_uniform = malloc(sizeof(struct UniformObj));
     ret_uniform->ubo = buffer;
+    ret_uniform->textures[0] = texture0;
+    ret_uniform->textures[1] = texture1;
 
     return ret_uniform;
 
@@ -331,9 +339,49 @@ void del_uniform(Uniform uniform) {
     free(uniform);
 } // del_uniform()
 
+// Load and create a texture image from the file located in <path>
+// If <linear> is true, apply linear filtering, nearest otherwise. If <clamp> is true
+// use clamp to edge wrap mode. Otherwise, use the default repeat mode.
+// Return an Image object containing its information
+Image load_tex_image(const char *path, int linear, int clamp) {
+
+    GLuint texture;
+    uint8_t *data;
+    uint32_t width, height;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    if (linear) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    } else {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
+    if (clamp) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
+
+    data = load_png_texture(path, &width, &height);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+        GL_UNSIGNED_BYTE, data);
+    free(data);
+
+    Image ret_image = malloc(sizeof(struct ImageObj));
+    ret_image->id = texture;
+
+    return ret_image;
+
+} // load_tex_image()
+
+// Destroy <image> and free any associated resources
+void del_image(Image image) {
+    glDeleteTextures(1, &image->id);
+    free(image);
+} // del_image()
+
 // Bind the <attrib> and <uniform> interfaces for rendering
-// For now, this just involves binding the program and ubo
-// containing all the uniform info.
+// This involves binding the program, ubo, and the non-null textures
 void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data) {
 
     glUseProgram(attrib->program);
@@ -341,5 +389,16 @@ void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data) {
     glBufferSubData(GL_UNIFORM_BUFFER, 0, size, data);
     glBindBufferBase(GL_UNIFORM_BUFFER, attrib->ubo, uniform->ubo);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    if (uniform->textures[0]) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, uniform->textures[0]->id);
+        glUniform1i(attrib->sampler, 0);
+    }
+    if (uniform->textures[1]) {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, uniform->textures[1]->id);
+        glUniform1i(attrib->sampler2, 1);
+    }
+    glActiveTexture(GL_TEXTURE0);
 
 } // bind_pipeline()

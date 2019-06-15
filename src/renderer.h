@@ -4,6 +4,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+// Image represents texture and framebuffer image information
+// It includes whatever is needed to bind it for rendering
+struct ImageObj;
+typedef struct ImageObj *Image;
+
 // Buffer is a wrapper object for the API elements of a buffer object
 struct BufferObj;
 typedef struct BufferObj *Buffer;
@@ -65,11 +70,17 @@ void draw_player(Attrib *attrib, Buffer buffer);
 // using rendering state <attrib>
 void draw_sky(Attrib *attrib, Buffer buffer);
 // Create a uniform interface object containing a ubo of size <ubo_size>
-// and return the handle.
-Uniform gen_uniform(uint32_t ubo_size);
+// and textures <texture0> and <texture1> then return the handle.
+Uniform gen_uniform(uint32_t ubo_size, Image texture0, Image texture1);
 // Destroy <uniform> and free any associated memory.
 void del_uniform(Uniform uniform);
+// Load and create a texture image from the file located in <path>
+// filter and clamp according to <linear> and <clamp> and return the created image object
+Image load_tex_image(const char *path, int linear, int clamp);
+// Destroy <image> and free any associated resources
+void del_image(Image image);
 // Bind the <attrib> and <uniform> interfaces for rendering
+// and init ubo with <size> bytes of <data>
 void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data);
 
 #endif // _glrenderer_

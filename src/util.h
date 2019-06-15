@@ -30,7 +30,7 @@ double rand_double();
 void update_fps(FPS *fps);
 char *load_file(const char *path);
 
-void load_png_texture(const char *file_name);
+unsigned char *load_png_texture(const char *file_name, uint32_t *width, uint32_t *height);
 char *tokenize(char *str, const char *delim, char **key);
 int char_width(char input);
 int string_width(const char *input);

@@ -60,19 +60,16 @@ void flip_image_vertical(
     free(new_data);
 }
 
-void load_png_texture(const char *file_name) {
+unsigned char *load_png_texture(const char *file_name, uint32_t *width, uint32_t *height) {
     unsigned int error;
     unsigned char *data;
-    unsigned int width, height;
-    error = lodepng_decode32_file(&data, &width, &height, file_name);
+    error = lodepng_decode32_file(&data, width, height, file_name);
     if (error) {
         fprintf(stderr, "load_png_texture %s failed, error %u: %s\n", file_name, error, lodepng_error_text(error));
         exit(1);
     }
-    flip_image_vertical(data, width, height);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, data);
-    free(data);
+    flip_image_vertical(data, *width, *height);
+    return data;
 }
 
 char *tokenize(char *str, const char *delim, char **key) {

@@ -1559,8 +1559,6 @@ int render_chunks(Attrib *attrib, Uniform uniform, Player *player) {
         ubo_body.matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    glUniform1i(attrib->sampler, 0);
-    glUniform1i(attrib->sampler2, 2);
 
     float planes[6][4];
     frustum_planes(planes, g->render_radius, ubo_body.matrix);
@@ -1597,7 +1595,7 @@ void render_signs(Attrib *attrib, Uniform uniform, Player *player) {
     frustum_planes(planes, g->render_radius, ubo_body.matrix);
 
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    glUniform1i(attrib->sampler, 3);
+
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
         if (chunk_distance(chunk, p, q) > g->sign_radius) {
@@ -1630,7 +1628,6 @@ void render_sign(Attrib *attrib, Uniform uniform, Player *player) {
         ubo_body.matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    glUniform1i(attrib->sampler, 3);
 
     char text[MAX_SIGN_LENGTH];
     strncpy(text, g->typing_buffer + 1, MAX_SIGN_LENGTH);
@@ -1658,7 +1655,6 @@ void render_players(Attrib *attrib, Uniform uniform, Player *player) {
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
 
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    glUniform1i(attrib->sampler, 0);
     for (int i = 0; i < g->player_count; i++) {
         Player *other = g->players + i;
         if (other != player) {
@@ -1678,7 +1674,6 @@ void render_sky(Attrib *attrib, Uniform uniform, Player *player, Buffer buffer) 
         ubo_body.matrix, g->width, g->height,
         0, 0, 0, s->rx, s->ry, g->fov, 0, g->render_radius);
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    glUniform1i(attrib->sampler, 2);
     draw_sky(attrib, buffer);
 } // render_sky()
 
@@ -1731,7 +1726,6 @@ void render_item(Attrib *attrib, Uniform uniform) {
     set_matrix_item(ubo_body.matrix, g->width, g->height, g->scale);
 
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    glUniform1i(attrib->sampler, 0);
 
     int w = items[g->item_index];
     if (is_plant(w)) {
@@ -1756,7 +1750,6 @@ void render_text(
     };
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
     bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
-    glUniform1i(attrib->sampler, 1);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     Buffer buffer = gen_text_buffer(x, y, n, text);
@@ -2587,46 +2580,17 @@ int main(int argc, char **argv) {
     glClearColor(0, 0, 0, 1);
 
     // LOAD TEXTURES //
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    load_png_texture("textures/texture.png");
-
-    GLuint font;
-    glGenTextures(1, &font);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, 1);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    load_png_texture("textures/font.png");
-
-    GLuint sky;
-    glGenTextures(1, &sky);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, 2);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    load_png_texture("textures/sky.png");
-
-    GLuint sign;
-    glGenTextures(1, &sign);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, 3);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    load_png_texture("textures/sign.png");
+    Image texture = load_tex_image("textures/texture.png", 0, 0);
+    Image font = load_tex_image("textures/font.png", 1, 0);
+    Image sky = load_tex_image("textures/sky.png", 1, 1);
+    Image sign = load_tex_image("textures/sign.png", 0, 0);
 
     // CREATE UNIFORMS //
-    Uniform block_uniform = gen_uniform(sizeof(BlockUbo));
-    Uniform line_uniform = gen_uniform(sizeof(MatUbo));
-    Uniform text_uniform = gen_uniform(sizeof(TextUbo));
-    Uniform sign_uniform = gen_uniform(sizeof(TextUbo));
-    Uniform sky_uniform = gen_uniform(sizeof(SkyUbo));
+    Uniform block_uniform = gen_uniform(sizeof(BlockUbo), texture, sky);
+    Uniform line_uniform = gen_uniform(sizeof(MatUbo), NULL, NULL);
+    Uniform text_uniform = gen_uniform(sizeof(TextUbo), font, NULL);
+    Uniform sign_uniform = gen_uniform(sizeof(TextUbo), sign, NULL);
+    Uniform sky_uniform = gen_uniform(sizeof(SkyUbo), sky, NULL);
 
     // LOAD SHADERS //
     Attrib block_attrib = {0};
@@ -2930,6 +2894,10 @@ int main(int argc, char **argv) {
         del_uniform(text_uniform);
         del_uniform(sign_uniform);
         del_uniform(sky_uniform);
+        del_image(texture);
+        del_image(font);
+        del_image(sky);
+        del_image(sign);
         delete_all_chunks();
         delete_all_players();
     }

@@ -18,9 +18,9 @@ typedef struct BufferObj *Buffer;
 struct UniformObj;
 typedef struct UniformObj *Uniform;
 
-typedef struct {
-    GLuint program;
-} Attrib;
+// Pipeline represents the shader and fixed function states that make up the rendering pipeline
+struct PipelineObj;
+typedef struct PipelineObj *Pipeline;
 
 // Generate a buffer object of <size> bytes and initialize with <data> and return its handle
 Buffer gen_buffer(int32_t size, float *data);
@@ -31,9 +31,6 @@ float *malloc_faces(int components, int faces);
 // Generate a vertex buffer representing <faces> quads with vertex attributes
 // consisting of <components> attributes using <data>  and return its handle
 Buffer gen_faces(int components, int faces, float *data);
-// Load a program object containing shaders loaded from files found at
-// <path1> and <path2> and return its handle
-GLuint load_program(const char *path1, const char *path2);
 // Draw lines consisting of <count> 2D or 3D vertices with <components> components
 // taken from vertex buffer <buffer>
 void draw_lines(Buffer buffer, int components, int count);
@@ -68,8 +65,12 @@ void del_uniform(Uniform uniform);
 Image load_tex_image(const char *path, int linear, int clamp);
 // Destroy <image> and free any associated resources
 void del_image(Image image);
-// Bind the <attrib> and <uniform> interfaces for rendering
+// Create pipeline object containing shaders as extracted from files <path1> and <path2>
+Pipeline gen_pipeline(const char *path1, const char *path2);
+// Bind the pipeline and <uniform> interfaces for rendering
 // and init ubo with <size> bytes of <data>
-void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data);
+void bind_pipeline(Pipeline pipeline, Uniform uniform, int size, void *data);
+// Destroy pipeline object <pipeline> and free any associated memory
+void del_pipeline(Pipeline pipeline);
 
 #endif // _glrenderer_

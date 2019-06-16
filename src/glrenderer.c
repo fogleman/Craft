@@ -23,6 +23,11 @@ struct UniformObj {
     Image textures[2];
 };
 
+// For GL, the pipeline object just consists of the program ID
+struct PipelineObj {
+    GLuint program;
+};
+
 // Generate a buffer object of <size> bytes and initialize with <data>
 Buffer gen_buffer(int32_t size, float *data) {
     Buffer buffer = malloc(sizeof(struct BufferObj));
@@ -370,12 +375,21 @@ void del_image(Image image) {
     free(image);
 } // del_image()
 
-// Bind the <attrib> and <uniform> interfaces for rendering
+// Create pipeline object containing shaders as extracted from files <path1> and <path2>
+// Since the only member of the GL pipeline is the program, this accomplishes no more than
+// load program with a thin wrapper.
+Pipeline gen_pipeline(const char *path1, const char *path2) {
+    Pipeline ret_pipeline = malloc(sizeof(struct PipelineObj));
+    ret_pipeline->program = load_program(path1, path2);
+    return ret_pipeline;
+} // gen_pipeline()
+
+// Bind the <pipeline> and <uniform> interfaces for rendering
 // This involves binding the program, ubo, and the non-null textures
-void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data) {
+void bind_pipeline(Pipeline pipeline, Uniform uniform, int size, void *data) {
 
     int binding = 0;
-    glUseProgram(attrib->program);
+    glUseProgram(pipeline->program);
     if (uniform->textures[0]) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, uniform->textures[0]->id);
@@ -394,3 +408,10 @@ void bind_pipeline(Attrib *attrib, Uniform uniform, int size, void *data) {
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 } // bind_pipeline()
+
+// Destroy pipeline object <pipeline> and free any associated memory
+// Destroys the program and then frees the allocated struct.
+void del_pipeline(Pipeline pipeline) {
+    glDeleteProgram(pipeline->program);
+    free(pipeline);
+} // del_pipeline()

@@ -1542,7 +1542,7 @@ void builder_block(int x, int y, int z, int w) {
 
 // Render all chunks making up the landscape within range and visible to <player>
 // according to render info in <attrib>
-int render_chunks(Attrib *attrib, Uniform uniform, Player *player) {
+int render_chunks(Pipeline pipeline, Uniform uniform, Player *player) {
     int result = 0;
     State *s = &player->state;
     ensure_chunks(player);
@@ -1558,7 +1558,7 @@ int render_chunks(Attrib *attrib, Uniform uniform, Player *player) {
     set_matrix_3d(
         ubo_body.matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
 
     float planes[6][4];
     frustum_planes(planes, g->render_radius, ubo_body.matrix);
@@ -1580,7 +1580,7 @@ int render_chunks(Attrib *attrib, Uniform uniform, Player *player) {
 
 // Render signs on chunks within range and visible to <player>
 // according to render info in <attrib>
-void render_signs(Attrib *attrib, Uniform uniform, Player *player) {
+void render_signs(Pipeline pipeline, Uniform uniform, Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
     int q = chunked(s->z);
@@ -1594,7 +1594,7 @@ void render_signs(Attrib *attrib, Uniform uniform, Player *player) {
     float planes[6][4];
     frustum_planes(planes, g->render_radius, ubo_body.matrix);
 
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
 
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
@@ -1612,7 +1612,7 @@ void render_signs(Attrib *attrib, Uniform uniform, Player *player) {
 
 // Render the sign currently being typed on the chunk targetted by <player>
 // according to the render info in <attrib>
-void render_sign(Attrib *attrib, Uniform uniform, Player *player) {
+void render_sign(Pipeline pipeline, Uniform uniform, Player *player) {
     if (!g->typing || g->typing_buffer[0] != CRAFT_KEY_SIGN) {
         return;
     }
@@ -1627,7 +1627,7 @@ void render_sign(Attrib *attrib, Uniform uniform, Player *player) {
     set_matrix_3d(
         ubo_body.matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
 
     char text[MAX_SIGN_LENGTH];
     strncpy(text, g->typing_buffer + 1, MAX_SIGN_LENGTH);
@@ -1641,7 +1641,7 @@ void render_sign(Attrib *attrib, Uniform uniform, Player *player) {
 
 // Render the cube representing the players near <player>
 // according to render info in <attrib>
-void render_players(Attrib *attrib, Uniform uniform, Player *player) {
+void render_players(Pipeline pipeline, Uniform uniform, Player *player) {
     State *s = &player->state;
     BlockUbo ubo_body = {
         .daylight = get_daylight(),
@@ -1654,7 +1654,7 @@ void render_players(Attrib *attrib, Uniform uniform, Player *player) {
         ubo_body.matrix, g->width, g->height,
         s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
 
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
     for (int i = 0; i < g->player_count; i++) {
         Player *other = g->players + i;
         if (other != player) {
@@ -1665,7 +1665,7 @@ void render_players(Attrib *attrib, Uniform uniform, Player *player) {
 
 // Render the sphere that surrounds <player> using the vertices in
 // <buffer> and the other rendering information in <attrib>
-void render_sky(Attrib *attrib, Uniform uniform, Player *player, Buffer buffer) {
+void render_sky(Pipeline pipeline, Uniform uniform, Player *player, Buffer buffer) {
     State *s = &player->state;
     SkyUbo ubo_body = {
         .timer = time_of_day()
@@ -1673,13 +1673,13 @@ void render_sky(Attrib *attrib, Uniform uniform, Player *player, Buffer buffer) 
     set_matrix_3d(
         ubo_body.matrix, g->width, g->height,
         0, 0, 0, s->rx, s->ry, g->fov, 0, g->render_radius);
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
     draw_sky(buffer);
 } // render_sky()
 
 // Render a wire box around the chunk currently targetted by <player>
 // according to the rendering information in <attrib>
-void render_wireframe(Attrib *attrib, Uniform uniform, Player *player) {
+void render_wireframe(Pipeline pipeline, Uniform uniform, Player *player) {
     State *s = &player->state;
     MatUbo ubo_body;
     set_matrix_3d(
@@ -1690,7 +1690,7 @@ void render_wireframe(Attrib *attrib, Uniform uniform, Player *player) {
     if (is_obstacle(hw)) {
         glLineWidth(1);
         glEnable(GL_COLOR_LOGIC_OP);
-        bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+        bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
         Buffer wireframe_buffer = gen_wireframe_buffer(hx, hy, hz, 0.53);
         draw_lines(wireframe_buffer, 3, 24);
         del_buffer(wireframe_buffer);
@@ -1700,10 +1700,10 @@ void render_wireframe(Attrib *attrib, Uniform uniform, Player *player) {
 
 // Render the targetting crosshair in the middle of the screen
 // according to the rendering information in <attrib>
-void render_crosshairs(Attrib *attrib, Uniform uniform) {
+void render_crosshairs(Pipeline pipeline, Uniform uniform) {
     MatUbo ubo_body;
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
     glLineWidth(4 * g->scale);
     glEnable(GL_COLOR_LOGIC_OP);
     Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
@@ -1715,7 +1715,7 @@ void render_crosshairs(Attrib *attrib, Uniform uniform) {
 // Render the 3D UI element representing the chunk that will be placed
 // next if the user presses the right mouse button.
 // according to the rendering information in <attrib>
-void render_item(Attrib *attrib, Uniform uniform) {
+void render_item(Pipeline pipeline, Uniform uniform) {
     BlockUbo ubo_body = {
         .daylight = get_daylight(),
         .camera = {0,0,5},
@@ -1725,7 +1725,7 @@ void render_item(Attrib *attrib, Uniform uniform) {
     };
     set_matrix_item(ubo_body.matrix, g->width, g->height, g->scale);
 
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
 
     int w = items[g->item_index];
     if (is_plant(w)) {
@@ -1743,13 +1743,13 @@ void render_item(Attrib *attrib, Uniform uniform) {
 // Render UI <text> in 2D at screen depth located at <x,y> scaled by <n>
 // aligned by <justify> and according to render info in <attrib>
 void render_text(
-    Attrib *attrib, Uniform uniform, int justify, float x, float y, float n, char *text)
+    Pipeline pipeline, Uniform uniform, int justify, float x, float y, float n, char *text)
 {
     TextUbo ubo_body = {
         .is_sign = 0
     };
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
-    bind_pipeline(attrib, uniform, sizeof(ubo_body), &ubo_body);
+    bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
     int length = strlen(text);
     x -= n * justify * (length - 1) / 2;
     Buffer buffer = gen_text_buffer(x, y, n, text);
@@ -2593,27 +2593,10 @@ int main(int argc, char **argv) {
     Uniform sky_uniform = gen_uniform(sizeof(SkyUbo), sky, NULL);
 
     // LOAD SHADERS //
-    Attrib block_attrib = {0};
-    Attrib line_attrib = {0};
-    Attrib text_attrib = {0};
-    Attrib sky_attrib = {0};
-    GLuint program;
-
-    program = load_program(
-        "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
-    block_attrib.program = program;
-
-    program = load_program(
-        "shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
-    line_attrib.program = program;
-
-    program = load_program(
-        "shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
-    text_attrib.program = program;
-
-    program = load_program(
-        "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
-    sky_attrib.program = program;
+    Pipeline block_pipeline = gen_pipeline("shaders/block_vertex.glsl", "shaders/block_fragment.glsl");
+    Pipeline line_pipeline = gen_pipeline("shaders/line_vertex.glsl", "shaders/line_fragment.glsl");
+    Pipeline text_pipeline = gen_pipeline("shaders/text_vertex.glsl", "shaders/text_fragment.glsl");
+    Pipeline sky_pipeline = gen_pipeline("shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {
@@ -2751,23 +2734,23 @@ int main(int argc, char **argv) {
             // RENDER 3-D SCENE //
             glClear(GL_COLOR_BUFFER_BIT);
             glClear(GL_DEPTH_BUFFER_BIT);
-            render_sky(&sky_attrib, sky_uniform, player, sky_buffer);
+            render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
             glClear(GL_DEPTH_BUFFER_BIT);
-            int face_count = render_chunks(&block_attrib, block_uniform, player);
-            render_signs(&text_attrib, sign_uniform, player);
-            render_sign(&text_attrib, sign_uniform, player);
-            render_players(&block_attrib, block_uniform, player);
+            int face_count = render_chunks(block_pipeline, block_uniform, player);
+            render_signs(text_pipeline, sign_uniform, player);
+            render_sign(text_pipeline, sign_uniform, player);
+            render_players(block_pipeline, block_uniform, player);
             if (SHOW_WIREFRAME) {
-                render_wireframe(&line_attrib, line_uniform, player);
+                render_wireframe(line_pipeline, line_uniform, player);
             }
 
             // RENDER HUD //
             glClear(GL_DEPTH_BUFFER_BIT);
             if (SHOW_CROSSHAIRS) {
-                render_crosshairs(&line_attrib, line_uniform);
+                render_crosshairs(line_pipeline, line_uniform);
             }
             if (SHOW_ITEM) {
-                render_item(&block_attrib, block_uniform);
+                render_item(block_pipeline, block_uniform);
             }
 
             // RENDER TEXT //
@@ -2786,14 +2769,14 @@ int main(int argc, char **argv) {
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
-                render_text(&text_attrib, text_uniform, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                render_text(text_pipeline, text_uniform, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }
             if (SHOW_CHAT_TEXT) {
                 for (int i = 0; i < MAX_MESSAGES; i++) {
                     int index = (g->message_index + i) % MAX_MESSAGES;
                     if (strlen(g->messages[index])) {
-                        render_text(&text_attrib, text_uniform, ALIGN_LEFT, tx, ty, ts,
+                        render_text(text_pipeline, text_uniform, ALIGN_LEFT, tx, ty, ts,
                             g->messages[index]);
                         ty -= ts * 2;
                     }
@@ -2801,17 +2784,17 @@ int main(int argc, char **argv) {
             }
             if (g->typing) {
                 snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
-                render_text(&text_attrib, text_uniform, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                render_text(text_pipeline, text_uniform, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }
             if (SHOW_PLAYER_NAMES) {
                 if (player != me) {
-                    render_text(&text_attrib, text_uniform, ALIGN_CENTER,
+                    render_text(text_pipeline, text_uniform, ALIGN_CENTER,
                         g->width / 2, ts, ts, player->name);
                 }
                 Player *other = player_crosshair(player);
                 if (other) {
-                    render_text(&text_attrib, text_uniform, ALIGN_CENTER,
+                    render_text(text_pipeline, text_uniform, ALIGN_CENTER,
                         g->width / 2, g->height / 2 - ts - 24, ts,
                         other->name);
                 }
@@ -2840,14 +2823,14 @@ int main(int argc, char **argv) {
                 g->ortho = 0;
                 g->fov = 65;
 
-                render_sky(&sky_attrib, sky_uniform, player, sky_buffer);
+                render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
                 glClear(GL_DEPTH_BUFFER_BIT);
-                render_chunks(&block_attrib, block_uniform, player);
-                render_signs(&text_attrib, sign_uniform, player);
-                render_players(&block_attrib, block_uniform, player);
+                render_chunks(block_pipeline, block_uniform, player);
+                render_signs(text_pipeline, sign_uniform, player);
+                render_players(block_pipeline, block_uniform, player);
                 glClear(GL_DEPTH_BUFFER_BIT);
                 if (SHOW_PLAYER_NAMES) {
-                    render_text(&text_attrib, text_uniform, ALIGN_CENTER,
+                    render_text(text_pipeline, text_uniform, ALIGN_CENTER,
                         pw / 2, ts, ts, player->name);
                 }
             }
@@ -2877,6 +2860,10 @@ int main(int argc, char **argv) {
         del_uniform(text_uniform);
         del_uniform(sign_uniform);
         del_uniform(sky_uniform);
+        del_pipeline(block_pipeline);
+        del_pipeline(line_pipeline);
+        del_pipeline(text_pipeline);
+        del_pipeline(sky_pipeline);
         del_image(texture);
         del_image(font);
         del_image(sky);

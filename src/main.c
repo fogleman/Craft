@@ -23,6 +23,7 @@
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
 #define WORKERS 4
+#define MAX_INFO_LENGTH 1024
 #define MAX_TEXT_LENGTH 256
 #define MAX_NAME_LENGTH 32
 #define MAX_PATH_LENGTH 256
@@ -1605,21 +1606,22 @@ void render_signs(Pipeline pipeline, Uniform uniform, Player *player) {
 
 // Generate and return a buffer for the sign currently being typed.
 // Return the <length> through the pointer
-Buffer gen_type_buffer(Player *player, int *length) {
+int update_type_buffer(Buffer buffer, Player *player) {
     if (!g->typing || g->typing_buffer[0] != CRAFT_KEY_SIGN || !g->typing_buffer[1]) {
-        return NULL;
+        return 0;
     }
     int x, y, z, face;
     if (!hit_test_face(player, &x, &y, &z, &face)) {
-        return NULL;
+        return 0;
     }
     char text[MAX_SIGN_LENGTH];
     strncpy(text, g->typing_buffer + 1, MAX_SIGN_LENGTH);
     text[MAX_SIGN_LENGTH - 1] = '\0';
     float *data = malloc_faces(5, strlen(text));
-    *length = _gen_sign_buffer(data, x, y, z, face, text);
-    return gen_faces(5, *length, data);
-} // gen_type_buffer()
+    int length = _gen_sign_buffer(data, x, y, z, face, text);
+    update_faces(buffer, 5, length, data);
+    return length;
+} // update_type_buffer()
 
 // Render the sign currently being typed on the chunk targetted by <player>
 // according to the render info in <attrib>
@@ -1719,6 +1721,12 @@ void render_item(Pipeline pipeline, Uniform uniform, Buffer buffer) {
     else
         draw_cube(buffer);
 } // render_item()
+
+// Generate a dynamic buffer for text rendering with attrib <components>
+// and <faces> characters
+Buffer gen_text_buffer(int components, int faces) {
+    return gen_dynamic_buffer(sizeof(GLfloat) * 6 * components * faces, NULL);
+} // gen_text_buffer()
 
 // Render UI <text> in 2D at screen depth located at <x,y> scaled by <n>
 // aligned by <justify> and according to render info in <attrib>
@@ -2629,8 +2637,8 @@ int main(int argc, char **argv) {
         Buffer sky_buffer = gen_sky_buffer();
         Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
         Buffer wireframe_buffer = gen_wireframe_buffer(0.53);
-        Buffer type_buffer = NULL;
-        Buffer text_buffer = NULL;
+        Buffer type_buffer = gen_text_buffer(5, MAX_TEXT_LENGTH);
+        Buffer text_buffer = gen_text_buffer(4, MAX_TEXT_LENGTH * (MAX_MESSAGES + 1) + MAX_INFO_LENGTH + 2 * MAX_NAME_LENGTH);
         Buffer *item_buffers = malloc(sizeof(Buffer) * item_count);
         for(int i = 0; i < item_count; i++) {
             int w = items[i];
@@ -2717,9 +2725,7 @@ int main(int argc, char **argv) {
             clear_frame(CLEAR_DEPTH_BIT);
             int face_count = render_chunks(block_pipeline, block_uniform, player);
             render_signs(sign_pipeline, sign_uniform, player);
-            int type_len = 0;
-            del_buffer(type_buffer);
-            type_buffer = gen_type_buffer(player, &type_len);
+            int type_len = update_type_buffer(type_buffer, player);
             render_sign(sign_pipeline, sign_uniform, player, type_len, type_buffer);
             render_players(block_pipeline, block_uniform, player);
             if (SHOW_WIREFRAME) {
@@ -2736,7 +2742,7 @@ int main(int argc, char **argv) {
             }
 
             // RENDER TEXT //
-            char info_buffer[1024];
+            char info_buffer[MAX_INFO_LENGTH];
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
@@ -2748,7 +2754,7 @@ int main(int argc, char **argv) {
                 hour = hour % 12;
                 hour = hour ? hour : 12;
                 length = snprintf(
-                                  info_buffer, 1024,
+                                  info_buffer, MAX_INFO_LENGTH,
                                   "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
                                   chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                                   g->player_count, g->chunk_count,
@@ -2788,8 +2794,6 @@ int main(int argc, char **argv) {
                 data_ptr += 24;
                 data_ptr = make_text(data_ptr, tx + 2*ts, ty, ts, g->typing_buffer);
             }
-            del_buffer(text_buffer);
-            text_buffer = NULL;
             if (SHOW_PLAYER_NAMES) {
                 if (player != me)
                     data_ptr = make_text(data_ptr, g->width/2, ts, ts, player->name);
@@ -2797,7 +2801,7 @@ int main(int argc, char **argv) {
                     make_text(data_ptr, g->width/2, g->height / 2 - ts - 24, ts, other->name);
             }
             if (length) {
-                text_buffer = gen_faces(4, length, data);
+                update_faces(text_buffer, 4, length, data);
                 render_text(text_pipeline, text_uniform, length, text_buffer);
             }
 

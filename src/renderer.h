@@ -33,6 +33,11 @@ void subclear_frame(uint32_t bitfield, int32_t x, int32_t y, int32_t width, int3
 void set_viewport(int32_t x, int32_t y, int32_t width, int32_t height);
 // Generate a buffer object of <size> bytes and initialize with <data> and return its handle
 Buffer gen_buffer(int32_t size, float *data);
+// Generate a buffer object of <size> bytes and initialize with <data> that
+// is expected to be changed frequently
+Buffer gen_dynamic_buffer(int32_t size, float *data);
+// Update the contents of <buffer> with <size> bytes of <data>
+void update_buffer(Buffer buffer, int32_t size, float *data);
 // Delete the buffer object represented by <buffer>
 void del_buffer(Buffer buffer);
 // Allocate and return memory for attribs consisting of <components> attribs for <faces> quads
@@ -40,6 +45,9 @@ float *malloc_faces(int components, int faces);
 // Generate a vertex buffer representing <faces> quads with vertex attributes
 // consisting of <components> attributes using <data>  and return its handle
 Buffer gen_faces(int components, int faces, float *data);
+// Update <buffer> with <faces> quads with vertex attributes
+// consisting of <components> attributes using <data>
+void update_faces(Buffer buffer, int components, int faces, float *data);
 // Draw lines consisting of <count> 2D or 3D vertices with <components> components
 // taken from vertex buffer <buffer> at <width> pixels
 void draw_lines(Buffer buffer, int components, int count, float width);

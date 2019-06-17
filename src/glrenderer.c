@@ -80,6 +80,27 @@ Buffer gen_buffer(int32_t size, float *data) {
     return buffer;
 } // gen_buffer()
 
+// Generate a buffer object of <size> bytes and initialize with <data> that
+// is expected to be changed frequently
+// For GL, this means defining it with GL_DYNAMIC_DRAW
+Buffer gen_dynamic_buffer(int32_t size, float *data) {
+    Buffer buffer = malloc(sizeof(struct BufferObj));
+    glGenBuffers(1, &buffer->id);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return buffer;
+} // gen_dynamic_buffer()
+
+// Update the contents of <buffer> with <size> bytes of <data>
+void update_buffer(Buffer buffer, int32_t size, float *data) {
+    if (!buffer) return;
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+} // update_buffer()
+
 // Delete the buffer object represented by <buffer>
 void del_buffer(Buffer buffer) {
     if (!buffer) return;
@@ -94,12 +115,22 @@ float *malloc_faces(int components, int faces) {
 
 // Generate a vertex buffer representing <faces> quads with vertex attributes
 // consisting of <components> attributes using <data>  and return its handle
+// <data> will be freed
 Buffer gen_faces(int components, int faces, float *data) {
     Buffer buffer = gen_buffer(
         sizeof(GLfloat) * 6 * components * faces, data);
     free(data);
     return buffer;
 } // gen_faces()
+
+// Update <buffer> with <faces> quads with vertex attributes
+// consisting of <components> attributes using <data>
+// <data> will be freed
+void update_faces(Buffer buffer, int components, int faces, float *data) {
+    update_buffer(buffer,
+        sizeof(GLfloat) * 6 * components * faces, data);
+    free(data);
+} // update_faces()
 
 // Create a shader of <type> kind using code contained in <source> and return its handle
 // <source> is expected to be a null terminated string pointing to valid GLSL

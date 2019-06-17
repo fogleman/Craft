@@ -33,7 +33,10 @@ struct PipelineObj {
 // Initialize persistent global state for the renderer
 // For GL this involves enabling depth testing, face culling,
 // and settng the clear color. returns 0 on success.
-int init_renderer() {
+int init_renderer(GLFWwindow *window) {
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(VSYNC);
+
     if (glewInit() != GLEW_OK) {
         return -1;
     }
@@ -136,7 +139,7 @@ void update_faces(Buffer buffer, int components, int faces, float *data) {
 // <source> is expected to be a null terminated string pointing to valid GLSL
 // the source is compiled and a shader is created. If compilation fails, an error message
 // is printed and the returned handle is invalid
-GLuint make_shader(GLenum type, const char *source, int length) {
+static GLuint make_shader(GLenum type, const char *source, int length) {
     GLuint shader = glCreateShader(type);
     glShaderBinary(1, &shader, GL_SHADER_BINARY_FORMAT_SPIR_V, source, length);
     glSpecializeShader(shader, "main", 0, NULL, NULL);
@@ -385,9 +388,13 @@ void draw_sky(Buffer buffer) {
     draw_triangles_3d(buffer, 512 * 3);
 } // draw_sky()
 
-// Create a uniform interface object containing a ubo of size <ubo_size>
+// Create a uniform object containing a ubo of size <ubo_size> to be used in <ubo_stages>
 // and textures <texture0> and <texture1> then return the handle.
-Uniform gen_uniform(uint32_t ubo_size, Image texture0, Image texture1) {
+// GL has not use for ubo_stages
+Uniform gen_uniform(uint32_t ubo_size, uint32_t ubo_stages, Image texture0, Image texture1) {
+
+    // GL has no use for this
+    (void)ubo_stages;
 
     GLuint buffer;
     glGenBuffers(1, &buffer);
@@ -452,11 +459,18 @@ void del_image(Image image) {
 } // del_image()
 
 // Create pipeline object containing shaders as extracted from files <path1> and <path2>
+// useable with <uniform> with <attrib_ct> attribs containing <components> enabling <feature_bits>
 // Since the only member of the GL pipeline is the program, this accomplishes no more than
-// load program with a thin wrapper.
-Pipeline gen_pipeline(const char *path1, const char *path2) {
+// load program with a thin wrapper while ignoring most of the latter parameters.
+Pipeline gen_pipeline(const char *path1, const char *path2, Uniform uniform,
+                      uint32_t attrib_ct, const uint32_t *components, uint32_t feature_bits) {
     Pipeline ret_pipeline = malloc(sizeof(struct PipelineObj));
     ret_pipeline->program = load_program(path1, path2);
+
+    (void)attrib_ct;
+    (void)components;
+    (void)feature_bits;
+
     return ret_pipeline;
 } // gen_pipeline()
 
@@ -491,3 +505,25 @@ void del_pipeline(Pipeline pipeline) {
     glDeleteProgram(pipeline->program);
     free(pipeline);
 } // del_pipeline()
+
+// Perform any initialization or setup required at the start of the frame rendering
+void start_frame() {
+    // GL doesn't need to do anything here.
+} // start_frame()
+
+// Perform any shutdown or submission required at the end of the frame rendering to <window>
+// For GL, it's just a swap
+void end_frame(GLFWwindow *window) {
+    glfwSwapBuffers(window);
+} // end_frame()
+
+// Conclude any rendering by the renderer in preparation for deletion
+// GL has nothing to do here.
+void shutdown_renderer() {
+} // shutdown_renderer
+
+// Destroy all renderer resources and free any memory
+// GL just calls the glfw function
+void del_renderer() {
+    glfwTerminate();
+} // del_renderer()

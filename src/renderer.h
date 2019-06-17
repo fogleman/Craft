@@ -1,8 +1,19 @@
 #ifndef _glrenderer_h_
 #define _glrenderer_h_
 
+#include <GLFW/glfw3.h>
+
+// A few bits for efficient communication with renderer
 #define CLEAR_COLOR_BIT 0x1
 #define CLEAR_DEPTH_BIT 0x2
+
+#define STAGE_VERT_BIT 0x1
+#define STAGE_FRAG_BIT 0x2
+
+#define FEATURE_NONE 0x0
+#define FEATURE_BLEND_BIT 0x1
+#define FEATURE_LINE_BIT 0x2
+#define FEATURE_DEPTH_BIAS_BIT 0x4
 
 // Image represents texture and framebuffer image information
 // It includes whatever is needed to bind it for rendering
@@ -22,8 +33,9 @@ typedef struct UniformObj *Uniform;
 struct PipelineObj;
 typedef struct PipelineObj *Pipeline;
 
-// Initialize persistent global state for the renderer. returns 0 on success
-int init_renderer();
+// Initialize persistent global state for the renderer using API-dependent <window>
+// returns 0 on success
+int init_renderer(GLFWwindow *window);
 // Clear the full framebuffer for the attachments indicated by the <bitfield>
 void clear_frame(uint32_t bitfield);
 // Clear the a portion of the  framebuffer indicated by <x,y,width,height>
@@ -72,9 +84,9 @@ void draw_plant(Buffer buffer);
 void draw_player(Buffer buffer);
 // Draw large sphere around origin represented by vertex buffer <buffer>
 void draw_sky(Buffer buffer);
-// Create a uniform interface object containing a ubo of size <ubo_size>
+// Create a uniform object containing a ubo of size <ubo_size> to be used in <ubo_stages>
 // and textures <texture0> and <texture1> then return the handle.
-Uniform gen_uniform(uint32_t ubo_size, Image texture0, Image texture1);
+Uniform gen_uniform(uint32_t ubo_size, uint32_t ubo_stages, Image texture0, Image texture1);
 // Destroy <uniform> and free any associated memory.
 void del_uniform(Uniform uniform);
 // Load and create a texture image from the file located in <path>
@@ -83,11 +95,21 @@ Image load_tex_image(const char *path, int linear, int clamp);
 // Destroy <image> and free any associated resources
 void del_image(Image image);
 // Create pipeline object containing shaders as extracted from files <path1> and <path2>
-Pipeline gen_pipeline(const char *path1, const char *path2);
+// useable with <uniform> with <attrib_ct> attribs containing <components> enabling <feature_bits>
+Pipeline gen_pipeline(const char *path1, const char *path2, Uniform uniform,
+                      uint32_t attrib_ct, const uint32_t *components, uint32_t feature_bits);
 // Bind the pipeline and <uniform> interfaces for rendering
 // and init ubo with <size> bytes of <data>
 void bind_pipeline(Pipeline pipeline, Uniform uniform, int size, void *data);
 // Destroy pipeline object <pipeline> and free any associated memory
 void del_pipeline(Pipeline pipeline);
+// Perform any initialization or setup required at the start of the frame rendering
+void start_frame();
+// Perform any shutdown or submission required at the end of the frame rendering to <window>
+void end_frame(GLFWwindow *window);
+// Conclude any rendering by the renderer in preparation for deletion
+void shutdown_renderer();
+// Destroy all renderer resources and free any memory
+void del_renderer();
 
 #endif // _glrenderer_

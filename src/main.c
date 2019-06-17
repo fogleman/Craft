@@ -765,6 +765,8 @@ void gen_sign_buffer(Chunk *chunk) {
             data + faces * 30, e->x, e->y, e->z, e->face, e->text);
     }
 
+    if (!faces) return;
+
     del_buffer(chunk->sign_buffer);
     chunk->sign_buffer = gen_faces(5, faces, data);
     chunk->sign_faces = faces;
@@ -1725,7 +1727,7 @@ void render_item(Pipeline pipeline, Uniform uniform, Buffer buffer) {
 // Generate a dynamic buffer for text rendering with attrib <components>
 // and <faces> characters
 Buffer gen_text_buffer(int components, int faces) {
-    return gen_dynamic_buffer(sizeof(GLfloat) * 6 * components * faces, NULL);
+    return gen_dynamic_buffer(sizeof(float) * 6 * components * faces, NULL);
 } // gen_text_buffer()
 
 // Render UI <text> in 2D at screen depth located at <x,y> scaled by <n>
@@ -2312,6 +2314,8 @@ void create_window() {
         window_width = modes[mode_count - 1].width;
         window_height = modes[mode_count - 1].height;
     }
+    if(VULKANIZE)
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     g->window = glfwCreateWindow(
         window_width, window_height, "Craft", monitor, NULL);
 }
@@ -2542,15 +2546,13 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    glfwMakeContextCurrent(g->window);
-    glfwSwapInterval(VSYNC);
     glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(g->window, on_key);
     glfwSetCharCallback(g->window, on_char);
     glfwSetMouseButtonCallback(g->window, on_mouse_button);
     glfwSetScrollCallback(g->window, on_scroll);
 
-    if (init_renderer())
+    if (init_renderer(g->window))
         return -1;
 
     // LOAD TEXTURES //
@@ -2560,18 +2562,30 @@ int main(int argc, char **argv) {
     Image sign = load_tex_image("textures/sign.png", 0, 0);
 
     // CREATE UNIFORMS //
-    Uniform block_uniform = gen_uniform(sizeof(BlockUbo), texture, sky);
-    Uniform line_uniform = gen_uniform(sizeof(MatUbo), NULL, NULL);
-    Uniform text_uniform = gen_uniform(sizeof(MatUbo), font, NULL);
-    Uniform sign_uniform = gen_uniform(sizeof(MatUbo), sign, NULL);
-    Uniform sky_uniform = gen_uniform(sizeof(SkyUbo), sky, NULL);
+    Uniform block_uniform = gen_uniform(sizeof(BlockUbo), STAGE_VERT_BIT|STAGE_FRAG_BIT, texture, sky);
+    Uniform item_uniform = gen_uniform(sizeof(BlockUbo), STAGE_VERT_BIT|STAGE_FRAG_BIT, texture, sky);
+    Uniform line_uniform = gen_uniform(sizeof(MatUbo), STAGE_VERT_BIT, NULL, NULL);
+    Uniform wire_uniform = gen_uniform(sizeof(MatUbo), STAGE_VERT_BIT, NULL, NULL);
+    Uniform text_uniform = gen_uniform(sizeof(MatUbo), STAGE_VERT_BIT, font, NULL);
+    Uniform sign_uniform = gen_uniform(sizeof(MatUbo), STAGE_VERT_BIT, sign, NULL);
+    Uniform sky_uniform = gen_uniform(sizeof(SkyUbo), STAGE_VERT_BIT|STAGE_FRAG_BIT, sky, NULL);
 
     // LOAD SHADERS //
-    Pipeline block_pipeline = gen_pipeline("shaders/block_vertex.spv", "shaders/block_fragment.spv");
-    Pipeline line_pipeline = gen_pipeline("shaders/line_vertex.spv", "shaders/line_fragment.spv");
-    Pipeline text_pipeline = gen_pipeline("shaders/text_vertex.spv", "shaders/text_fragment.spv");
-    Pipeline sign_pipeline = gen_pipeline("shaders/sign_vertex.spv", "shaders/sign_fragment.spv");
-    Pipeline sky_pipeline = gen_pipeline("shaders/sky_vertex.spv", "shaders/sky_fragment.spv");
+    uint32_t attrib_components[3] = {3, 3, 4};
+    Pipeline block_pipeline = gen_pipeline("shaders/block_vertex.spv", "shaders/block_fragment.spv",
+                                           block_uniform, 3, attrib_components, FEATURE_NONE);
+    attrib_components[2] = 2; // {3, 3, 2}
+    Pipeline sky_pipeline = gen_pipeline("shaders/sky_vertex.spv", "shaders/sky_fragment.spv",
+                                         sky_uniform, 3, attrib_components, FEATURE_NONE);
+    // {3}
+    Pipeline line_pipeline = gen_pipeline("shaders/line_vertex.spv", "shaders/line_fragment.spv",
+                                          line_uniform, 1, attrib_components, FEATURE_LINE_BIT);
+    attrib_components[1] = 2; // {3, 2}
+    Pipeline sign_pipeline = gen_pipeline("shaders/sign_vertex.spv", "shaders/sign_fragment.spv",
+                                          sign_uniform, 2, attrib_components, FEATURE_DEPTH_BIAS_BIT);
+    attrib_components[0] = 2; // {2, 2}
+    Pipeline text_pipeline = gen_pipeline("shaders/text_vertex.spv", "shaders/text_fragment.spv",
+                                          text_uniform, 2, attrib_components, FEATURE_BLEND_BIT);
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {
@@ -2635,7 +2649,7 @@ int main(int argc, char **argv) {
         glfwGetFramebufferSize(g->window, &g->width, &g->height);
         g->scale = get_scale_factor();
         Buffer sky_buffer = gen_sky_buffer();
-        Buffer crosshair_buffer = gen_crosshair_buffer(g->width, g->height, g->scale);
+        Buffer crosshair_buffer = gen_crosshair_buffer();
         Buffer wireframe_buffer = gen_wireframe_buffer(0.53);
         Buffer type_buffer = gen_text_buffer(5, MAX_TEXT_LENGTH);
         Buffer text_buffer = gen_text_buffer(4, MAX_TEXT_LENGTH * (MAX_MESSAGES + 1) + MAX_INFO_LENGTH + 2 * MAX_NAME_LENGTH);
@@ -2720,7 +2734,8 @@ int main(int argc, char **argv) {
             Player *player = g->players + g->observe1;
 
             // RENDER 3-D SCENE //
-            clear_frame(CLEAR_COLOR_BIT|CLEAR_DEPTH_BIT);
+            start_frame();
+            clear_frame(CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT);
             render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
             clear_frame(CLEAR_DEPTH_BIT);
             int face_count = render_chunks(block_pipeline, block_uniform, player);
@@ -2729,7 +2744,7 @@ int main(int argc, char **argv) {
             render_sign(sign_pipeline, sign_uniform, player, type_len, type_buffer);
             render_players(block_pipeline, block_uniform, player);
             if (SHOW_WIREFRAME) {
-                render_wireframe(line_pipeline, line_uniform, player, wireframe_buffer);
+                render_wireframe(line_pipeline, wire_uniform, player, wireframe_buffer);
             }
 
             // RENDER HUD //
@@ -2738,7 +2753,7 @@ int main(int argc, char **argv) {
                 render_crosshairs(line_pipeline, line_uniform, crosshair_buffer);
             }
             if (SHOW_ITEM) {
-                render_item(block_pipeline, block_uniform, item_buffers[g->item_index]);
+                render_item(block_pipeline, item_uniform, item_buffers[g->item_index]);
             }
 
             // RENDER TEXT //
@@ -2843,7 +2858,7 @@ int main(int argc, char **argv) {
             }
 
             // SWAP AND POLL //
-            glfwSwapBuffers(g->window);
+            end_frame(g->window);
             glfwPollEvents();
             if (glfwWindowShouldClose(g->window)) {
                 running = 0;
@@ -2861,18 +2876,31 @@ int main(int argc, char **argv) {
         db_disable();
         client_stop();
         client_disable();
+        shutdown_renderer();
+
+        for(int i = 0; i < item_count; i++)
+            del_buffer(item_buffers[i]);
+        free(item_buffers);
+        del_buffer(type_buffer);
+        del_buffer(text_buffer);
         del_buffer(wireframe_buffer);
         del_buffer(crosshair_buffer);
         del_buffer(sky_buffer);
+
         del_uniform(block_uniform);
+        del_uniform(item_uniform);
         del_uniform(line_uniform);
+        del_uniform(wire_uniform);
         del_uniform(text_uniform);
         del_uniform(sign_uniform);
         del_uniform(sky_uniform);
+
         del_pipeline(block_pipeline);
         del_pipeline(line_pipeline);
         del_pipeline(text_pipeline);
+        del_pipeline(sign_pipeline);
         del_pipeline(sky_pipeline);
+
         del_image(texture);
         del_image(font);
         del_image(sky);
@@ -2880,8 +2908,7 @@ int main(int argc, char **argv) {
         delete_all_chunks();
         delete_all_players();
     }
-
-    glfwTerminate();
+    del_renderer();
     curl_global_cleanup();
     return 0;
 }

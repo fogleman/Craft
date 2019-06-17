@@ -2049,13 +2049,18 @@ void parse_command(const char *buffer, int forward) {
         g->mode = MODE_ONLINE;
         strncpy(g->server_addr, server_addr, MAX_ADDR_LENGTH);
         g->server_port = server_port;
-        snprintf(g->db_path, MAX_PATH_LENGTH,
-            "cache.%s.%d.db", g->server_addr, g->server_port);
+        size_t rv = snprintf(g->db_path, MAX_PATH_LENGTH,
+                            "cache.%s.%d.db", g->server_addr, g->server_port);
+        if (rv < 0 || rv >= MAX_PATH_LENGTH)
+            fprintf(stderr, "database name is too long somehow cache.%s.%d.db\n", g->server_addr, g->server_port);
     }
     else if (sscanf(buffer, "/offline %128s", filename) == 1) {
         g->mode_changed = 1;
         g->mode = MODE_OFFLINE;
-        snprintf(g->db_path, MAX_PATH_LENGTH, "%s.db", filename);
+        int rv = snprintf(g->db_path, MAX_PATH_LENGTH, "%s.db", filename);
+        if (rv < 0 || rv >= MAX_PATH_LENGTH) {
+            add_message("Excessive database path length");
+        }
     }
     else if (strcmp(buffer, "/offline") == 0) {
         g->mode_changed = 1;
@@ -2703,8 +2708,10 @@ int main(int argc, char **argv) {
         g->mode = MODE_ONLINE;
         strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
         g->server_port = argc == 3 ? atoi(argv[2]) : DEFAULT_PORT;
-        snprintf(g->db_path, MAX_PATH_LENGTH,
+        size_t rv = snprintf(g->db_path, MAX_PATH_LENGTH,
             "cache.%s.%d.db", g->server_addr, g->server_port);
+        if (rv < 0 || rv >= MAX_PATH_LENGTH)
+            fprintf(stderr, "database name is too long somehow cache.%s.%d.db\n", g->server_addr, g->server_port);
     }
     else {
         g->mode = MODE_OFFLINE;

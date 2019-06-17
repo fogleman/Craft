@@ -12,7 +12,7 @@ add_executable(
     deps/sqlite/sqlite3.c
     deps/tinycthread/tinycthread.c)
 
-add_definitions(-std=c99 -O3)
+add_definitions(-std=c99 -O3 -Wall)
 
 include_directories(deps/lodepng)
 include_directories(deps/noise)

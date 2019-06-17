@@ -37,7 +37,11 @@ char *load_file(const char *path) {
     int length = ftell(file);
     rewind(file);
     char *data = calloc(length + 1, sizeof(char));
-    fread(data, 1, length, file);
+    size_t rv = fread(data, 1, length, file);
+    if (rv != length) {
+        fprintf(stderr, "fread %s failed: %d %s\n", path, errno, strerror(errno));
+        exit(1);
+    }
     fclose(file);
     return data;
 }
@@ -177,7 +181,7 @@ int char_width(char input) {
         4, 7, 6, 6, 6, 6, 5, 6, 6, 2, 5, 5, 2, 9, 6, 6,
         6, 6, 6, 6, 5, 6, 6, 6, 6, 6, 6, 4, 2, 5, 7, 0
     };
-    return lookup[input];
+    return lookup[(int)input];
 }
 
 int string_width(const char *input) {

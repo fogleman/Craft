@@ -309,17 +309,17 @@ Buffer gen_plant_buffer(float x, float y, float z, float n, int w) {
     return gen_faces(10, 4, data);
 } // gen_plant_buffer()
 
-// Generate a vertex buffer representing a player at location <x>, <y>, and <z>
-// and rotation <rx> and <ry> and return its handle
+// Update the vertex buffer <buffer> representing a player at location <x>, <y>, and <z>
+// and rotation <rx> and <ry>
 // A player is represented as a single floating cube with a face and clothes texture
 // 3D position coords, 3D normals, and a 4-component texcoord is included.
 // The first 2 components of the texcoord are standard tex coordinates,
 // The last two are theoretically used for ambient occlusion, but not for plants.
-Buffer gen_player_buffer(float x, float y, float z, float rx, float ry) {
+void update_player_buffer(Buffer buffer, float x, float y, float z, float rx, float ry) {
     float *data = malloc_faces(10, 6);
     make_player(data, x, y, z, rx, ry);
-    return gen_faces(10, 6, data);
-} // gen_player_buffer()
+    update_faces(buffer, 10, 6, data);
+} // update_player_buffer()
 
 // Make a sequence of vertices representing UI text at location <x>,<y> on the screen
 // and scaled by a factor of <n> representing <text> and copy them into <data>
@@ -365,8 +365,7 @@ void update_player(Player *player,
     else {
         State *s = &player->state;
         s->x = x; s->y = y; s->z = z; s->rx = rx; s->ry = ry;
-        del_buffer(player->buffer);
-        player->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
+        update_player_buffer(player->buffer, s->x, s->y, s->z, s->rx, s->ry);
     }
 }
 
@@ -2454,7 +2453,7 @@ void parse_buffer(char *buffer) {
                 player = g->players + g->player_count;
                 g->player_count++;
                 player->id = pid;
-                player->buffer = 0;
+                player->buffer = gen_dynamic_buffer(sizeof(float) * 6 * 10 * 6, NULL);
                 snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
                 update_player(player, px, py, pz, prx, pry, 1); // twice
             }
@@ -2570,6 +2569,12 @@ int main(int argc, char **argv) {
     Uniform sign_uniform = gen_uniform(sizeof(MatUbo), STAGE_VERT_BIT, sign, NULL);
     Uniform sky_uniform = gen_uniform(sizeof(SkyUbo), STAGE_VERT_BIT|STAGE_FRAG_BIT, sky, NULL);
 
+    // Additional uniforms for picture in picture
+    Uniform block2_uniform = gen_uniform(sizeof(BlockUbo), STAGE_VERT_BIT|STAGE_FRAG_BIT, texture, sky);
+    Uniform text2_uniform = gen_uniform(sizeof(MatUbo), STAGE_VERT_BIT, font, NULL);
+    Uniform sign2_uniform = gen_uniform(sizeof(MatUbo), STAGE_VERT_BIT, sign, NULL);
+    Uniform sky2_uniform = gen_uniform(sizeof(SkyUbo), STAGE_VERT_BIT|STAGE_FRAG_BIT, sky, NULL);
+
     // LOAD SHADERS //
     uint32_t attrib_components[3] = {3, 3, 4};
     Pipeline block_pipeline = gen_pipeline("shaders/block_vertex.spv", "shaders/block_fragment.spv",
@@ -2653,6 +2658,7 @@ int main(int argc, char **argv) {
         Buffer wireframe_buffer = gen_wireframe_buffer(0.53);
         Buffer type_buffer = gen_text_buffer(5, MAX_TEXT_LENGTH);
         Buffer text_buffer = gen_text_buffer(4, MAX_TEXT_LENGTH * (MAX_MESSAGES + 1) + MAX_INFO_LENGTH + 2 * MAX_NAME_LENGTH);
+        Buffer text2_buffer = gen_text_buffer(4, MAX_NAME_LENGTH);
         Buffer *item_buffers = malloc(sizeof(Buffer) * item_count);
         for(int i = 0; i < item_count; i++) {
             int w = items[i];
@@ -2665,7 +2671,7 @@ int main(int argc, char **argv) {
         State *s = &g->players->state;
         me->id = 0;
         me->name[0] = '\0';
-        me->buffer = 0;
+        me->buffer = gen_dynamic_buffer(sizeof(float) * 6 * 10 * 6, NULL);
         g->player_count = 1;
 
         // LOAD STATE FROM DATABASE //
@@ -2681,7 +2687,6 @@ int main(int argc, char **argv) {
             // WINDOW SIZE AND SCALE //
             g->scale = get_scale_factor();
             glfwGetFramebufferSize(g->window, &g->width, &g->height);
-            set_viewport(0, 0, g->width, g->height);
 
             // FRAME RATE //
             if (g->time_changed) {
@@ -2726,8 +2731,7 @@ int main(int argc, char **argv) {
             g->observe1 = g->observe1 % g->player_count;
             g->observe2 = g->observe2 % g->player_count;
             delete_chunks();
-            del_buffer(me->buffer);
-            me->buffer = gen_player_buffer(s->x, s->y, s->z, s->rx, s->ry);
+            update_player_buffer(me->buffer, s->x, s->y, s->z, s->rx, s->ry);
             for (int i = 1; i < g->player_count; i++) {
                 interpolate_player(g->players + i);
             }
@@ -2735,6 +2739,7 @@ int main(int argc, char **argv) {
 
             // RENDER 3-D SCENE //
             start_frame();
+            set_viewport(0, 0, g->width, g->height);
             clear_frame(CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT);
             render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
             clear_frame(CLEAR_DEPTH_BIT);
@@ -2840,20 +2845,19 @@ int main(int argc, char **argv) {
                 g->ortho = 0;
                 g->fov = 65;
 
-                render_sky(sky_pipeline, sky_uniform, player, sky_buffer);
+                render_sky(sky_pipeline, sky2_uniform, player, sky_buffer);
                 clear_frame(CLEAR_DEPTH_BIT);
-                render_chunks(block_pipeline, block_uniform, player);
-                render_signs(sign_pipeline, sign_uniform, player);
-                render_players(block_pipeline, block_uniform, player);
+                render_chunks(block_pipeline, block2_uniform, player);
+                render_signs(sign_pipeline, sign2_uniform, player);
+                render_players(block_pipeline, block2_uniform, player);
                 clear_frame(CLEAR_DEPTH_BIT);
                 if (SHOW_PLAYER_NAMES) {
                     int length = strlen(player->name);
                     float x = pw / 2 - ts * ALIGN_CENTER * (length - 1)/2;
                     float *data = malloc_faces(4, length);
                     make_text(data, x, ts, ts, player->name);
-                    Buffer name_buffer = gen_faces(4, length, data);
-                    render_text(text_pipeline, text_uniform, length, name_buffer);
-                    del_buffer(name_buffer);
+                    update_faces(text2_buffer, 4, length, data);
+                    render_text(text_pipeline, text2_uniform, length, text2_buffer);
                 }
             }
 
@@ -2887,6 +2891,8 @@ int main(int argc, char **argv) {
         del_buffer(crosshair_buffer);
         del_buffer(sky_buffer);
 
+        del_buffer(text2_buffer);
+
         del_uniform(block_uniform);
         del_uniform(item_uniform);
         del_uniform(line_uniform);
@@ -2894,6 +2900,11 @@ int main(int argc, char **argv) {
         del_uniform(text_uniform);
         del_uniform(sign_uniform);
         del_uniform(sky_uniform);
+
+        del_uniform(block2_uniform);
+        del_uniform(text2_uniform);
+        del_uniform(sign2_uniform);
+        del_uniform(sky2_uniform);
 
         del_pipeline(block_pipeline);
         del_pipeline(line_pipeline);

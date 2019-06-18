@@ -732,7 +732,7 @@ int init_renderer(GLFWwindow *window) {
     if (create_frames(vk->swapchain))
         return -1;
 
-    vk->descriptor_pool = create_descriptor_pool(vk->frame_ct*5, vk->frame_ct*5);
+    vk->descriptor_pool = create_descriptor_pool(vk->frame_ct*11, vk->frame_ct*12);
     if (vk->descriptor_pool == VK_NULL_HANDLE)
         return -1;
 
@@ -778,7 +778,17 @@ void clear_frame(uint32_t bitfield) {
 
 // set viewport for the framebuffer limited to <x,y,width,height>
 void set_viewport(int32_t x, int32_t y, int32_t width, int32_t height) {
-    // UNIMPLIMENTED
+    VkViewport viewport = {
+        .x = x,
+        .y = vk->depth_buf->extent.height - y,
+        .width = width,
+        .height = -height,
+        .minDepth = -1.0f,
+        .maxDepth = 1.0f,
+    };
+
+    vkCmdSetViewport(vk->cmd_bufs[vk->cur_frame], 0, 1, &viewport);
+
 } // set_viewport()
 
 // Create a bufer object of <size> bytes able to be used for <usage> allocated with memory
@@ -1395,15 +1405,6 @@ Pipeline gen_pipeline(const char *path1, const char *path2, Uniform uniform,
         .primitiveRestartEnable = VK_FALSE,
     };
 
-    // Viewport and scissor dimensions are taken from the currently bound images
-    VkViewport viewport = {
-        .x = 0.0f,
-        .y = (float)vk->depth_buf->extent.height,
-        .width = (float) vk->depth_buf->extent.width,
-        .height = -((float)vk->depth_buf->extent.height),
-        .minDepth = -1.0f,
-        .maxDepth = 1.0f,
-    };
     VkRect2D scissor = {
         .offset = {0, 0},
         .extent = vk->depth_buf->extent,
@@ -1412,7 +1413,7 @@ Pipeline gen_pipeline(const char *path1, const char *path2, Uniform uniform,
     VkPipelineViewportStateCreateInfo viewport_info = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .viewportCount = 1,
-        .pViewports = &viewport,
+        .pViewports = NULL,
         .scissorCount = 1,
         .pScissors = &scissor,
     };
@@ -1479,13 +1480,15 @@ Pipeline gen_pipeline(const char *path1, const char *path2, Uniform uniform,
         return NULL;
     }
 
-    // The only required dynamic state is line width if line rendering is enabled
-    VkDynamicState dynamic_state = VK_DYNAMIC_STATE_LINE_WIDTH;
+    // The only definitely required dynamic state is viewport
+    // line width too if line rendering is enabled
+    VkDynamicState dynamic_states[2] = {VK_DYNAMIC_STATE_VIEWPORT,
+                                        VK_DYNAMIC_STATE_LINE_WIDTH};
 
     VkPipelineDynamicStateCreateInfo dynamic_info = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount = 1,
-        .pDynamicStates = &dynamic_state,
+        .dynamicStateCount = 1 + line,
+        .pDynamicStates = dynamic_states,
     };
     // This is where it all gets packaged up and submitted to the Vulkan bureaucracy
     VkGraphicsPipelineCreateInfo pipeline_info = {
@@ -1499,7 +1502,7 @@ Pipeline gen_pipeline(const char *path1, const char *path2, Uniform uniform,
         .pMultisampleState = &msaa_info,
         .pDepthStencilState = &depth_info,
         .pColorBlendState = &blend_info,
-        .pDynamicState = (line?&dynamic_info:NULL),
+        .pDynamicState = &dynamic_info,
         .layout = layout,
         .renderPass = vk->render_pass,
         .subpass = 0,

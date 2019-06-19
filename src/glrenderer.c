@@ -297,21 +297,20 @@ static void draw_triangles_2d(Buffer buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 } // draw_triangles_2d()
 
-// Draw lines consisting of <count> 2D or 3D vertices with <components> components
+// Draw lines consisting of <count> 3D vertices
 // taken from vertex buffer <buffer> at <width> pixels wide.
 // Intended for use rendering 3D highlights or 2D UI elements
-// The expected components are 2D or 3D position coords and 2D tex coords
+// The expected components are 3D position coords and 2D tex coords
 // The <buffer> is bound and used for vertex attribs
-// and pointers specified. <components> determines how many attribs there are
-// depending on whether the lines are 2D or 3D <count> is used for the number of
+// and pointers specified. <count> is used for the number of
 // vertices in the draw call. Everything is unbound before exit.
-void draw_lines(Buffer buffer, int components, int count, float width) {
+void draw_lines(Buffer buffer, int count, float width) {
     glLineWidth(width);
     glEnable(GL_COLOR_LOGIC_OP);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->id);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(
-        0, components, GL_FLOAT, GL_FALSE, 0, 0);
+        0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glDrawArrays(GL_LINES, 0, count);
     glDisableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -48,9 +48,9 @@ Buffer gen_faces(int components, int faces, float *data);
 // Update <buffer> with <faces> quads with vertex attributes
 // consisting of <components> attributes using <data>
 void update_faces(Buffer buffer, int components, int faces, float *data);
-// Draw lines consisting of <count> 2D or 3D vertices with <components> components
+// Draw lines consisting of <count> 3D vertices
 // taken from vertex buffer <buffer> at <width> pixels
-void draw_lines(Buffer buffer, int components, int count, float width);
+void draw_lines(Buffer buffer, int count, float width);
 // Draw landscape chunk using vertex buffer <buffer> consisting of <faces> quads
 void draw_chunk(Buffer buffer, int faces);
 // Draw UI placement option represented by vertex buffer <buffer>

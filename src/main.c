@@ -244,8 +244,8 @@ Buffer gen_crosshair_buffer() {
     int y = g->height / 2;
     int p = 10 * g->scale;
     float data[] = {
-        x, y - p, x, y + p,
-        x - p, y, x + p, y
+        x, y - p, 0, x, y + p, 0,
+        x - p, y, 0, x + p, y, 0
     };
     return gen_buffer(sizeof(data), data);
 } // gen_crosshair_buffer()
@@ -1687,7 +1687,7 @@ void render_wireframe(Pipeline pipeline, Uniform uniform, Player *player, Buffer
                       ubo_body.matrix, g->width, g->height,
                       s->x - hx, s->y - hy, s->z - hz, s->rx, s->ry, g->fov, g->ortho, g->render_radius);
         bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
-        draw_lines(buffer, 3, 24, 1.0);
+        draw_lines(buffer, 24, 1.0);
     }
 } // render_wireframe()
 
@@ -1697,7 +1697,7 @@ void render_crosshairs(Pipeline pipeline, Uniform uniform, Buffer buffer) {
     MatUbo ubo_body;
     set_matrix_2d(ubo_body.matrix, g->width, g->height);
     bind_pipeline(pipeline, uniform, sizeof(ubo_body), &ubo_body);
-    draw_lines(buffer, 2, 4, 4 * g->scale);
+    draw_lines(buffer, 4, 4 * g->scale);
 }
 
 // Render the 3D UI element representing the chunk that will be placed

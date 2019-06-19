@@ -23,6 +23,7 @@ struct BufferObj {
     VkBuffer buffer;
     VkDeviceMemory mem;
     VkDeviceSize size;
+    Buffer next; // used for delete queues
 };
 
 // Uniforms include per frame descriptor sets and ubo buffers, and the single common layout
@@ -46,6 +47,7 @@ typedef struct {
     VkFence fence;
     VkSemaphore ready;
     VkSemaphore done;
+    Buffer delete_queue;
 } Frame;
 
 // Global data regarding the vulkan renderer. All are created once and used throughout.
@@ -477,6 +479,9 @@ static int32_t create_frames(VkSwapchainKHR swapchain) {
             fputs("semaphore/fence creation failed\n", stderr);
             return VK_INCOMPLETE;// whatever
         }
+
+        // Initialize Delete queue
+        frame->delete_queue = NULL;
     }
     free(swap_imgs);
 
@@ -817,6 +822,7 @@ static Buffer create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemor
     buffer_obj->buffer = buffer;
     buffer_obj->mem = buf_mem;
     buffer_obj->size = size;
+    buffer_obj->next = NULL;
 
     return buffer_obj;
 
@@ -849,14 +855,23 @@ static void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) {
 
 } // copy_buffer()
 
-// Delete the buffer object represented by <buffer>
+// Destroy the buffer object represented by <buffer>
 // Destroys the vulkan buffer, frees the device memory, and frees the object
-void del_buffer(Buffer buf) {
-    if (!buf) return; // it happens
+static void destroy_buffer(Buffer buf) {
     vkDestroyBuffer(vk->device, buf->buffer, NULL);
     vkFreeMemory(vk->device, buf->mem, NULL);
     free(buf);
 
+} // destroy_buffer()
+
+// Delete the buffer object represented by <buffer>
+// Actually, this queues the buffer up for deletion
+//  the next time the current frame slot is started
+void del_buffer(Buffer buf) {
+    if (!buf) return; // it happens
+    Frame *frame = &vk->frames[vk->cur_frame];
+    buf->next = frame->delete_queue;
+    frame->delete_queue = buf;
 } // del_buffer()
 
 // Generate a buffer object of <size> bytes and initialize with <data> and return its handle
@@ -1563,21 +1578,31 @@ void start_frame() {
     };
 
     vkWaitForFences(vk->device, 1, &vk->frames[vk->cur_frame].fence, VK_TRUE, ~0UL);
+
+    Frame *frame = &vk->frames[vk->cur_frame];
+
+    // Delete any vertex buffers waiting for this fence.
+    Buffer next = NULL;
+    for (Buffer buf = frame->delete_queue; buf; buf = next) {
+        next = buf->next;
+        destroy_buffer(buf);
+    }
+    frame->delete_queue = NULL;
+
     if (vkBeginCommandBuffer(cbuf, &begin_info)) {
         fputs("Command buffer Begin Failed\n",stderr);
         return;
     }
 
-    uint32_t cur = vk->cur_frame;
     VkClearValue clear_color = {.color = {{0.0,0.0,0.0,1.0}}};
     VkClearValue clear_depth = {.depthStencil = {.depth = 1.0, .stencil = 0}};
     VkClearValue clears[2] = {clear_color, clear_depth};
     VkRenderPassBeginInfo rp_begin_info = {
          .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
          .renderPass = vk->render_pass,
-         .framebuffer = vk->frames[cur].fb,
+         .framebuffer = frame->fb,
          .renderArea.offset = {0, 0},
-         .renderArea.extent = vk->frames[cur].color_buf->extent,
+         .renderArea.extent = frame->color_buf->extent,
          .clearValueCount = 2,
          .pClearValues = clears,
         };
@@ -1655,11 +1680,20 @@ void shutdown_renderer() {
 // Destroy all renderer resources and free any memory
 // This is where every vulkan object created should be destroyed.
 void del_renderer() {
+
     del_image(vk->depth_buf);
 
     // Destroy per-frame objects
     for (int i = 0; i < vk->frame_ct; i++) {
         Frame *frame = &vk->frames[i];
+
+        Buffer next = NULL;
+        for (Buffer buf = frame->delete_queue; buf; buf = next) {
+            next = buf->next;
+            destroy_buffer(buf);
+        }
+        frame->delete_queue = NULL;
+
         vkDestroyFramebuffer(vk->device, frame->fb, NULL);
 
         vkDestroyImageView(vk->device, frame->color_buf->view, NULL);

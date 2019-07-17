@@ -52,7 +52,7 @@ PROJECT_LOGO           =
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @GLFW_BINARY_DIR@/docs
+OUTPUT_DIRECTORY       = "@GLFW_BINARY_DIR@/docs"
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -195,7 +195,17 @@ TAB_SIZE               = 8
 # will result in a user-defined paragraph with heading "Side Effects:".
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES                =
+ALIASES                = "thread_safety=@par Thread safety^^" \
+                         "pointer_lifetime=@par Pointer lifetime^^" \
+                         "analysis=@par Analysis^^" \
+                         "reentrancy=@par Reentrancy^^" \
+                         "errors=@par Errors^^" \
+                         "glfw3=__GLFW 3:__" \
+                         "x11=__X11:__" \
+                         "wayland=__Wayland:__" \
+                         "win32=__Windows:__" \
+                         "macos=__macOS:__" \
+                         "linux=__Linux:__"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding
@@ -254,7 +264,7 @@ MARKDOWN_SUPPORT       = YES
 
 # When enabled doxygen tries to link words that correspond to documented classes,
 # or namespaces to their corresponding documentation. Such a link can be
-# prevented in individual cases by by putting a % sign in front of the word or
+# prevented in individual cases by putting a % sign in front of the word or
 # globally by setting AUTOLINK_SUPPORT to NO.
 
 AUTOLINK_SUPPORT       = YES
@@ -459,7 +469,7 @@ INLINE_INFO            = YES
 # alphabetically by member name. If set to NO the members will appear in
 # declaration order.
 
-SORT_MEMBER_DOCS       = YES
+SORT_MEMBER_DOCS       = NO
 
 # If the SORT_BRIEF_DOCS tag is set to YES then doxygen will sort the
 # brief documentation of file, namespace and class members alphabetically
@@ -579,7 +589,7 @@ FILE_VERSION_FILTER    =
 # You can optionally specify a file name after the option, if omitted
 # DoxygenLayout.xml will be used as the name of the layout file.
 
-LAYOUT_FILE            =
+LAYOUT_FILE            = "@GLFW_SOURCE_DIR@/docs/DoxygenLayout.xml"
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files
 # containing the references data. This must be a list of .bib files. The
@@ -641,7 +651,7 @@ WARN_FORMAT            = "$file:$line: $text"
 # and error messages should be written. If left blank the output is written
 # to stderr.
 
-WARN_LOGFILE           = @GLFW_BINARY_DIR@/docs/warnings.txt
+WARN_LOGFILE           = "@GLFW_BINARY_DIR@/docs/warnings.txt"
 
 #---------------------------------------------------------------------------
 # configuration options related to the input files
@@ -652,22 +662,7 @@ WARN_LOGFILE           = @GLFW_BINARY_DIR@/docs/warnings.txt
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @GLFW_INTERNAL_DOCS@                         \
-                         @GLFW_SOURCE_DIR@/include/GLFW/glfw3.h       \
-                         @GLFW_SOURCE_DIR@/include/GLFW/glfw3native.h \
-                         @GLFW_SOURCE_DIR@/docs/main.dox              \
-                         @GLFW_SOURCE_DIR@/docs/news.dox              \
-                         @GLFW_SOURCE_DIR@/docs/moving.dox            \
-                         @GLFW_SOURCE_DIR@/docs/quick.dox             \
-                         @GLFW_SOURCE_DIR@/docs/compile.dox           \
-                         @GLFW_SOURCE_DIR@/docs/build.dox             \
-                         @GLFW_SOURCE_DIR@/docs/intro.dox             \
-                         @GLFW_SOURCE_DIR@/docs/context.dox           \
-                         @GLFW_SOURCE_DIR@/docs/monitor.dox           \
-                         @GLFW_SOURCE_DIR@/docs/window.dox            \
-                         @GLFW_SOURCE_DIR@/docs/input.dox             \
-                         @GLFW_SOURCE_DIR@/docs/rift.dox              \
-                         @GLFW_SOURCE_DIR@/docs/compat.dox
+INPUT                  = @GLFW_DOCS_SOURCES@
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -727,7 +722,7 @@ EXCLUDE_SYMBOLS        = APIENTRY GLFWAPI
 # directories that contain example code fragments that are included (see
 # the \include command).
 
-EXAMPLE_PATH           = @GLFW_SOURCE_DIR@/examples
+EXAMPLE_PATH           = "@GLFW_SOURCE_DIR@/examples"
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
@@ -903,13 +898,13 @@ HTML_FILE_EXTENSION    = .html
 # have to redo this when upgrading to a newer version of doxygen or when
 # changing the value of configuration settings such as GENERATE_TREEVIEW!
 
-HTML_HEADER            = @GLFW_SOURCE_DIR@/docs/header.html
+HTML_HEADER            = "@GLFW_SOURCE_DIR@/docs/header.html"
 
 # The HTML_FOOTER tag can be used to specify a personal HTML footer for
 # each generated HTML page. If it is left blank doxygen will generate a
 # standard footer.
 
-HTML_FOOTER            = @GLFW_SOURCE_DIR@/docs/footer.html
+HTML_FOOTER            = "@GLFW_SOURCE_DIR@/docs/footer.html"
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading
 # style sheet that is used by each HTML page. It can be used to
@@ -928,7 +923,7 @@ HTML_STYLESHEET        =
 # robust against future updates. Doxygen will copy the style sheet file to
 # the output directory.
 
-HTML_EXTRA_STYLESHEET  = @GLFW_SOURCE_DIR@/docs/extra.css
+HTML_EXTRA_STYLESHEET  = "@GLFW_SOURCE_DIR@/docs/extra.css"
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -937,7 +932,7 @@ HTML_EXTRA_STYLESHEET  = @GLFW_SOURCE_DIR@/docs/extra.css
 # files. In the HTML_STYLESHEET file, use the file name only. Also note that
 # the files will be copied as-is; there are no commands or markers available.
 
-HTML_EXTRA_FILES       = @GLFW_SOURCE_DIR@/docs/spaces.svg
+HTML_EXTRA_FILES       = "@GLFW_SOURCE_DIR@/docs/spaces.svg"
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the style sheet and background images
@@ -1573,14 +1568,17 @@ INCLUDE_FILE_PATTERNS  =
 # undefined via #undef or recursively expanded use the := operator
 # instead of the = operator.
 
-PREDEFINED             = GLFWAPI=                 \
-                         GLFW_EXPOSE_NATIVE_WIN32 \
-                         GLFW_EXPOSE_NATIVE_WGL   \
-                         GLFW_EXPOSE_NATIVE_X11   \
-                         GLFW_EXPOSE_NATIVE_GLX   \
-                         GLFW_EXPOSE_NATIVE_COCOA \
-                         GLFW_EXPOSE_NATIVE_NSGL  \
-                         GLFW_EXPOSE_NATIVE_EGL
+PREDEFINED             = GLFWAPI=                   \
+                         GLFW_EXPOSE_NATIVE_WIN32   \
+                         GLFW_EXPOSE_NATIVE_WGL     \
+                         GLFW_EXPOSE_NATIVE_X11     \
+                         GLFW_EXPOSE_NATIVE_WAYLAND \
+                         GLFW_EXPOSE_NATIVE_GLX     \
+                         GLFW_EXPOSE_NATIVE_COCOA   \
+                         GLFW_EXPOSE_NATIVE_NSGL    \
+                         GLFW_EXPOSE_NATIVE_EGL     \
+                         GLFW_EXPOSE_NATIVE_OSMESA  \
+                         VK_VERSION_1_0
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.

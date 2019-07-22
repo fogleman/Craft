@@ -25,7 +25,7 @@ COMMIT_INTERVAL = 5
 AUTH_REQUIRED = True
 AUTH_URL = 'https://craft.michaelfogleman.com/api/1/access'
 
-DAY_LENGTH = 600
+DAY_LENGTH = 1000
 SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
 RECORD_HISTORY = False

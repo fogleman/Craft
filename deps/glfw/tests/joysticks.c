@@ -148,7 +148,7 @@ static void refresh_joysticks(void)
             int axis_count, button_count;
 
             free(j->name);
-            j->name = strdup(glfwGetJoystickName(GLFW_JOYSTICK_1 + i));
+            j->name = strdup(glfwGetJoystickName(GLFW_JOYSTICK_2 + i));
 
             axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1 + i, &axis_count);
             if (axis_count != j->axis_count)

@@ -290,7 +290,7 @@ class Model(object):
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)
-        client.send(TALK, 'Welcome to Craft! CSE2410 not2bad')
+        client.send(TALK, 'CSE2410 not2bad')
         client.send(TALK, 'Type "/help" for a list of commands.')
         self.send_position(client)
         self.send_positions(client)

@@ -2853,7 +2853,6 @@ int main(int argc, char **argv) {
 
             // RENDER TEXT //
             char text_buffer[1024];
-			char team_info[40];
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
@@ -2869,8 +2868,6 @@ int main(int argc, char **argv) {
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
-				snprintf(team_info, 40, "not2bad: BH JU JV KW");
-				render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, team_info);
                 ty -= ts * 2;
             }
             if (SHOW_CHAT_TEXT) {
@@ -2884,7 +2881,7 @@ int main(int argc, char **argv) {
                 }
             }
             if (g->typing) {
-                snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
+                snprintf(text_buffer, 1024, "not2bad > %s", g->typing_buffer);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }

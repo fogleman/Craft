@@ -2853,6 +2853,7 @@ int main(int argc, char **argv) {
 
             // RENDER TEXT //
             char text_buffer[1024];
+			char team_info[40];
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
@@ -2881,7 +2882,7 @@ int main(int argc, char **argv) {
                 }
             }
             if (g->typing) {
-                snprintf(text_buffer, 1024, "not2bad > %s", g->typing_buffer);
+                snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }

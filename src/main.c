@@ -2864,7 +2864,7 @@ int main(int argc, char **argv) {
                 hour = hour ? hour : 12;
                 snprintf(
                     text_buffer, 1024,
-                    "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps  %d Jose Bailey Jon Kerryanne",
+                    "(%d, %d) \ncoordinates:\nx:%.2f \ny:%.2f \nz:%.2f \n[%d, %d, %d] \n%d%cm %dfps  %d \nJose Bailey Jon Kerryanne",
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);

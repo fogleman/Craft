@@ -1772,6 +1772,7 @@ void render_item(Attrib *attrib) {
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, time_of_day());
+	printf("test\n");
     int w = items[g->item_index];
     if (is_plant(w)) {
         GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);

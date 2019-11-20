@@ -1772,8 +1772,11 @@ void render_item(Attrib *attrib) {
     glUniform3f(attrib->camera, 0, 0, 5);
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, time_of_day());
-	printf("test\n");
     int w = items[g->item_index];
+	float ts_var = 12 * g->scale;
+    float tx_var = ts / 2;
+    float ty_var = g->height - ts;
+	render_text(&text_attrib, ALIGN_LEFT, tx_var, ty_var, tz_var, "item");
     if (is_plant(w)) {
         GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
         draw_plant(attrib, buffer);

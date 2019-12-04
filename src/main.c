@@ -2868,10 +2868,10 @@ int main(int argc, char **argv) {
                 hour = hour ? hour : 12;
                 char curr_item[16];
                 if (g->item_index >= 0) {
-                	curr_item = items[g->item_index];
+                	strcpy(curr_item, items[g->item_index]);
                 }
                 else {
-                	curr_item = "No item equipped";
+                	strcpy(curr_item, "No item equipped");
                 }
                 snprintf(
                     text_buffer, 1024,

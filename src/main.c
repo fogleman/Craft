@@ -2870,7 +2870,7 @@ int main(int argc, char **argv) {
                 	g->item_index = 0;
                 snprintf(
                     text_buffer, 1024,
-                    "%s (%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps  %d Jose Bailey Jon Kerryanne",
+                    "%s (%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps Jose Bailey Jon Kerryanne",
                     item_names[g->item_index], chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);

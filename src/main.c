@@ -2877,9 +2877,9 @@ int main(int argc, char **argv) {
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty - ts, ts, text_buffer);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, team_info);
                 snprintf(block_name_buffer, 40, item_names[g->item_index]);
-                render_text(&text_attrib, ALIGN_LEFT, tx, ts, ts, text_buffer);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ts, ts, block_name_buffer);
                 ty -= ts * 2;
             }
             if (SHOW_CHAT_TEXT) {

@@ -2875,11 +2875,11 @@ int main(int argc, char **argv) {
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
-                snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
-                snprintf(block_name_buffer, 40, item_names[g->item_index]);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
-                render_text(&team_info, ALIGN_LEFT, tx, ty - ts, ts, text_buffer);
-                render_text(&block_name_buffer, ALIGN_LEFT, tx, ts, ts, text_buffer);
+                snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - ts, ts, text_buffer);
+                snprintf(block_name_buffer, 40, item_names[g->item_index]);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ts, ts, text_buffer);
                 ty -= ts * 2;
             }
             if (SHOW_CHAT_TEXT) {

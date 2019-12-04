@@ -2857,6 +2857,7 @@ int main(int argc, char **argv) {
 
             // RENDER TEXT //
             char text_buffer[1024];
+            char block_name_buffer[40];
 			char team_info[40];
             float ts = 12 * g->scale;
             float tx = ts / 2;
@@ -2870,12 +2871,15 @@ int main(int argc, char **argv) {
                 	g->item_index = 0;
                 snprintf(
                     text_buffer, 1024,
-                    "%s (%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps Jose Bailey Jon Kerryanne",
+                    "%s (%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps",
                     item_names[g->item_index], chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
-                //snprintf(text_buffer, 50, "TEST x:%.2f y:%.2f z:%.2f", s->x, s->y, s->z);
+                snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
+                snprintf(block_name_buffer, 40, item_names[g->item_index]);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                render_text(&team_info, ALIGN_LEFT, tx, ty - ts, ts, text_buffer);
+                render_text(&block_name_buffer, ALIGN_LEFT, tx, ts, ts, text_buffer);
                 ty -= ts * 2;
             }
             if (SHOW_CHAT_TEXT) {

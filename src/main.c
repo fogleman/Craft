@@ -2866,7 +2866,7 @@ int main(int argc, char **argv) {
                 char am_pm = hour < 12 ? 'a' : 'p';
                 hour = hour % 12;
                 hour = hour ? hour : 12;
-                char curr_item[16];
+                char curr_item[20];
                 if (g->item_index >= 0) {
                 	strcpy(curr_item, items[g->item_index]);
                 }

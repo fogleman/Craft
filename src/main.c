@@ -2866,17 +2866,12 @@ int main(int argc, char **argv) {
                 char am_pm = hour < 12 ? 'a' : 'p';
                 hour = hour % 12;
                 hour = hour ? hour : 12;
-                char curr_item[20];
-                if (g->item_index >= 0) {
-                	strcpy(curr_item, items[g->item_index]);
-                }
-                else {
-                	strcpy(curr_item, "No item equipped");
-                }
+                if (g->item_index < 0)
+                	g->item_index = 0;
                 snprintf(
                     text_buffer, 1024,
-                    "(%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps  %d Jose Bailey Jon Kerryanne",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z,
+                    "%s (%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps  %d Jose Bailey Jon Kerryanne",
+                    str(items[g->item_index]), chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
                 snprintf(text_buffer, 50, "TEST x:%.2f y:%.2f z:%.2f", s->x, s->y, s->z);

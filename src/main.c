@@ -1773,9 +1773,9 @@ void render_item(Attrib *attrib) {
     glUniform1i(attrib->sampler, 0);
     glUniform1f(attrib->timer, time_of_day());
     int w = items[g->item_index];
-	float ts_var = 12 * g->scale;
-    float tx_var = ts_var / 2;
-    float ty_var = g->height - ts_var;
+	/*float ts_var = 12 * g->scale;
+    float tx_var = ts / 2;
+    float ty_var = g->height - ts;*/
     if (is_plant(w)) {
         GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
         draw_plant(attrib, buffer);

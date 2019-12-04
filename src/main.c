@@ -1776,7 +1776,6 @@ void render_item(Attrib *attrib) {
 	float ts_var = 12 * g->scale;
     float tx_var = ts / 2;
     float ty_var = g->height - ts;
-	render_text(&text_attrib, ALIGN_LEFT, tx_var, ty_var, tz_var, "item");
     if (is_plant(w)) {
         GLuint buffer = gen_plant_buffer(0, 0, 0, 0.5, w);
         draw_plant(attrib, buffer);
@@ -1787,6 +1786,7 @@ void render_item(Attrib *attrib) {
         draw_cube(attrib, buffer);
         del_buffer(buffer);
     }
+	//render_text(&text_attrib, ALIGN_LEFT, tx_var, ty_var, ts_var, "item");
 }
 
 void render_text(
@@ -2868,8 +2868,8 @@ int main(int argc, char **argv) {
                 hour = hour ? hour : 12;
                 snprintf(
                     text_buffer, 1024,
-                    "(%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps  %d Jose Bailey Jon Kerryanne",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z,
+                    "%s (%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps  %d Jose Bailey Jon Kerryanne",
+                    items[&g->item_index], chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
                 snprintf(text_buffer, 50, "TEST x:%.2f y:%.2f z:%.2f", s->x, s->y, s->z);

@@ -99,22 +99,22 @@ const char* item_names[] = {
 	"Pink",
 	"Olive Green",
 	"Light Brown",
-	"Silver",
-	"Blue Gray",
-	"White",
-	"Ice Blue",
-	"Turquoise",
-	"Sky Blue",
-	"Bright Blue",
-	"Deep Blue",
-	"Beige",
-	"Tan",
-	"Orange",
-	"Light Brown",
-	"Deep Brown",
+	"Black",
+	"Indigo"
 	"Plum",
-	"Indigo",
-	"Black"
+	"Deep Brown",
+	"Light Brown",
+	"Orange",
+	"Tan",
+	"Beige",
+	"Deep Blue",
+	"Bright Blue",
+	"Sky Blue",
+	"Turquoise",
+	"Ice Blue",
+	"White"
+	"Blue Gray",
+	"Silver"
 };
 
 const int item_count = sizeof(items) / sizeof(int);

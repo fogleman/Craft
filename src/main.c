@@ -2871,11 +2871,13 @@ int main(int argc, char **argv) {
                 	g->item_index = 0;
                 snprintf(
                     text_buffer, 1024,
-                    "(%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps",
+                    "(%d, %d) coordinates: x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps",
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                snprintf(coordinates, 40, "coordinates part 2: x:%.2f y:%.2f z:%.2f", s->x, s->y, s->z);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, coordinates);
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, team_info);
                 snprintf(block_name_buffer, 40, item_names[g->item_index]);

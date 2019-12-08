@@ -2859,7 +2859,7 @@ int main(int argc, char **argv) {
             char text_buffer[1024];
             char block_name_buffer[40];
 			char team_info[40];
-            char coordinates[40]; //added for newline test
+            char coordinates[1024]; //added for newline test
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;

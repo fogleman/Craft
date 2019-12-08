@@ -2872,10 +2872,10 @@ int main(int argc, char **argv) {
                 	g->item_index = 0;
                 snprintf(coordinates, 1024,
                     "coordinates: x:%.2f y:%.2f z:%.2f chunk: (%d, %d)", s->x, s->y, s->z, chunked(s->x), chunked(s->z));
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, text_buffer);
                 snprintf(text_buffer, 1024, "misc:[%d, %d, %d] time: %d%cm %dfps", g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, coordinates);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, coordinates);
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, team_info);
                 snprintf(block_name_buffer, 40, item_names[g->item_index]);

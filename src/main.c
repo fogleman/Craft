@@ -2877,8 +2877,8 @@ int main(int argc, char **argv) {
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
-                snprintf(coordinates, 40, "coordinates part 2: x:%.2f y:%.2f z:%.2f", s->x, s->y, s->z); //newline test
-                render_text(&text_attrib, ALIGN_RIGHT, tx, ty, ts, coordinates); //newline test
+                snprintf(coordinates, 1024, "coordinates part 2: x:%.2f y:%.2f z:%.2f", s->x, s->y, s->z); //newline test
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, coordinates); //newline test
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, team_info);
                 snprintf(block_name_buffer, 40, item_names[g->item_index]);

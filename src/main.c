@@ -2856,10 +2856,10 @@ int main(int argc, char **argv) {
             }
 
             // RENDER TEXT //
-            char text_buffer[1024];
-            char block_name_buffer[40];
+            char coordinates[1024];
+			char text_buffer[1024];
 			char team_info[40];
-            char coordinates[1024]; //added for newline test
+            char block_name_buffer[40];
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
@@ -2870,17 +2870,14 @@ int main(int argc, char **argv) {
                 hour = hour ? hour : 12;
                 if (g->item_index < 0)
                 	g->item_index = 0;
-                snprintf(
-                    text_buffer, 1024,
-                    "(%d, %d) coordinates: x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps",
-                    chunked(s->x), chunked(s->z), s->x, s->y, s->z,
-                    g->player_count, g->chunk_count,
-                    face_count * 2, hour, am_pm, fps.fps);
+                snprintf(coordinates, 1024,
+                    "coordinates: x:%.2f y:%.2f z:%.2f chunk: (%d, %d)", s->x, s->y, s->z, chunked(s->x), chunked(s->z));
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
-                snprintf(coordinates, 1024, "coordinates part 2: x:%.2f y:%.2f z:%.2f", s->x, s->y, s->z); //newline test
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, coordinates); //newline test
+                snprintf(text_buffer, 1024, "misc:[%d, %d, %d] time: %d%cm %dfps", g->player_count, g->chunk_count,
+                    face_count * 2, hour, am_pm, fps.fps);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, coordinates);
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, team_info);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, team_info);
                 snprintf(block_name_buffer, 40, item_names[g->item_index]);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ts, ts, block_name_buffer);
                 ty -= ts * 2;

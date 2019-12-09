@@ -100,7 +100,7 @@ const char* item_names[] = {
 	"Olive Green",
 	"Light Brown",
 	"Black",
-	"Indigo"
+	"Indigo",
 	"Plum",
 	"Deep Brown",
 	"Light Brown",
@@ -112,7 +112,7 @@ const char* item_names[] = {
 	"Sky Blue",
 	"Turquoise",
 	"Ice Blue",
-	"White"
+	"White",
 	"Blue Gray",
 	"Silver"
 };

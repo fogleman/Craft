@@ -2878,8 +2878,6 @@ int main(int argc, char **argv) {
                 savetimetextfile = fopen("timeofday.txt", "w+");
                 fprintf(savetimetextfile,"%d", hour);
                 fclose(savetimetextfile);
-                if (g->item_index < 0)
-                	g->item_index = 0;
                 snprintf(
                     text_buffer, 1024,
                     "(%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps",

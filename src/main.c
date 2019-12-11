@@ -2592,7 +2592,14 @@ void reset_model() {
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);
     g->message_index = 0;
     g->day_length = DAY_LENGTH;
-    glfwSetTime(g->day_length / 3.0);
+    FILE *gettimetextfile;
+    gettimetextfile = fopen("timeofday.txt", "r");
+    int leftoff_hour;
+    int leftoff_time;
+    fscanf(gettimetextfile, "%d", &leftoff_hour);
+    fclose(gettimetextfile);
+    leftoff_time = (leftoff_hour * 600) / 8;
+    glfwSetTime(leftoff_time/3);
     g->time_changed = 1;
 }
 
@@ -2939,8 +2946,10 @@ int main(int argc, char **argv) {
                 char am_pm = hour < 12 ? 'a' : 'p';
                 hour = hour % 12;
                 hour = hour ? hour : 12;
-                if (g->item_index < 0)
-                	g->item_index = 0;
+                FILE* savetimetextfile;
+                savetimetextfile = fopen("timeofday.txt", "w+");
+                fprintf(savetimetextfile,"%d", hour);
+                fclose(savetimetextfile);
                 snprintf(
                     text_buffer, 1024,
                     "(%d, %d) coordinates:x:%.2f y:%.2f z:%.2f [%d, %d, %d] %d%cm %dfps",
@@ -2949,7 +2958,7 @@ int main(int argc, char **argv) {
                     face_count * 2, hour, am_pm, fps.fps);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);   // renders text, xy being position in the screen
                 
-                compass(&text_attrib, ALIGN_LEFT, tx, ty, ts, xAxis);             // renders compass
+                compass(&text_attrib, ALIGN_LEFT, tx, ty, ts, xAxis);             // renders compass [jvacacela]
         
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, team_info);

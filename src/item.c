@@ -199,6 +199,49 @@ const int plants[256] = {
     54, // 23 - blue flower
 };
 
+const char *compassNav[] = {
+    "    N    ",
+    "         ",
+    "W   +   E",
+    "         ",
+    "    S    ",
+    "        E",
+    "N        ",
+    "    +    ",
+    "        S",
+    "W        ",
+    "    E    ",
+    "         ",
+    "N   +   S",
+    "         ",
+    "    W    ",
+    "        S",
+    "E        ",
+    "    +    ",
+    "        W",
+    "N        ",
+    "    S    ",
+    "         ",
+    "E   +   W",
+    "         ",
+    "    N    ",
+    "        W",
+    "S        ",
+    "    +    ",
+    "        N",
+    "E        ",
+    "    W    ",
+    "         ",
+    "S   +   N",
+    "         ",
+    "    E    ",
+    "        N",
+    "W        ",
+    "    +    ",
+    "        E",
+    "S        "
+};
+
 int is_plant(int w) {
     switch (w) {
         case TALL_GRASS:

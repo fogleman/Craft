@@ -84,7 +84,7 @@ void make_cube(
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
-    int wleft = blocks[w][0];
+    int wleft = blocks[w][0];    
     int wright = blocks[w][1];
     int wtop = blocks[w][2];
     int wbottom = blocks[w][3];

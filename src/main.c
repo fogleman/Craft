@@ -1644,6 +1644,15 @@ int render_chunks(Attrib *attrib, Player *player) {
     return result;
 }
 
+/*sends the x axis value of the camera (used for the compass)
+  value doesn't change in perspective to the window size
+*/
+
+float sendxAxis(Player *player){ 
+    State *s = &player->state;  
+    return s->rx;
+}
+
 void render_signs(Attrib *attrib, Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
@@ -2587,6 +2596,68 @@ void reset_model() {
     g->time_changed = 1;
 }
 
+void compass(Attrib *text_attrib, int zero, float tx, float ty, float ts, float xAxis){
+    char compass_buffer[1024];                                                                 // compass buffer array
+    int j = 0;
+    if(xAxis > 0 && xAxis < 0.785){
+        for(int i = 0; i < 5; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);                                 // updates compass buffer with the compass array
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer);    // renders compass in screen by rows 
+            j+=2;                                                                              // j is going to be 0,2,4,6,8 accordingly for proper position
+        }
+        j = 0;
+    } else if(xAxis>0.785 && xAxis<1.57){
+        for(int i = 5; i < 10; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer); 
+            j+=2;
+        }
+        j = 0;
+    } else if(xAxis>1.57 && xAxis<2.355){
+        for(int i = 10; i < 15; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer); 
+            j+=2;
+        }
+        j = 0;
+    }else if(xAxis>2.355 && xAxis<3.14){
+        for(int i = 15; i < 20; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer); 
+            j+=2;
+        }
+        j = 0;
+    }else if(xAxis>3.14 && xAxis<3.925){
+        for(int i = 20; i < 25; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer); 
+            j+=2;
+        }
+        j = 0;
+    }else if(xAxis>3.925 && xAxis<4.71){
+        for(int i = 25; i < 30; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer); 
+            j+=2;
+        }
+        j = 0;
+    }else if(xAxis>4.71 && xAxis<5.495){
+        for(int i = 30; i < 35; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer); 
+            j+=2;
+        }
+        j = 0;
+    }else if(xAxis>5.495 && xAxis<6.28){
+        for(int i = 35; i < 40; i++){
+            snprintf(compass_buffer, 40, "%s", compassNav[i]);
+            render_text(text_attrib, ALIGN_LEFT, tx, ty- ((4+j) * ts), ts, compass_buffer); 
+            j+=2;
+        }
+        j = 0;
+    }
+}
+
 int main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -2654,7 +2725,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("textures/sign.png");
-
+    
     // LOAD SHADERS //
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
@@ -2856,6 +2927,7 @@ int main(int argc, char **argv) {
             }
 
             // RENDER TEXT //
+            float xAxis = sendxAxis(player); // x Axis goes from 0 - 6.283
             char text_buffer[1024];
             char block_name_buffer[40];
 			char team_info[40];
@@ -2875,7 +2947,10 @@ int main(int argc, char **argv) {
                     chunked(s->x), chunked(s->z), s->x, s->y, s->z,
                     g->player_count, g->chunk_count,
                     face_count * 2, hour, am_pm, fps.fps);
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);   // renders text, xy being position in the screen
+                
+                compass(&text_attrib, ALIGN_LEFT, tx, ty, ts, xAxis);             // renders compass
+        
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, team_info);
                 snprintf(block_name_buffer, 40, item_names[g->item_index]);

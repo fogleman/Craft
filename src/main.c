@@ -2958,7 +2958,7 @@ int main(int argc, char **argv) {
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, text_buffer); //rendering text_buffer
                 snprintf(team_info, 40, "Jose Bailey Jon Kerryanne"); //team member names
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, team_info); //render team_info
-                compass(&text_attrib, ALIGN_LEFT, tx, ty, ts, xAxis); //render compass
+                compass(&text_attrib, ALIGN_LEFT, tx, ty - (6 * ts), ts, xAxis); //render compass
                 snprintf(block_name_buffer, 40, item_names[g->item_index]); //block ID
                 render_text(&text_attrib, ALIGN_LEFT, tx, ts, ts, block_name_buffer); //render block_name_buffer
                 ty -= ts * 2;

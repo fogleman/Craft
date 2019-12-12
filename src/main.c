@@ -2950,17 +2950,17 @@ int main(int argc, char **argv) {
                 if (g->item_index < 0)
                 	g->item_index = 0;
                 snprintf(coordinates, 1024,
-                    "coordinates: x:%.2f y:%.2f z:%.2f chunk: (%d, %d)", s->x, s->y, s->z, chunked(s->x), chunked(s->z));
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, coordinates);
-				
+                    "coordinates: x:%.2f y:%.2f z:%.2f chunk: (%d, %d)",
+					s->x, s->y, s->z, chunked(s->x), chunked(s->z)); //coordinates and current chunk 
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, coordinates); //rendering coordinates
                 snprintf(text_buffer, 1024, "misc:[%d, %d, %d] time: %d%cm %dfps", g->player_count, g->chunk_count,
-                    face_count * 2, hour, am_pm, fps.fps);
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, text_buffer);
-                snprintf(team_info, 40, "Jose Bailey Jon Kerryanne");
-                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, team_info);
-                snprintf(block_name_buffer, 40, item_names[g->item_index]);
+                    face_count * 2, hour, am_pm, fps.fps); //player count, chunk count, block face count, time, fps
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (2 * ts), ts, text_buffer); //rendering text_buffer
+                snprintf(team_info, 40, "Jose Bailey Jon Kerryanne"); //team member names
+                render_text(&text_attrib, ALIGN_LEFT, tx, ty - (4 * ts), ts, team_info); //render team_info
                 compass(&text_attrib, ALIGN_LEFT, tx, ty, ts, xAxis); //render compass
-                render_text(&text_attrib, ALIGN_LEFT, tx, ts, ts, block_name_buffer);
+                snprintf(block_name_buffer, 40, item_names[g->item_index]); //block ID
+                render_text(&text_attrib, ALIGN_LEFT, tx, ts, ts, block_name_buffer); //render block_name_buffer
                 ty -= ts * 2;
             }
             if (SHOW_CHAT_TEXT) {

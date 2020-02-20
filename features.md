@@ -9,3 +9,5 @@ features
 4. Create Water biomes where there will be pools generated with the map
 
 5. Create Item selection menu that will provide a better way to select the blocks given
+
+6. Dabble with movement to make a auto run feature that will make traversing the world easier

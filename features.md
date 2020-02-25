@@ -1,6 +1,6 @@
 1. Get stone to create a structure.
-  User Story A: As a craft user, I want to create structures with stone so that mountain biomes will be generated.
-    Task 1:
+  A) As a craft player, I want to play in a generated world that contains stone blocks so that I can observe.
+  B) As a craft player, I want to play in a generated world that contains mountains and craters comprised of stone blocks. 
   
 2. Implement water so user can move through water blocks.
   User Story A:

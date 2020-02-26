@@ -9,7 +9,9 @@ Status is one of blank, assigned to person and sprint number, pull request and s
   
 ## User Story B
   5pts PO Priority 1: Task 004 Demonstrate prototype geometric pattern of blocks that represent a crater.
+  
   5pts PO Priority 1: Task 005 Demonstrate prototype geometric pattern of blocks that represent a mountain.
+  
   8pts PO Priority 1: Task 006 Demostrate crated and mountain geometric patterns comprised of primarily stone blocks.
 
 ## User Story C

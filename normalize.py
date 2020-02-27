@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import cv2
 
 
+#Takes height and width as parameters
+#sets and gets values in array
+#returns and array
 class NormArray:
     def __init__(self, height, width):
         self.height = height
@@ -20,6 +23,9 @@ class NormArray:
     def getarray (self):
         return self.array
 
+#Takes image as parameter and normalizes it
+#Normalize means taking an array of value and making min 0 and max 100 (or whatever value you want to the max)
+#Returns normalized array
 def normalize(image):
     #scan image, resize to equal dimensions, convert to array of rgb values.
     img = plt.imread(image)
@@ -39,23 +45,3 @@ def normalize(image):
             norm_arr.setval(x, y, val)
 
     return norm_arr
-
-def plot(arr):
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    x = np.linspace(0, int(arr.height), int(arr.width)) # z-value set to 1 because arr values are from 1 to 0
-    y = np.linspace(0, int(arr.height), int(arr.width))
-
-    X, Y = np.meshgrid(x, y)
-    Z = arr.getarray()
-
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='binary')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-
-    ax.view_init(1000, 1000)
-    plt.show()
-
-arr = normalize("heightdata.png")
-plot(arr)

@@ -2,7 +2,24 @@ cmake_minimum_required(VERSION 2.8)
 
 project(craft)
 
-FILE(GLOB SOURCE_FILES src/*.c)
+# Not good code
+# FILE(GLOB SOURCE_FILES src/*.c)
+
+# Good code
+set(SOURCE_FILES
+    src/main.c
+    src/auth.c
+    src/client.c
+    src/cube.c
+    src/db.c
+    src/item.c
+    src/map.c
+    src/matrix.c
+    src/ring.c
+    src/sign.c
+    src/util.c
+    src/world.c
+)
 
 add_executable(
     craft

@@ -1,8 +1,8 @@
-## Craft
+## Craft Reborn
 
-Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
+Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server. The original Craft project was started in 2013 by Michael Fogleman. However, the latest update to the original was in 2017 and issues have been piling up since. This project is a fork of the original Craft with the idea that the project can continue and new stuff can be added even when the original maintainer has moved on.
 
-http://www.michaelfogleman.com/craft/
+Original website: http://www.michaelfogleman.com/craft/
 
 ![Screenshot](http://i.imgur.com/SH7wcas.png)
 
@@ -65,7 +65,7 @@ terminal.
 
 ### Multiplayer
 
-Register for an account!
+Register for an account! NOTE: Servers may not be available at the current time!
 
 https://craft.michaelfogleman.com/
 

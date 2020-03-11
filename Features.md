@@ -1,6 +1,6 @@
 ## Minecraft Topography
-  ### Feature 1
+### Feature 1
   #### Story A - Terrain generation from Topographic Images
-      1. Process topographic images to create an array of pixel values corresponding to block height
-      2. The map generated will correspond exactly to the pixel array
+    - Process topographic images to create an array of pixel values corresponding to block height
+    - The map generated will correspond exactly to the pixel array
   

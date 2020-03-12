@@ -18,14 +18,33 @@ void create_world(int p, int q, world_func func, void *arg) {
             int h = f * mh;
             int w = 1;
             int t = 12;
+            //player height is .75 so brick player is standing on is height -.75
+            //sand starts at brick 12 which is the value of t
+            
+            //if the height is less than ground level (12) then use sand brick
             if (h <= t) {
                 h = t;
-                w = 2;
+                w = 3;
             }
+            //h-12 turns all bricks under 14 up to whatever you set it as
+            //h-2 turns all bricks under 2 up to whatever you set it as
+            
+            
+            //if height is 2 less than ground level then use stone brick
+            /*else if (h <= t-2) {
+                h = t;
+                w = 3;
+            }*/
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
+                // this is what generates the map
+                /**
+                Grass is 1
+                Sand  is 2
+                Stone is 3
+                */
                 func(x, y, z, w * flag, arg);
-            }
+            }// /*
             if (w == 1) {
                 if (SHOW_PLANTS) {
                     // grass
@@ -62,16 +81,17 @@ void create_world(int p, int q, world_func func, void *arg) {
                     }
                 }
             }
-            // clouds
+             //clouds
             if (SHOW_CLOUDS) {
                 for (int y = 64; y < 72; y++) {
                     if (simplex3(
-                        x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
+                       x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                     {
-                        func(x, y, z, 16 * flag, arg);
-                    }
-                }
-            }
+                      func(x, y, z, 16 * flag, arg);
+                   }
+               }
+            }//*/
+              
         }
     }
 }

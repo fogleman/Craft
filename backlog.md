@@ -21,15 +21,15 @@ Status is one of blank, assigned to person and sprint number, pull request and s
 
 # Task 2
 ## User Story A
-  Status: Assigned Daniel Sprint 1 2pts PO Priority 1: Task 001 Create/Find water shader
+  Status: Pull Request Daniel Sprint 1 2pts PO Priority 1: Task 001 Create/Find water shader
   
-  Status: Assigned Daniel Sprint 1 2pts PO Priority 1: Task 002 Add water shader to shaders directory
+  Status: Pull Request Daniel Sprint 1 2pts PO Priority 1: Task 002 Add water shader to shaders directory
   
   Status: Assigned Daniel Sprint 1 8pts PO Priority 1: Task 003 Generate one or more water blocks.
   
-## User Story A
-  5pts PO Priority 1: Task 004 Demonstrate water transparency
+## User Story B
+  Status: Assigned Daniel Sprint 2 3pts PO Priority 1: Task 004 Demonstrate water transparency
   
-  5pts PO Priority 1: Task 005 Demonstrate user movement through water blocks
+  Status: Assigned Daniel Sprint 2 3pts PO Priority 1: Task 005 Demonstrate user movement through water blocks
   
   

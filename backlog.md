@@ -13,7 +13,7 @@ Status is one of blank, assigned to person and sprint number, pull request and s
                         Attached pictures in the Photos folder named selectiveStoneGeneration
   
 ## User Story B
-  5pts PO Priority 1: Task 004 Demonstrate prototype geometric pattern of blocks that represent a crater.
+Status: COMPLETE Gavin Sprint 2 5pts PO Priority 1: Task 004 Demonstrate prototype geometric pattern of blocks that represent a crater.
   
   5pts PO Priority 1: Task 005 Demonstrate prototype geometric pattern of blocks that represent a mountain.
   

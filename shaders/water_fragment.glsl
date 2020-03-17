@@ -1,4 +1,3 @@
-//From https://github.com/fogleman/Craft/tree/water
 #version 120
 
 uniform sampler2D sky_sampler;

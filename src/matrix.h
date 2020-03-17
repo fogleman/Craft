@@ -23,6 +23,10 @@ void set_matrix_3d(
     float *matrix, int width, int height,
     float x, float y, float z, float rx, float ry,
     float fov, int ortho, int radius);
+//set_matrix_3d for water
+void set_matrix_3d_water(
+    float *matrix, int width, int height,
+    float x, float y, float z, float rx, float ry, float fov, int ortho);
 void set_matrix_item(float *matrix, int width, int height, int scale);
 
 #endif

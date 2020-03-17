@@ -25,7 +25,9 @@ Status is one of blank, assigned to person and sprint number, pull request and s
   
   Status: Pull Request Daniel Sprint 1 2pts PO Priority 1: Task 002 Add water shader to shaders directory
   
-  Status: Assigned Daniel Sprint 1 8pts PO Priority 1: Task 003 Generate one or more water blocks.
+  Status: Assigned Daniel Sprint 1 8pts PO Priority 1: Task 003 Generate water layer.
+  
+  Status: Assigned Daniel Sprint 2 8pts PO Priority 1: Task 004 Generate water layer level with ground.
   
 ## User Story B
   Status: Assigned Daniel Sprint 2 3pts PO Priority 1: Task 004 Demonstrate water transparency

@@ -20,28 +20,26 @@ void create_world(int p, int q, world_func func, void *arg) {
             int t = 12;
             //player height is .75 so brick player is standing on is height -.75
             //sand starts at brick 12 which is the value of t
-            
+            //int oldh = h;
             //if the height is less than ground level (12) then use sand brick
-            if (h <= t) {
-                h = t;
-                w = 3;
+            if (h <= t/*t is a hardcoded ground level*/) {
+                //h = t; //This stops sand from apearing as holes
+                w = 2;
             }
-            //h-12 turns all bricks under 14 up to whatever you set it as
-            //h-2 turns all bricks under 2 up to whatever you set it as
             
             
             //if height is 2 less than ground level then use stone brick
-            /*else if (h <= t-2) {
-                h = t;
-                w = 3;
-            }*/
+            if (h <= t-2) {
+                //h = t;
+                w = 6;
+            }
             // sand and grass terrain
             for (int y = 0; y < h; y++) {
                 // this is what generates the map
                 /**
                 Grass is 1
                 Sand  is 2
-                Stone is 3
+                Stone is 6
                 */
                 func(x, y, z, w * flag, arg);
             }// /*

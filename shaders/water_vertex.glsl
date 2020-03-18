@@ -1,4 +1,3 @@
-//From https://github.com/fogleman/Craft/tree/water
 #version 120
 
 uniform mat4 matrix;

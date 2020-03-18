@@ -1,3 +1,4 @@
+//Water functions based off https://github.com/fogleman/Craft/tree/water
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <curl/curl.h>
@@ -248,6 +249,23 @@ GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     return gen_buffer(sizeof(data), data);
 }
 
+GLuint gen_water_buffer(float x, float y, float z, float n) {
+    float data[108];
+    float ao[6][4] = {0};
+    make_cube_faces_water(
+        data, ao,
+        0, 0, 1, 0, 0, 0,
+        0, 0, 255, 0, 0, 0,
+        x, y - n, z, n);
+    make_cube_faces_water(
+        data + 54, ao,
+        0, 0, 0, 1, 0, 0,
+        0, 0, 0, 255, 0, 0,
+        x, y + n, z, n);
+    return gen_buffer(sizeof(data), data);
+}
+
+
 GLuint gen_sky_buffer() {
     float data[12288];
     make_sphere(data, 1, 3);
@@ -406,6 +424,10 @@ void draw_plant(Attrib *attrib, GLuint buffer) {
 
 void draw_player(Attrib *attrib, Player *player) {
     draw_cube(attrib, player->buffer);
+}
+
+void draw_water(Attrib *attrib, GLuint buffer) {
+    draw_triangles_3d_ao(attrib, buffer, 12);
 }
 
 Player *find_player(int id) {
@@ -1644,6 +1666,32 @@ int render_chunks(Attrib *attrib, Player *player) {
     return result;
 }
 
+void render_water(Attrib *attrib, Player *player) {
+    State *s = &player->state;
+    float light = get_daylight();
+    float matrix[16];
+    set_matrix_3d_water(
+        matrix, g->width, g->height,
+        s->x, s->y, s->z, s->rx, s->ry, g->fov, g->ortho);
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform3f(attrib->camera, s->x, s->y, s->z);
+    glUniform1i(attrib->extra1, 2);
+    glUniform1f(attrib->extra2, light);
+    glUniform1f(attrib->extra3, RENDER_CHUNK_RADIUS * CHUNK_SIZE);
+    glUniform1f(attrib->extra4, g->ortho);
+    glUniform1f(attrib->timer, time_of_day());
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    GLuint buffer = gen_water_buffer(
+        s->x, 11 + sinf(glfwGetTime() * 2) * 0.05, s->z,
+        RENDER_CHUNK_RADIUS * CHUNK_SIZE);
+    draw_water(attrib, buffer);
+    del_buffer(buffer);
+    glDisable(GL_BLEND);
+}
+
+
 void render_signs(Attrib *attrib, Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
@@ -2656,6 +2704,7 @@ int main(int argc, char **argv) {
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
     Attrib sky_attrib = {0};
+    Attrib water_attrib = {0};
     GLuint program;
 
     program = load_program(
@@ -2697,6 +2746,20 @@ int main(int argc, char **argv) {
     sky_attrib.matrix = glGetUniformLocation(program, "matrix");
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
+    
+    program = load_program(
+        "shaders/water_vertex.glsl", "shaders/water_fragment.glsl");
+    water_attrib.program = program;
+    water_attrib.position = glGetAttribLocation(program, "position");
+    water_attrib.normal = glGetAttribLocation(program, "normal");
+    water_attrib.uv = glGetAttribLocation(program, "uv");
+    water_attrib.matrix = glGetUniformLocation(program, "matrix");
+    water_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
+    water_attrib.extra2 = glGetUniformLocation(program, "daylight");
+    water_attrib.extra3 = glGetUniformLocation(program, "fog_distance");
+    water_attrib.extra4 = glGetUniformLocation(program, "ortho");
+    water_attrib.camera = glGetUniformLocation(program, "camera");
+    water_attrib.timer = glGetUniformLocation(program, "timer");
 
     // CHECK COMMAND LINE ARGUMENTS //
     if (argc == 2 || argc == 3) {
@@ -2841,6 +2904,8 @@ int main(int argc, char **argv) {
             if (SHOW_WIREFRAME) {
                 render_wireframe(&line_attrib, player);
             }
+            
+            render_water(&water_attrib, player);
 
             // RENDER HUD //
             glClear(GL_DEPTH_BUFFER_BIT);

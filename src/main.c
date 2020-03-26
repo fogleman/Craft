@@ -46,7 +46,7 @@
 #define WORKER_DONE 2
 
 typedef struct {
-    //Watr functions/objects designated wit "W" or "_w"
+    //Water functions/objects designated with "W" or "_w"
     MapW map;
     SignList signs;
     int p;
@@ -1225,7 +1225,7 @@ void render_water(Attrib *attrib, Player *player) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     GLuint buffer = gen_water_buffer(
-        s->x, 20 + sinf(glfwGetTime() * 2) * 0.05, s->z,
+        s->x, 12 + sinf(glfwGetTime() * 2) * 0.05, s->z,
         RENDER_CHUNK_RADIUS * CHUNK_SIZE);
     draw_water(attrib, buffer);
     del_buffer(buffer);

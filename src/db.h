@@ -22,14 +22,12 @@ int db_auth_get_selected(
 void db_save_state(float x, float y, float z, float rx, float ry);
 int db_load_state(float *x, float *y, float *z, float *rx, float *ry);
 void db_insert_block(int p, int q, int x, int y, int z, int w);
-void db_insert_light(int p, int q, int x, int y, int z, int w);
 void db_insert_sign(
     int p, int q, int x, int y, int z, int face, const char *text);
 void db_delete_sign(int x, int y, int z, int face);
 void db_delete_signs(int x, int y, int z);
 void db_delete_all_signs();
-void db_load_blocks(Map *map, int p, int q);
-void db_load_lights(Map *map, int p, int q);
+void db_load_map(MapW *map, int p, int q);
 void db_load_signs(SignList *list, int p, int q);
 int db_get_key(int p, int q);
 void db_set_key(int p, int q, int key);

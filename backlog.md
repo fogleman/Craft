@@ -15,9 +15,9 @@ Status is one of blank, assigned to person and sprint number, pull request and s
 ## User Story B
 Status: COMPLETE Gavin Sprint 2 5pts PO Priority 1: Task 004 Demonstrate prototype geometric pattern of blocks that represent a crater.
   
-  5pts PO Priority 1: Task 005 Demonstrate prototype geometric pattern of blocks that represent a mountain.
+Status: COMPLETE Gavin Sprint 3  5pts PO Priority 1: Task 005 Demonstrate prototype geometric pattern of blocks that represent a mountain.
   
-  8pts PO Priority 1: Task 006 Demostrate crated and mountain geometric patterns comprised of primarily stone blocks.
+Status: Assigned Gavin Sprint 4  8pts PO Priority 1: Task 006 Demostrate crated and mountain geometric patterns comprised of primarily stone blocks.
 
 ## User Story C
   Task 007 Demonstrate prototype geometric pattern of blocks that represent a mountain that shares terrain features with actual moutains.

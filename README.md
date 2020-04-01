@@ -4,7 +4,7 @@ Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C 
 
 http://www.michaelfogleman.com/craft/
 
-![Screenshot](http://i.imgur.com/SH7wcas.png)
+![Screenshot](https://i.imgur.com/SH7wcas.png)
 
 ### Features
 
@@ -149,7 +149,7 @@ Teleport back to the spawn point.
 
 ### Screenshot
 
-![Screenshot](http://i.imgur.com/foYz3aN.png)
+![Screenshot](https://i.imgur.com/foYz3aN.png)
 
 ### Implementation Details
 

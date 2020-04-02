@@ -1,8 +1,8 @@
-## Craft
+## CraftedEngine
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
 
-http://www.michaelfogleman.com/craft/
+**Searching for people to work in this. If intrusted, leave a issue and i'll give a way to contact.**
 
 ![Screenshot](https://i.imgur.com/SH7wcas.png)
 
@@ -20,7 +20,7 @@ http://www.michaelfogleman.com/craft/
 
 Mac and Windows binaries are available on the website.
 
-http://www.michaelfogleman.com/craft/
+**Coming soon**
 
 See below to run from source.
 
@@ -63,30 +63,22 @@ terminal.
     make
     ./craft
 
-### Multiplayer
 
-Register for an account!
-
-https://craft.michaelfogleman.com/
-
-#### Client
-
-You can connect to a server with command line arguments...
-
-    ./craft craft.michaelfogleman.com
-
-Or, with the "/online" command in the game itself.
-
-    /online craft.michaelfogleman.com
 
 #### Server
 
 You can run your own server or connect to mine. The server is written in Python
 but requires a compiled DLL so it can perform the terrain generation just like
-the client.
+the client. That means there's multiplayer
 
     gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
     python server.py [HOST [PORT]]
+   
+   
+   ### Availiability
+   CraftedEngine can run on Windows, macOS and Linux. I've tried to compile it on Raspberry Pi and it **WORKS** but it is **VERY LAGGY**.
+   
+
 
 ### Controls
 

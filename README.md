@@ -18,7 +18,7 @@ Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C 
 
 ### Download
 
-Mac and Windows binaries are available on the website.
+Mac and Windows binaries are not available yet.
 
 **Coming soon**
 
@@ -69,7 +69,7 @@ terminal.
 
 You can run your own server or connect to mine. The server is written in Python
 but requires a compiled DLL so it can perform the terrain generation just like
-the client. That means there's multiplayer
+the client. That means there's multiplayer.
 
     gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
     python server.py [HOST [PORT]]

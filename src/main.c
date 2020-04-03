@@ -2434,11 +2434,20 @@ void handle_movement(double dt) {
                 vy = 1;
             }
             else if (dy == 0) {
-                dy = 8;
+                dy = 10;
             }
         }
     }
-    float speed = g->flying ? 20 : 5;
+    int spee = 5;
+    if(glfwGetKey(g->window, CRAFT_KEY_SPRINT)) {
+       if(g->flying) {
+          spee = 20;
+       }
+       else {
+         if(glfwGetKey(g->window, CRAFT_KEY_FORWARD)) spee = 20;
+       }
+    }
+    float speed = g->flying ? spee : spee;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

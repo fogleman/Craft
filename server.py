@@ -13,16 +13,16 @@ import time
 import traceback
 
 DEFAULT_HOST = '0.0.0.0'
-DEFAULT_PORT = 4080
+DEFAULT_PORT = 3000
 
-DB_PATH = 'craft.db'
+DB_PATH = 'ce.db'
 LOG_PATH = 'log.txt'
 
 CHUNK_SIZE = 32
 BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
-AUTH_REQUIRED = True
+AUTH_REQUIRED = False
 AUTH_URL = 'https://craft.michaelfogleman.com/api/1/access'
 
 DAY_LENGTH = 600
@@ -284,13 +284,13 @@ class Model(object):
         return result
     def on_connect(self, client):
         client.client_id = self.next_client_id()
-        client.nick = 'guest%d' % client.client_id
+        client.nick = 'Player%d' % client.client_id
         log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)
-        client.send(TALK, 'Welcome to Craft!')
+        client.send(TALK, 'Welcome to CraftedEngine!')
         client.send(TALK, 'Type "/help" for a list of commands.')
         self.send_position(client)
         self.send_positions(client)
@@ -329,8 +329,8 @@ class Model(object):
                 user_id = int(response.text)
         client.user_id = user_id
         if user_id is None:
-            client.nick = 'guest%d' % client.client_id
-            client.send(TALK, 'Visit craft.michaelfogleman.com to register!')
+            client.nick = 'Player%d' % client.client_id
+            client.send(TALK, 'This is an early alpha! Please report errors to the Github.')
         else:
             client.nick = username
         self.send_nick(client)

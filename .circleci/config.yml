@@ -10,5 +10,4 @@ workflows:
   welcome:
     # Run the welcome/run job in its own container
     jobs:
-      - cmake .
-      - make
+      - welcome/run

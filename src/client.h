@@ -1,7 +1,7 @@
 #ifndef _client_h_
 #define _client_h_
 
-#define DEFAULT_PORT 4080
+#define DEFAULT_PORT 3000
 
 void client_enable();
 void client_disable();

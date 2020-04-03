@@ -2372,7 +2372,7 @@ void create_window() {
         window_height = modes[mode_count - 1].height;
     }
     g->window = glfwCreateWindow(
-        window_width, window_height, "Craft", monitor, NULL);
+        window_width, window_height, "CraftedEngine", monitor, NULL);
 }
 
 void handle_mouse_input() {

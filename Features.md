@@ -12,4 +12,3 @@
    - Task 1: Minimum block height will be 20 blocks and maximum block height will be 100 blocks
    - Task 2: Any blocks over 80 blocks will be snow blocks. 
    
-  

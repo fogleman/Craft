@@ -1,0 +1,151 @@
+\hypertarget{classserver_1_1_model}{}\doxysection{Model Class Reference}
+\label{classserver_1_1_model}\index{Model@{Model}}
+Inheritance diagram for Model\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classserver_1_1_model}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_abe387516da2ab18f978ae5c4e9a13d9b}\label{classserver_1_1_model_abe387516da2ab18f978ae5c4e9a13d9b}} 
+def {\bfseries \+\_\+\+\_\+init\+\_\+\+\_\+} (self, seed)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_af1af6ddf04f00f958949618f79c33b82}\label{classserver_1_1_model_af1af6ddf04f00f958949618f79c33b82}} 
+def {\bfseries start} (self)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ad22709b2e67308af35f55680d5a026e0}\label{classserver_1_1_model_ad22709b2e67308af35f55680d5a026e0}} 
+def {\bfseries run} (self)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a71332c2ac4c9800a403a5c358097f978}\label{classserver_1_1_model_a71332c2ac4c9800a403a5c358097f978}} 
+def {\bfseries enqueue} (self, func, $\ast$args, $\ast$$\ast$kwargs)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_add1dd16a40bb5f755594afa0c8518a0d}\label{classserver_1_1_model_add1dd16a40bb5f755594afa0c8518a0d}} 
+def {\bfseries dequeue} (self)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_aef966527223cfd104f42d0811bcfd7cf}\label{classserver_1_1_model_aef966527223cfd104f42d0811bcfd7cf}} 
+def {\bfseries execute} (self, $\ast$args, $\ast$$\ast$kwargs)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a4a469816e51870a4c4ed918152d7f940}\label{classserver_1_1_model_a4a469816e51870a4c4ed918152d7f940}} 
+def {\bfseries commit} (self)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ac01f65b80c99c0a85e28511f08a1f6e2}\label{classserver_1_1_model_ac01f65b80c99c0a85e28511f08a1f6e2}} 
+def {\bfseries create\+\_\+tables} (self)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ac3a73a68cf186c930cd8a5a32078ed36}\label{classserver_1_1_model_ac3a73a68cf186c930cd8a5a32078ed36}} 
+def {\bfseries get\+\_\+default\+\_\+block} (self, x, y, z)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a3ba4c54b4d3e19edcd7e501a38a4063c}\label{classserver_1_1_model_a3ba4c54b4d3e19edcd7e501a38a4063c}} 
+def {\bfseries get\+\_\+block} (self, x, y, z)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_afbbed1a22c854ed609b032eefc9c8feb}\label{classserver_1_1_model_afbbed1a22c854ed609b032eefc9c8feb}} 
+def {\bfseries next\+\_\+client\+\_\+id} (self)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ad5e4ea13af06a8fe7cca23e1bccc2da7}\label{classserver_1_1_model_ad5e4ea13af06a8fe7cca23e1bccc2da7}} 
+def {\bfseries on\+\_\+connect} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a87ad797b551fece3c47bd80d58ce61d8}\label{classserver_1_1_model_a87ad797b551fece3c47bd80d58ce61d8}} 
+def {\bfseries on\+\_\+data} (self, client, data)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_aab3f2905a0b839c66f18477b0cf1fadd}\label{classserver_1_1_model_aab3f2905a0b839c66f18477b0cf1fadd}} 
+def {\bfseries on\+\_\+disconnect} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_adce9db5860bc9182e856e1ba73f33f23}\label{classserver_1_1_model_adce9db5860bc9182e856e1ba73f33f23}} 
+def {\bfseries on\+\_\+version} (self, client, version)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a4023cc74b948f1e39afc6bfc0f567909}\label{classserver_1_1_model_a4023cc74b948f1e39afc6bfc0f567909}} 
+def {\bfseries on\+\_\+authenticate} (self, client, username, access\+\_\+token)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ae9cf1dd8c250062aa46f430ba014d97f}\label{classserver_1_1_model_ae9cf1dd8c250062aa46f430ba014d97f}} 
+def {\bfseries on\+\_\+chunk} (self, client, p, q, key=0)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a249205d417aaeaa9c7a8e2698433b795}\label{classserver_1_1_model_a249205d417aaeaa9c7a8e2698433b795}} 
+def {\bfseries on\+\_\+block} (self, client, x, y, z, w)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a8810b734173ffd243fa5fa4266db742d}\label{classserver_1_1_model_a8810b734173ffd243fa5fa4266db742d}} 
+def {\bfseries on\+\_\+light} (self, client, x, y, z, w)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a82f95112ff028a757bdffc8d3bad8658}\label{classserver_1_1_model_a82f95112ff028a757bdffc8d3bad8658}} 
+def {\bfseries on\+\_\+sign} (self, client, x, y, z, face, $\ast$args)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a2cdd2027799b7b93e10b6aca2727f90b}\label{classserver_1_1_model_a2cdd2027799b7b93e10b6aca2727f90b}} 
+def {\bfseries on\+\_\+position} (self, client, x, y, z, rx, ry)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_af85780fcb62c2e6bd8838921c196dbea}\label{classserver_1_1_model_af85780fcb62c2e6bd8838921c196dbea}} 
+def {\bfseries on\+\_\+talk} (self, client, $\ast$args)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a31b27b0baceb155d278c65ee84fd11e0}\label{classserver_1_1_model_a31b27b0baceb155d278c65ee84fd11e0}} 
+def {\bfseries on\+\_\+nick} (self, client, nick=None)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a2244f3e4a5cd558e1fdb1ead0912f5a5}\label{classserver_1_1_model_a2244f3e4a5cd558e1fdb1ead0912f5a5}} 
+def {\bfseries on\+\_\+spawn} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_adbd0e07e469a9216f8cbbbb0739ad69a}\label{classserver_1_1_model_adbd0e07e469a9216f8cbbbb0739ad69a}} 
+def {\bfseries on\+\_\+goto} (self, client, nick=None)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a7e4f1719c4bb03b13e17217a5f8fb48b}\label{classserver_1_1_model_a7e4f1719c4bb03b13e17217a5f8fb48b}} 
+def {\bfseries on\+\_\+pq} (self, client, p, q)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a176e53efcbc228f0bb189bfc9c5fed37}\label{classserver_1_1_model_a176e53efcbc228f0bb189bfc9c5fed37}} 
+def {\bfseries on\+\_\+help} (self, client, topic=None)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a8fd575d856a9d8bbf8d160000a5b030c}\label{classserver_1_1_model_a8fd575d856a9d8bbf8d160000a5b030c}} 
+def {\bfseries on\+\_\+list} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ade1b98be5a46e3dadb312472a701846d}\label{classserver_1_1_model_ade1b98be5a46e3dadb312472a701846d}} 
+def {\bfseries send\+\_\+positions} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ad8ed170c149c0774ed27c19ae7d8e022}\label{classserver_1_1_model_ad8ed170c149c0774ed27c19ae7d8e022}} 
+def {\bfseries send\+\_\+position} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_ac63ccb919425c750a6377a720ad1ab9f}\label{classserver_1_1_model_ac63ccb919425c750a6377a720ad1ab9f}} 
+def {\bfseries send\+\_\+nicks} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_aac40c1769546e1c9169a4cbd46d2e6b0}\label{classserver_1_1_model_aac40c1769546e1c9169a4cbd46d2e6b0}} 
+def {\bfseries send\+\_\+nick} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a1b1d6392c57ee9b73fad22a5aeefef69}\label{classserver_1_1_model_a1b1d6392c57ee9b73fad22a5aeefef69}} 
+def {\bfseries send\+\_\+disconnect} (self, client)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a8554b61203b79252f7fed31991553e21}\label{classserver_1_1_model_a8554b61203b79252f7fed31991553e21}} 
+def {\bfseries send\+\_\+block} (self, client, p, q, x, y, z, w)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a46e16fad99f7ba2cb2c810d12c2da80a}\label{classserver_1_1_model_a46e16fad99f7ba2cb2c810d12c2da80a}} 
+def {\bfseries send\+\_\+light} (self, client, p, q, x, y, z, w)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a9f52319b7535e500904436b7968f1861}\label{classserver_1_1_model_a9f52319b7535e500904436b7968f1861}} 
+def {\bfseries send\+\_\+sign} (self, client, p, q, x, y, z, face, text)
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_afcb4f3f98034f5dd3ea5c0ab138c6c8f}\label{classserver_1_1_model_afcb4f3f98034f5dd3ea5c0ab138c6c8f}} 
+def {\bfseries send\+\_\+talk} (self, text)
+\end{DoxyCompactItemize}
+\doxysubsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a95d27c454bae5de9e80962221646154e}\label{classserver_1_1_model_a95d27c454bae5de9e80962221646154e}} 
+{\bfseries world}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a4058051e3069ff2943649d921f089458}\label{classserver_1_1_model_a4058051e3069ff2943649d921f089458}} 
+{\bfseries clients}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_af8ceabb22d9297bd28382151f35a2252}\label{classserver_1_1_model_af8ceabb22d9297bd28382151f35a2252}} 
+{\bfseries queue}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a033f2c2ba101d1649bd36de7783782f0}\label{classserver_1_1_model_a033f2c2ba101d1649bd36de7783782f0}} 
+{\bfseries commands}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a103e4e385ad1b4a2a287abf1024d219f}\label{classserver_1_1_model_a103e4e385ad1b4a2a287abf1024d219f}} 
+{\bfseries patterns}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a10275a078bd1abcbebc206cc5d19e18b}\label{classserver_1_1_model_a10275a078bd1abcbebc206cc5d19e18b}} 
+{\bfseries connection}
+\item 
+\mbox{\Hypertarget{classserver_1_1_model_a8bef4cc9e309915b2cf4934df89a1a68}\label{classserver_1_1_model_a8bef4cc9e309915b2cf4934df89a1a68}} 
+{\bfseries last\+\_\+commit}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/gavinanderson/\+Documents/\+C/\+Craft/server.\+py\end{DoxyCompactItemize}

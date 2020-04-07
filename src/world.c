@@ -15,17 +15,55 @@ void create_world(int p, int q, world_func func, void *arg) {
             float f = simplex2(x * 0.01, z * 0.01, 4, 0.5, 2);
             float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
             int mh = g * 32 + 16;
-            int h = f * mh;
+
+            //use a random number generator to determine if a moutain will
+            //be made or not set to 90 so moutains are rare
+            int num = (rand() % (100 - 1 + 1)) + 1; 
+            int h = f * mh *2;
+
             int w = 1;
             int t = 12;
-            if (h <= t) {
-                h = t;
+            //player height is .75 so brick player is standing on is height -.75
+            //sand starts at brick 12 which is the value of t
+            //int oldh = h;
+
+            /**
+                Grass is 1
+                Sand  is 2
+                Stone is 6
+            */
+            //if the height is less than ground level (12) then use sand brick
+            if (h <= t+1/*t is a hardcoded ground level*/) {
                 w = 2;
             }
-            // sand and grass terrain
+            
+            
+            //if height is 2 less than ground level then use stone brick
+            //if the level is over 28 then use the stone block. This means 
+            //a moutain is being formed
+            if (h <= t-2 || h>= 32) {
+                //h = t;
+                w = 6;
+
+                if (num >=95)
+                {
+                	w = 1;
+                }
+
+                if (h>=55)
+                {
+                	//white wool looks like snow brick
+                	//use that brick if the height is moutain high
+                	w=61;
+                }
+            }
+            //terrain
             for (int y = 0; y < h; y++) {
+                // this is what generates the map
+                
                 func(x, y, z, w * flag, arg);
             }
+            // /*
             if (w == 1) {
                 if (SHOW_PLANTS) {
                     // grass
@@ -62,16 +100,17 @@ void create_world(int p, int q, world_func func, void *arg) {
                     }
                 }
             }
-            // clouds
+             //clouds
             if (SHOW_CLOUDS) {
                 for (int y = 64; y < 72; y++) {
                     if (simplex3(
-                        x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
+                       x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                     {
-                        func(x, y, z, 16 * flag, arg);
-                    }
-                }
-            }
+                      func(x, y, z, 16 * flag, arg);
+                   }
+               }
+            }//*/
+              
         }
     }
 }

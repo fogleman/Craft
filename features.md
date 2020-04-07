@@ -1,3 +1,4 @@
+
 1. Adding stone as a randomly generated block for the world - currently its a block that can be selected but not one that will apear on the map. If i can get any stone generated then this will be a success. Stone will create a structure such as moutain or crater.
 
 		 A) As a Craft player, I want to play in a generated world that contains stone blocks so that I can observe. 

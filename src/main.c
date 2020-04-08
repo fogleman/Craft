@@ -39,6 +39,9 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
+static int spee = 5;
+static int jumpHeight = 8;
+
 typedef struct {
     Map map;
     Map lights;
@@ -2025,6 +2028,8 @@ void parse_command(const char *buffer, int forward) {
     int server_port = DEFAULT_PORT;
     char filename[MAX_PATH_LENGTH];
     int radius, count, xc, yc, zc;
+    int amount;
+    int defJump = 8;
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
@@ -2122,6 +2127,18 @@ void parse_command(const char *buffer, int forward) {
     }
     else if (sscanf(buffer, "/cylinder %d", &radius) == 1) {
         cylinder(&g->block0, &g->block1, radius, 0);
+    }
+    else if (sscanf(buffer, "/setSpeed %d", &amount) == 1) {
+        spee = amount;
+    }
+    else if (sscanf(buffer, "/setJump %d", &amount) == 1) {
+        jumpHeight = amount;
+    }
+    else if (sscanf(buffer, "/resSpeed") == 0) {
+        spee = 5;
+    }
+    else if (sscanf(buffer, "/resJump") == 0) {
+        jumpHeight = defJump;
     }
     else if (forward) {
         client_talk(buffer);
@@ -2428,26 +2445,27 @@ void handle_movement(double dt) {
     }
     float vx, vy, vz;
     get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    int jH = jumpHeight;
     if (!g->typing) {
         if (glfwGetKey(g->window, CRAFT_KEY_JUMP)) {
             if (g->flying) {
                 vy = 1;
             }
             else if (dy == 0) {
-                dy = 10;
+                dy = jH;
             }
         }
     }
-    int spee = 5;
+    int spe = spee;
     if(glfwGetKey(g->window, CRAFT_KEY_SPRINT)) {
        if(g->flying) {
-          spee = 20;
+          spe = spee * 4;
        }
        else {
-         if(glfwGetKey(g->window, CRAFT_KEY_FORWARD)) spee = 20;
+         if(glfwGetKey(g->window, CRAFT_KEY_FORWARD)) spe = spee * 4;
        }
     }
-    float speed = g->flying ? spee : spee;
+    float speed = g->flying ? spe : spe;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

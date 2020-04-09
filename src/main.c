@@ -1224,8 +1224,15 @@ void render_water(Attrib *attrib, Player *player) {
     glUniform1f(attrib->timer, time_of_day());
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //Lower water level
+    int water_level = 12;
+    //Higher waves
+    float wave_height = 0.1;
+    //Faster wave speed
+    float wave_speed = 3;
+    
     GLuint buffer = gen_water_buffer(
-        s->x, 12 + sinf(glfwGetTime() * 2) * 0.05, s->z,
+        s->x, water_level + sinf(glfwGetTime() * wave_speed) * wave_height, s->z,
         RENDER_CHUNK_RADIUS * CHUNK_SIZE);
     draw_water(attrib, buffer);
     del_buffer(buffer);

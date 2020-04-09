@@ -8,3 +8,6 @@
 #### Task 1: Add a new command that takes a value input that is used to change the jump height.
 ### User Story D: As a user, I want to be able to change fall speed manually so that I can customize my experience.
 #### Task 1: Add a new command that takes a value input that is used to change the fall speed.
+## Feature 2: Graphical Enhancements
+### User Story E: As a user, I want to be able to change the settings to display alternative textures on common blocks. 
+#### Task 1: Update the settings and create altered texture files such that they can be toggled on or off.

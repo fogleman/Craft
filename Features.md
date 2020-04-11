@@ -12,5 +12,5 @@
 #### Task 1: Add a command to turn on and off the minigame
 #### Task 2: Change movement functionality so that when the minigame is on jump height is increased incrementally everytime the player jumps
 ## Feature 2: Graphical Enhancements
-### User Story E: As a user, I want to be able to change the settings to display alternative textures on common blocks. 
+### User Story F: As a user, I want to be able to change the settings to display alternative textures on common blocks. 
 #### Task 1: Update the settings and create altered texture files such that they can be toggled on or off.

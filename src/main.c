@@ -135,8 +135,9 @@ static int middle_click = 0;
 static int observe1 = 0;
 static int observe2 = 0;
 static int flying = 0;
-//Normal speed initially
-static int sprint = 0;
+//use sprint and jump to scale speed/jump height
+static int sprint = 1;
+static int jump = 8;
 static int item_index = 0;
 static int scale = 1;
 static int ortho = 0;
@@ -1525,7 +1526,20 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
         //Toggle sprint on 'X'
         if (key == CRAFT_KEY_SPRINT) {
-          sprint = !sprint;
+          switch (sprint) {
+            case 1:
+              sprint = 2;
+              jump = 12;
+              break;
+            case 2:
+              sprint = 3;
+              jump = 16;
+              break;
+            default:
+              sprint = 1;
+              jump = 8;
+              break;
+          }
         }
         if (key >= '1' && key <= '9') {
             item_index = key - '1';
@@ -1702,20 +1716,13 @@ void handle_movement(double dt) {
                 vy = 1;
             }
             else if (dy == 0) {
-              //Increase jump height if sprinting
-              if (sprint) {
-                dy = 10;
-              } else {
-                  dy = 8;
-                }
+              dy = jump;
             }
         }
     }
     float speed = flying ? 20 : 5;
-    //Increase speed if sprinting
-    if (sprint) {
-      speed *= 2;
-    }
+    //Scale speed according to sprint
+    speed *= sprint;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

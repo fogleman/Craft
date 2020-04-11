@@ -14,3 +14,4 @@
 ## Feature 2: Graphical Enhancements
 ### User Story F: As a user, I want to be able to change the settings to display alternative textures on common blocks. 
 #### Task 1: Update the settings and create altered texture files such that they can be toggled on or off.
+### user story G: As a user, I want to be able to change the light setting so when you press the up key it gets lighter and when you press the down key it gets darker.

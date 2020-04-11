@@ -1702,12 +1702,20 @@ void handle_movement(double dt) {
                 vy = 1;
             }
             else if (dy == 0) {
-                dy = 8;
+              //Increase jump height if sprinting
+              if (sprint) {
+                dy = 10;
+              } else {
+                  dy = 8;
+                }
             }
         }
     }
     float speed = flying ? 20 : 5;
-
+    //Increase speed if sprinting
+    if (sprint) {
+      speed *= 2;
+    }
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

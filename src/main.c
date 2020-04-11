@@ -135,6 +135,8 @@ static int middle_click = 0;
 static int observe1 = 0;
 static int observe2 = 0;
 static int flying = 0;
+//Normal speed initially
+static int sprint = 0;
 static int item_index = 0;
 static int scale = 1;
 static int ortho = 0;
@@ -1230,7 +1232,7 @@ void render_water(Attrib *attrib, Player *player) {
     float wave_height = 0.1;
     //Faster wave speed
     float wave_speed = 3;
-    
+
     GLuint buffer = gen_water_buffer(
         s->x, water_level + sinf(glfwGetTime() * wave_speed) * wave_height, s->z,
         RENDER_CHUNK_RADIUS * CHUNK_SIZE);
@@ -1521,6 +1523,10 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == CRAFT_KEY_FLY) {
             flying = !flying;
         }
+        //Toggle sprint on 'X'
+        if (key == CRAFT_KEY_SPRINT) {
+          sprint = !sprint;
+        }
         if (key >= '1' && key <= '9') {
             item_index = key - '1';
         }
@@ -1701,6 +1707,7 @@ void handle_movement(double dt) {
         }
     }
     float speed = flying ? 20 : 5;
+
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

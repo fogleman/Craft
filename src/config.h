@@ -43,6 +43,8 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+//Use 'X' to toggle speed
+#define CRAFT_KEY_SPRINT 'X'
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

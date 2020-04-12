@@ -1535,6 +1535,10 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
               sprint = 3;
               jump = 16;
               break;
+            case 3:
+              sprint = 20;
+              jump = 72;
+              break;
             default:
               sprint = 1;
               jump = 8;
@@ -1717,6 +1721,11 @@ void handle_movement(double dt) {
             }
             else if (dy == 0) {
               dy = jump;
+            }
+        }
+        if (glfwGetKey(window, CRAFT_KEY_DESCEND)) {
+            if (flying) {
+              vy = -1;
             }
         }
     }

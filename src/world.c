@@ -18,7 +18,7 @@ void create_world(int p, int q, world_func func, void *arg) {
 
             //use a random number generator to determine if a moutain will
             //be made or not set to 90 so moutains are rare
-            int num = (rand() % (100 - 1 + 1)) + 1; 
+            int num = (rand() % (100 - 1 + 1)) + 1;
             int h = f * mh *2;
 
             int w = 1;
@@ -36,10 +36,10 @@ void create_world(int p, int q, world_func func, void *arg) {
             if (h <= t+1/*t is a hardcoded ground level*/) {
                 w = 2;
             }
-            
-            
+
+
             //if height is 2 less than ground level then use stone brick
-            //if the level is over 28 then use the stone block. This means 
+            //if the level is over 28 then use the stone block. This means
             //a moutain is being formed
             if (h <= t-2 || h>= 32) {
                 //h = t;
@@ -60,7 +60,7 @@ void create_world(int p, int q, world_func func, void *arg) {
             //terrain
             for (int y = 0; y < h; y++) {
                 // this is what generates the map
-                
+
                 func(x, y, z, w * flag, arg);
             }
             // /*
@@ -110,7 +110,7 @@ void create_world(int p, int q, world_func func, void *arg) {
                    }
                }
             }//*/
-              
+
         }
     }
 }

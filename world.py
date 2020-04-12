@@ -3,10 +3,17 @@
 
 from ctypes import CDLL, CFUNCTYPE, c_float, c_int, c_void_p
 from collections import OrderedDict
+import normalize
 
 dll = CDLL('./world')
 
 WORLD_FUNC = CFUNCTYPE(None, c_int, c_int, c_int, c_int, c_void_p)
+
+## \package world
+# \brief Ref : Req 1.0 Craft implementation shall create a terrain from a topographic image
+# \param pixel_file : file containing pixel values of topographic image
+##
+pixel_file = normalize.process_image("heightdata.png")
 
 def dll_seed(x):
     dll.seed(x)
@@ -15,7 +22,7 @@ def dll_create_world(p, q):
     result = {}
     def world_func(x, y, z, w, arg):
         result[(x, y, z)] = w
-    dll.create_world(p, q, WORLD_FUNC(world_func), None)
+    dll.create_world(p, q, WORLD_FUNC(world_func), None, None)
     return result
 
 dll.simplex2.restype = c_float

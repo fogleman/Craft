@@ -62,7 +62,7 @@ Use the following commands in place of the ones described in the next section.
 
 Once you have the dependencies (see above), run the following commands in your
 terminal. To use a topographic image as terrain generation, change the image
-"heightdata.png" to the topographic image of your choosing. The must be a .png 
+"heightdata.png" to the topographic image of your choosing. The image must be a .png 
 and in greyscale.
 
     git clone https://github.com/fogleman/Craft.git

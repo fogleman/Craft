@@ -8,7 +8,7 @@ http://www.michaelfogleman.com/craft/
 
 ### Features
 
-* Simple but nice looking terrain generation using perlin / simplex noise.
+* Simple but nice looking terrain generation using perlin / simplex noise and from Topographic Images.
 * More than 10 types of blocks and more can be added easily.
 * Supports plants (grass, flowers, trees, etc.) and transparency (glass).
 * Simple clouds in the sky (they don't move).
@@ -33,11 +33,14 @@ if you don't already have it. You may use [Homebrew](http://brew.sh) to simplify
 the installation:
 
     brew install cmake
+    pip install numpy opencv-python matplotlib
 
 #### Linux (Ubuntu)
 
     sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
     sudo apt-get build-dep glfw
+    sudo apt-get update
+    pip install numpy opencv-python matplotlib
 
 #### Windows
 
@@ -47,10 +50,13 @@ and [MinGW](http://www.mingw.org/). Add `C:\MinGW\bin` to your `PATH`.
 Download and install [cURL](http://curl.haxx.se/download.html) so that
 CURL/lib and CURL/include are in your Program Files directory.
 
+Download and install [python3](https://www.python.org/downloads/release/python-377/) and [pip](https://www.liquidweb.com/kb/install-pip-windows/) to install dependencies for normalize.py
+
 Use the following commands in place of the ones described in the next section.
 
     cmake -G "MinGW Makefiles"
     mingw32-make
+    python -m pip install numpy opencv-python matplotlib
 
 ### Compile and Run
 
@@ -59,6 +65,7 @@ terminal.
 
     git clone https://github.com/fogleman/Craft.git
     cd Craft
+    python3 normalize.py
     cmake .
     make
     ./craft

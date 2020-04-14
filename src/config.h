@@ -27,7 +27,7 @@
 #define SHOW_PLAYER_NAMES 1
 
 // key bindings
-#define CRAFT_KEY_QUIT 'Q'
+#define CRAFT_KEY_QUIT 'L'
 #define CRAFT_KEY_FORWARD 'W'
 #define CRAFT_KEY_BACKWARD 'S'
 #define CRAFT_KEY_LEFT 'A'
@@ -47,6 +47,9 @@
 #define CRAFT_KEY_SIGN '`'
 //Use 'X' to toggle speed
 #define CRAFT_KEY_SPRINT 'X'
+//autorun
+#define GLFW_PRESS   1
+#define CRAFT_KEY_AUTORUN 'C'
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

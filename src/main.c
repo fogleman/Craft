@@ -1703,6 +1703,15 @@ void handle_movement(double dt) {
         float m = dt * 1.0;
         ortho = glfwGetKey(window, CRAFT_KEY_ORTHO) ? 64 : 0;
         fov = glfwGetKey(window, CRAFT_KEY_ZOOM) ? 15 : 65;
+        ///////////////////
+        //Auto run feature that works when the c key is pressed
+        ///////////////////
+        if(glfwGetKey(window, CRAFT_KEY_AUTORUN)){
+            //detect autorun hit
+            //start running until hit again
+                sz--;
+        }
+
         if (glfwGetKey(window, CRAFT_KEY_FORWARD)) sz--;
         if (glfwGetKey(window, CRAFT_KEY_BACKWARD)) sz++;
         if (glfwGetKey(window, CRAFT_KEY_LEFT)) sx--;

@@ -23,7 +23,7 @@ Status: COMPLETE Gavin Sprint 4  8pts PO Priority 1: Task 006 Demostrate crated 
  Status: COMPLETE Gavin Sprint 4 Task 007 Demonstrate prototype geometric pattern of blocks that represent a mountain that shares terrain features with actual moutains.
  
  ## BUG FIXES
- Status: ASSIGNED Gavin Sprint 5 Task 008 Remove q feature to quit which serves as a inconvenience when the X button does the same thing
+ Status: COMPLETE Gavin Sprint 5 Task 008 Remove q feature to quit which serves as a inconvenience when the X button does the same thing
  
 # Task 2
 ## User Story A

@@ -33,15 +33,19 @@ Status: Assigned Gavin Sprint 4  8pts PO Priority 1: Task 006 Demostrate crated 
   Status: COMPLETE Daniel Sprint 2 8pts PO Priority 1: Task 004 Generate water layer level with ground.
   
 ## User Story B
-  Status: Assigned Daniel Sprint 3 1pts PO Priority 1: Task 004 Demonstrate water transparency
+  Status: COMPLETE Daniel Sprint 3 1pts PO Priority 1: Task 004 Demonstrate water transparency
   
-  Status: Assigned Daniel Sprint 3 1pts PO Priority 1: Task 005 Demonstrate user movement through water blocks
+  Status: COMPLETE Daniel Sprint 3 1pts PO Priority 1: Task 005 Demonstrate user movement through water blocks
   
   # Task 3
 ## User Story A
-  Status: Assigned Daniel Sprint 3 2pts PO Priority 1: Task 006 Raise or lower water level
+  Status: COMPLETE Daniel Sprint 3 2pts PO Priority 1: Task 001 Raise or lower water level
   
-  Status: Assigned Daniel Sprint 3 3pts PO Priority 1: Task 007 Remove one or more blocks at ground level
+  Status: COMPLETE Daniel Sprint 3 3pts PO Priority 1: Task 002 Remove one or more blocks at ground level
+## USER Story B
+  Status: COPMLETE Daniel Sprint 3 3pts P0 Priority 1: Task 003 Remove a group of blocks to generate a pool
   
-  Task 007 Remove a group of blocks to generate a pool
+  # Task 5
+## User Story A
+ Status: Assigned Daniel Sprint 3 8 pts P0 Priority 1: Task 001 Increase player movement speed
   

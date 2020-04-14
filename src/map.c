@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <string.h>
 #include "map.h"
 
 int hash_int(int key) {
@@ -28,7 +27,17 @@ void map_alloc(Map *map, int dx, int dy, int dz, int mask) {
     map->data = (MapEntry *)calloc(map->mask + 1, sizeof(MapEntry));
 }
 
+void map_alloc_w(MapW *map) {
+    map->mask = 0xfff;
+    map->size = 0;
+    map->data = (MapEntryW *)calloc(map->mask + 1, sizeof(MapEntryW));
+}
+
 void map_free(Map *map) {
+    free(map->data);
+}
+
+void map_free_w(MapW *map) {
     free(map->data);
 }
 
@@ -77,6 +86,38 @@ int map_set(Map *map, int x, int y, int z, int w) {
     return 0;
 }
 
+int map_set_w(MapW *map, int x, int y, int z, int w) {
+    unsigned int index = hash(x, y, z) & map->mask;
+    MapEntryW *entry = map->data + index;
+    int overwrite = 0;
+    while (!EMPTY_ENTRY_W(entry)) {
+        if (entry->x == x && entry->y == y && entry->z == z) {
+            overwrite = 1;
+            break;
+        }
+        index = (index + 1) & map->mask;
+        entry = map->data + index;
+    }
+    if (overwrite) {
+        if (entry->w != w) {
+            entry->w = w;
+            return 1;
+        }
+    }
+    else if (w) {
+        entry->x = x;
+        entry->y = y;
+        entry->z = z;
+        entry->w = w;
+        map->size++;
+        if (map->size * 2 > map->mask) {
+            map_grow_w(map);
+        }
+        return 1;
+    }
+    return 0;
+}
+
 int map_get(Map *map, int x, int y, int z) {
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
@@ -96,6 +137,20 @@ int map_get(Map *map, int x, int y, int z) {
     return 0;
 }
 
+
+int map_get_w(MapW *map, int x, int y, int z) {
+    unsigned int index = hash(x, y, z) & map->mask;
+    MapEntryW *entry = map->data + index;
+    while (!EMPTY_ENTRY_W(entry)) {
+        if (entry->x == x && entry->y == y && entry->z == z) {
+            return entry->w;
+        }
+        index = (index + 1) & map->mask;
+        entry = map->data + index;
+    }
+    return 0;
+}
+
 void map_grow(Map *map) {
     Map new_map;
     new_map.dx = map->dx;
@@ -107,6 +162,20 @@ void map_grow(Map *map) {
     MAP_FOR_EACH(map, ex, ey, ez, ew) {
         map_set(&new_map, ex, ey, ez, ew);
     } END_MAP_FOR_EACH;
+    free(map->data);
+    map->mask = new_map.mask;
+    map->size = new_map.size;
+    map->data = new_map.data;
+}
+
+void map_grow_w(MapW *map) {
+    MapW new_map;
+    new_map.mask = (map->mask << 1) | 1;
+    new_map.size = 0;
+    new_map.data = (MapEntryW *)calloc(new_map.mask + 1, sizeof(MapEntryW));
+    MAP_FOR_EACH_W(map, entry) {
+        map_set_w(&new_map, entry->x, entry->y, entry->z, entry->w);
+    } END_MAP_FOR_EACH_W;
     free(map->data);
     map->mask = new_map.mask;
     map->size = new_map.size;

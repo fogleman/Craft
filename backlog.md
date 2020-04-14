@@ -25,6 +25,13 @@ Status: COMPLETE Gavin Sprint 4  8pts PO Priority 1: Task 006 Demostrate crated 
  ## BUG FIXES
  Status: COMPLETE Gavin Sprint 5 Task 008 Remove q feature to quit which serves as a inconvenience when the X button does the same thing
  
+## User Story D
+ Status: ASSIGNED Gavin Sprint 5 Task 009 Look into auto run feature.
+ 
+ Status: ASSIGNED Gavin Sprint 5 Task 009 create auto run feature.
+ 
+ Status: ASSIGNED Gavin Sprint 5 Task 009 TEST auto run feature.
+ 
 # Task 2
 ## User Story A
   Status: COMPLETE Daniel Sprint 1 2pts PO Priority 1: Task 001 Create/Find water shader

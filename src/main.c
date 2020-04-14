@@ -1177,8 +1177,8 @@ void gen_chunk_buffer(Chunk *chunk) {
 void topographicHelper(){
     int y;
     int val;
-    FILE *inFile = fopen("data_file.txt", "r");
-    FILE *inFile = fopen(filename, "r");
+    char fileName[] = "data_file.txt";
+    FILE *inFile = fopen(fileName, "r");
     if (inFile == NULL){
         printf("\nFile does not exist.\n");
     }

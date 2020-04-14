@@ -1,4 +1,3 @@
-from mpl_toolkits import mplot3d
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -88,14 +87,17 @@ def normalize(image):
 ##
 def process_image(image_name):
 
-    if not image.endswith(".png"):
+    if not image_name.endswith(".png"):
         return print("File must be a .png")
 
-    pixel_arr = normalize(image)
-    with open("src/data_file.txt", 'w') as file:
+    pixel_arr = normalize(image_name)
+    with open("data_file.txt", 'w') as file:
         for x in range(pixel_arr.height):
             for y in range(pixel_arr.width):
                 file.write(str(pixel_arr.getval(x, y)) + '\n')
 
     file.close()
     return file
+
+
+process_image("heightdata.png")

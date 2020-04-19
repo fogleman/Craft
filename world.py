@@ -3,6 +3,7 @@
 
 from ctypes import CDLL, CFUNCTYPE, c_float, c_int, c_void_p
 from collections import OrderedDict
+import normalize
 
 dll = CDLL('./world')
 
@@ -15,7 +16,7 @@ def dll_create_world(p, q):
     result = {}
     def world_func(x, y, z, w, arg):
         result[(x, y, z)] = w
-    dll.create_world(p, q, WORLD_FUNC(world_func), None)
+    dll.create_world(p, q, WORLD_FUNC(world_func), None, None)
     return result
 
 dll.simplex2.restype = c_float

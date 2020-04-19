@@ -20,6 +20,7 @@
 #include "util.h"
 #include "world.h"
 
+
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
 #define WORKERS 4
@@ -155,6 +156,8 @@ typedef struct {
 
 static Model model;
 static Model *g = &model;
+
+int pixelArray[2000][2000];
 
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
@@ -1168,6 +1171,29 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
+/* \file main.c
+    \brief Ref : Req 1.0 Craft implementation shall create a terrain from a topographic image
+*/
+void topographicHelper(){
+    int y;
+    int val;
+    char fileName[] = "data_file.txt";
+    FILE *inFile = fopen(fileName, "r");
+    if (inFile == NULL){
+        printf("\nFile does not exist.\n");
+    }
+    else{
+        for (int x = 0; x < 2000; x++){
+            for (int z = 0; z < 2000; z++){
+                if(fscanf(inFile, "%d", &y)){
+                    pixelArray[x][z] = y;
+                }
+            }
+        }
+    }
+    fclose(inFile);
+}
+
 void map_set_func(int x, int y, int z, int w, void *arg) {
     Map *map = (Map *)arg;
     map_set(map, x, y, z, w);
@@ -1178,7 +1204,7 @@ void load_chunk(WorkerItem *item) {
     int q = item->q;
     Map *block_map = item->block_maps[1][1];
     Map *light_map = item->light_maps[1][1];
-    create_world(p, q, map_set_func, block_map);
+    create_world(p, q, map_set_func, pixelArray, block_map);
     db_load_blocks(block_map, p, q);
     db_load_lights(light_map, p, q);
 }
@@ -2589,6 +2615,8 @@ int main(int argc, char **argv) {
     srand(time(NULL));
     rand();
 
+    // Ref : Req 1.0 Craft implementation shall create a terrain from a topographic image
+    topographicHelper();
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
         return -1;

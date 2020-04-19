@@ -23,7 +23,7 @@ void create_world(int p, int q, world_func func, int pixelArray[][2000], void *a
             float g = simplex2(-x * 0.01, -z * 0.01, 2, 0.9, 2);
             int mh = g * 32 + 16;
             int h;
-            if(x > 0 && x < 2000 && z < 0 && z < 2000){
+            if(x > 0 && x < 2000 && z > 0 && z < 2000){
                 h = pixelArray[x][z];
             }
             else{

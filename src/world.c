@@ -34,12 +34,17 @@ void create_world(int p, int q, world_func func, int pixelArray[][2000], void *a
             // Ref : Req 2.0 At least three block types shall be generated in game.
             // Ref : Req 2.1 Generated terrain blocks over 80 blocks high shall be snow blocks
             // Ref : Req 2.2 Generated block types shall vary based on block height
+            int snow = 80;
             if (h <= t) {
                 h = t;
                 w = 2;
             }
             // sand and grass terrain
+
             for (int y = 0; y < h; y++) {
+                if(y > snow){
+                    w = 9;
+                }
                 func(x, y, z, w * flag, arg);
             }
             if (w == 1) {
@@ -80,7 +85,7 @@ void create_world(int p, int q, world_func func, int pixelArray[][2000], void *a
             }
             // clouds
             if (SHOW_CLOUDS) {
-                for (int y = 64; y < 72; y++) {
+                for (int y = 105; y < 113; y++) {
                     if (simplex3(
                         x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                     {

@@ -19,7 +19,7 @@
 #include "tinycthread.h"
 #include "util.h"
 #include "world.h"
-// test commit!
+
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
 #define WORKERS 4

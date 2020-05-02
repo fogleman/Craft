@@ -43,7 +43,9 @@
 static int spee = 5;
 static int jumpHeight = 8;
 static int jumpCount = 0;
+static int jumpSpeedCount = 0;
 static bool jumpCheck = false;
+static bool speedCheck = false;
 
 typedef struct {
     Map map;
@@ -2025,40 +2027,27 @@ void tree(Block *block) {
 }
 
 void parse_command(const char *buffer, int forward) {
-    char username[128] = {0};
-    char token[128] = {0};
-    char server_addr[MAX_ADDR_LENGTH];
-    int server_port = DEFAULT_PORT;
-    char filename[MAX_PATH_LENGTH];
-    int radius, count, xc, yc, zc;
     int amount;
-    int none;
-    if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
-        db_auth_set(username, token);
-        add_message("Successfully imported identity token!");
-        login();
-    }
-    else if (sscanf(buffer, "/setSpeed %d", &amount) == 1) {
+    if (sscanf(buffer, "/setSpeed %d", &amount) == 1) {
         spee = amount;
     }
     else if (sscanf(buffer, "/setJump %d", &amount) == 1) {
         jumpHeight = amount;
     }
-    else if (sscanf(buffer, "/jumpGame") == 0) {
-        if(jumpCheck == false) {
-            jumpCheck = true;
-        } else {
-            jumpCheck = false;
+    else if (sscanf(buffer, "/miniGame %d", &amount) == 1) {
+        if(amount == 0) {
+            if(jumpCheck == false) {
+                jumpCheck = true;
+            } else {
+                jumpCheck = false;
+            }
         }
-    }
-    else if (sscanf(buffer, "/view %d", &radius) == 1) {
-        if (radius >= 1 && radius <= 24) {
-            g->create_radius = radius;
-            g->render_radius = radius;
-            g->delete_radius = radius + 4;
-        }
-        else {
-            add_message("Viewing distance must be between 1 and 24.");
+        else if(amount == 1) {
+            if(speedCheck == false) {
+                speedCheck = true;
+            } else {
+                speedCheck = false;
+            }
         }
     }
 }
@@ -2372,20 +2361,23 @@ void handle_movement(double dt) {
                 if(jumpCheck == true) {
                     jumpHeight++;
                 }
+                if(speedCheck == true) {
+                    spee++;
+                }
                 dy = jumpHeight;
             }
         }
     }
-    int spe = spee;
+    
     if(glfwGetKey(g->window, CRAFT_KEY_SPRINT)) {
        if(g->flying) {
-          spe = spee * 4;
+          spee = spee * 4;
        }
        else {
-         if(glfwGetKey(g->window, CRAFT_KEY_FORWARD)) spe = spee * 4;
+         if(glfwGetKey(g->window, CRAFT_KEY_FORWARD)) spee = spee * 4;
        }
     }
-    float speed = g->flying ? spe : spe;
+    float speed = g->flying ? spee : spee;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

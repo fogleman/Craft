@@ -17,7 +17,7 @@
 // rendering options
 #define SHOW_LIGHTS 1
 #define SHOW_PLANTS 1
-#define SHOW_CLOUDS 1
+#define SHOW_CLOUDS 3
 #define SHOW_TREES 1
 #define SHOW_ITEM 1
 #define SHOW_CROSSHAIRS 1

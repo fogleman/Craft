@@ -11,7 +11,7 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
-#define DAY_LENGTH 20
+#define DAY_LENGTH 900
 #define INVERT_MOUSE 0
 
 // rendering options

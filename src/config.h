@@ -27,8 +27,8 @@
 #define SHOW_PLAYER_NAMES 1
 
 // key bindings
-#define CRAFT_KEY_FORWARD 'N'
-#define CRAFT_KEY_BACKWARD 'M'
+#define CRAFT_KEY_FORWARD 'W'
+#define CRAFT_KEY_BACKWARD 'S'
 #define CRAFT_KEY_LEFT 'D'
 #define CRAFT_KEY_RIGHT 'A'
 #define CRAFT_KEY_JUMP GLFW_KEY_SPACE

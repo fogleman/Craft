@@ -215,3 +215,5 @@ http://0fps.wordpress.com/2013/07/03/ambient-occlusion-for-minecraft-like-worlds
 * lodepng is used for loading PNG textures.
 * sqlite3 is used for saving the blocks added / removed by the user.
 * tinycthread is used for cross-platform threading.
+
+[![Run on Repl.it](https://repl.it/badge/github/fogleman/Craft)](https://repl.it/github/fogleman/Craft)

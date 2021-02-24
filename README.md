@@ -4,7 +4,7 @@ Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C 
 
 http://www.michaelfogleman.com/craft/
 
-![](http://www.michaelfogleman.com/static/img/craft1.png)
+![Screenshot](https://i.imgur.com/SH7wcas.png)
 
 ### Features
 
@@ -36,7 +36,7 @@ the installation:
 
 #### Linux (Ubuntu)
 
-    sudo apt-get install cmake libglew-dev xorg-dev
+    sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
     sudo apt-get build-dep glfw
 
 #### Windows
@@ -65,19 +65,19 @@ terminal.
 
 ### Multiplayer
 
-Register for an account!
-
-https://craft.michaelfogleman.com/
+After many years, craft.michaelfogleman.com has been taken down. See the [Server](#server) section for info on self-hosting.
 
 #### Client
 
 You can connect to a server with command line arguments...
 
-    ./craft michaelfogleman.com
+```bash
+./craft [HOST [PORT]]
+```
 
 Or, with the "/online" command in the game itself.
-
-    /online michaelfogleman.com
+    
+    /online [HOST [PORT]]
 
 #### Server
 
@@ -85,8 +85,10 @@ You can run your own server or connect to mine. The server is written in Python
 but requires a compiled DLL so it can perform the terrain generation just like
 the client.
 
-    gcc -std=c99 -O3 -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
-    python server.py [HOST [PORT]]
+```bash
+gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
+python server.py [HOST [PORT]]
+```
 
 ### Controls
 
@@ -94,6 +96,7 @@ the client.
 - Space to jump.
 - Left Click to destroy a block.
 - Right Click or Cmd + Left Click to create a block.
+- Ctrl + Right Click to toggle a block as a light source.
 - 1-9 to select the block type to create.
 - E to cycle through the block types.
 - Tab to toggle between walking and flying.
@@ -102,6 +105,9 @@ the client.
 - F to show the scene in orthographic mode.
 - O to observe players in the main view.
 - P to observe players in the picture-in-picture view.
+- T to type text into chat.
+- Forward slash (/) to enter a command.
+- Backquote (`) to write text on any block (signs).
 - Arrow keys emulate mouse movement.
 - Enter emulates mouse click.
 
@@ -145,7 +151,7 @@ Teleport back to the spawn point.
 
 ### Screenshot
 
-![](http://www.michaelfogleman.com/static/img/craft3.png)
+![Screenshot](https://i.imgur.com/foYz3aN.png)
 
 ### Implementation Details
 

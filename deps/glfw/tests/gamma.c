@@ -24,7 +24,7 @@
 //========================================================================
 //
 // This program is used to test the gamma correction functionality for
-// both fullscreen and windowed mode windows
+// both full screen and windowed mode windows
 //
 //========================================================================
 
@@ -128,6 +128,12 @@ int main(int argc, char** argv)
     if (monitor)
     {
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+
         width = mode->width;
         height = mode->height;
     }

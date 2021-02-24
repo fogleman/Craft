@@ -2,10 +2,129 @@
 
 @page news New features
 
-@tableofcontents
+@section news_31 New features in 3.1
+
+These are the release highlights.  For a full list of changes see the
+[version history](http://www.glfw.org/changelog.html).
 
 
-@section news_30 New features in version 3.0
+@subsection news_31_cursor Custom mouse cursor images
+
+GLFW now supports creating and setting both custom cursor images and standard
+cursor shapes.  They are created with @ref glfwCreateCursor or @ref
+glfwCreateStandardCursor, set with @ref glfwSetCursor and destroyed with @ref
+glfwDestroyCursor.
+
+@see @ref cursor_object
+
+
+@subsection news_31_drop Path drop event
+
+GLFW now provides a callback for receiving the paths of files and directories
+dropped onto GLFW windows.  The callback is set with @ref glfwSetDropCallback.
+
+@see @ref path_drop
+
+
+@subsection news_31_emptyevent Main thread wake-up
+
+GLFW now provides the @ref glfwPostEmptyEvent function for posting an empty
+event from another thread to the main thread event queue, causing @ref
+glfwWaitEvents to return.
+
+@see @ref events
+
+
+@subsection news_31_framesize Window frame size query
+
+GLFW now supports querying the size, on each side, of the frame around the
+client area of a window, with @ref glfwGetWindowFrameSize.
+
+@see [Window size](@ref window_size)
+
+
+@subsection news_31_autoiconify Simultaneous multi-monitor rendering
+
+GLFW now supports disabling auto-iconification of full screen windows with
+the [GLFW_AUTO_ICONIFY](@ref window_hints_wnd) window hint.  This is intended
+for people building multi-monitor installations, where you need windows to stay
+in full screen despite losing input focus.
+
+
+@subsection news_31_floating Floating windows
+
+GLFW now supports floating windows, also called topmost or always on top, for
+easier debugging with the [GLFW_FLOATING](@ref window_hints_wnd) window hint.
+
+
+@subsection news_31_focused Initially unfocused windows
+
+GLFW now supports preventing a windowed mode window from gaining input focus on
+creation, with the [GLFW_FOCUSED](@ref window_hints_wnd) window hint.
+
+
+@subsection news_31_direct Direct access for window attributes and cursor position
+
+GLFW now queries the window input focus, visibility and iconification attributes
+and the cursor position directly instead of returning cached data.
+
+
+@subsection news_31_libovr Better interoperability with Oculus Rift
+
+GLFW now provides native access functions for the OS level handles corresponding
+to monitor objects, as well as a [brief guide](@ref rift).  It is also regularly
+tested for compatibility with the latest version of LibOVR (0.4.4 on release).
+
+
+@subsection news_31_charmods Character with modifiers callback
+
+GLFW now provides a callback for character events with modifier key bits.  The
+callback is set with @ref glfwSetCharModsCallback.  Unlike the regular character
+callback, this will report character events that will not result in a character
+being input, for example if the Control key is held down.
+
+@see @ref input_char
+
+
+@subsection news_31_single Single buffered framebuffers
+
+GLFW now supports the creation of single buffered windows, with the
+[GLFW_DOUBLEBUFFER](@ref window_hints_fb) window hint.
+
+
+@subsection news_31_glext Macro for including extension header
+
+GLFW now includes the extension header appropriate for the chosen OpenGL or
+OpenGL ES header when [GLFW_INCLUDE_GLEXT](@ref build_macros) is defined.  GLFW
+does not provide these headers.  They must be provided by your development
+environment or your OpenGL or OpenGL ES SDK.
+
+
+@subsection news_31_release Context release behaviors
+
+GLFW now supports controlling whether the pipeline is flushed when a context is
+made non-current, with the
+[GLFW_CONTEXT_RELEASE_BEHAVIOR](@ref window_hints_ctx) window hint, provided the
+machine supports the `GL_KHR_context_flush_control` extension.
+
+
+@subsection news_31_wayland (Experimental) Wayland support
+
+GLFW now has an _experimental_ Wayland display protocol backend that can be
+selected on Linux with a CMake option.
+
+
+@subsection news_31_mir (Experimental) Mir support
+
+GLFW now has an _experimental_ Mir display server backend that can be selected
+on Linux with a CMake option.
+
+
+@section news_30 New features in 3.0
+
+These are the release highlights.  For a full list of changes see the
+[version history](http://www.glfw.org/changelog.html).
+
 
 @subsection news_30_cmake CMake build system
 
@@ -18,7 +137,7 @@ For more information on how to use CMake, see the
 [CMake manual](http://cmake.org/cmake/help/documentation.html).
 
 
-@subsection new_30_multiwnd Multi-window support
+@subsection news_30_multiwnd Multi-window support
 
 GLFW now supports the creation of multiple windows, each with their own OpenGL
 or OpenGL ES context, and all window functions now take a window handle.  Event
@@ -62,8 +181,8 @@ glfwSetGamma, which generates a ramp from a gamma value and then sets it.
 
 GLFW now supports the creation of OpenGL ES contexts, by setting the
 `GLFW_CLIENT_API` window hint to `GLFW_OPENGL_ES_API`, where creation of such
-contexts are supported.  Note that GLFW *does not implement* OpenGL ES, so your
-driver must provide support in a way usable by GLFW.  Modern nVidia and Intel
+contexts are supported.  Note that GLFW _does not implement_ OpenGL ES, so your
+driver must provide support in a way usable by GLFW.  Modern Nvidia and Intel
 drivers support creation of OpenGL ES context using the GLX and WGL APIs, while
 AMD provides an EGL implementation instead.
 
@@ -79,8 +198,8 @@ through CMake options.
 GLFW now supports high-DPI monitors on both Windows and OS X, giving windows full
 resolution framebuffers where other UI elements are scaled up.  To achieve this,
 @ref glfwGetFramebufferSize and @ref glfwSetFramebufferSizeCallback have been
-added.  These work with pixels, while the rest of the GLFW API work with screen
-coordinates.
+added.  These work with pixels, while the rest of the GLFW API works with screen
+coordinates.  This is important as OpenGL uses pixels, not screen coordinates.
 
 
 @subsection news_30_error Error callback

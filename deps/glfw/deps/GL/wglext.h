@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /*
-** Copyright (c) 2013 The Khronos Group Inc.
+** Copyright (c) 2013-2014 The Khronos Group Inc.
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a
 ** copy of this software and/or associated documentation files (the
@@ -33,7 +33,7 @@ extern "C" {
 ** used to make the header, and the header can be found at
 **   http://www.opengl.org/registry/
 **
-** Khronos $Revision$ on $Date$
+** Khronos $Revision: 27684 $ on $Date: 2014-08-11 01:21:35 -0700 (Mon, 11 Aug 2014) $
 */
 
 #if defined(_WIN32) && !defined(APIENTRY) && !defined(__CYGWIN__) && !defined(__SCITECH_SNAP__)
@@ -41,7 +41,7 @@ extern "C" {
 #include <windows.h>
 #endif
 
-#define WGL_WGLEXT_VERSION 20130710
+#define WGL_WGLEXT_VERSION 20140810
 
 /* Generated C header for:
  * API: wgl
@@ -69,6 +69,13 @@ BOOL WINAPI wglSaveBufferRegionARB (HANDLE hRegion, int x, int y, int width, int
 BOOL WINAPI wglRestoreBufferRegionARB (HANDLE hRegion, int x, int y, int width, int height, int xSrc, int ySrc);
 #endif
 #endif /* WGL_ARB_buffer_region */
+
+#ifndef WGL_ARB_context_flush_control
+#define WGL_ARB_context_flush_control 1
+#define WGL_CONTEXT_RELEASE_BEHAVIOR_ARB  0x2097
+#define WGL_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB 0
+#define WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB 0x2098
+#endif /* WGL_ARB_context_flush_control */
 
 #ifndef WGL_ARB_create_context
 #define WGL_ARB_create_context 1
@@ -644,6 +651,14 @@ typedef BOOL (WINAPI * PFNWGLCOPYIMAGESUBDATANVPROC) (HGLRC hSrcRC, GLuint srcNa
 BOOL WINAPI wglCopyImageSubDataNV (HGLRC hSrcRC, GLuint srcName, GLenum srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, HGLRC hDstRC, GLuint dstName, GLenum dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei width, GLsizei height, GLsizei depth);
 #endif
 #endif /* WGL_NV_copy_image */
+
+#ifndef WGL_NV_delay_before_swap
+#define WGL_NV_delay_before_swap 1
+typedef BOOL (WINAPI * PFNWGLDELAYBEFORESWAPNVPROC) (HDC hDC, GLfloat seconds);
+#ifdef WGL_WGLEXT_PROTOTYPES
+BOOL WINAPI wglDelayBeforeSwapNV (HDC hDC, GLfloat seconds);
+#endif
+#endif /* WGL_NV_delay_before_swap */
 
 #ifndef WGL_NV_float_buffer
 #define WGL_NV_float_buffer 1

@@ -1858,6 +1858,29 @@ void paste() {
     }
 }
 
+void array(Block *b1, Block *b2, int xc, int yc, int zc) {
+    if (b1->w != b2->w) {
+        return;
+    }
+    int w = b1->w;
+    int dx = b2->x - b1->x;
+    int dy = b2->y - b1->y;
+    int dz = b2->z - b1->z;
+    xc = dx ? xc : 1;
+    yc = dy ? yc : 1;
+    zc = dz ? zc : 1;
+    for (int i = 0; i < xc; i++) {
+        int x = b1->x + dx * i;
+        for (int j = 0; j < yc; j++) {
+            int y = b1->y + dy * j;
+            for (int k = 0; k < zc; k++) {
+                int z = b1->z + dz * k;
+                builder_block(x, y, z, w);
+            }
+        }
+    }
+}
+
 void cube(Block *b1, Block *b2, int fill) {
     if (b1->w != b2->w) {
         return;
@@ -2001,7 +2024,7 @@ void parse_command(const char *buffer, int forward) {
     char server_addr[MAX_ADDR_LENGTH];
     int server_port = DEFAULT_PORT;
     char filename[MAX_PATH_LENGTH];
-    int radius;
+    int radius, count, xc, yc, zc;
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
@@ -2057,6 +2080,12 @@ void parse_command(const char *buffer, int forward) {
     }
     else if (strcmp(buffer, "/tree") == 0) {
         tree(&g->block0);
+    }
+    else if (sscanf(buffer, "/array %d %d %d", &xc, &yc, &zc) == 3) {
+        array(&g->block1, &g->block0, xc, yc, zc);
+    }
+    else if (sscanf(buffer, "/array %d", &count) == 1) {
+        array(&g->block1, &g->block0, count, count, count);
     }
     else if (strcmp(buffer, "/fcube") == 0) {
         cube(&g->block0, &g->block1, 1);

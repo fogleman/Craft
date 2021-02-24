@@ -64,49 +64,53 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 static void draw_joystick(Joystick* j, int x, int y, int width, int height)
 {
     int i;
-    int axis_width, axis_height;
-    int button_width, button_height;
+    const int axis_height = 3 * height / 4;
+    const int button_height = height / 4;
 
-    axis_width = width / j->axis_count;
-    axis_height = 3 * height / 4;
-
-    button_width = width / j->button_count;
-    button_height = height / 4;
-
-    for (i = 0;  i < j->axis_count;  i++)
+    if (j->axis_count)
     {
-        float value = j->axes[i] / 2.f + 0.5f;
+        const int axis_width = width / j->axis_count;
 
-        glColor3f(0.3f, 0.3f, 0.3f);
-        glRecti(x + i * axis_width,
-                y,
-                x + (i + 1) * axis_width,
-                y + axis_height);
+        for (i = 0;  i < j->axis_count;  i++)
+        {
+            float value = j->axes[i] / 2.f + 0.5f;
 
-        glColor3f(1.f, 1.f, 1.f);
-        glRecti(x + i * axis_width,
-                y + (int) (value * (axis_height - 5)),
-                x + (i + 1) * axis_width,
-                y + 5 + (int) (value * (axis_height - 5)));
+            glColor3f(0.3f, 0.3f, 0.3f);
+            glRecti(x + i * axis_width,
+                    y,
+                    x + (i + 1) * axis_width,
+                    y + axis_height);
+
+            glColor3f(1.f, 1.f, 1.f);
+            glRecti(x + i * axis_width,
+                    y + (int) (value * (axis_height - 5)),
+                    x + (i + 1) * axis_width,
+                    y + 5 + (int) (value * (axis_height - 5)));
+        }
     }
 
-    for (i = 0;  i < j->button_count;  i++)
+    if (j->button_count)
     {
-        if (j->buttons[i])
-            glColor3f(1.f, 1.f, 1.f);
-        else
-            glColor3f(0.3f, 0.3f, 0.3f);
+        const int button_width = width / j->button_count;
 
-        glRecti(x + i * button_width,
-                y + axis_height,
-                x + (i + 1) * button_width,
-                y + axis_height + button_height);
+        for (i = 0;  i < j->button_count;  i++)
+        {
+            if (j->buttons[i])
+                glColor3f(1.f, 1.f, 1.f);
+            else
+                glColor3f(0.3f, 0.3f, 0.3f);
+
+            glRecti(x + i * button_width,
+                    y + axis_height,
+                    x + (i + 1) * button_width,
+                    y + axis_height + button_height);
+        }
     }
 }
 
 static void draw_joysticks(GLFWwindow* window)
 {
-    int i, width, height;
+    int i, width, height, offset = 0;
 
     glfwGetFramebufferSize(window, &width, &height);
 
@@ -122,8 +126,9 @@ static void draw_joysticks(GLFWwindow* window)
         if (j->present)
         {
             draw_joystick(j,
-                          0, i * height / joystick_count,
+                          0, offset * height / joystick_count,
                           width, height / joystick_count);
+            offset++;
         }
     }
 }

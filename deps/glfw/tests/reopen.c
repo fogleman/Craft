@@ -26,7 +26,7 @@
 // This test came about as the result of bug #1262773
 //
 // It closes and re-opens the GLFW window every five seconds, alternating
-// between windowed and fullscreen mode
+// between windowed and full screen mode
 //
 // It also times and logs opening and closing actions and attempts to separate
 // user initiated window closing from its own
@@ -122,16 +122,29 @@ int main(int argc, char** argv)
 
     for (;;)
     {
+        int width, height;
         GLFWmonitor* monitor = NULL;
 
-        if (count & 1)
+        if (count % 2 == 0)
         {
             int monitorCount;
             GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
             monitor = monitors[rand() % monitorCount];
         }
 
-        window = open_window(640, 480, monitor);
+        if (monitor)
+        {
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+            width = mode->width;
+            height = mode->height;
+        }
+        else
+        {
+            width = 640;
+            height = 480;
+        }
+
+        window = open_window(width, height, monitor);
         if (!window)
         {
             glfwTerminate();

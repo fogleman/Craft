@@ -65,19 +65,19 @@ terminal.
 
 ### Multiplayer
 
-Register for an account!
-
-https://craft.michaelfogleman.com/
+After many years, craft.michaelfogleman.com has been taken down. See the [Server](#server) section for info on self-hosting.
 
 #### Client
 
 You can connect to a server with command line arguments...
 
-    ./craft craft.michaelfogleman.com
+```bash
+./craft [HOST [PORT]]
+```
 
 Or, with the "/online" command in the game itself.
-
-    /online craft.michaelfogleman.com
+    
+    /online [HOST [PORT]]
 
 #### Server
 
@@ -85,8 +85,10 @@ You can run your own server or connect to mine. The server is written in Python
 but requires a compiled DLL so it can perform the terrain generation just like
 the client.
 
-    gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
-    python server.py [HOST [PORT]]
+```bash
+gcc -std=c99 -O3 -fPIC -shared -o world -I src -I deps/noise deps/noise/noise.c src/world.c
+python server.py [HOST [PORT]]
+```
 
 ### Controls
 

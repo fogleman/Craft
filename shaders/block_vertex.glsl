@@ -1,20 +1,24 @@
-#version 120
+#version 420
 
-uniform mat4 matrix;
-uniform vec3 camera;
-uniform float fog_distance;
-uniform int ortho;
+layout (std140, binding = 2) uniform BlockUbo {
+  mat4 matrix;
+  vec3 camera;
+  float timer;
+  float daylight;
+  float fog_distance;
+  bool ortho;
+};
 
-attribute vec4 position;
-attribute vec3 normal;
-attribute vec4 uv;
+layout (location = 0) in vec4 position;
+layout (location = 2) in vec4 uv;
+layout (location = 1) in vec3 normal;
 
-varying vec2 fragment_uv;
-varying float fragment_ao;
-varying float fragment_light;
-varying float fog_factor;
-varying float fog_height;
-varying float diffuse;
+layout (location = 0) out vec2 fragment_uv;
+layout (location = 1) out float fragment_ao;
+layout (location = 2) out float fragment_light;
+layout (location = 3) out float fog_factor;
+layout (location = 4) out float fog_height;
+layout (location = 5) out float diffuse;
 
 const float pi = 3.14159265;
 const vec3 light_direction = normalize(vec3(-1.0, 1.0, -1.0));
@@ -25,7 +29,7 @@ void main() {
     fragment_ao = 0.3 + (1.0 - uv.z) * 0.7;
     fragment_light = uv.w;
     diffuse = max(0.0, dot(normal, light_direction));
-    if (bool(ortho)) {
+    if (ortho) {
         fog_factor = 0.0;
         fog_height = 0.0;
     }

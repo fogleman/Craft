@@ -1,19 +1,17 @@
-#version 120
+#version 420
 
-uniform sampler2D sampler;
-uniform bool is_sign;
+layout(binding = 0) uniform sampler2D text_sampler;
 
-varying vec2 fragment_uv;
+layout (std140, binding = 1) uniform MatUbo {
+  mat4 matrix;
+};
+
+layout (location = 0) in vec2 fragment_uv;
+
+layout (location = 0) out vec4 frag_color;
 
 void main() {
-    vec4 color = texture2D(sampler, fragment_uv);
-    if (is_sign) {
-        if (color == vec4(1.0)) {
-            discard;
-        }
-    }
-    else {
-        color.a = max(color.a, 0.4);
-    }
-    gl_FragColor = color;
+    vec4 color = texture(text_sampler, fragment_uv);
+    color.a = max(color.a, 0.4);
+    frag_color = color;
 }

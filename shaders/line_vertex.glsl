@@ -1,8 +1,10 @@
-#version 120
+#version 420
 
-uniform mat4 matrix;
+layout (std140, binding = 0) uniform LineUbo {
+  mat4 matrix;
+};
 
-attribute vec4 position;
+layout (location = 0) in vec4 position;
 
 void main() {
     gl_Position = matrix * position;

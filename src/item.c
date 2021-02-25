@@ -59,6 +59,64 @@ const int items[] = {
     COLOR_31
 };
 
+const char* item_names[] = {
+    // items the user can build
+    "Grass",
+    "Sand",
+    "Stone",
+    "Brick",
+    "Wood",
+    "Cement",
+    "Dirt",
+    "Plank",
+    "Snow",
+    "Glass",
+    "Cobble",
+    "Light Stone",
+    "Dark Stone",
+    "Chest",
+    "Leaves",
+    "Tall Grass",
+    "Yellow Flower",
+    "Red Flower",
+    "Purple Flower",
+    "Sun Flower",
+    "White Flower",
+    "Blue Flower",
+	"Bright Yellow",
+	"Light Green",
+	"Bright Green",
+	"Teal",
+	"Forest Green",
+	"Dark Brown",
+	"Blue Black",
+	"Navy Blue",
+	"Light Gray",
+	"Dark Gray",
+	"Purple",
+	"Red",
+	"Coral",
+	"Pink",
+	"Olive Green",
+	"Light Brown",
+	"Black",
+	"Indigo",
+	"Plum",
+	"Deep Brown",
+	"Light Brown",
+	"Orange",
+	"Tan",
+	"Beige",
+	"Deep Blue",
+	"Bright Blue",
+	"Sky Blue",
+	"Turquoise",
+	"Ice Blue",
+	"White",
+	"Blue Gray",
+	"Silver"
+};
+
 const int item_count = sizeof(items) / sizeof(int);
 
 const int blocks[256][6] = {
@@ -139,6 +197,49 @@ const int plants[256] = {
     52, // 21 - sun flower
     53, // 22 - white flower
     54, // 23 - blue flower
+};
+
+const char *compassNav[] = {
+    "    N    ",
+    "         ",
+    "W   +   E",
+    "         ",
+    "    S    ",
+    "        E",
+    "N        ",
+    "    +    ",
+    "        S",
+    "W        ",
+    "    E    ",
+    "         ",
+    "N   +   S",
+    "         ",
+    "    W    ",
+    "        S",
+    "E        ",
+    "    +    ",
+    "        W",
+    "N        ",
+    "    S    ",
+    "         ",
+    "E   +   W",
+    "         ",
+    "    N    ",
+    "        W",
+    "S        ",
+    "    +    ",
+    "        N",
+    "E        ",
+    "    W    ",
+    "         ",
+    "S   +   N",
+    "         ",
+    "    E    ",
+    "        N",
+    "W        ",
+    "    +    ",
+    "        E",
+    "S        "
 };
 
 int is_plant(int w) {

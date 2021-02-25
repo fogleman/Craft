@@ -62,6 +62,8 @@ extern const int items[];
 extern const int item_count;
 extern const int blocks[256][6];
 extern const int plants[256];
+extern const char* item_names[];
+extern const char* compassNav[];
 
 int is_plant(int w);
 int is_obstacle(int w);

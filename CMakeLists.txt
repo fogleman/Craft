@@ -46,4 +46,5 @@ endif()
 if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+    SET_TARGET_PROPERTIES(craft PROPERTIES LINK_FLAGS "craft.res -mwindows")
 endif()

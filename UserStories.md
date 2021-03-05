@@ -45,4 +45,4 @@
 1. Generate branches for repository - 1
 ### 6. As a dev, I want a document that tracks our velocity so that we can measure our progress.
 1. Generate SprintTracker.md - 1
-2. Add it to github
+2. Add it to github - 1

@@ -1,6 +1,9 @@
 # This file allows you to programmatically create blocks in Craft.
 # Please use this wisely. Test on your own server first. Do not abuse it.
 
+from builtins import zip
+from builtins import range
+from builtins import object
 import requests
 import socket
 import sqlite3

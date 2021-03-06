@@ -1,6 +1,7 @@
 # gcc -std=c99 -O3 -shared -o world \
 #   -I src -I deps/noise deps/noise/noise.c src/world.c
 
+from builtins import object
 from ctypes import CDLL, CFUNCTYPE, c_float, c_int, c_void_p
 from collections import OrderedDict
 

@@ -39,6 +39,11 @@ the installation:
     sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
     sudo apt-get build-dep glfw
 
+#### Linux (Fedora)
+
+    sudo dnf install cmake glew-devel xorg-x11-proto-devel libcurl-devel openssl-devel
+    sudo dnf builddep glfw
+
 #### Windows
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)

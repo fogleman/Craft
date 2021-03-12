@@ -25,6 +25,11 @@
 //
 //========================================================================
 
+#define _GNU_SOURCE
+#ifdef __GNUC__
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "internal.h"
 
 #if defined(__linux__)
@@ -230,14 +235,23 @@ int _glfwInitJoysticks(void)
 
         while ((entry = readdir(dir)))
         {
-            char path[20];
+            char* path = NULL;
             regmatch_t match;
 
             if (regexec(&_glfw.linux_js.regex, entry->d_name, 1, &match, 0) != 0)
                 continue;
 
-            snprintf(path, sizeof(path), "%s/%s", dirname, entry->d_name);
+            if (asprintf(&path, "%s/%s", dirname, entry->d_name) < 0)
+            {
+                _glfwInputError(GLFW_PLATFORM_ERROR,
+                                "Linux: Failed to construct device path: %s",
+                                strerror(errno));
+                continue;
+
+            }
+
             openJoystickDevice(path);
+            free(path);
         }
 
         closedir(dir);

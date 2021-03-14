@@ -19,9 +19,9 @@
     1. Create Snow Block Texture - 2
     2. Add Snow Block Texture to Bitmap - 2
     3. Add Snow Block - 3
-### 4. As a player, I want the world to endlessly generate so that I can explore forever.\
-1. Find where world generation happens in source files - unpointed
-2. Figure out how world is generated in craft - unpointed
+### 4. As a player, I want the world to endlessly generate so that I can explore forever.
+1. Find where world generation happens in source files - 8
+2. Figure out how world is generated in craft - 8
 ### 5. As a player, I want TNT so that I can blow things up.
 1. Add TNT Block - 7
     1. Add the TNT Block - 3
@@ -32,12 +32,18 @@
 ### 1. As a dev, I want our tasks up on a kanban board so that they are easier to assign and visualize. <br>
 1. ~~Add tasks to the kanban board - 1~~
 ### 2. As a dev, I want us to use Doxygen or some other documentation generating software so that we can have fancy .htmls that track our design.
-1. Research Doxygen and Alternatives - 5
-2. Get Doxygen up and running - unpointed
-3. Decide on Doxygen standards between the two of us - unpointed
+1. ~~Research Doxygen and Alternatives - 5~~
+2. ~~Get Doxygen up and running - 2~~
+3. Decide on Doxygen standards between the two of us - 2
+4. Figure out what can be added to .gitignore. - 3
 ### 3. As a dev, I want pertinent documents up on github so that the team always has the most current version to look to for reference.
 1. Look into using wiki to store our documents - 2
 2. ~~Generate a UserStories markdown file for github - 1~~
 ### 4. As a dev, I want to learn more about OpenGL so that I feel confident adding new textures and effects to Craft.
 1. Alex Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5
 2. Michael Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5
+### 5. As a dev, I want a solid branching strategy for our repository so that our version control is stable and effective.
+1. Generate branches for repository - 1
+### 6. As a dev, I want a document that tracks our velocity so that we can measure our progress.
+1. Generate SprintTracker.md - 1
+2. Add it to github - 1

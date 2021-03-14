@@ -40,7 +40,8 @@
 1. Look into using wiki to store our documents - 2
 2. ~~Generate a UserStories markdown file for github - 1~~
 ### 4. As a dev, I want to learn more about OpenGL so that I feel confident adding new textures and effects to Craft.
-1. Watch [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5
+1. Alex Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5
+2. Michael Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5
 ### 5. As a dev, I want a solid branching strategy for our repository so that our version control is stable and effective.
 1. Generate branches for repository - 1
 ### 6. As a dev, I want a document that tracks our velocity so that we can measure our progress.

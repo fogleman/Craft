@@ -2137,11 +2137,15 @@ void on_light() {
     }
 }
 
+// Destroy Block
 void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
     int hw = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, &hx, &hy, &hz);
     if (hy > 0 && hy < 256 && is_destructable(hw)) {
+        if (hw == TNT) {
+            explode(hx, hy, hz);
+        }
         set_block(hx, hy, hz, 0);
         record_block(hx, hy, hz, 0);
         if (is_plant(get_block(hx, hy + 1, hz))) {
@@ -2150,6 +2154,27 @@ void on_left_click() {
     }
 }
 
+// Destroy Blocks in 3 x 3 x 3 cube.
+void explode(int x, int y, int z) {
+    x = x - 1;
+    y = y - 1;
+    z = z - 1;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                destroyBlock(x + i, y + j, z + k);
+            }
+        }
+    }
+}
+
+// Destroy block at given x, y, z.
+void destroyBlock(int x, int y, int z) {
+    set_block(x, y, z, 0);
+    record_block(x, y, z, 0);
+}
+
+// Add block
 void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;

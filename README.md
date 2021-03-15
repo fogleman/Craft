@@ -18,11 +18,18 @@ http://www.michaelfogleman.com/craft/
 
 ### Download
 
+## macOS / Windows
 Mac and Windows binaries are available on the website.
 
 http://www.michaelfogleman.com/craft/
 
 See below to run from source.
+
+## Arch Linux / Manjaro
+An AUR package is available. You can install it with `aurman` (or `yay`, or whatever AUR helper you prefer):
+```
+aurman -S craft-git
+```
 
 ### Install Dependencies
 

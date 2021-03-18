@@ -34,8 +34,8 @@
 ### 2. As a dev, I want us to use Doxygen or some other documentation generating software so that we can have fancy .htmls that track our design.
 1. ~~Research Doxygen and Alternatives - 5~~
 2. ~~Get Doxygen up and running - 2~~
-3. Decide on Doxygen standards between the two of us - 2
-4. Figure out what can be added to .gitignore. - 3
+3. ~~Decide on Doxygen standards between the two of us - 2~~
+4. ~~Figure out what can be added to .gitignore. - 3~~
 ### 3. As a dev, I want pertinent documents up on github so that the team always has the most current version to look to for reference.
 1. Look into using wiki to store our documents - 2
 2. ~~Generate a UserStories markdown file for github - 1~~

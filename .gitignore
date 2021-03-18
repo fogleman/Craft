@@ -21,3 +21,5 @@ log.txt
 deps/*
 /html/*
 html/*
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake

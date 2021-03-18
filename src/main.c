@@ -2585,16 +2585,21 @@ void reset_model() {
 
 int main(int argc, char **argv) {
     // INITIALIZATION //
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0) {
+        puts("curl_global_init returns error (non-zero)");
+        return -1;
+    }
     srand(time(NULL));
     rand();
 
     // WINDOW INITIALIZATION //
     if (!glfwInit()) {
+        puts("glfwInit returns error");
         return -1;
     }
     create_window();
     if (!g->window) {
+        puts("window not created");
         glfwTerminate();
         return -1;
     }
@@ -2608,6 +2613,7 @@ int main(int argc, char **argv) {
     glfwSetScrollCallback(g->window, on_scroll);
 
     if (glewInit() != GLEW_OK) {
+        puts("glewInit returns error");
         return -1;
     }
 

@@ -2,9 +2,6 @@
 
 ## Sprint 1 (2/19/21 - 3/5/21)
 ### Velocity: 9
-New User Stories:  
-DS 5  
-DS 6  
   
 Completed Tasks  
 DS 2.1 - 5  

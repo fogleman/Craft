@@ -32,9 +32,9 @@
 2. Figure out how world is generated in craft - 8
 ### 5. As a player, I want TNT so that I can blow things up.
 1. Add TNT Block
-    1. Add the TNT Block - 3
-    2. Effect: Destroy Blocks in Radius - 2
-    3. Trigger: Right-Click TNT Block - 2
+    1. ~~Add the TNT Block - 3~~
+    2. ~~Effect: Destroy Blocks in Radius - 2~~
+    3. ~~Trigger: Right-Click TNT Block - 2~~
 2. Refined TNT Effects
     1. Chain Trigger: TNT explodes other TNT - 3
     2. Graphics: Add an Explosion effect - 5

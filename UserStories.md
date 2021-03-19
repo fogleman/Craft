@@ -2,7 +2,7 @@
 
 ## US - User Stories
 ### 1. As a player, I want the clouds to move so that the environment is more immersive.
-1. Dynamic Clouds - 19
+1. Dynamic Clouds
     1. ~~Add Cloud Block - 3~~
     2. Add Cloud Movement - 3
     3. ~~Dynamic Cloud Shape Generation - 5~~ (Already implemented)
@@ -11,7 +11,7 @@
     6. Continuous Cloud Generation during Runtime - 5
     7. Fog dependent on time of day - 3
 ### 2. As a player, I want a weather system so that there's more variety day-to-day.
-1. Rain - 19
+1. Rain
     1. Create Dark Cloud Texture - 2
     2. Create Rain Texture - 2
     3. Add Rain Effect to the Game - 5
@@ -31,11 +31,11 @@
 1. Find where world generation happens in source files - 8
 2. Figure out how world is generated in craft - 8
 ### 5. As a player, I want TNT so that I can blow things up.
-1. Add TNT Block - 7
+1. Add TNT Block
     1. Add the TNT Block - 3
     2. Effect: Destroy Blocks in Radius - 2
     3. Trigger: Right-Click TNT Block - 2
-2. Refined TNT Effects - 21
+2. Refined TNT Effects
     1. Chain Trigger: TNT explodes other TNT - 3
     2. Graphics: Add an Explosion effect - 5
     3. Sound: Add an explosion sound - 5

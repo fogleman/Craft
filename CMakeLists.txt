@@ -33,17 +33,22 @@ endif()
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
 
+find_package(OpenGL REQUIRED)
+
 if(APPLE)
     target_link_libraries(craft glfw
+        ${OPENGL_gl_LIBRARY}
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
 if(UNIX)
     target_link_libraries(craft dl glfw
+        ${OPENGL_gl_LIBRARY}
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
 if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
+        ${OPENGL_gl_LIBRARY}
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()

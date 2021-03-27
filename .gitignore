@@ -13,4 +13,6 @@ log.txt
 *.exe
 *.dll
 *.pyc
-
+deps/glfw/src/glfw3Config.cmake
+deps/glfw/src/glfw3ConfigVersion.cmake
+deps/glfw/src/glfw_config.h

@@ -2154,14 +2154,14 @@ void on_left_click() {
     }
 }
 
-// Destroy Blocks in 3 x 3 x 3 cube.
+// Destroy Blocks in 5 x 5 x 5 cube.
 void explode(int x, int y, int z) {
-    x = x - 1;
-    y = y - 1;
-    z = z - 1;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
+    x = x - 2;
+    y = y - 2;
+    z = z - 2;
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            for (int k = 0; k < 5; k++) {
                 destroyBlock(x + i, y + j, z + k);
             }
         }

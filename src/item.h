@@ -26,6 +26,7 @@
 #define WHITE_FLOWER 22
 #define BLUE_FLOWER 23
 #define TNT 24
+#define ICE 25
 #define COLOR_00 32
 #define COLOR_01 33
 #define COLOR_02 34

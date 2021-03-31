@@ -39,6 +39,7 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
+
 typedef struct {
     Map map;
     Map lights;
@@ -1176,9 +1177,12 @@ void map_set_func(int x, int y, int z, int w, void *arg) {
 void load_chunk(WorkerItem *item) {
     int p = item->p;
     int q = item->q;
+    
+
     Map *block_map = item->block_maps[1][1];
     Map *light_map = item->light_maps[1][1];
-    create_world(p, q, map_set_func, block_map);
+
+    create_world(p, q, map_set_func, block_map); //
     db_load_blocks(block_map, p, q);
     db_load_lights(light_map, p, q);
 }
@@ -2832,7 +2836,19 @@ int main(int argc, char **argv) {
             // RENDER 3-D SCENE //
             glClear(GL_COLOR_BUFFER_BIT);
             glClear(GL_DEPTH_BUFFER_BIT);
-            render_sky(&sky_attrib, player, sky_buffer);
+                //
+                render_sky(&sky_attrib, player, sky_buffer);
+                // // clouds
+                //     if (SHOW_CLOUDS) {
+                //         for (int y = 64; y < 72; y++) {
+                //             if (simplex3(
+                //                 x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
+                //             {
+                //                 func(x, y, z, 16 * flag, arg);
+                //             }
+                //         }
+                //     }
+                // //
             glClear(GL_DEPTH_BUFFER_BIT);
             int face_count = render_chunks(&block_attrib, player);
             render_signs(&text_attrib, player);

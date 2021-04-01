@@ -2159,26 +2159,23 @@ void explode(int x, int y, int z) {
     x = x - 2;
     y = y - 2;
     z = z - 2;
-    printf("Here\n");
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
             for (int k = 0; k < 5; k++) {
-                int w = get_block(x + i, y + j, z + k);
-                if (w == TNT) {
-                    printf("Found TNT\n");
-                }
                 destroyBlock(x + i, y + j, z + k);
             }
         }
     }
-    printf("Made it\n");
 }
 
 // Destroy block at given x, y, z.
 void destroyBlock(int x, int y, int z) {
     int w = get_block(x, y, z);
+    
     set_block(x, y, z, 0);
     record_block(x, y, z, 0);
+
+    // If a TNT Block is "destroyed", it will explode.
     if (w == TNT) {
         explode(x, y, z);
     }

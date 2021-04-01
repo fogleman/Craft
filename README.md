@@ -99,7 +99,7 @@ python server.py [HOST [PORT]]
 - Ctrl + Right Click to toggle a block as a light source.
 - 1-9 to select the block type to create.
 - E to cycle through the block types.
-- Tab to toggle between walking and flying.
+- Tab to toggle between walking and flying (when flying, space to ascend, right-shift to descend).
 - ZXCVBN to move in exact directions along the XYZ axes.
 - Left shift to zoom.
 - F to show the scene in orthographic mode.

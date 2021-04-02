@@ -2838,17 +2838,7 @@ int main(int argc, char **argv) {
             glClear(GL_DEPTH_BUFFER_BIT);
                 //
                 render_sky(&sky_attrib, player, sky_buffer);
-                // // clouds
-                //     if (SHOW_CLOUDS) {
-                //         for (int y = 64; y < 72; y++) {
-                //             if (simplex3(
-                //                 x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
-                //             {
-                //                 func(x, y, z, 16 * flag, arg);
-                //             }
-                //         }
-                //     }
-                // //
+
             glClear(GL_DEPTH_BUFFER_BIT);
             int face_count = render_chunks(&block_attrib, player);
             render_signs(&text_attrib, player);

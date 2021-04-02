@@ -36,3 +36,17 @@ DS 6.2 - 1 - Michael
 Continuing Tasks  
 DS 4.1 - 5 - Alex  
 DS 4.2 - 5 - Michael  
+
+## Sprint 3 (3/19/21 - 4/2/21)
+### Velocity: 18
+Completed Tasks
+US 1.1.5 - 3 - Alex
+US 3.1.1 - 1 - Michael
+US 3.2.1 - 1 - Michael
+US 5.2.1 - 3 - Michael
+
+DS 4.1 - 5 - Alex
+DS 4.2 - 5 - Michael
+
+Continuing Tasks
+US 1.1.2 - - 3 - Alex

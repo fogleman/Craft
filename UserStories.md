@@ -7,9 +7,7 @@
     2. Add Cloud Movement - 3
     3. ~~Dynamic Cloud Shape Generation - 5~~ (Already implemented)
     4. Bound Cloud Movement and Generation - 8
-    5. Add Fog Effect - 3
-    6. Continuous Cloud Generation during Runtime - 5
-    7. Fog dependent on time of day - 3
+    5. Continuous Cloud Generation during Runtime - 5
 ### 2. As a player, I want a weather system so that there's more variety day-to-day.
 1. Rain
     1. Create Dark Cloud Texture - 2
@@ -17,13 +15,18 @@
     3. Add Rain Effect to the Game - 5
     4. Add a button or command to change weather - 5
     5. Research Weather Cycle or Random Generation - 5
+2. Fog
+    1. ~~Add Fog Effect - 3~~
+    2. Fog dependent on time of day - 3
+    3. Make Fog Not Transparent - 3
+    4. Clouds Lower to Fog, Fog Rises to Clouds - 3
 ### 3. As a player, I want more biomes so that exploration is more rewarding.
 1. Snow Blocks
-    1. Add Snow Block to Textures - 1
+    1. ~~Add Snow Block to Textures - 1~~
     2. ~~Add Snow Block Texture to Bitmap - 2~~ (Trivial after more research)
     3. ~~Add Snow Block - 3~~ (Trivial after more research)
 2. Ice Block
-    1. Add Ice Block to Textures - 1
+    1. ~~Add Ice Block to Textures - 1~~
     2. Graphics: Make it transparent - 2
     3. Effect: Slow down player movement - 2
     4. Advanced Effect: Momentum - 5
@@ -36,7 +39,7 @@
     2. ~~Effect: Destroy Blocks in Radius - 2~~
     3. ~~Trigger: Right-Click TNT Block - 2~~
 2. Refined TNT Effects
-    1. Chain Trigger: TNT explodes other TNT - 3
+    1. ~~Chain Trigger: TNT explodes other TNT - 3~~
     2. Graphics: Add an Explosion effect - 5
     3. Sound: Add an explosion sound - 5
     4. Add radial vector explosion for dynamic craters - 8
@@ -53,8 +56,8 @@
 1. Look into using wiki to store our documents - 2
 2. ~~Generate a UserStories markdown file for github - 1~~
 ### 4. As a dev, I want to learn more about OpenGL so that I feel confident adding new textures and effects to Craft.
-1. Alex Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5
-2. Michael Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5
+1. ~~Alex Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5~~
+2. ~~Michael Completes Watching [Cherno](https://www.youtube.com/playlist?list=PLlrATfBNZ98foTJPJ_Ev03o2oq3-GGOS2) - 5~~
 ### 5. As a dev, I want a solid branching strategy for our repository so that our version control is stable and effective.
 1. ~~Generate branches for repository - 1~~
 ### 6. As a dev, I want a document that tracks our velocity so that we can measure our progress.

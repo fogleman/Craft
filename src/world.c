@@ -72,6 +72,16 @@ void create_world(int p, int q, world_func func, void *arg) {
                     }
                 }
             }
+            // fog
+            if (SHOW_CLOUDS) {
+                for (int y = 10; y < 22; y++) {
+                    if (simplex3(
+                        x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.55)
+                    {
+                        func(x, y, z, 16 * flag, arg);
+                    }
+                }
+            }
         }
     }
 }

@@ -163,7 +163,7 @@ int is_obstacle(int w) {
     }
     switch (w) {
         case EMPTY:
-        case CLOUD:
+        /*case CLOUD:*/
             return 0;
         default:
             return 1;
@@ -191,7 +191,7 @@ int is_transparent(int w) {
 int is_destructable(int w) {
     switch (w) {
         case EMPTY:
-        case CLOUD:
+        /*case CLOUD:*/
             return 0;
         default:
             return 1;

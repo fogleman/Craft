@@ -2,6 +2,9 @@
 #include "noise.h"
 #include "world.h"
 
+#include "stdio.h"
+
+
 void create_world(int p, int q, world_func func, void *arg) {
     int pad = 1;
     for (int dx = -pad; dx < CHUNK_SIZE + pad; dx++) {
@@ -75,8 +78,12 @@ void create_world(int p, int q, world_func func, void *arg) {
             // fog
             if (SHOW_CLOUDS) {
                 for (int y = 10; y < 22; y++) {
+<<<<<<< HEAD
                     if (simplex3(
                         x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.55) 
+=======
+                    if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.45)
+>>>>>>> cc9eda014974a91c7eff1f5642e71c7e3696b563
                     {
                         func(x, y, z, 16 * flag, arg);
                     }

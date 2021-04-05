@@ -163,7 +163,6 @@ int is_obstacle(int w) {
     }
     switch (w) {
         case EMPTY:
-        case CLOUD:
             return 0;
         default:
             return 1;
@@ -182,6 +181,7 @@ int is_transparent(int w) {
         case EMPTY:
         case GLASS:
         case LEAVES:
+        case CLOUD:             //see comment below
             return 1;
         default:
             return 0;
@@ -191,9 +191,9 @@ int is_transparent(int w) {
 int is_destructable(int w) {
     switch (w) {
         case EMPTY:
-        case CLOUD:
-            return 0;
-        default:
+        /*case CLOUD:*/         //US 2.2.2 Make Fog Not Transparent - while this makes
+            return 0;           //the fog remain transparent, it resolves the bug of
+        default:                //seeing through the map and the fog.
             return 1;
     }
 }

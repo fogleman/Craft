@@ -1178,10 +1178,8 @@ void load_chunk(WorkerItem *item) {
     int p = item->p;
     int q = item->q;
     
-
     Map *block_map = item->block_maps[1][1];
     Map *light_map = item->light_maps[1][1];
-
     create_world(p, q, map_set_func, block_map); //
     db_load_blocks(block_map, p, q);
     db_load_lights(light_map, p, q);
@@ -2837,7 +2835,6 @@ int main(int argc, char **argv) {
             glClear(GL_COLOR_BUFFER_BIT);
             glClear(GL_DEPTH_BUFFER_BIT);
             render_sky(&sky_attrib, player, sky_buffer);
-
             glClear(GL_DEPTH_BUFFER_BIT);
             int face_count = render_chunks(&block_attrib, player);
             render_signs(&text_attrib, player);

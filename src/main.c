@@ -2172,8 +2172,15 @@ void explode(int x, int y, int z) {
 
 // Destroy block at given x, y, z.
 void destroyBlock(int x, int y, int z) {
+    int w = get_block(x, y, z);
+    
     set_block(x, y, z, 0);
     record_block(x, y, z, 0);
+
+    // If a TNT Block is "destroyed", it will explode.
+    if (w == TNT) {
+        explode(x, y, z);
+    }
 }
 
 // Add block

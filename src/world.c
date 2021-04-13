@@ -75,15 +75,11 @@ void create_world(int p, int q, world_func func, void *arg) {
                     }
                 }
             }
-            // fog
+            // fog                                                              //US 2.2.1 Add Fog Effect
             if (SHOW_CLOUDS) {
                 for (int y = 10; y < 22; y++) {
-<<<<<<< HEAD
                     if (simplex3(
-                        x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.55) 
-=======
-                    if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.45)
->>>>>>> cc9eda014974a91c7eff1f5642e71c7e3696b563
+                        x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.8) 
                     {
                         func(x, y, z, 16 * flag, arg);
                     }

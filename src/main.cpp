@@ -1,6 +1,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <curl/curl.h>
+#include "tinycthread.h"
+#include "noise.h"
+
+extern "C"{
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +18,11 @@
 #include "item.h"
 #include "map.h"
 #include "matrix.h"
-#include "noise.h"
 #include "sign.h"
-#include "tinycthread.h"
 #include "util.h"
 #include "world.h"
+}
+#include "clouds.h"
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
@@ -1169,6 +1173,15 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
+int isLightChanging(int t){
+    if( (t >= 0 && t <= 0.1) ||
+        (t <= 0.9 && t >= 1) )
+    {
+        return 1;
+    }
+    else{ return 0; }
+}
+
 void map_set_func(int x, int y, int z, int w, void *arg) {
     Map *map = (Map *)arg;
     map_set(map, x, y, z, w);
@@ -1180,7 +1193,7 @@ void load_chunk(WorkerItem *item) {
     
     Map *block_map = item->block_maps[1][1];
     Map *light_map = item->light_maps[1][1];
-    create_world(p, q, map_set_func, block_map); //
+    create_world(p, q, map_set_func, block_map); //creates world (including cloud/fog blocks)
     db_load_blocks(block_map, p, q);
     db_load_lights(light_map, p, q);
 }
@@ -1232,17 +1245,17 @@ void delete_chunks() {
     State *states[3] = {s1, s2, s3};
     for (int i = 0; i < count; i++) {
         Chunk *chunk = g->chunks + i;
-        int delete = 1;
+        int Delete = 1;
         for (int j = 0; j < 3; j++) {
             State *s = states[j];
             int p = chunked(s->x);
             int q = chunked(s->z);
             if (chunk_distance(chunk, p, q) < g->delete_radius) {
-                delete = 0;
+                Delete = 0;
                 break;
             }
         }
-        if (delete) {
+        if (Delete) {
             map_free(&chunk->map);
             map_free(&chunk->lights);
             sign_list_free(&chunk->signs);
@@ -1399,9 +1412,9 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
                 other = find_chunk(chunk->p + dp, chunk->q + dq);
             }
             if (other) {
-                Map *block_map = malloc(sizeof(Map));
+                Map *block_map = (Map*)malloc(sizeof(Map));
                 map_copy(block_map, &other->map);
-                Map *light_map = malloc(sizeof(Map));
+                Map *light_map = (Map*)malloc(sizeof(Map));
                 map_copy(light_map, &other->lights);
                 item->block_maps[dp + 1][dq + 1] = block_map;
                 item->light_maps[dp + 1][dq + 1] = light_map;
@@ -2139,6 +2152,26 @@ void on_light() {
     }
 }
 
+// Destroy block at given x, y, z.
+void destroyBlock(int x, int y, int z) {
+    set_block(x, y, z, 0);
+    record_block(x, y, z, 0);
+}
+
+// Destroy Blocks in 5 x 5 x 5 cube.
+void explode(int x, int y, int z) {
+    x = x - 2;
+    y = y - 2;
+    z = z - 2;
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            for (int k = 0; k < 5; k++) {
+                destroyBlock(x + i, y + j, z + k);
+            }
+        }
+    }
+}
+
 // Destroy Block
 void on_left_click() {
     State *s = &g->players->state;
@@ -2156,25 +2189,6 @@ void on_left_click() {
     }
 }
 
-// Destroy Blocks in 5 x 5 x 5 cube.
-void explode(int x, int y, int z) {
-    x = x - 2;
-    y = y - 2;
-    z = z - 2;
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < 5; j++) {
-            for (int k = 0; k < 5; k++) {
-                destroyBlock(x + i, y + j, z + k);
-            }
-        }
-    }
-}
-
-// Destroy block at given x, y, z.
-void destroyBlock(int x, int y, int z) {
-    set_block(x, y, z, 0);
-    record_block(x, y, z, 0);
-}
 
 // Add block
 void on_right_click() {
@@ -2797,6 +2811,7 @@ int main(int argc, char **argv) {
         if (!loaded) {
             s->y = highest_block(s->x, s->z) + 2;
         }
+        
 
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();

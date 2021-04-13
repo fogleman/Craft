@@ -2,6 +2,7 @@
 #include <string.h>
 #include "map.h"
 
+
 int hash_int(int key) {
     key = ~key + (key << 15);
     key = key ^ (key >> 12);
@@ -41,6 +42,7 @@ void map_copy(Map *dst, Map *src) {
     dst->data = (MapEntry *)calloc(dst->mask + 1, sizeof(MapEntry));
     memcpy(dst->data, src->data, (dst->mask + 1) * sizeof(MapEntry));
 }
+
 
 int map_set(Map *map, int x, int y, int z, int w) {
     unsigned int index = hash(x, y, z) & map->mask;

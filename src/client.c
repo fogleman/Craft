@@ -164,7 +164,7 @@ char *client_recv() {
     }
     if (p >= queue) {
         int length = p - queue + 1;
-        result = malloc(sizeof(char) * (length + 1));
+        result = (char*)malloc(sizeof(char) * (length + 1));
         memcpy(result, queue, sizeof(char) * length);
         result[length] = '\0';
         int remaining = qsize - length;
@@ -177,7 +177,7 @@ char *client_recv() {
 }
 
 int recv_worker(void *arg) {
-    char *data = malloc(sizeof(char) * RECV_SIZE);
+    char *data = (char*)malloc(sizeof(char) * RECV_SIZE);
     while (1) {
         int length;
         if ((length = recv(sd, data, RECV_SIZE - 1, 0)) <= 0) {

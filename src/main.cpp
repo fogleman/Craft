@@ -1,27 +1,26 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <curl/curl.h>
-#include "tinycthread.h"
-#include "noise.h"
-
-extern "C"{
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include "auth.h"
-#include "client.h"
-#include "config.h"
-#include "cube.h"
-#include "db.h"
-#include "item.h"
-#include "map.h"
-#include "matrix.h"
-#include "sign.h"
-#include "util.h"
-#include "world.h"
-}
+extern "C" {
+    #include <GL/glew.h>
+    #include <GLFW/glfw3.h>
+    #include <curl/curl.h>
+    #include "tinycthread.h"
+    #include "noise.h"
+    #include <math.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <time.h>
+    #include "auth.h"
+    #include "client.h"
+    #include "config.h"
+    #include "cube.h"
+    #include "db.h"
+    #include "item.h"
+    #include "map.h"
+    #include "matrix.h"
+    #include "sign.h"
+    #include "util.h"
+    #include "world.h"
+}       //extern "C"
 #include "clouds.h"
 
 #define MAX_CHUNKS 8192
@@ -2624,6 +2623,7 @@ void reset_model() {
     g->time_changed = 1;
 }
 
+extern "C"
 int main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);

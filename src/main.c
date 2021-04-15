@@ -187,6 +187,9 @@ int get_scale_factor() {
     int window_width, window_height;
     int buffer_width, buffer_height;
     glfwGetWindowSize(g->window, &window_width, &window_height);
+	if(window_width <= 0 || window_height <= 0){
+		return 0;
+	}
     glfwGetFramebufferSize(g->window, &buffer_width, &buffer_height);
     int result = buffer_width / window_width;
     result = MAX(1, result);

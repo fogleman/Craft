@@ -15,12 +15,13 @@ extern "C" {
     #include "cube.h"
     #include "db.h"
     #include "item.h"
-    #include "map.h"
     #include "matrix.h"
     #include "sign.h"
     #include "util.h"
     #include "world.h"
 }       //extern "C"
+
+#include "map.h"
 #include "clouds.h"
 
 #define MAX_CHUNKS 8192
@@ -1183,7 +1184,8 @@ int isLightChanging(int t){
 
 void map_set_func(int x, int y, int z, int w, void *arg) {
     Map *map = (Map *)arg;
-    map_set(map, x, y, z, w);
+    float t = time_of_day();
+    map_set(map, x, y, z, w, t);
 }
 
 void load_chunk(WorkerItem *item) {
@@ -1527,7 +1529,8 @@ void toggle_light(int x, int y, int z) {
     if (chunk) {
         Map *map = &chunk->lights;
         int w = map_get(map, x, y, z) ? 0 : 15;
-        map_set(map, x, y, z, w);
+        float t = time_of_day();
+        map_set(map, x, y, z, w, t);
         db_insert_light(p, q, x, y, z, w);
         client_light(x, y, z, w);
         dirty_chunk(chunk);
@@ -1538,7 +1541,8 @@ void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->lights;
-        if (map_set(map, x, y, z, w)) {
+        float t = time_of_day();
+        if (map_set(map, x, y, z, w, t)) {
             dirty_chunk(chunk);
             db_insert_light(p, q, x, y, z, w);
         }
@@ -1552,7 +1556,8 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->map;
-        if (map_set(map, x, y, z, w)) {
+        float t = time_of_day(); 
+        if (map_set(map, x, y, z, w, t)) {
             if (dirty) {
                 dirty_chunk(chunk);
             }

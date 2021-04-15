@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "map.h"
+#include "clouds.h"
 
 
 int hash_int(int key) {
@@ -43,8 +44,8 @@ void map_copy(Map *dst, Map *src) {
     memcpy(dst->data, src->data, (dst->mask + 1) * sizeof(MapEntry));
 }
 
-
 int map_set(Map *map, int x, int y, int z, int w) {
+    std::vector<cloudPosition> allClouds;
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
     y -= map->dy;
@@ -58,6 +59,58 @@ int map_set(Map *map, int x, int y, int z, int w) {
         }
         index = (index + 1) & map->mask;
         entry = map->data + index;
+    }
+    if(w == 16) //if Cloud
+    {
+        allClouds = setClouds(allClouds, x, y, z);
+    }
+    if (overwrite) {
+        if (entry->e.w != w) {
+            entry->e.w = w;
+            return 1;
+        }
+    }
+    else if (w) {
+        entry->e.x = x;
+        entry->e.y = y;
+        entry->e.z = z;
+        entry->e.w = w;
+        map->size++;
+        if (map->size * 2 > map->mask) {
+            map_grow(map);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+int map_set(Map *map, int x, int y, int z, int w, int t) {
+    std::vector<cloudPosition> allClouds;
+    unsigned int index = hash(x, y, z) & map->mask;
+    x -= map->dx;
+    y -= map->dy;
+    z -= map->dz;
+    MapEntry *entry = map->data + index;
+    int overwrite = 0;
+    while (!EMPTY_ENTRY(entry)) {
+        if (entry->e.x == x && entry->e.y == y && entry->e.z == z) {
+            overwrite = 1;
+            break;
+        }
+        index = (index + 1) & map->mask;
+        entry = map->data + index;
+    }
+    if(w == 16) //if Cloud
+    {
+        allClouds = setClouds(allClouds, x, y, z);
+        while( t <= 0.1 && t >= 0) //time is dawn
+        {
+            moveAllCloudsUp(map, allClouds, t);
+        }
+        while( t >= 0.85 && t <= 1) //time is dusk
+        {
+            moveAllCloudsDown(map, allClouds, t);
+        }
     }
     if (overwrite) {
         if (entry->e.w != w) {

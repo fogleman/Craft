@@ -24,6 +24,14 @@ struct cloudPosition{
     int z;
 };
 
+//Worker Functions
+std::vector<cloudPosition> setClouds(std::vector<cloudPosition>, int x, int y, int z);
+void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions, int);
+void moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions, int);
+void moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, char xyz, int);
 
-void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions);
-void moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions);
+//Test Functions
+int gotClouds(std::vector<cloudPosition>);
+int isPositionChanged(std::vector<cloudPosition> startData, std::vector<cloudPosition> endData);
+int isValidChar(char xyz);
+

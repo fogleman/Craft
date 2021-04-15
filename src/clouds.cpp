@@ -1,19 +1,59 @@
 #include "clouds.h"
 
-void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions)
+//Worker Functions
+std::vector<cloudPosition> setClouds(std::vector<cloudPosition> allClouds, int x, int y, int z)
 {
-    std::vector<cloudPosition> cloudCopy = allCloudPositions;
+    cloudPosition p;
+    p.x =x;
+    p.y = y;
+    p.z = z;
+    allClouds.push_back(p);
 
-    while( allCloudPositions.size() > 0 )
+    return allClouds;
+}
+
+void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
+{
+    char xyz = 'y';
+    int  posChange = -1;
+    moveClouds(map,allCloudPositions, posChange, xyz, t);
+}
+
+void moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
+{
+    char xyz = 'y';
+    int  posChange = 1;
+    moveClouds(map,allCloudPositions, posChange, xyz, t);
+}
+
+void moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, char xyz, int t)
+{
+    std::vector<cloudPosition> cloudCopy = clouds;
+    while (clouds.size() > 0)
     {
-        cloudPosition p = allCloudPositions.back();
-        map_set(map, p.x, p.y, p.z, 0);                 //remove cloud
-        allCloudPositions.pop_back();
+        cloudPosition p = clouds.back();
+        map_set(map, p.x, p.y, p.z, EMPTY, t);     //remove cloud at current position
+        clouds.pop_back();
     }
-    while( allCloudPositions.size() > 0 )
+    while (clouds.size() > 0)
     {
         cloudPosition p = cloudCopy.back();
-        map_set(map, p.x, p.y-1, p.z, CLOUD);           //add cloud to space below
-        cloudCopy.pop_back();
+        
+        if(xyz == 'x'){ map_set(map, p.x + posChange, p.y, p.z, CLOUD, t);}
+        else if(xyz == 'y'){ map_set(map, p.x, p.y + posChange, p.z, CLOUD, t);}
+        else if(xyz == 'z'){ map_set(map, p.x, p.y, p.z + posChange, CLOUD, t);}
+
+        clouds.pop_back();
     }
+    
+    
 }
+
+
+//Test Functions
+int gotClouds(std::vector<cloudPosition> clouds){ return 0; }
+
+int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){ return 0; }
+
+int isValidChar(char xyz){ return 0; }
+

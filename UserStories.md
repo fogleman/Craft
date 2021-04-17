@@ -18,7 +18,7 @@
 2. Fog
     1. ~~Add Fog Effect - 3~~
     2. Fog dependent on time of day - 3
-    3. Make Fog Not Transparent - 3
+    3. Make Fog Transparent - 3
     4. Clouds Lower to Fog, Fog Rises to Clouds - 3
 ### 3. As a player, I want more biomes so that exploration is more rewarding.
 1. Snow Blocks

@@ -21,6 +21,7 @@ int hash(int x, int y, int z) {
     return x ^ y ^ z;
 }
 
+extern "C"
 void map_alloc(Map *map, int dx, int dy, int dz, int mask) {
     map->dx = dx;
     map->dy = dy;
@@ -30,10 +31,12 @@ void map_alloc(Map *map, int dx, int dy, int dz, int mask) {
     map->data = (MapEntry *)calloc(map->mask + 1, sizeof(MapEntry));
 }
 
+extern "C"
 void map_free(Map *map) {
     free(map->data);
 }
 
+extern "C"
 void map_copy(Map *dst, Map *src) {
     dst->dx = src->dx;
     dst->dy = src->dy;
@@ -44,46 +47,7 @@ void map_copy(Map *dst, Map *src) {
     memcpy(dst->data, src->data, (dst->mask + 1) * sizeof(MapEntry));
 }
 
-int map_set(Map *map, int x, int y, int z, int w) {
-    std::vector<cloudPosition> allClouds;
-    unsigned int index = hash(x, y, z) & map->mask;
-    x -= map->dx;
-    y -= map->dy;
-    z -= map->dz;
-    MapEntry *entry = map->data + index;
-    int overwrite = 0;
-    while (!EMPTY_ENTRY(entry)) {
-        if (entry->e.x == x && entry->e.y == y && entry->e.z == z) {
-            overwrite = 1;
-            break;
-        }
-        index = (index + 1) & map->mask;
-        entry = map->data + index;
-    }
-    if(w == 16) //if Cloud
-    {
-        allClouds = setClouds(allClouds, x, y, z);
-    }
-    if (overwrite) {
-        if (entry->e.w != w) {
-            entry->e.w = w;
-            return 1;
-        }
-    }
-    else if (w) {
-        entry->e.x = x;
-        entry->e.y = y;
-        entry->e.z = z;
-        entry->e.w = w;
-        map->size++;
-        if (map->size * 2 > map->mask) {
-            map_grow(map);
-        }
-        return 1;
-    }
-    return 0;
-}
-
+extern "C"
 int map_set(Map *map, int x, int y, int z, int w, int t) {
     std::vector<cloudPosition> allClouds;
     unsigned int index = hash(x, y, z) & map->mask;
@@ -132,6 +96,7 @@ int map_set(Map *map, int x, int y, int z, int w, int t) {
     return 0;
 }
 
+extern "C"
 int map_get(Map *map, int x, int y, int z) {
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
@@ -151,6 +116,7 @@ int map_get(Map *map, int x, int y, int z) {
     return 0;
 }
 
+extern "C"
 void map_grow(Map *map) {
     Map new_map;
     new_map.dx = map->dx;
@@ -160,7 +126,7 @@ void map_grow(Map *map) {
     new_map.size = 0;
     new_map.data = (MapEntry *)calloc(new_map.mask + 1, sizeof(MapEntry));
     MAP_FOR_EACH(map, ex, ey, ez, ew) {
-        map_set(&new_map, ex, ey, ez, ew);
+        map_set(&new_map, ex, ey, ez, ew, 2);
     } END_MAP_FOR_EACH;
     free(map->data);
     map->mask = new_map.mask;

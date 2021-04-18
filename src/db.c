@@ -1,5 +1,6 @@
-#include <string.h>
+
 #include "db.h"
+#include <string.h>
 #include "ring.h"
 #include "sqlite3.h"
 #include "tinycthread.h"
@@ -401,6 +402,9 @@ void db_delete_all_signs() {
     sqlite3_exec(db, "delete from sign;", NULL, NULL, NULL);
 }
 
+#ifdef __cplusplus
+extern "C"{
+#endif
 void db_load_blocks(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
@@ -418,7 +422,13 @@ void db_load_blocks(Map *map, int p, int q) {
     }
     mtx_unlock(&load_mtx);
 }
+#ifdef __cplusplus
+}
+#endif
 
+#ifdef __cplusplus
+extern "C"{
+#endif
 void db_load_lights(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
@@ -436,7 +446,13 @@ void db_load_lights(Map *map, int p, int q) {
     }
     mtx_unlock(&load_mtx);
 }
+#ifdef __cplusplus
+}
+#endif
 
+#ifdef _cplusplus
+extern "C"{
+#endif
 void db_load_signs(SignList *list, int p, int q) {
     if (!db_enabled) {
         return;
@@ -454,6 +470,9 @@ void db_load_signs(SignList *list, int p, int q) {
         sign_list_add(list, x, y, z, face, text);
     }
 }
+#ifdef __cplusplus
+}
+#endif
 
 int db_get_key(int p, int q) {
     if (!db_enabled) {

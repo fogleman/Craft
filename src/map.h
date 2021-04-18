@@ -1,6 +1,7 @@
 #ifndef _map_h_
 #define _map_h_
 
+
 #define EMPTY_ENTRY(entry) ((entry)->value == 0)
 
 #define MAP_FOR_EACH(map, ex, ey, ez, ew) \
@@ -15,6 +16,8 @@
         int ew = entry->e.w;
 
 #define END_MAP_FOR_EACH }
+
+
 
 typedef union {
     unsigned int value;
@@ -35,13 +38,18 @@ typedef struct {
     MapEntry *data;
 } Map;
 
-
+#ifdef __cplusplus
+extern "C"{
+#endif
 void map_alloc(Map *map, int dx, int dy, int dz, int mask);
 void map_free(Map *map);
 void map_copy(Map *dst, Map *src);
 void map_grow(Map *map);
-
 int map_set(Map *map, int x, int y, int z, int w, int t); //overloaded to take time
 int map_get(Map *map, int x, int y, int z);
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

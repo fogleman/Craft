@@ -1,6 +1,7 @@
 #include "clouds.h"
 
 //Worker Functions
+extern "C"
 std::vector<cloudPosition> setClouds(std::vector<cloudPosition> allClouds, int x, int y, int z)
 {
     cloudPosition p;
@@ -12,6 +13,7 @@ std::vector<cloudPosition> setClouds(std::vector<cloudPosition> allClouds, int x
     return allClouds;
 }
 
+extern "C"
 void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
 {
     char xyz = 'y';
@@ -19,6 +21,7 @@ void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions, i
     moveClouds(map,allCloudPositions, posChange, xyz, t);
 }
 
+extern "C"
 void moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
 {
     char xyz = 'y';
@@ -26,22 +29,23 @@ void moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions, int
     moveClouds(map,allCloudPositions, posChange, xyz, t);
 }
 
+extern "C"
 void moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, char xyz, int t)
 {
     std::vector<cloudPosition> cloudCopy = clouds;
     while (clouds.size() > 0)
     {
         cloudPosition p = clouds.back();
-        map_set(map, p.x, p.y, p.z, EMPTY, t);     //remove cloud at current position
+        map_set(map, p.x, p.y, p.z, 0, t);     //remove cloud at current position
         clouds.pop_back();
     }
     while (clouds.size() > 0)
     {
         cloudPosition p = cloudCopy.back();
         
-        if(xyz == 'x'){ map_set(map, p.x + posChange, p.y, p.z, CLOUD, t);}
-        else if(xyz == 'y'){ map_set(map, p.x, p.y + posChange, p.z, CLOUD, t);}
-        else if(xyz == 'z'){ map_set(map, p.x, p.y, p.z + posChange, CLOUD, t);}
+        if(xyz == 'x'){ map_set(map, p.x + posChange, p.y, p.z, 16, t);}
+        else if(xyz == 'y'){ map_set(map, p.x, p.y + posChange, p.z, 16, t);}
+        else if(xyz == 'z'){ map_set(map, p.x, p.y, p.z + posChange, 16, t);}
 
         clouds.pop_back();
     }
@@ -51,9 +55,9 @@ void moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, char
 
 
 //Test Functions
-int gotClouds(std::vector<cloudPosition> clouds){ return 0; }
-
-int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){ return 0; }
-
-int isValidChar(char xyz){ return 0; }
-
+//extern "C"
+//int gotClouds(std::vector<cloudPosition> clouds){ return 0; }
+//extern "C"
+//int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){ return 0; }
+//extern "C"
+//int isValidChar(char xyz){ return 0; }

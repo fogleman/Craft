@@ -8,6 +8,7 @@
     3. ~~Dynamic Cloud Shape Generation - 5~~ (Already implemented)
     4. Bound Cloud Movement and Generation - 8
     5. Continuous Cloud Generation during Runtime - 5
+    6. Convert files the Cloud source code is dependent on to C++ compilation - 3
 ### 2. As a player, I want a weather system so that there's more variety day-to-day.
 1. Rain
     1. Create Dark Cloud Texture - 2

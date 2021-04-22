@@ -66,19 +66,7 @@ int map_set(Map *map, int x, int y, int z, int w, int t=2) {
     }
     if(w == 16) //if Cloud
     {
-        // std::vector<cloudPosition> allClouds;
-        printf("There are Cloud Blocks!?!?!\n");
-        // allClouds = setClouds(allClouds, x, y, z);
-        // while( t <= 0.1 && t >= 0) //time is dawn
-        // {
-        //     moveAllCloudsUp(map, allClouds, t);
-        // }
-        // while( t >= 0.85 && t <= 1) //time is dusk
-        // {
-        //     moveAllCloudsDown(map, allClouds, t);
-        // }
-        // int size = allClouds.size();
-        // printf("allClouds.size() = "); printf("%d", size); printf("\n");
+        //Cloud Functions
     }
     if (overwrite) {
         if (entry->e.w != w) {

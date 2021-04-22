@@ -55,9 +55,9 @@ void moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, char
 
 
 //Test Functions
-//extern "C"
-//int gotClouds(std::vector<cloudPosition> clouds){ return 0; }
-//extern "C"
-//int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){ return 0; }
-//extern "C"
-//int isValidChar(char xyz){ return 0; }
+extern "C"
+int gotClouds(std::vector<cloudPosition> clouds){ return 0; }
+extern "C"
+int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){ return 0; }
+extern "C"
+int isValidChar(char xyz){ return 0; }

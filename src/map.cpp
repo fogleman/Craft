@@ -48,8 +48,8 @@ void map_copy(Map *dst, Map *src) {
 }
 
 extern "C"
-int map_set(Map *map, int x, int y, int z, int w, int t) {
-    std::vector<cloudPosition> allClouds;
+int map_set(Map *map, int x, int y, int z, int w, int t=2) {
+    //std::vector<cloudPosition> allClouds;
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
     y -= map->dy;
@@ -64,18 +64,18 @@ int map_set(Map *map, int x, int y, int z, int w, int t) {
         index = (index + 1) & map->mask;
         entry = map->data + index;
     }
-    if(w == 16) //if Cloud
-    {
-        allClouds = setClouds(allClouds, x, y, z);
-        while( t <= 0.1 && t >= 0) //time is dawn
-        {
-            moveAllCloudsUp(map, allClouds, t);
-        }
-        while( t >= 0.85 && t <= 1) //time is dusk
-        {
-            moveAllCloudsDown(map, allClouds, t);
-        }
-    }
+    // if(w == 16) //if Cloud
+    // {
+    //     allClouds = setClouds(allClouds, x, y, z);
+    //     while( t <= 0.1 && t >= 0) //time is dawn
+    //     {
+    //         moveAllCloudsUp(map, allClouds, t);
+    //     }
+    //     while( t >= 0.85 && t <= 1) //time is dusk
+    //     {
+    //         moveAllCloudsDown(map, allClouds, t);
+    //     }
+    // }
     if (overwrite) {
         if (entry->e.w != w) {
             entry->e.w = w;

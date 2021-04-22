@@ -194,9 +194,10 @@ int is_transparent(int w) {
 
 int is_destructable(int w) {
     switch (w) {
-        case EMPTY:             //US 2.2.2 Make Fog Transparent - while this makes
+        case EMPTY:
+        /*case CLOUD:*/         //US 2.2.2 Make Fog Not Transparent - while this makes
             return 0;           //the fog remain transparent, it resolves the bug of
         default:                //seeing through the map and the fog.
-           return 1;
+            return 1;
     }
 }

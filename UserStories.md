@@ -82,10 +82,10 @@
 2. ~~Add it to github - 1~~
 ### 7. As a dev., I want the project code to be more easily read and highly refactored.
 1. Refactor World.c functions
-    1. Refactor create_wrold() - 1
+    1. Refactor create_world() - 1
 2. Refactor map.cpp functions
-    1. map_get() - 1
-    2. map_set() - 1
+    1. Refactor map_get() - 1
+    2. Refactor map_set() - 1
 3. Refactor main.cpp functions
     1. Refactor _hit_test() - 1
     2. Refactor compute_chunks() - 1

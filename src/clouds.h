@@ -11,6 +11,8 @@ struct cloudPosition{
 extern "C"
 std::vector<cloudPosition> setClouds(std::vector<cloudPosition>, int x, int y, int z);
 extern "C"
+std::vector<cloudPosition> getClouds();
+extern "C"
 void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions, int);
 extern "C"
 void moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions, int);

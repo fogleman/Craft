@@ -1,5 +1,18 @@
 #include "clouds.h"
 
+struct cloudData{
+    private:
+        std::vector<cloudPosition> privateCloud;
+    public:
+        void set(std::vector<cloudPosition> cloud){
+            privateCloud = cloud;
+        }
+        std::vector<cloudPosition> get(){
+            return privateCloud;
+        }
+} allCloudData;
+
+
 //Worker Functions
 extern "C"
 std::vector<cloudPosition> setClouds(std::vector<cloudPosition> allClouds, int x, int y, int z)
@@ -10,7 +23,17 @@ std::vector<cloudPosition> setClouds(std::vector<cloudPosition> allClouds, int x
     p.z = z;
     allClouds.push_back(p);
 
+    //cloudData data;
+    allCloudData.set(allClouds);
     return allClouds;
+}
+
+extern "C"
+std::vector<cloudPosition> getClouds(){
+    cloudData data;
+    std::vector<cloudPosition> clouds = allCloudData.get();
+    printf("Get!\n");
+    return clouds;
 }
 
 extern "C"

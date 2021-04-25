@@ -68,10 +68,12 @@ void map_free(Map *map);
 void map_copy(Map *dst, Map *src);
 void map_grow(Map *map);
 int map_set(Map *map, int x, int y, int z, int w, int t); //overloaded to take time
+int map_set_clouds(Map *map, int x, int y, int z, int w, int t);
 int map_get(Map *map, int x, int y, int z);
 #ifdef __cplusplus
 }
 #endif
+
 
 
 #endif

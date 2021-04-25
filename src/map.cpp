@@ -47,9 +47,12 @@ void map_copy(Map *dst, Map *src) {
     memcpy(dst->data, src->data, (dst->mask + 1) * sizeof(MapEntry));
 }
 
-extern "C"
-int map_set(Map *map, int x, int y, int z, int w, int t=2) {
-    
+#ifdef __cplusplus
+extern "C"{
+#endif
+int map_set(Map *map, int x, int y, int z, int w, int t) {
+    int numClouds=0;
+    std::vector<cloudPosition> allClouds;
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
     y -= map->dy;
@@ -64,9 +67,9 @@ int map_set(Map *map, int x, int y, int z, int w, int t=2) {
         index = (index + 1) & map->mask;
         entry = map->data + index;
     }
-    if(w == 16) //if Cloud
-    {
-        //Cloud Functions
+    if(w==CLOUD && t == -1){ 
+        allClouds = setClouds(allClouds, x, y, z);
+        moveAllCloudsDown(map, allClouds, t);
     }
     if (overwrite) {
         if (entry->e.w != w) {
@@ -87,6 +90,9 @@ int map_set(Map *map, int x, int y, int z, int w, int t=2) {
     }
     return 0;
 }
+#ifdef __cplusplus
+}
+#endif
 
 extern "C"
 int map_get(Map *map, int x, int y, int z) {

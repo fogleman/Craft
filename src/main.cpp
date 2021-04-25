@@ -45,6 +45,19 @@ extern "C" {
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
+class timerClass{
+    public:
+        timerClass();
+        ~timerClass();
+        void settimer(float t){
+            time = t;
+        };
+        float gettimer(){
+            return time;
+        };
+    private:
+        float time;
+};
 
 typedef struct {
     Map map;
@@ -1235,6 +1248,26 @@ void map_set_func(int x, int y, int z, int w, void *arg) {
     Map *map = (Map *)arg;
     float t = time_of_day();
     map_set(map, x, y, z, w, t);
+
+    std::vector<cloudPosition> allClouds;
+    Map *tempMap = (Map *)map;
+    if( sizeof(map) != 0) {printf("mapsize = "); printf("%f", sizeof(map)); printf("\n");}
+    // for(int i=0; i< map->size; i++)
+    // {
+    //     if(tempMap->data->e.w ==16)
+    //     {
+    //         printf("There's clouds\n");
+    //         cloudPosition p;
+    //         p.x = tempMap->data->e.x;
+    //         p.y = map->data->e.y -1;
+    //         p.z = tempMap->data->e.z;
+    //         allClouds.push_back(p);
+    //     }
+    //     map++;
+    // }
+    //map_set(tempMap, x, y, z, w, t);
+    //printf("vec size = "); printf("%d", allClouds.size()); printf("\n");
+    //moveAllCloudsDown(tempMap, allClouds, t);
 }
 
 extern "C"
@@ -1595,6 +1628,7 @@ void toggle_light(int x, int y, int z) {
         Map *map = &chunk->lights;
         int w = map_get(map, x, y, z) ? 0 : 15;
         float t = time_of_day();
+
         map_set(map, x, y, z, w, t);
         db_insert_light(p, q, x, y, z, w);
         client_light(x, y, z, w);
@@ -1606,12 +1640,17 @@ extern "C"
 void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        Map *map = &chunk->lights;
+        {Map *map = &chunk->lights;
         float t = time_of_day();
+        
         if (map_set(map, x, y, z, w, t)) {
             dirty_chunk(chunk);
             db_insert_light(p, q, x, y, z, w);
-        }
+        }}
+        {Map *map2 = &chunk->map;
+        float t = time_of_day();
+        map_set(map2, x, y, z, w, t);}
+        
     }
     else {
         db_insert_light(p, q, x, y, z, w);
@@ -2925,6 +2964,9 @@ int main(int argc, char **argv) {
         me->buffer = 0;
         g->player_count = 1;
 
+        
+
+
         // LOAD STATE FROM DATABASE //
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
         force_chunks(me);
@@ -2954,6 +2996,24 @@ int main(int argc, char **argv) {
             dt = MIN(dt, 0.2);
             dt = MAX(dt, 0.0);
             previous = now;
+
+            // Check time to adjust clouds
+            float cloudTime = time_of_day();
+            //printf("Made it here!\n");
+            // if(isLightChanging){
+            //     std::vector<cloudPosition> allClouds = getClouds();
+            //     printf("Even made it here!\n");
+            //     printf("Cloud Vec Size = "); printf("%f", sizeof(g->chunks->map)); printf("\n");
+            //     moveAllCloudsUp(&(g->chunks->map), allClouds, cloudTime);
+            // }
+            if( (cloudTime <= 1 && cloudTime >= 0.9)||(cloudTime >=0 && cloudTime <= 0.2) ){
+                
+                //printf("Light is Changing "); printf("\n");
+                // printf("time of day = "); printf("%f", cloudTime); printf("\n");
+                // std::vector<cloudPosition> allClouds = getClouds();
+                // moveAllCloudsDown(map, allClouds, cloudTime);
+            }
+            else{/* printf("\n");*/}
 
             // HANDLE MOUSE INPUT //
             handle_mouse_input();

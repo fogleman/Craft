@@ -81,8 +81,7 @@ void create_world(int p, int q, world_func func, void *arg) {
 void create_clouds(int flag, int x, int z, int w, world_func func, void *arg)
 {
     for (int y = 64; y < 72; y++) {
-        if (simplex3(
-            x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
+        if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
         {
             func(x, y, z, 16 * flag, arg);
         }
@@ -93,8 +92,7 @@ void create_clouds(int flag, int x, int z, int w, world_func func, void *arg)
 void create_fog(int flag, int x, int z, int w, world_func func, void *arg)
 {
     for (int y = 10; y < 22; y++) {
-        if (simplex3(
-            x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.8)
+        if (simplex3(x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.8)
         {
             func(x, y, z, 16 * flag, arg);
         }

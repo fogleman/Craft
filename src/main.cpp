@@ -1336,7 +1336,10 @@ void delete_chunks() {
                 break;
             }
         }
-        if (Delete) { delete_chunk_data(chunk, count); }
+        if (Delete) {
+            delete_chunk_data(chunk, count);
+            count--;
+        }
     }
     g->chunk_count = count;
 }
@@ -1624,9 +1627,7 @@ void toggle_light(int x, int y, int z) {
 
 extern "C"
 void set_light_set_light_map(Chunk *chunk, int p, int q, int x, int y, int z, int w){
-    Map *map = &chunk->lights;
-    float t = time_of_day();
-    if (map_set(map, x, y, z, w, t)) {
+    if (map_set(&chunk->map, x, y, z, w, Global_Time)) {
         dirty_chunk(chunk);
         db_insert_light(p, q, x, y, z, w);
     }
@@ -1634,22 +1635,15 @@ void set_light_set_light_map(Chunk *chunk, int p, int q, int x, int y, int z, in
 
 extern "C"
 void set_light_set_whole_map(Chunk *chunk, int p, int q, int x, int y, int z, int w){
-    Map *map2 = &chunk->map;
-    float t = time_of_day();
-    map_set(map2, x, y, z, w, t);
+    map_set(&chunk->map, x, y, z, w, Global_Time);
 }
 
 extern "C"
 void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-
         set_light_set_light_map(chunk, p, q, x, y, z, w);
         set_light_set_whole_map(chunk, p, q, x, y, z, w);
-        // {Map *map2 = &chunk->map;
-        // float t = time_of_day();
-        // map_set(map2, x, y, z, w, t);}
-        
     }
     else {
         db_insert_light(p, q, x, y, z, w);

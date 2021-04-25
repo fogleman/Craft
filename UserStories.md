@@ -4,11 +4,18 @@
 ### 1. As a player, I want the clouds to move so that the environment is more immersive.
 1. Dynamic Clouds
     1. ~~Add Cloud Block - 3~~
-    2. Add Cloud Movement - 3
-    3. ~~Dynamic Cloud Shape Generation - 5~~ (Already implemented)
-    4. Bound Cloud Movement and Generation - 8
-    5. Continuous Cloud Generation during Runtime - 5
-    6. Convert files the Cloud source code is dependent on to C++ compilation - 3
+    2. Add Cloud Movement - ~~3~~
+        1. Add function to move cloud at same altitude - 2
+        2. Add function to test cloud motion functtion - 2
+        3. Implement functions into map.cpp - 8
+    4. ~~Dynamic Cloud Shape Generation - 5~~ (Already implemented)
+    5. Bound Cloud Movement and Generation - 8
+    6. Continuous Cloud Generation during Runtime - 5
+    7. Convert files the Cloud source code is dep. on to C++ compilation - ~~3~~
+        1.  Create cloud.h - 2
+        2.  Create cloud.cpp - 2
+        3.  Allow program to be called by C code - 2
+        4.  Implement into map.cpp and main.cpp - 3
 ### 2. As a player, I want a weather system so that there's more variety day-to-day.
 1. Rain
     1. Create Dark Cloud Texture - 2
@@ -19,8 +26,17 @@
 2. Fog
     1. ~~Add Fog Effect - 3~~
     2. Fog dependent on time of day - 3
-    3. Make Fog Transparent - 3
-    4. Clouds Lower to Fog, Fog Rises to Clouds - 3
+        1. Alter map functions to accept time as an argument - 2
+        2. Write function to change cloud/fog depending on time - 2
+        3. Access time passed in game world - 5
+        4. Implement time dependent functions - 5
+    4. Make Fog Transparent - 3
+    5. Clouds Lower to Fog, Fog Rises to Clouds - 3
+        1. Write function to get cloud blocks - 2
+        2. Write function to lower cloud blocks - 2
+        3. Write function to raise cloud blocks - 2
+        4. Write function to test cloud position change - 2
+        5. Implement functions into main.cpp and map.cpp - 8
 ### 3. As a player, I want more biomes so that exploration is more rewarding.
 1. Snow Blocks
     1. ~~Add Snow Block to Textures - 1~~
@@ -64,3 +80,18 @@
 ### 6. As a dev, I want a document that tracks our velocity so that we can measure our progress.
 1. ~~Generate SprintTracker.md - 1~~
 2. ~~Add it to github - 1~~
+### 7. As a dev., I want the project code to be more easily read and highly refactored.
+1. Refactor World.c functions
+    1. Refactor create_wrold() - 1
+2. Refactor map.cpp functions
+    1. map_get() - 1
+    2. map_set() - 1
+3. Refactor main.cpp functions
+    1. Refactor _hit_test() - 1
+    2. Refactor compute_chunks() - 1
+    3. Refactor delete_chunks() - 1
+    4. Refactor check_workers() - 1
+    5. Refactor set_lights() - 1
+    6. Refactor cylinder() - 1
+    7. Refactor sphere() - 1
+    8. Refactor cube() - 1

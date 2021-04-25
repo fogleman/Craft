@@ -70,6 +70,9 @@ void map_grow(Map *map);
 int map_set(Map *map, int x, int y, int z, int w, int t); //overloaded to take time
 int map_set_clouds(Map *map, int x, int y, int z, int w, int t);
 int map_get(Map *map, int x, int y, int z);
+
+int update_entry(Map *map, MapEntry *entry, int x, int y, int z, int w);
+
 #ifdef __cplusplus
 }
 #endif

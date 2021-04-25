@@ -24,7 +24,7 @@ std::vector<cloudPosition> setClouds(std::vector<cloudPosition> allClouds, int x
     allClouds.push_back(p);
 
     //cloudData data;
-    allCloudData.set(allClouds);
+    //allCloudData.set(allClouds);
     return allClouds;
 }
 
@@ -79,8 +79,53 @@ void moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, char
 
 //Test Functions
 extern "C"
-int gotClouds(std::vector<cloudPosition> clouds){ return 0; }
+int gotClouds(std::vector<cloudPosition> clouds){ 
+    if(clouds.size() == 0)
+    {
+        printf("Test FAILED: Clouds in Vector "); printf("%ld", clouds.size()); printf("\n");
+        return -1;
+    }
+    else{
+        printf("Test PASSED: Clouds in Vector "); printf("%ld", clouds.size()); printf("\n");
+        return clouds.size();
+    } 
+}
 extern "C"
-int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){ return 0; }
+int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){
+    int test = 0;
+    while( test < 1){
+        if (startData.size() == endData.size()){
+            for(int idx=0; idx<startData.size(); idx++){
+                if(startData[1].x == endData[1].x){
+                    if(startData[idx].y == endData[idx].y){
+                        if(startData[idx].z == endData[idx].z){
+                           /*Point is the same;*/ }
+                        else{ test++; }}
+                    else{ test++; }}
+                else{ test++; }
+            }
+        }else {test++;}
+    }
+
+    if( test >= 1 )
+    {
+        printf("Test FAILED: US 2.2.4 Cloud Position Changed\n");
+        return -1;
+    } 
+    else{
+        printf("Test PASSED: US 2.2.4 Cloud Position Changed\n");
+        return 0;
+    }
+}
 extern "C"
-int isValidChar(char xyz){ return 0; }
+int isValidChar(char xyz){
+    if( xyz == 'x' || xyz == 'y' || xyz == 'z')
+    {
+        printf("Test PASSED: valid position char change\n");
+        return 0;
+    }
+    else{
+        printf("Test PASSED: valid position char change\n");
+        return -1;
+    }
+}

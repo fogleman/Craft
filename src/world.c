@@ -67,24 +67,36 @@ void create_world(int p, int q, world_func func, void *arg) {
             }
             // clouds
             if (SHOW_CLOUDS) {
-                for (int y = 64; y < 72; y++) {
-                    if (simplex3(
-                        x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
-                    {
-                        func(x, y, z, 16 * flag, arg);
-                    }
-                }
+                create_clouds(flag, x, z, w, func, arg);
             }
             // fog                                                              //US 2.2.1 Add Fog Effect
             if (SHOW_CLOUDS) {
-                for (int y = 10; y < 22; y++) {
-                    if (simplex3(
-                        x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.8) 
-                    {
-                        func(x, y, z, 16 * flag, arg);
-                    }
-                }
+                create_fog(flag, x, z, w, func, arg);
             }
+        }
+    }
+}
+
+//DS 7.1.1 Refactor world.c functions
+void create_clouds(int flag, int x, int z, int w, world_func func, void *arg)
+{
+    for (int y = 64; y < 72; y++) {
+        if (simplex3(
+            x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
+        {
+            func(x, y, z, 16 * flag, arg);
+        }
+    }
+}
+
+//DS 7.1.1 Refactor world.c functions
+void create_fog(int flag, int x, int z, int w, world_func func, void *arg)
+{
+    for (int y = 10; y < 22; y++) {
+        if (simplex3(
+            x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.8)
+        {
+            func(x, y, z, 16 * flag, arg);
         }
     }
 }

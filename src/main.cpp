@@ -45,6 +45,9 @@ extern "C" {
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
+float Global_Time;
+float last_Time;
+
 class timerClass{
     public:
         timerClass();
@@ -1246,28 +1249,7 @@ int isLightChanging(int t){
 extern "C"
 void map_set_func(int x, int y, int z, int w, void *arg) {
     Map *map = (Map *)arg;
-    float t = time_of_day();
-    map_set(map, x, y, z, w, t);
-
-    std::vector<cloudPosition> allClouds;
-    Map *tempMap = (Map *)map;
-    if( sizeof(map) != 0) {printf("mapsize = "); printf("%f", sizeof(map)); printf("\n");}
-    // for(int i=0; i< map->size; i++)
-    // {
-    //     if(tempMap->data->e.w ==16)
-    //     {
-    //         printf("There's clouds\n");
-    //         cloudPosition p;
-    //         p.x = tempMap->data->e.x;
-    //         p.y = map->data->e.y -1;
-    //         p.z = tempMap->data->e.z;
-    //         allClouds.push_back(p);
-    //     }
-    //     map++;
-    // }
-    //map_set(tempMap, x, y, z, w, t);
-    //printf("vec size = "); printf("%d", allClouds.size()); printf("\n");
-    //moveAllCloudsDown(tempMap, allClouds, t);
+    map_set(map, x, y, z, w, Global_Time);
 }
 
 extern "C"
@@ -1623,6 +1605,7 @@ extern "C"
 void toggle_light(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
+    printf("Toggle Lights\n");
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
         Map *map = &chunk->lights;
@@ -1637,19 +1620,32 @@ void toggle_light(int x, int y, int z) {
 }
 
 extern "C"
+void set_light_set_light_map(Chunk *chunk, int p, int q, int x, int y, int z, int w){
+    Map *map = &chunk->lights;
+    float t = time_of_day();
+    if (map_set(map, x, y, z, w, t)) {
+        dirty_chunk(chunk);
+        db_insert_light(p, q, x, y, z, w);
+    }
+}
+
+extern "C"
+void set_light_set_whole_map(Chunk *chunk, int p, int q, int x, int y, int z, int w){
+    Map *map2 = &chunk->map;
+    float t = time_of_day();
+    map_set(map2, x, y, z, w, t);
+}
+
+extern "C"
 void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
-        {Map *map = &chunk->lights;
-        float t = time_of_day();
-        
-        if (map_set(map, x, y, z, w, t)) {
-            dirty_chunk(chunk);
-            db_insert_light(p, q, x, y, z, w);
-        }}
-        {Map *map2 = &chunk->map;
-        float t = time_of_day();
-        map_set(map2, x, y, z, w, t);}
+
+        set_light_set_light_map(chunk, p, q, x, y, z, w);
+        set_light_set_whole_map(chunk, p, q, x, y, z, w);
+        // {Map *map2 = &chunk->map;
+        // float t = time_of_day();
+        // map_set(map2, x, y, z, w, t);}
         
     }
     else {
@@ -2784,6 +2780,7 @@ void reset_model() {
 
 extern "C"
 int main(int argc, char **argv) {
+    Global_Time = 0;
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));
@@ -2974,7 +2971,9 @@ int main(int argc, char **argv) {
             s->y = highest_block(s->x, s->z) + 2;
         }
         
-
+        last_Time = Global_Time;
+        Global_Time = time_of_day();
+        
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
         while (1) {
@@ -2996,24 +2995,6 @@ int main(int argc, char **argv) {
             dt = MIN(dt, 0.2);
             dt = MAX(dt, 0.0);
             previous = now;
-
-            // Check time to adjust clouds
-            float cloudTime = time_of_day();
-            //printf("Made it here!\n");
-            // if(isLightChanging){
-            //     std::vector<cloudPosition> allClouds = getClouds();
-            //     printf("Even made it here!\n");
-            //     printf("Cloud Vec Size = "); printf("%f", sizeof(g->chunks->map)); printf("\n");
-            //     moveAllCloudsUp(&(g->chunks->map), allClouds, cloudTime);
-            // }
-            if( (cloudTime <= 1 && cloudTime >= 0.9)||(cloudTime >=0 && cloudTime <= 0.2) ){
-                
-                //printf("Light is Changing "); printf("\n");
-                // printf("time of day = "); printf("%f", cloudTime); printf("\n");
-                // std::vector<cloudPosition> allClouds = getClouds();
-                // moveAllCloudsDown(map, allClouds, cloudTime);
-            }
-            else{/* printf("\n");*/}
 
             // HANDLE MOUSE INPUT //
             handle_mouse_input();

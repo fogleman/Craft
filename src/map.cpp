@@ -50,9 +50,28 @@ void map_copy(Map *dst, Map *src) {
 #ifdef __cplusplus
 extern "C"{
 #endif
+int update_entry(Map *map, MapEntry *entry, int x, int y, int z, int w){
+    if(w){
+        entry->e.x = x;
+        entry->e.y = y;
+        entry->e.z = z;
+        entry->e.w = w;
+        map->size++;
+        if (map->size * 2 > map->mask) {
+            map_grow(map);
+        }
+        return 1;
+    }
+    else{ return 0;}
+}
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C"{
+#endif
 int map_set(Map *map, int x, int y, int z, int w, int t) {
-    int numClouds=0;
-    std::vector<cloudPosition> allClouds;
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
     y -= map->dy;
@@ -67,28 +86,13 @@ int map_set(Map *map, int x, int y, int z, int w, int t) {
         index = (index + 1) & map->mask;
         entry = map->data + index;
     }
-    if(w==CLOUD && t == -1){ 
-        allClouds = setClouds(allClouds, x, y, z);
-        moveAllCloudsDown(map, allClouds, t);
-    }
     if (overwrite) {
         if (entry->e.w != w) {
             entry->e.w = w;
             return 1;
         }
     }
-    else if (w) {
-        entry->e.x = x;
-        entry->e.y = y;
-        entry->e.z = z;
-        entry->e.w = w;
-        map->size++;
-        if (map->size * 2 > map->mask) {
-            map_grow(map);
-        }
-        return 1;
-    }
-    return 0;
+    return update_entry(map, entry, x, y, z, w);
 }
 #ifdef __cplusplus
 }

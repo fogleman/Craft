@@ -1307,6 +1307,17 @@ void create_chunk(Chunk *chunk, int p, int q) {
 }
 
 extern "C"
+void delete_chunk_data(Chunk *chunk, int count){
+    map_free(&chunk->map);
+    map_free(&chunk->lights);
+    sign_list_free(&chunk->signs);
+    del_buffer(chunk->buffer);
+    del_buffer(chunk->sign_buffer);
+    Chunk *other = g->chunks + (--count);
+    memcpy(chunk, other, sizeof(Chunk));
+}
+
+extern "C"
 void delete_chunks() {
     int count = g->chunk_count;
     State *s1 = &g->players->state;
@@ -1325,15 +1336,7 @@ void delete_chunks() {
                 break;
             }
         }
-        if (Delete) {
-            map_free(&chunk->map);
-            map_free(&chunk->lights);
-            sign_list_free(&chunk->signs);
-            del_buffer(chunk->buffer);
-            del_buffer(chunk->sign_buffer);
-            Chunk *other = g->chunks + (--count);
-            memcpy(chunk, other, sizeof(Chunk));
-        }
+        if (Delete) { delete_chunk_data(chunk, count); }
     }
     g->chunk_count = count;
 }

@@ -48,20 +48,6 @@ extern "C" {
 float Global_Time;
 float last_Time;
 
-class timerClass{
-    public:
-        timerClass();
-        ~timerClass();
-        void settimer(float t){
-            time = t;
-        };
-        float gettimer(){
-            return time;
-        };
-    private:
-        float time;
-};
-
 typedef struct {
     Map map;
     Map lights;

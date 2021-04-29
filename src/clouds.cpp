@@ -1,3 +1,5 @@
+
+
 #include "clouds.h"
 
 struct cloudData{
@@ -37,43 +39,69 @@ std::vector<cloudPosition> getClouds(){
 }
 
 extern "C"
-void moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
+std::vector<cloudPosition> moveAllCloudsDown(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
 {
-    char xyz = 'y';
+    int xyz = 2;
     int  posChange = -1;
-    moveClouds(map,allCloudPositions, posChange, xyz, t);
+    allCloudPositions = moveClouds(map,allCloudPositions, posChange, xyz, t);
+    return allCloudPositions;
 }
 
 extern "C"
-void moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
+std::vector<cloudPosition> moveAllCloudsUp(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
 {
-    char xyz = 'y';
+    int xyz = 2;
     int  posChange = 1;
-    moveClouds(map,allCloudPositions, posChange, xyz, t);
+    allCloudPositions = moveClouds(map,allCloudPositions, posChange, xyz, t);
+    return allCloudPositions;
+}
+  
+extern "C"
+std::vector<cloudPosition> moveAllCloudsOver(Map *map, std::vector<cloudPosition> allCloudPositions, int t)
+{   
+    int xyz = 1;
+    int  posChange = 1;
+    std::vector<cloudPosition> movedClouds = moveClouds(map,allCloudPositions, posChange, xyz, t);
+    return movedClouds;
 }
 
 extern "C"
-void moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, char xyz, int t)
+std::vector<cloudPosition> moveClouds(Map *map, std::vector<cloudPosition> clouds, int posChange, int xyz, int t)
 {
     std::vector<cloudPosition> cloudCopy = clouds;
+    std::vector<cloudPosition> returnClouds = clouds;
     while (clouds.size() > 0)
     {
         cloudPosition p = clouds.back();
-        map_set(map, p.x, p.y, p.z, 0, t);     //remove cloud at current position
+        //map_set(map, p.x, p.y, p.z, 0, t);     //remove cloud at current position
         clouds.pop_back();
     }
     while (clouds.size() > 0)
     {
         cloudPosition p = cloudCopy.back();
         
-        if(xyz == 'x'){ map_set(map, p.x + posChange, p.y, p.z, 16, t);}
-        else if(xyz == 'y'){ map_set(map, p.x, p.y + posChange, p.z, 16, t);}
-        else if(xyz == 'z'){ map_set(map, p.x, p.y, p.z + posChange, 16, t);}
-
+        if(xyz == 1){ 
+            //map_set(map, p.x + posChange, p.y, p.z, 16, t);
+        }
+        else if(xyz == 2){ 
+            //map_set(map, p.x, p.y + posChange, p.z, 16, t);
+        }
+        else if(xyz == 3){ 
+            //map_set(map, p.x, p.y, p.z + posChange, 16, t);     
+        }
         clouds.pop_back();
     }
-    
-    
+    if(xyz == 1){ 
+        for(int i = 0; i < returnClouds.size(); i++){returnClouds[i].x = returnClouds[i].x + posChange;}    
+    }
+    else if(xyz == 2){ 
+        for(int i = 0; i < returnClouds.size(); i++){returnClouds[i].y = returnClouds[i].y + posChange;}
+    }
+    else if(xyz == 3){ 
+        for(int i = 0; i < returnClouds.size(); i++){returnClouds[i].z = returnClouds[i].z + posChange;}
+    }
+
+    return returnClouds;
 }
 
 
@@ -90,13 +118,15 @@ int gotClouds(std::vector<cloudPosition> clouds){
         return clouds.size();
     } 
 }
+
 extern "C"
 int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosition> endData){
     int test = 0;
-    while( test < 1){
+    int done = 0;
+    while( test < 1 && done == 0){
         if (startData.size() == endData.size()){
             for(int idx=0; idx<startData.size(); idx++){
-                if(startData[1].x == endData[1].x){
+                if(startData[idx].x == endData[idx].x){
                     if(startData[idx].y == endData[idx].y){
                         if(startData[idx].z == endData[idx].z){
                            /*Point is the same;*/ }
@@ -104,16 +134,19 @@ int isPositionChanged(std::vector<cloudPosition>startData, std::vector<cloudPosi
                     else{ test++; }}
                 else{ test++; }
             }
+            done++;
         }else {test++;}
     }
 
     if( test >= 1 )
-    {
-        printf("Test FAILED: US 2.2.4 Cloud Position Changed\n");
+    {   
+        /// @note Output supressed for testing function efficacy
+        /// printf("Test FAILED: US 2.2.4 Cloud Position Changed\n");
         return -1;
     } 
     else{
-        printf("Test PASSED: US 2.2.4 Cloud Position Changed\n");
+        /// @note Output supressed for testing function efficacy
+        /// printf("Test PASSED: US 2.2.4 Cloud Position Changed\n");
         return 0;
     }
 }

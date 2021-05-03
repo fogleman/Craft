@@ -4,6 +4,10 @@ project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.c)
 
+FILE(GLOB LUA_FILES deps/lua/*.c)
+LIST(REMOVE_ITEM LUA_FILES ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/lua.c)
+LIST(REMOVE_ITEM LUA_FILES ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/luac.c)
+
 add_executable(
     craft
     ${SOURCE_FILES}
@@ -11,7 +15,8 @@ add_executable(
     deps/lodepng/lodepng.c
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
-    deps/tinycthread/tinycthread.c)
+    deps/tinycthread/tinycthread.c
+    ${LUA_FILES})
 
 add_definitions(-std=c99 -O3)
 
@@ -19,7 +24,9 @@ add_subdirectory(deps/glfw)
 include_directories(deps/glew/include)
 include_directories(deps/glfw/include)
 include_directories(deps/lodepng)
+include_directories(deps/lua)
 include_directories(deps/noise)
+include_directories(deps/sglib)
 include_directories(deps/sqlite)
 include_directories(deps/tinycthread)
 

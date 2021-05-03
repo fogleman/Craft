@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "api.h"
 #include "auth.h"
 #include "client.h"
 #include "config.h"
@@ -2771,6 +2772,9 @@ int main(int argc, char **argv) {
             s->y = highest_block(s->x, s->z) + 2;
         }
 
+        // INITIALIZE LUA //
+        clua_init();
+
         // BEGIN MAIN LOOP //
         double previous = glfwGetTime();
         while (1) {
@@ -2947,6 +2951,7 @@ int main(int argc, char **argv) {
         }
 
         // SHUTDOWN //
+        clua_close();
         db_save_state(s->x, s->y, s->z, s->rx, s->ry);
         db_close();
         db_disable();

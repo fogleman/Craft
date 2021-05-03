@@ -1,0 +1,5465 @@
+<HTML>
+
+<HEAD>
+
+<TITLE>SGLIB - Reference</TITLE>
+
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000">
+
+<br>
+<center>
+<h1>SGLIB - Reference Manual</h1>
+</center>
+
+<br>
+
+<h2>Content</h2>
+
+<ul>
+<li><a href="#about">About</a>
+<li><a href="#concepts">Concepts</a>
+<li><a href="#api0">Application Interface - level 0</a>
+<ul>
+<li><a href="#array_api0">Arrays</a>
+<li><a href="#list_api0">Linked Lists</a>
+<li><a href="#sorted_list_api0">Sorted Linked Lists</a>
+<li><a href="#dl_list_api0">Double Linked Lists</a>
+<li><a href="#bin_tree_api0">Binary Trees</a>
+</ul>
+<li><a href="#api1">Application Interface - level 1</a>
+<ul>
+<li><a href="#array_api1">Arrays</a>
+<li><a href="#hashed_container_api1">Hashed Containers</a>
+<li><a href="#list_api1">Linked Lists</a>
+<li><a href="#sorted_list_api1">Sorted Linked Lists</a>
+<li><a href="#dl_list_api1">Double Linked Lists</a>
+<li><a href="#rbtree_api1">Red-Black Trees</a>
+</ul>
+<li><a href="#examples">Examples</a>
+<ul>
+<li><a href="#array_exam">Arrays</a>
+<li><a href="#hashed_container_exam">Hashed Containers</a>
+<li><a href="#list_exam">Linked Lists</a>
+<li><a href="#sorted_list_exam">Sorted Linked Lists</a>
+<li><a href="#dl_list_exam">Double Linked Lists</a>
+<li><a href="#rbtree_exam">Red-Black Trees</a>
+</ul>
+</ul>
+
+
+<br><br>
+<br><br>
+
+<a name="about"></a>
+
+<h2> About Sglib </h2>
+
+<em>SGLIB</em> stands for <em>Simple Generic Library</em> and it
+consists of single header file
+written in C programming language.
+The header file <code>sglib.h</code> provides generic implementation of most
+common algorithms for arrays, lists, sorted lists and red-black trees.
+Implementation of double linked lists and hashed tables is envisaged.
+Also suggestions for new useful functionalities are welcomed.
+The library is generic and it does not define its own data
+structures. Rather it acts on existing user defined data structures
+via a generic interface.  It also does not allocate or deallocate any
+memory and does not depend on any particular memory management.  In
+case od several datatypes, sglib even does not impose its own data
+representation. For example, sglib list routines can be applied to any
+user defined structure containing a pointer to the same
+structure as its field.
+
+<p>
+All algorithms are implemented in form of macros parametrized by the
+type of data structure and comparator function (or comparator
+macro). Several further generic parameters such as the name of 'next'
+field for linked lists may be required for some algorithms and data
+structures.
+
+<p>
+Sglib offers access to algorithms in two level user interface. A
+<em>level - 0</em> interface is simply a collection of useful macros.
+If you do not like large macros or you afraid introduction of symbol
+clashes after macro expansions you can use a <em>level - 1</em>
+interface. This interface generates legal C functions for each particular
+type. Those functions can be called from the main program without
+worrying about unwanted effects due to macro expansions.
+
+<p>
+You can always use level - 0 interface. You can use level - 1 interface
+only if your base type is named by a single identifier, or if you have
+defined a typedef for it. It is a question of taste whether you decide
+to use one of two interfaces. It seems that you get the most
+advantages by using both interfaces in the same time. You can do this
+without worrying about implementation clashes, the level - 1
+inplementation are just wrappers to level - 0 interface.  However, few
+functions using recursion (red-black trees for example) are
+implemented exclusively in level - 1 interface.
+
+<p>
+During the design and implementation of sglib we have followed following rules:
+<ul>
+<li>Efficiency. Resulting code must be as efficient as if it was
+specialized code
+<li>Simplicity. No special tool is needed for generic constructions.
+<li>In order to avoid conflicts with user symbols, each defined macro and
+function starts by 'SGLIB_' and 'sglib_' prefix respectively.
+<li>In order to avoid situation when actual macro parameter conflicts with
+symbol defined within macro, all names defined within macros start and
+finish with underscore character.
+<li>Each occurence of macro parameter giving an expression is always used
+enclosed into supplementary parentheses.
+</ul>
+
+
+
+<br><br>
+<a name="concepts"></a>
+
+<h2> Sglib - Concepts </h2>
+
+
+<a name=comparator></a>
+
+<h3>Comparator</h3>
+
+A <em>comparator</em> is a function (or macro)
+taking two elements and returning an integer value, the value is
+respectively a negative number, zero or a positive number for cases
+when the first parameter is less than, equal, or greater than the second.
+For example the standard C function <em>strcmp</em> is a string
+<em>comparator</em> which can be directly
+used in sglib. Also a macro
+<pre>
+#define SGLIB_NUMERIC_COMPARATOR(x, y) ((int)((x) - (y)))
+</pre>
+is a comparator for integers numbers. By the way, the macro
+<code>SGLIB_NUMERIC_COMPARATOR</code> with this definition
+is predefined in sglib
+and you can use it withount need of your own redefinitions.
+
+
+<a name=subcomparator></a>
+
+<h3>Subcomparator</h3>
+
+
+A <a href="#comparator">comparator</a> which is induced from
+another comparator in a way that it
+makes several elements equal while otherwise preserving the original
+ordering is called a <em>subcomparator</em>. More formally, if <code>cmp</code>
+is a comparator and <code>subcmp</code> is its subcomparator, then:
+<br>
+<br>
+&nbsp; <code>cmp(x,y) &lt; 0</code> implies <code>subcmp(x,y) &lt;= 0</code>
+<br>
+and
+<br>
+&nbsp; <code>cmp(x,y) > 0</code> implies <code>subcmp(x,y) >= 0</code>
+<br>
+<br>
+Subcomparators are used in iterators to iterate over such part
+of a container which is equal to a given element. For example, let's take that we have a red black tree
+of strings ordered lexicographically.
+We can define a subcomparator comparing only the first letter
+of strings:
+<pre>
+#define strsubcmp(x, y) (x[0] - y[0])
+</pre>
+Using this subcomparator we can iterate over all strings
+starting with the same letter.
+
+
+
+
+<a name="elem_exchanger"></a>
+
+<h3>Array elem_exchanger and simultaneous sorting of multiple arrays</h3>
+
+An <em>elem_exchanger</em> is a function (or macro) performing
+exchange of two elements in an array.
+It takes following four parameters: the type of array elements,
+the array on which it operates, and two indexes of elements to exchange.
+For example the following macro:
+<pre>
+#define SGLIB_ARRAY_ELEMENTS_EXCHANGER(type, a, i, j) {type tmp;tmp=a[i];a[i]=a[j];a[j]=tmp;}
+</pre>
+is an <em>elem_exchanger</em> usable by sglib. By the way, the macro
+<code>SGLIB_ARRAY_ELEMENTS_EXCHANGER</code> with this definition
+is predefined in the sglib and you can use in implementations of your own
+<em>elem_exchanger</em>s.
+An <em>elem_exchanger</em> can be used to parametrize sorting
+algorithms. The motivation is that
+in many projects, several arrays keep related informations.
+Elemens of different arrays having the same index are related to each other
+and they form a single record. For example, one can represent a phone annuary by
+keeping person names in one array (say <em>name</em>) and corresponding phone
+numbers in another array (say <em>phoneNumbers</em>). In this representation the person
+<code>name[i]</code>
+has the phone number <code>phoneNumber[i]</code>.
+If you decide to sort your annuary alphabetically by names,
+you have to make corresponding reordering also on numbers.
+<p>
+Sglib modifies arrays exclusively by
+using an <em>elem_exchanger</em>.
+You can use your own <em>elem_exchanger</em> as parameter for sorting
+algorithms. Your implementation can
+simultaneously exchange elements in several arrays,
+and hence make sorting to act on multiple related arrays.
+For example, continuing the annuary example, we can define the following
+<em>elem_exchanger</em>:
+<pre>
+#define ANNUARY_EXCHANGER(type, a, i, j) {  SGLIB_ARRAY_ELEMENTS_EXCHANGER(char *, name, i, j);  SGLIB_ARRAY_ELEMENTS_EXCHANGER(int, phoneNumber, i, j);}
+</pre>
+and use it as parameter of a sorting macro. For example we can sort the first 1000 elements
+of the annuary by the following command:
+<pre>
+SGLIB_ARRAY_QUICK_SORT(char*, name, 1000, strcmp, ANNUARY_EXCHANGER);
+</pre>
+
+<br><br>
+
+
+<A name="container"></a>
+
+<h3>Container</h3>
+
+A <em>container</em> data structure is any data structure containing
+elements. This is for example an array, list, sorted list, red-black tree, etc.
+
+
+<A name="linked_list"></a>
+
+<h3>Linked lists</h3>
+
+A linked list is any C structure containing a pointer to the next
+element. The structure is entirely defined by the user,
+sglib does not provide any default implementation.
+Following code defines several lists on which sglib can operate:
+
+<center>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+
+struct myintlist {
+&nbsp;    int value;
+&nbsp;    struct myintlist *next;
+};
+
+struct history {
+&nbsp;    int order;
+&nbsp;    struct historyelem *h;
+&nbsp;    // ... any other records
+&nbsp;    struct history *previous;
+};
+
+// you can even consider special trees as linked lists
+struct mytreenode {
+&nbsp;    int nodetype;
+&nbsp;    union nodeinformations node;
+&nbsp;    struct mytrenode **subtrees;
+};
+
+</pre>
+</td></tr>
+</table>
+</center>
+
+Sglib does not contain
+any allocation or freeing of memory, so your program is responsible
+for allocating/freeing of each element of the list.
+Sglib provides macros for ordering and
+maintaining such lists. Macros, such
+as insert and delete only affect the <a
+href="#next_element">next</a> field of elements, so that the element is correctly
+inserted/deleted into/from the list.
+
+
+<A name="next_element"></a>
+
+<h3>Linked list next element parameter</h3>
+
+The <em>next</em> parameter of sglib macros is the name of the field
+pointing to the next element of the <a href="#linked_list">list</a>.
+For example for structures defined in the previous section
+this parameter will be respectively words:
+<code>next</code>, <code>previous</code> and <code>subtrees[1]</code>.
+
+
+
+
+<A name="comparator_equality"></a>
+<A name="pointer_equality"></a>
+
+<h3>Pointer equality versus comparator equality</h3>
+
+Sglib distinguishes two notions of equality. Two elements are said <em>pointer equal</em> if they
+are the same object in the memory and hence they are referenced by the same pointer.
+Two elements are said <em>comparator equal</em> if the
+<a href="#comparator">comparator</a> applied on those elements returns zero.
+In other words, the comparator equality tests the equality of keys. You can have several
+elements with the same key (hence comparator equal) in a data structure such as list, but only
+one occurence of each element with the same pointer (otherwise a cyclic data structure occurs).
+
+<p>
+The difference between pointer and comparator equality remains the
+difference between <code>==</code> and <code>equals</code> operators in Java language (with
+the difference that in sglib user has to implement its own comparator).
+
+<A name="pointer_member"></a>
+<A name="comparator_member"></a>
+
+<h3>Pointer and comparator equal membership</h3>
+
+Distinction between <a href="#comparator_equality">pointer and comparator equality</a>
+generates two notions of membership in a <a href="#container">container</a> data structure.
+We say that an element <code>E</code>
+is a <em>pointer equal member</em> of a container if it is physically
+part of the data structure, i.e. if the container contains the pointer to <code>E</code>.
+We say that an element <code>E</code>
+is a <em>comparator equal member</em>, if the container contains
+an element which is <a href="#comparator_equality">comparator equal</a> to <code>E</code>.
+In other words, an element is a <em>comparator equal member</em> of a container
+if the container contains an element with the same key. Note that if an element
+is a <em>pointer equal member</em> then it is also a <em>comparator equal member</em>.
+
+
+
+
+
+<A name="dl_linked_list"></a>
+
+<h3>Double Linked lists</h3>
+
+A double linked list is any C structure containing two pointers interpreted respectively as the previous and the next
+elements of the list. The structure is entirely defined by the user,
+sglib does not provide any default implementation.
+Following code defines several double linked lists on which sglib can operate:
+
+<center>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+
+struct mydoublelinkedlist {
+&nbsp;    int value;
+&nbsp;    struct mydoublelinkedlist *previous, *next;
+};
+
+struct history {
+&nbsp;    int order;
+&nbsp;    struct historyelem *h;
+&nbsp;    // ... any other records
+&nbsp;    struct history *up, *down;
+};
+
+</pre>
+</td></tr>
+</table>
+</center>
+
+Sglib provides macros for ordering and
+maintaining such lists. The list is passed to sglib using a pointer to any of its member.
+Sglib than operates on the whole list accessible via
+<a href="#dl_previous_element">previous</a> and <a href="#dl_next_element">next</a>
+fields.
+Macros, such
+as insert and delete only affect the <a href="#dl_previous_element">previous</a> and <a href="#dl_next_element">next</a>
+fields of elements, the rest of the structure is kept intact.
+
+
+<A name="dl_previous_element"></a>
+<A name="dl_next_element"></a>
+
+<h3>Previous and next parameters of macros for double linked lists</h3>
+
+The <em>previous</em> and <em>next</em> parameters of sglib macros are names of fields
+pointing respectively to the previous and to the next elements of a <a href="#dl_linked_list">double linked list</a>.
+For example, in the case of the first structure defined in the previous section
+those parameters will be <code>previous</code> and <code>next</code>. For the second structure
+those parameters will be <code>up</code> and <code>down</code>.
+
+
+
+
+
+
+<a name="bintree"></a>
+
+<h3>Binary trees</h3>
+
+A <em>binary tree</em> is any structure type containing two pointers to subtrees.
+The structure is entirely defined by the user,
+sglib does not provide any default implementation.
+Following code defines several implementations of binary trees on which sglib can operate:
+
+<center>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+
+struct myTreeNode {
+&nbsp;    int key;
+&nbsp;    struct myTreeNode *left;
+&nbsp;    struct myTreeNode *right;
+};
+
+struct generalTree {
+&nbsp;    struct nodeInfo onfo;
+&nbsp;    struct generalTree **subtrees;
+};
+
+// you can have a structure which is a tree and a list at the same time
+struct listAndTree {
+&nbsp;    int key;
+&nbsp;    struct listAndTree *left_ptr;
+&nbsp;    struct listAndTree *right_ptr;
+&nbsp;    struct listAndTree *next_ptr;
+};
+
+</pre>
+</td></tr>
+</table>
+</center>
+
+
+<A name="left_right_element"></a>
+
+<h3>Left and right parameters of tree macros</h3>
+
+The <em>left</em> and <em>right</em> parameters of sglib macros are the names of fields
+pointing respectively to the left and right subtrees of the given <a href="#bintree">tree</a> node.
+For example for structures defined in the previous section
+those parameter will be respectively pairs of words:
+<code>left, right</code> then <code>subtrees[0], subtrees[1]</code> and finally
+<code>left_ptr, right_ptr</code>.
+
+
+
+<a name="rbtree"></a>
+
+<h3>Red-Black Trees</h3>
+
+A <em>red-black tree</em> is a balanced <a href="#bintree">binary tree</a> with (at least) one
+bit of additional information storing the color of each node. Nodes in red-black trees
+can be colored either red or black. Usualy those two colors are represented by 0 and 1
+respectively. The structure defining a node in red-black tree is entirely defined by the user,
+sglib does not provide any default implementation.
+Our implementation of red-black trees uses recursion,
+this is why red-black trees are available only in level-1 interface.
+Following code defines several examples of structures which can be organized
+as red-black trees:
+
+<center>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+
+struct myTreeNode {
+&nbsp;    int key;
+&nbsp;    char color;
+&nbsp;    struct myTreeNode *left;
+&nbsp;    struct myTreeNode *right;
+};
+
+struct TreeWithOneColorBit {
+&nbsp;    struct {
+&nbsp;      unsigned key:31;
+&nbsp;      unsigned blackLabel:1;
+&nbsp;    } bits;
+&nbsp;    struct TreeWithOneColorBit *left;
+&nbsp;    struct TreeWithOneColorBit *right;
+};
+
+</pre>
+</td></tr>
+</table>
+</center>
+
+
+
+<A name="rb_color"</a>
+
+<h3>Color parameter for red-black tree macros</h3>
+
+The <em>color</em> parameter of macros operating on red-black trees is the name of the field
+containing information about the color of the node.
+For example for structures defined in the previous section
+this parameter will be <code>color</code> and <code>bits.blackLabel</code>.
+
+
+
+<br><br>
+<br><br>
+<a name="api0"></a>
+
+<h2>API: level 0</h2>
+
+The level 0 application interface is simply a collection of useful
+generic macros. Those macros are in general parametrized by some kind
+of C type (probably a C structure) and this is why they can not be
+implemented by C functions.
+
+<p>
+
+By convention, names of all macros start by SGLIB_ prefix. Then
+goes the identification of the data structure on which the macro
+operates and finaly the action performed by the macro.
+
+<p> In the design of macros we tried to make macros as generic as
+possible.  This sometimes leads to parameters which may seems useless.
+However, because macro expansion is done in compile time and the
+number of macro parameters does not affect the efficiency of the code,
+we thing that additional parameters do not matter.
+
+<br><br>
+
+
+
+<br><br>
+
+<a name="array_api0"></a>
+
+
+<h2>Array sorting API: level 0</h2>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_SINGLE_QUICK_SORT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_ARRAY_SINGLE_QUICK_SORT(type, a, max, comparator)</b></code>
+<br>
+<br>
+sort a single array using quicksort.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements.
+<dd><code>a</code> - the array to sort.
+<dd><code>max</code> - the number of elements in the array.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_SINGLE_HEAP_SORT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_SINGLE_HEAP_SORT(type, a, max, comparator)</b></code>
+<br>
+<br>
+sort a single array using heapsort.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements.
+<dd><code>a</code> - the array to sort.
+<dd><code>max</code> - the number of elements in the array.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_QUICK_SORT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_QUICK_SORT(type, a, max, comparator, elem_exchanger)</b></code>
+<br>
+<br>
+sort possibly multiple arrays using quicksort.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements.
+<dd><code>a</code> - the array to sort.
+<dd><code>max</code> - the number of elements in the array.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+<dd><code>elem_exchanger</code> - an <a href="#elem_exchanger">elem_exchanger</A> used to exchange two elements in the array.
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_HEAP_SORT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_HEAP_SORT(type, a, max, comparator, elem_exchanger)</b></code>
+<br>
+<br>
+sort possibly multiple arrays using heapsort.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements.
+<dd><code>a</code> - the array to sort.
+<dd><code>max</code> - the number of elements in the array.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+<dd><code>elem_exchanger</code> - an <a href="#elem_exchanger">elem_exchanger</A> used to exchange two elements in the array.
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_BINARY_SEARCH</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_ARRAY_BINARY_SEARCH(type, a, start_index, end_index, key, comparator, found, result_index)</b></code>
+<br>
+<br>
+find the key in a sorted array using binary search.
+<dd><dl>
+<dt><b>Parameters:</b>
+<dd><code>type</code> - the type of array elements.
+<dd><code>a</code> - the array.
+<dd><code>start_index</code> - the starting index, it is the smallest index possibly containing the <code>key</code>.
+<dd><code>end_index</code> - the ending index, it is the largest index possibly containing the <code>key</code> increased by one.
+<dd><code>key</code> - the element to search.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+<dd><code>found</code> - (output) is set to non-zero if the key was found, to zero otherwise.
+<dd><code>result_index</code> - (output) is set to the index of the element equal to the key. If there is no such element, than <code>result_index</code> is set to the index where the key can be inserted while preserving the array ordering.
+</dd>
+</td></tr>
+
+</table>
+
+
+<br><br>
+
+<a name="list_api0"></a>
+
+<h2>Lists API: level 0</h2>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_ADD</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_ADD(type, list, elem, next)</b></code>
+<br>
+<br>
+add an element to a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_ADD_IF_NOT_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_ADD_IF_NOT_MEMBER(type, list, elem, comparator, next, member)</b></code>
+<br>
+<br>
+add an element to a list if there is no <a href="#comparator_equality">comparator equal</a> element inside.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> has been added to the list, otherwise this variable is set to the member of the <code>list</code> which is equal to <code>elem</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_CONCAT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_CONCAT(type, first, second, next)</b></code>
+<br>
+<br>
+concatenate two lists by appending the second at the end of the first.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>first</code> - the first list.
+<dd><code>second</code> - the second list.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_DELETE</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_DELETE(type, list, elem, next)</b></code>
+<br>
+<br>
+delete an element from a list. The element must be a <a href="#pointer_member">pointer equal member</a> of the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to delete.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_DELETE_IF_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_DELETE_IF_MEMBER(type, list, elem, comparator, next, member)</b></code>
+<br>
+<br>
+remove a <a href="#comparator_equality">comparator equal</a> element from a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to delete.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> was not inside the <code>list</code>, otherwise this variable is set to the deleted element.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_IS_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_IS_MEMBER(type, list, elem, next, result)</b></code>
+<br>
+<br>
+determine whether an element is a <a href="#pointer_member">pointer member</a> of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to search.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) set to zero, if <code>elem</code> is not memebr of the <code>list</code>, non-zero otherwise.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_FIND_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_FIND_MEMBER(type, list, elem, comparator, next, result)</b></code>
+<br>
+<br>
+determine whether there is a <a href="#comparator_equality">comparator equal</a> element in a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to search.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) set to the resulting member. This variable is NULL if the <code>elem</code> has not been found in the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_LEN</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_LEN(type, list, next, result)</b></code>
+<br>
+<br>
+compute the length of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) the length of the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_MAP_ON_ELEMENTS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_MAP_ON_ELEMENTS(type, list, var, next, command)</b></code>
+<br>
+<br>
+apply a command on all elements of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>var</code> - the variable which will run through each element of the list.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>command</code> - any (possibly composed) statement of the C language. In the statement you can use the variable <code>var</code> (third parameter of the macro) going through all elements of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_REVERSE</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_REVERSE(type, list, next)</b></code>
+<br>
+<br>
+reverse a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list to reverse.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_LIST_SORT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_LIST_SORT(type, list, comparator, next)</b></code>
+<br>
+<br>
+sort a list using mergesort.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list to sort
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+</table>
+
+
+
+<br><br>
+
+<a name="sorted_list_api0"></a>
+
+<h2>Sorted Lists API: level 0</h2>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_ADD</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_ADD(type, list, elem, comparator, next)</b></code>
+<br>
+<br>
+insert an element into a sorted list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list where to insert the new element.
+<dd><code>elem</code> - the element to insert.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_ADD_IF_NOT_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_ADD_IF_NOT_MEMBER(type, list, elem, comparator, next, member)</b></code>
+<br>
+<br>
+insert an element into a sorted list if there is no <a href="#comparator_equality">comparator equal</a> element inside.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list where to add the element.
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> has been added to the list, otherwise this variable is set to the member of the <code>list</code> which is equal to <code>elem</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_DELETE</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_DELETE(type, list, elem, next)</b></code>
+<br>
+<br>
+delete an element from a sorted list. The element must be a <a href="#pointer_member">pointer equal member</a> of the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list where to delete the element.
+<dd><code>elem</code> - the element to delete. It must be a <a href="#pointer_member">pointer equal member</a> of the <em>list</em>.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_DELETE_IF_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_DELETE_IF_MEMBER(type, list, elem, comparator, next, member)</b></code>
+<br>
+<br>
+remove a <a href="#comparator_equality">comparator equal</a> element from a sorted list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list where to delete the element.
+<dd><code>elem</code> - the element to delete.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> was not inside the <code>list</code>, otherwise this variable is set to the deleted element.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_IS_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_IS_MEMBER(type, list, elem, comparator, next, result)</b></code>
+<br>
+<br>
+determine whether an element is a <a href="#pointer_member">pointer member</a> of a sorted list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list to search.
+<dd><code>elem</code> - the element to search.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) set to zero, if the <code>elem</code> is not member of the <code>list</code>. Non-zero otherwise.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_FIND_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_FIND_MEMBER(type, list, elem, comparator, next, result)</b></code>
+<br>
+<br>
+determine whether an element is a <a href="#comparator_member">comparator member</a> of a sorted list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list to search.
+<dd><code>elem</code> - the element to search.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) set to the resulting member. This variable is NULL if the <code>elem</code> has not been found in the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_FIND_MEMBER_OR_PLACE</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_FIND_MEMBER_OR_PLACE(type, list, elem, comparator, next, comparator_result, member_ptr)</b></code>
+<br>
+<br>
+determine whether an element is a <a href="#comparator_member">comparator member</a> of a sorted list, if not, find
+the place where to insert it.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list where to search the element.
+<dd><code>elem</code> - the element to search.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>comparator_result</code> - (output) the last <code>comparator</code> result. This is zero if the <code>element</code> was present in the <code>list</code>, non-zero otherwise.
+<dd><code>member_ptr</code> - (output) the place where to insert <code>elem</code>. It is the pointer to the pointer which will be set to <code>elem</code> by insertion. If <code>comparator_result</code> is zero, then this is the pointer to the pointer to the element equal to <code>elem</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_LEN</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_LEN(type, list, next, result)</b></code>
+<br>
+<br>
+compute the length of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) variable set to the length of the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_SORTED_LIST_MAP_ON_ELEMENTS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_SORTED_LIST_MAP_ON_ELEMENTS(type, list, var, next, command)</b></code>
+<br>
+<br>
+apply a command on all elements of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>var</code> - the variable which will run through each element of the list.
+
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+
+<dd><code>command</code> - any (possibly composed) statement of the C language. In the statement you can use the variable <code>var</code> (third parameter of the macro) going through all elements of the list.
+
+</dd>
+</td></tr>
+
+
+</table>
+
+
+
+<br><br>
+
+<a name="dl_list_api0"></a>
+
+<h2>Double Linked Lists API: level 0</h2>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_ADD</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_ADD(type, list, elem, previous, next)</b></code>
+<br>
+<br>
+add an element to a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_ADD_BEFORE</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_ADD_BEFORE(type, list, elem, previous, next)</b></code>
+<br>
+<br>
+add an element to a list. <code>Elem</code> will be inserted before the element pointed by <code>list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list (also specifying the place where to insert the new element).
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_ADD_AFTER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_ADD_AFTER(type, list, elem, previous, next)</b></code>
+<br>
+<br>
+add an element to a list. <code>Elem</code> will be inserted after the element pointed by <code>list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list (also specifying the place where to insert the new element).
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_ADD_IF_NOT_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_ADD_IF_NOT_MEMBER(type, list, elem, comparator, previous, next, member)</b></code>
+<br>
+<br>
+add an element to a list if there is no <a href="#comparator_equality">comparator equal</a> element inside.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> has been added to the list, otherwise this variable is set to the member of the <code>list</code> which is equal to <code>elem</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_ADD_BEFORE_IF_NOT_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_ADD_BEFORE_IF_NOT_MEMBER(type, list, elem, comparator, previous, next, member)</b></code>
+<br>
+<br>
+add an element to a list if there is no <a href="#comparator_equality">comparator equal</a> element inside. <code>Elem</code> will be inserted before the element pointed by <code>list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list (also specifying the place where to insert the new element).
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> has been added to the list, otherwise this variable is set to the member of the <code>list</code> which is equal to <code>elem</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_ADD_AFTER_IF_NOT_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_ADD_AFTER_IF_NOT_MEMBER(type, list, elem, comparator, previous, next, member)</b></code>
+<br>
+<br>
+add an element to a list if there is no <a href="#comparator_equality">comparator equal</a> element inside. <code>Elem</code> will be inserted after the element pointed by <code>list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list (also specifying the place where to insert the new element).
+<dd><code>elem</code> - the element to add.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> has been added to the list, otherwise this variable is set to the member of the <code>list</code> which is equal to <code>elem</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_CONCAT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_CONCAT(type, first, second, previous, next)</b></code>
+<br>
+<br>
+concatenate two lists by appending the second at the end of the first.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>first</code> - the first list.
+<dd><code>second</code> - the second list.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_DELETE</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_DELETE(type, list, elem, previous, next)</b></code>
+<br>
+<br>
+delete an element from a list. The element must be a <a href="#pointer_member">pointer equal member</a> of the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to delete.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_DELETE_IF_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_DELETE_IF_MEMBER(type, list, elem, comparator, previous, next, member)</b></code>
+<br>
+<br>
+remove a <a href="#comparator_equality">comparator equal</a> element from a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to delete.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>member</code> - (output) NULL, if the <code>elem</code> was not inside the <code>list</code>, otherwise this variable is set to the deleted element.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_IS_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_IS_MEMBER(type, list, elem, previous, next, result)</b></code>
+<br>
+<br>
+determine whether an element is a <a href="#pointer_member">pointer member</a> of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to search.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) set to zero, if <code>elem</code> is not memebr of the <code>list</code>, non-zero otherwise.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_FIND_MEMBER</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_FIND_MEMBER(type, list, elem, comparator, previous, next, result)</b></code>
+<br>
+<br>
+determine whether there is a <a href="#comparator_equality">comparator equal</a> element in a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>elem</code> - the element to search.
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) set to the resulting member. This variable is NULL if the <code>elem</code> has not been found in the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_GET_FIRST</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_GET_FIRST(type, list, previous, next, result)</b></code>
+<br>
+<br>
+get the first element of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) the first element of the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_GET_LAST</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_GET_LAST(type, list, previous, next, result)</b></code>
+<br>
+<br>
+get the last element of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) the last element of the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_LEN</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_LEN(type, list, previous, next, result)</b></code>
+<br>
+<br>
+compute the length of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>result</code> - (output) the length of the <code>list</code>.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_MAP_ON_ELEMENTS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_MAP_ON_ELEMENTS(type, list, var, previous, next, command)</b></code>
+<br>
+<br>
+apply a command on all elements of a list. <code>Command</code> will be repeatedly executed for each element of the list accessible via the <code>previous</code> field and then via the <code>next</code> field. The current element of the list is stored in the
+variable <code>var</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list.
+<dd><code>var</code> - the variable which will run through each element of the list.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+
+<dd><code>command</code> - any (possibly composed) statement of the C language. In the statement you can use the variable <code>var</code> (third parameter of the macro) going through all
+elements of the list.
+
+</dd>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_REVERSE</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_REVERSE(type, list, previous, next)</b></code>
+<br>
+<br>
+reverse a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list to reverse.
+
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DL_LIST_SORT</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DL_LIST_SORT(type, list, comparator, previous, next)</b></code>
+<br>
+<br>
+sort a list using mergesort. As a side effect the <code>list</code> is set to the first element of the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+
+<dd><code>list</code> - the list to sort
+
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+
+</table>
+
+
+
+<br><br>
+
+<a name="bin_tree_api0"></a>
+
+<h2>Binary Trees API: level 0</h2>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_BIN_TREE_MAP_ON_ELEMENTS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_BIN_TREE_MAP_ON_ELEMENTS(type, tree, var, left, right, command)</b></code>
+<br>
+<br>
+traverse a binary tree and apply command on each element. This is non-recursive implementation of tree traversal. It maintains the path to the current node in the array <code>_path_</code>, the <code>_path_[0]</code> contains the root of the tree. The <code>_path_[_pathi_-1]</code> contains the parent of the <code>var</code>. The maximal deep of the tree is limited by <code>SGLIB_MAX_TREE_DEEP</code> macro.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the tree data structure.
+
+
+<dd><code>tree</code> - the tree.
+<dd><code>var</code> - the variable which will run through each element of the tree.
+
+
+<dd><code>left</code> - the name of the field pointing to the <a href="#left_right_element">left</a> subtree of the tree.
+<dd><code>right</code> - the name of the field pointing to the <a href="#left_right_element">right</a> subtree of the tree.
+
+
+<dd><code>command</code> - any (possibly composed) statement of the C language. In the statement you can use the variable <code>var</code> (third parameter of the macro) going through all
+elements of the tree.
+
+</dd>
+</td></tr>
+
+</table>
+
+
+
+
+<br><br>
+<br><br>
+<br><br>
+
+<a name="api1"></a>
+
+
+<h2>API: level 1</h2>
+
+The level - 1 application interface consists of two stages. First you need to
+invoke a generic macro for given data type and then you can use a collection
+of functions generated by the macro (see also our <a href="#examples">samples</a>
+for the difference between the two interfaces).
+Function names
+are composed from the name of the base type given by the user.
+
+
+
+
+
+
+
+
+
+
+
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+
+
+<a name="array_api1"></a>
+
+
+<h2>Arrays API: level 1</h2>
+
+<table border=3 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td width=90%>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_ARRAY_SORTING_PROTOTYPES</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DEFINE_ARRAY_SORTING_PROTOTYPES(type, comparator)</b></code>
+<br>
+<br>
+define headers of array sorting functions.
+Declared functions are:
+<br>
+<a href="#sglib_type_array_quick_sort">sglib_<font  face="Arial" color="909090">type</font>_array_quick_sort</a>
+<br>
+<a href="#sglib_type_array_heap_sort">sglib_<font  face="Arial" color="909090">type</font>_array_heap_sort</a>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements. It <b>must</b> be a single identifier.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS"></a>
+<code><b>SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS(type, comparator)</b></code>
+<br>
+<br>
+define the array sorting functions.
+Defined functions are:
+<br>
+<a href="#sglib_type_array_quick_sort">sglib_<font  face="Arial" color="909090">type</font>_array_quick_sort</a>
+<br>
+<a href="#sglib_type_array_heap_sort">sglib_<font  face="Arial" color="909090">type</font>_array_heap_sort</a>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements. It <b>must</b> be a single identifier.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dd>
+</td></tr>
+
+</table>
+
+<br>
+<h4>Functions generated by above macros:</b4>
+<br>
+<br>
+
+<table border=1 CELLPADDING="10" CELLSPACING="1">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_array_quick_sort</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_type_array_quick_sort"></a>
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_array_quick_sort(<font  face="Arial" color="909090">type</font> *a, int max)</b></code>
+<br>
+<br>
+sort an array using quicksort.
+<dd><dl>
+<dt><b>Parameters:</b>
+<dd><code>a</code> - the array to sort.
+<dd><code>max</code> - the number of elements in the array.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS"><b>SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements. It <b>must</b> be a single identifier.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_array_heap_sort</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_type_array_heap_sort"></a>
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_array_heap_sort(<font  face="Arial" color="909090">type</font> *a, int max)</b></code>
+<br>
+<br>
+sort an array using heapsort.
+<dd><dl>
+<dt><b>Parameters:</b>
+<dd><code>a</code> - the array to sort.
+<dd><code>max</code> - the number of elements in the array.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS"><b>SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of array elements. It <b>must</b> be a single identifier.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+</table>
+
+</td></tr>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+
+<a name="hashed_container_api1"></a>
+
+
+<h2>Hashed Containers API: level 1</h2>
+
+
+Usually, in libraries similar to sglib, a hashed container is an array
+where each cell contains a (possibly empty) list of elements.
+
+
+In sglib we use a more abstract notion of hashed container.  A hashed
+container is a table of fixed size containing another (we say
+<em>base</em>) container in each cell. Once an object is going to be
+inserted into the hashed container, the hash function is used to
+determine the cell where it belongs and then the object is inserted
+into the base container stored in this cell. The base container is
+usualy a list, however it can be a sorted list, double linked list or
+a red-black tree as well. Sglib's hashed container is parametrized by
+the name of the base container.
+
+<p>
+Hashed containers are provided only in level-1 interface because they
+require a uniform interface for operations applied on the base container.
+
+<br> <br> <br>
+
+<table border=3 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td width=90%>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(type, dim, hash_function)</b></code>
+<br>
+<br>
+define headers of hashed container functions and iterator.
+It defines structure <em>sglib_hashed_<font  face="Arial" color="909090">type</font>_iterator</em>
+and declares functions:
+<br>
+<a href="#sglib_hashed_type_init">sglib_hashed_<font  face="Arial" color="909090">type</font>_init</a>
+<br>
+<a href="#sglib_hashed_type_add">sglib_hashed_<font  face="Arial" color="909090">type</font>_add</a>
+<br>
+<a href="#sglib_hashed_type_add_if_not_member">sglib_hashed_<font  face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br>
+<a href="#sglib_hashed_type_delete">sglib_hashed_<font  face="Arial" color="909090">type</font>_delete</a>
+<br>
+<a href="#sglib_hashed_type_delete_if_member">sglib_hashed_<font  face="Arial" color="909090">type</font>_delete_if_member</a>
+<br>
+<a href="#sglib_hashed_type_is_member">sglib_hashed_<font  face="Arial" color="909090">type</font>_is_member</a>
+<br>
+<a href="#sglib_hashed_type_find_member">sglib_hashed_<font  face="Arial" color="909090">type</font>_find_member</a>
+<br>
+<a href="#sglib_hashed_type_it_init">sglib_hashed_<font  face="Arial" color="909090">type</font>_it_init</a>
+<br>
+<a href="#sglib_hashed_type_it_init_on_equal">sglib_hashed_<font  face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br>
+<a href="#sglib_hashed_type_it_next">sglib_hashed_<font  face="Arial" color="909090">type</font>_it_next</a>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"></a>
+<code><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(type, dim, hash_function)</b></code>
+<br>
+<br>
+define the hashed container functions.
+Defined functions are:
+<br>
+<a href="#sglib_hashed_type_init">sglib_hashed_<font  face="Arial" color="909090">type</font>_init</a>
+<br>
+<a href="#sglib_hashed_type_add">sglib_hashed_<font  face="Arial" color="909090">type</font>_add</a>
+<br>
+<a href="#sglib_hashed_type_add_if_not_member">sglib_hashed_<font  face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br>
+<a href="#sglib_hashed_type_delete">sglib_hashed_<font  face="Arial" color="909090">type</font>_delete</a>
+<br>
+<a href="#sglib_hashed_type_delete_if_member">sglib_hashed_<font  face="Arial" color="909090">type</font>_delete_if_member</a>
+<br>
+<a href="#sglib_hashed_type_"is_member>sglib_hashed_<font  face="Arial" color="909090">type</font>_is_member</a>
+<br>
+<a href="#sglib_hashed_type_find_member">sglib_hashed_<font  face="Arial" color="909090">type</font>_find_member</a>
+<br>
+<a href="#sglib_hashed_type_it_init">sglib_hashed_<font  face="Arial" color="909090">type</font>_it_init</a>
+<br>
+<a href="#sglib_hashed_type_it_init_on_equal">sglib_hashed_<font  face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br>
+<a href="#sglib_hashed_type_it_next">sglib_hashed_<font  face="Arial" color="909090">type</font>_it_next</a>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dd>
+</td></tr>
+
+</table>
+
+<br>
+<h4>Functions generated by above macros:</b4>
+<br>
+<br>
+
+<table border=1 CELLPADDING="10" CELLSPACING="1">
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_init</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_init"></a>
+<code><b>void sglib_hashed_<font  face="Arial" color="909090">type</font>_init(<font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>])</b></code>
+<br>
+<br>
+set each cell in the table to NULL.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>table</code> - the hashed container.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_add</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_add"></a>
+<code><b>void sglib_hashed_<font  face="Arial" color="909090">type</font>_add(<font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>], <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+Add an element into the hashed container.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>table</code> - the hashed container.
+
+<dd><code>elem</code> - the element to be added.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_add_if_not_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_add_if_not_member"></a>
+<code><b>int sglib_hashed_<font  face="Arial" color="909090">type</font>_add_if_not_member(<font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>], <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **member)</b></code>
+<br>
+<br>
+Add an element into the hashed container if there is no <a href="#comparator_equality">comparator equal</a> element inside.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>table</code> - the hashed container.
+
+<dd><code>elem</code> - the element to be added.
+<dd><code>member</code> - in case if the element is a member of the container, set <code>*member</code> to it.
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was inserted to the container. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_delete</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_delete"></a>
+<code><b>void sglib_hashed_<font  face="Arial" color="909090">type</font>_delete(<font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>], <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+delete an element from a hashed container. The element must be a <a href="#pointer_equality">pointer equal</a> member of the hashed container.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>table</code> - the hashed container.
+
+<dd><code>elem</code> - the element to be removed.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_delete_if_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_delete_if_member"></a>
+<code><b>int sglib_hashed_<font  face="Arial" color="909090">type</font>_delete_if_member(<font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>], <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **member)</b></code>
+<br>
+<br>
+find a <a href="#comparator_equality">comparator equal</a> element in the hashed container and remove it.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>table</code> - the hashed container.
+
+<dd><code>elem</code> - the element to be removed.
+<dd><code>member</code> - in case if the element is a member of the list, set <code>*member</code> to the removed element.
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was removed from the container. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_is_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_is_member"></a>
+<code><b>int sglib_hashed_<font  face="Arial" color="909090">type</font>_is_member(<font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>], <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+determine whether an element is inside a hashed container. The element is searched using <a href="#comparator_equality">pointer equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>table</code> - the hashed container.
+
+<dd><code>elem</code> - the element to be searched.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_find_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_find_member"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_hashed_<font  face="Arial" color="909090">type</font>_find_member(<font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>], <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+find an element in the hashed container. The element is searched using <a href="#comparator_equality">comparator equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>table</code> - the hashed container.
+
+<dd><code>elem</code> - the element to be searched.
+</dt>
+<dt><b>Returns:</b>
+<dd>The member of the container <a href="#comparator_equality">comparator equal</a> to <code>elem</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_it_init</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_it_init"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_hashed_<font  face="Arial" color="909090">type</font>_it_init(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>])</b></code>
+<br>
+<br>
+initialize an iterator <code>it</code> to run over elements of <code>table</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>table</code> - the hashed container.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The first iterated element or <code>NULL</code> if there is no element.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_it_init_on_equal</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_it_init_on_equal"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_hashed_<font  face="Arial" color="909090">type</font>_it_init_on_equal(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *table[<font  face="Arial" color="909090">dim</font>], int (*subcomparator)(<font  face="Arial" color="909090">type</font> *, <font  face="Arial" color="909090">type</font> *), <font  face="Arial" color="909090">type</font> *equalto)</b></code>
+<br>
+<br>
+initialize an iterator <code>it</code> to run over those elements of <code>table</code> which are
+equal to <code>equalto</code>. The equality is considered with respect to the
+<code>subcomparator</code> which must be a <a href="#subcomparator">subcomparator</a>
+of the base container comparator.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>table</code> - the hashed container.
+
+<dd><code>subcomparator</code> - the comparator used to find equal elements.
+<dd><code>equalto</code> - the element used as filter.
+</dt>
+<dt><b>Returns:</b>
+<dd>The first iterated element or <code>NULL</code> if there is no element equal to <code>equalto</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_hashed_<font face="Arial" color="909090">type</font>_it_next</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_hashed_type_it_next"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_hashed_<font  face="Arial" color="909090">type</font>_it_next(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it)</b></code>
+<br>
+<br>
+get the next element from the iterator <code>it</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The next iterated element or <code>NULL</code> if there is no next element.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS"><b>SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of the base container. It <b>must</b> be a single identifier.
+<dd><code>dim</code> - the size of the array.
+<dd><code>hash_function</code> - the hashing function mapping elements into unsigned integers.
+
+</dt>
+</font>
+</td></tr>
+
+
+</table>
+
+</td></tr>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+<br><br><br><br><br><br>
+<br><br><br><br><br><br>
+
+<a name="list_api1"></a>
+
+<h2>Linked lists API: level 1</h2>
+
+
+<table border=3 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td width=90%>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_LIST_PROTOTYPES</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DEFINE_LIST_PROTOTYPES(type, comparator, next)</b></code>
+<br>
+<br>
+define headers for linked list functions.
+Declared functions are:
+
+<br><a href="#sglib_list_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_list_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_list_type_concat">sglib_<font face="Arial" color="909090">type</font>_concat</a>
+<br><a href="#sglib_list_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_list_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_list_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_list_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_list_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_list_type_sort">sglib_<font face="Arial" color="909090">type</font>_sort</a>
+<br><a href="#sglib_list_type_reverse">sglib_<font face="Arial" color="909090">type</font>_reverse</a>
+<br><a href="#sglib_list_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_list_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_list_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<br>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="SGLIB_DEFINE_LIST_FUNCTIONS"></a>
+<code><b>SGLIB_DEFINE_LIST_FUNCTIONS(type, comparator, next)</b></code>
+<br>
+<br>
+define functions for manipulating linked lists.
+Defined functions are:
+
+<br><a href="#sglib_list_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_list_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_list_type_concat">sglib_<font face="Arial" color="909090">type</font>_concat</a>
+<br><a href="#sglib_list_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_list_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_list_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_list_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_list_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_list_type_sort">sglib_<font face="Arial" color="909090">type</font>_sort</a>
+<br><a href="#sglib_list_type_reverse">sglib_<font face="Arial" color="909090">type</font>_reverse</a>
+<br><a href="#sglib_list_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_list_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_list_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+</table>
+
+<br>
+<h4>Functions generated by above macros:</b4>
+<br>
+<br>
+
+<table border=1 CELLPADDING="10" CELLSPACING="1">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_add"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_add(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element into a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_add_if_not_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **member)</b></code>
+<br>
+<br>
+insert an element if there is no <a href="#comparator_equality">comparator equal</a> element in the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to insert.
+<dd><code>member</code> - in case if the element is a member of the list, set <code>*member</code> to it.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was inserted to the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_concat</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_concat"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_concat(<font  face="Arial" color="909090">type</font> **first, <font  face="Arial" color="909090">type</font> *second)</b></code>
+<br>
+<br>
+concatenate two lists by appending second at the end of the first.
+<dd><dl>
+<dt><b>Parameters:</b>
+<dd><code>first</code> - the first list, it will contain the result of the concatenation.
+<dd><code>second</code> - the second list.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_delete"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_delete(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+delete an element. The element must be a member of the <em>list</em>, it is looked using the <a href="#pointer_equality">pointer equality</a>, not equality generated by <font  face="Arial" color="909090">comparator</font>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to delete.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete_if_member</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_delete_if_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_delete_if_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **result)</b></code>
+<br>
+<br>
+find a <a href="#comparator_equality">comparator equal</a> element in the list and remove it.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+<dd><code>result</code> - an output variable pointer. The variable will be set to the element removed from the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was removed from the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_is_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_is_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_is_member(<font  face="Arial" color="909090">type</font> *list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+determine whether an element is inside a list. The element is searched using <a href="#comparator_equality">pointer equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element is in the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_find_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_find_member"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_find_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+find an element in the list. The element is searched using <a href="#comparator_equality">comparator equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The member of the list <a href="#comparator_equality">comparator equal</a> to <code>elem</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_len</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_len"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_len(<font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+compute the length of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The lenght of the <code>list</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_sort</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_sort"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_sort(<font  face="Arial" color="909090">type</font> **list)</b></code>
+<br>
+<br>
+sort the list according to <font  face="Arial" color="909090">comparator</font>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_reverse</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_reverse"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_reverse(<font  face="Arial" color="909090">type</font> **list)</b></code>
+<br>
+<br>
+reverse the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_it_init"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+
+initialize an iterator <code>it</code> to run over elements of <code>list</code>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The first iterated element or <code>NULL</code> if there is no element.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_it_init_on_equal"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init_on_equal(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *list, int (*subcomparator)(<font  face="Arial" color="909090">type</font> *, <font  face="Arial" color="909090">type</font> *), <font  face="Arial" color="909090">type</font> *equalto)</b></code>
+<br>
+<br>
+
+initialize an iterator <code>it</code> to run over those elements of <code>list</code> which are
+equal to <code>equalto</code>. The equality is considered with respect to the
+<code>subcomparator</code> which must be a <a href="#subcomparator">subcomparator</a>
+of the <font face="Arial" size=-1 color="909090">comparator</font>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>subcomparator</code> - the comparator used to find equal elements.
+<dd><code>equalto</code> - the element used as filter.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The first iterated element or <code>NULL</code> if there is no element equal to <code>equalto</code>.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_next</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_list_type_it_next"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_next(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it)</b></code>
+<br>
+<br>
+
+get the next element from the iterator <code>it</code>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The next iterated element or <code>NULL</code> if there is no next element.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_LIST_FUNCTIONS"><b>SGLIB_DEFINE_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+</table>
+
+</td></tr>
+</table>
+
+
+
+<br><br>
+<br><br>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="sorted_list_api1"></a>
+
+<h2>Sorted Linked lists API: level 1</h2>
+
+
+<table border=3 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td width=90%>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_SORTED_LIST_PROTOTYPES</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DEFINE_SORTED_LIST_PROTOTYPES(type, comparator, next)</b></code>
+<br>
+<br>
+define headers for sorted linked list functions.
+Declared functions are:
+
+<br><a href="#sglib_sorted_list_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_sorted_list_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_sorted_list_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_sorted_list_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_sorted_list_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_sorted_list_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_sorted_list_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_sorted_list_type_sort">sglib_<font face="Arial" color="909090">type</font>_sort</a>
+<br><a href="#sglib_sorted_list_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_sorted_list_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_sorted_list_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<br>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"></a>
+<code><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS(type, comparator, next)</b></code>
+<br>
+<br>
+define functions for manipulating sorted linked lists.
+Defined functions are:
+
+<br><a href="#sglib_sorted_list_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_sorted_list_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_sorted_list_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_sorted_list_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_sorted_list_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_sorted_list_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_sorted_list_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_sorted_list_type_sort">sglib_<font face="Arial" color="909090">type</font>_sort</a>
+<br><a href="#sglib_sorted_list_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_sorted_list_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_sorted_list_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+</table>
+
+<br>
+<h4>Functions generated by above macros:</b4>
+<br>
+<br>
+
+<table border=1 CELLPADDING="10" CELLSPACING="1">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_add"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_add(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element into a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_add_if_not_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **member)</b></code>
+<br>
+<br>
+insert an element if there is no <a href="#comparator_equality">comparator equal</a> element in the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to insert.
+<dd><code>member</code> - in case if the element is a member of the list, set <code>*member</code> to it.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was inserted to the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_delete"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_delete(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+delete an element. The element must be a member of the <em>list</em>, it is looked using the <a href="#pointer_equality">pointer equality</a>, not equality generated by <font  face="Arial" color="909090">comparator</font>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to delete.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete_if_member</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_delete_if_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_delete_if_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **result)</b></code>
+<br>
+<br>
+find a <a href="#comparator_equality">comparator equal</a> element in the list and remove it.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+<dd><code>result</code> - an output variable pointer. The variable will be set to the element removed from the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was removed from the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_is_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_is_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_is_member(<font  face="Arial" color="909090">type</font> *list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+determine whether an element is inside a list. The element is searched using <a href="#comparator_equality">pointer equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element is in the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_find_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_find_member"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_find_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+find an element in the list. The element is searched using <a href="#comparator_equality">comparator equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The member of the list <a href="#comparator_equality">comparator equal</a> to <code>elem</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_len</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_len"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_len(<font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+compute the length of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The lenght of the <code>list</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_sort</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_sort"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_sort(<font  face="Arial" color="909090">type</font> **list)</b></code>
+<br>
+<br>
+sort the list according to <font  face="Arial" color="909090">comparator</font>. This function does not logically
+belong to this datatype as it is supposed that lists are kept sorted. However, it can be used
+to initial sorting, when the <code>list</code> was created by other than sglib functions.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_it_init"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+
+initialize an iterator <code>it</code> to run over elements of <code>list</code>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The first iterated element or <code>NULL</code> if there is no element.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_it_init_on_equal"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init_on_equal(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *list, int (*subcomparator)(<font  face="Arial" color="909090">type</font> *, <font  face="Arial" color="909090">type</font> *), <font  face="Arial" color="909090">type</font> *equalto)</b></code>
+<br>
+<br>
+
+initialize an iterator <code>it</code> to run over those elements of <code>list</code> which are
+equal to <code>equalto</code>. The equality is considered with respect to the
+<code>subcomparator</code> which must be a <a href="#subcomparator">subcomparator</a>
+of the <font face="Arial" size=-1 color="909090">comparator</font>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>subcomparator</code> - the comparator used to find equal elements.
+<dd><code>equalto</code> - the element used as filter.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The first iterated element or <code>NULL</code> if there is no element equal to <code>equalto</code>.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_next</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_sorted_list_type_it_next"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_next(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it)</b></code>
+<br>
+<br>
+
+get the next element from the iterator <code>it</code>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The next iterated element or <code>NULL</code> if there is no next element.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_SORTED_LIST_FUNCTIONS"><b>SGLIB_DEFINE_SORTED_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>next</code> - the name of the field pointing to the <a href="#next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+</table>
+
+</td></tr>
+</table>
+
+
+
+<br><br>
+<br><br>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="dl_list_api1"></a>
+
+<h2>Double linked lists API: level 1</h2>
+
+
+<table border=3 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td width=90%>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_DL_LIST_PROTOTYPES</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DEFINE_DL_LIST_PROTOTYPES(type, comparator, previous, next)</b></code>
+<br>
+<br>
+define headers for double linked list functions.
+Declared functions are:
+
+<br><a href="#sglib_dl_list_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_dl_list_type_add_before">sglib_<font face="Arial" color="909090">type</font>_add_before</a>
+<br><a href="#sglib_dl_list_type_add_after">sglib_<font face="Arial" color="909090">type</font>_add_after</a>
+<br><a href="#sglib_dl_list_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_dl_list_type_add_before_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_before_if_not_member</a>
+<br><a href="#sglib_dl_list_type_add_after_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_after_if_not_member</a>
+<br><a href="#sglib_dl_list_type_concat">sglib_<font face="Arial" color="909090">type</font>_concat</a>
+<br><a href="#sglib_dl_list_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_dl_list_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_dl_list_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_dl_list_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_dl_list_type_get_first">sglib_<font face="Arial" color="909090">type</font>_get_first</a>
+<br><a href="#sglib_dl_list_type_get_last">sglib_<font face="Arial" color="909090">type</font>_get_last</a>
+<br><a href="#sglib_dl_list_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_dl_list_type_sort">sglib_<font face="Arial" color="909090">type</font>_sort</a>
+<br><a href="#sglib_dl_list_type_reverse">sglib_<font face="Arial" color="909090">type</font>_reverse</a>
+<br><a href="#sglib_dl_list_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_dl_list_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_dl_list_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<br>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="SGLIB_DEFINE_DL_LIST_FUNCTIONS"></a>
+<code><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS(type, comparator, previous, next)</b></code>
+<br>
+<br>
+define functions for manipulating linked lists.
+Defined functions are:
+
+<br><a href="#sglib_dl_list_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_dl_list_type_add_before">sglib_<font face="Arial" color="909090">type</font>_add_before</a>
+<br><a href="#sglib_dl_list_type_add_after">sglib_<font face="Arial" color="909090">type</font>_add_after</a>
+<br><a href="#sglib_dl_list_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_dl_list_type_add_before_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_before_if_not_member</a>
+<br><a href="#sglib_dl_list_type_add_after_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_after_if_not_member</a>
+<br><a href="#sglib_dl_list_type_concat">sglib_<font face="Arial" color="909090">type</font>_concat</a>
+<br><a href="#sglib_dl_list_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_dl_list_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_dl_list_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_dl_list_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_dl_list_type_get_first">sglib_<font face="Arial" color="909090">type</font>_get_first</a>
+<br><a href="#sglib_dl_list_type_get_last">sglib_<font face="Arial" color="909090">type</font>_get_last</a>
+<br><a href="#sglib_dl_list_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_dl_list_type_sort">sglib_<font face="Arial" color="909090">type</font>_sort</a>
+<br><a href="#sglib_dl_list_type_reverse">sglib_<font face="Arial" color="909090">type</font>_reverse</a>
+<br><a href="#sglib_dl_list_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_dl_list_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_dl_list_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dd>
+</td></tr>
+
+</table>
+
+<br>
+<h4>Functions generated by above macros:</b4>
+<br>
+<br>
+
+<table border=1 CELLPADDING="10" CELLSPACING="1">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_add"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_add(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element into a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_before</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_add_before"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_add_before(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element into a list. <code>Elem</code> will be inserted before the element pointed by <code>*list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list (also the place where to insert the new element).
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_after</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_add_after"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_add_after(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element into a list. <code>Elem</code> will be inserted after the element pointed by <code>*list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list (also the place where to insert the new element).
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_add_if_not_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **member)</b></code>
+<br>
+<br>
+insert an element if there is no <a href="#comparator_equality">comparator equal</a> element in the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to insert.
+<dd><code>member</code> - in case if the element is a member of the list, set <code>*member</code> to it.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was inserted to the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_before_if_not_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_add_before_if_not_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_add_before_if_not_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element if there is no <a href="#comparator_equality">comparator equal</a> element in the list.
+<code>Elem</code> will be inserted before the element pointed by <code>*list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list (also the place where to insert the new element).
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was inserted to the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_after_if_not_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_add_after_if_not_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_add_after_if_not_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element if there is no <a href="#comparator_equality">comparator equal</a> element in the list.
+<code>Elem</code> will be inserted before the element pointed by <code>*list</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list (also the place where to insert the new element).
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was inserted to the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_concat</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_concat"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_concat(<font  face="Arial" color="909090">type</font> **first, <font  face="Arial" color="909090">type</font> *second)</b></code>
+<br>
+<br>
+concatenate two lists by appending second at the end of the first.
+<dd><dl>
+<dt><b>Parameters:</b>
+<dd><code>first</code> - the first list, it will contain the result of the concatenation.
+<dd><code>second</code> - the second list.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_delete"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_delete(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+delete an element. The element must be a <a href="#pointer_equality">pointer equal</a> member of the <em>list</em>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to delete.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete_if_member</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_delete_if_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_delete_if_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **result)</b></code>
+<br>
+<br>
+find a <a href="#comparator_equality">comparator equal</a> element in the list and remove it.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+<dd><code>result</code> - an output variable pointer. The variable will be set to the element removed from the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was removed from the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_is_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_is_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_is_member(<font  face="Arial" color="909090">type</font> *list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+determine whether an element is inside a list. The element is searched using <a href="#comparator_equality">pointer equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element is in the list. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_find_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_find_member"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_find_member(<font  face="Arial" color="909090">type</font> **list, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+find an element in the list. The element is searched using <a href="#comparator_equality">comparator equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The member of the list <a href="#comparator_equality">comparator equal</a> to <code>elem</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_get_first</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_get_first"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_get_first(<font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+get the first element of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The first element of the <code>list</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_get_last</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_get_last"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_get_last(<font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+get the last element of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The last element of the <code>list</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_len</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_len"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_len(<font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+compute the length of a list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The lenght of the <code>list</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_sort</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_sort"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_sort(<font  face="Arial" color="909090">type</font> **list)</b></code>
+<br>
+<br>
+sort the list according to <font  face="Arial" color="909090">comparator</font>. After the sorting <code>*list</code> will point to the first element of the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_reverse</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_reverse"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_reverse(<font  face="Arial" color="909090">type</font> **list)</b></code>
+<br>
+<br>
+reverse the list.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>list</code> - the list.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_it_init"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *list)</b></code>
+<br>
+<br>
+
+initialize an iterator <code>it</code> to run over elements of <code>list</code>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>list</code> - the list.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The first iterated element or <code>NULL</code> if there is no element.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_it_init_on_equal"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init_on_equal(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *list, int (*subcomparator)(<font  face="Arial" color="909090">type</font> *, <font  face="Arial" color="909090">type</font> *), <font  face="Arial" color="909090">type</font> *equalto)</b></code>
+<br>
+<br>
+
+initialize an iterator <code>it</code> to run over those elements of <code>list</code> which are
+equal to <code>equalto</code>. The equality is considered with respect to the
+<code>subcomparator</code> which must be a <a href="#subcomparator">subcomparator</a>
+of the <font face="Arial" size=-1 color="909090">comparator</font>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>list</code> - the list.
+
+
+<dd><code>subcomparator</code> - the comparator used to find equal elements.
+<dd><code>equalto</code> - the element used as filter.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The first iterated element or <code>NULL</code> if there is no element equal to <code>equalto</code>.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_next</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_dl_list_type_it_next"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_next(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it)</b></code>
+<br>
+<br>
+
+get the next element from the iterator <code>it</code>.
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+</dt>
+<dt><b>Returns:</b>
+
+<dd>The next iterated element or <code>NULL</code> if there is no next element.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_DL_LIST_FUNCTIONS"><b>SGLIB_DEFINE_DL_LIST_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of list elements.
+
+<dd><code>comparator</code> - the <a href="#comparator">comparator</a> used to compare elements.
+
+<dd><code>previous</code> - the name of the field pointing to the <a href="#dl_previous_element">previous</a> element of the list.
+<dd><code>next</code> - the name of the field pointing to the <a href="#dl_next_element">next</a> element of the list.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+</table>
+
+</td></tr>
+</table>
+
+
+
+<br><br>
+<br><br>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="rbtree_api1"></a>
+
+<h2>Red-Black Trees API: level 1</h2>
+
+
+<table border=3 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td width=90%>
+
+<table border=1 CELLPADDING="10" CELLSPACING="0">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_RBTREE_PROTOTYPES</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<code><b>SGLIB_DEFINE_RBTREE_PROTOTYPES(type, left, right, colorbit, comparator)</b></code>
+<br>
+<br>
+define headers for red black tree implementation.
+Declared functions are:
+
+<br><a href="#sglib_rbtree_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_rbtree_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_rbtree_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_rbtree_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_rbtree_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_rbtree_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_rbtree_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_rbtree_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_rbtree_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_rbtree_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<br>
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dd>
+</td></tr>
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>macro</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="SGLIB_DEFINE_RBTREE_FUNCTIONS"></a>
+<code><b>SGLIB_DEFINE_RBTREE_FUNCTIONS(type, left, right, colorbit, comparator)</b></code>
+<br>
+<br>
+define functions for manipulating balanced red-black trees.
+Defined functions are:
+
+<br><a href="#sglib_rbtree_type_add">sglib_<font face="Arial" color="909090">type</font>_add</a>
+<br><a href="#sglib_rbtree_type_add_if_not_member">sglib_<font face="Arial" color="909090">type</font>_add_if_not_member</a>
+<br><a href="#sglib_rbtree_type_delete">sglib_<font face="Arial" color="909090">type</font>_delete</a>
+<br><a href="#sglib_rbtree_type_delete_if_member">sglib_<font face="Arial" color="909090">type</font>_delete_if_member</a>
+<br><a href="#sglib_rbtree_type_find_member">sglib_<font face="Arial" color="909090">type</font>_find_member</a>
+<br><a href="#sglib_rbtree_type_is_member">sglib_<font face="Arial" color="909090">type</font>_is_member</a>
+<br><a href="#sglib_rbtree_type_len">sglib_<font face="Arial" color="909090">type</font>_len</a>
+<br><a href="#sglib_rbtree_type_it_init">sglib_<font face="Arial" color="909090">type</font>_it_init</a>
+<br><a href="#sglib_rbtree_type_it_init_on_equal">sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</a>
+<br><a href="#sglib_rbtree_type_it_next">sglib_<font face="Arial" color="909090">type</font>_it_next</a>
+
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dd>
+</td></tr>
+
+</table>
+
+<br>
+<h4>Functions generated by above macros:</b4>
+<br>
+<br>
+
+<table border=1 CELLPADDING="10" CELLSPACING="1">
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_add"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_add(<font  face="Arial" color="909090">type</font> **tree, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+insert an element into a tree.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>tree</code> - the tree.
+
+
+<dd><code>elem</code> - the element to insert.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_add_if_not_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_add_if_not_member(<font  face="Arial" color="909090">type</font> **tree, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **member)</b></code>
+<br>
+<br>
+insert an element if there is no <a href="#comparator_equality">comparator equal</a> element in the tree.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>tree</code> - the tree.
+
+
+<dd><code>elem</code> - the element to insert.
+<dd><code>member</code> - in case if the element is a member of the tree, set <code>*member</code> to it.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was inserted to the tree. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_delete"></a>
+<code><b>void sglib_<font  face="Arial" color="909090">type</font>_delete(<font  face="Arial" color="909090">type</font> **tree, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+delete an element. The element must be a member of the <em>tree</em>, it is looked using the <a href="#pointer_equality">pointer equality</a>, not equality generated by <font  face="Arial" color="909090">comparator</font>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>tree</code> - the tree.
+
+
+<dd><code>elem</code> - the element to delete.
+
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_delete_if_member</code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_delete_if_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_delete_if_member(<font  face="Arial" color="909090">type</font> **tree, <font  face="Arial" color="909090">type</font> *elem, <font  face="Arial" color="909090">type</font> **result)</b></code>
+<br>
+<br>
+find a <a href="#comparator_equality">comparator equal</a> element in the tree and remove it.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>tree</code> - the tree.
+
+
+<dd><code>elem</code> - the element to search.
+<dd><code>result</code> - an output variable pointer. The variable will be set to the element removed from the tree.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element was removed from the tree. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_is_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_is_member"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_is_member(<font  face="Arial" color="909090">type</font> *tree, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+determine whether an element is inside a tree. The element is searched using <a href="#comparator_equality">pointer equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>tree</code> - the tree.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>Non-zero if the element is in the tree. Zero otherwise.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_find_member</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_find_member"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_find_member(<font  face="Arial" color="909090">type</font> **tree, <font  face="Arial" color="909090">type</font> *elem)</b></code>
+<br>
+<br>
+find an element in the tree. The element is searched using <a href="#comparator_equality">comparator equality</a>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>tree</code> - the tree.
+
+
+<dd><code>elem</code> - the element to search.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The member of the tree <a href="#comparator_equality">comparator equal</a> to <code>elem</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font  face="Arial" color="909090">type</font>_len</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_len"></a>
+<code><b>int sglib_<font  face="Arial" color="909090">type</font>_len(<font  face="Arial" color="909090">type</font> *tree)</b></code>
+<br>
+<br>
+compute the length of a tree, i.e. compute how many elements is inside.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>tree</code> - the tree.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The number of elements in the <code>tree</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_it_init"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *tree)</b></code>
+<br>
+<br>
+initialize an iterator <code>it</code> to run over elements of <code>tree</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>tree</code> - the tree.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The first iterated element or <code>NULL</code> if there is no element.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_init_on_equal</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_it_init_on_equal"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_init_on_equal(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it, <font  face="Arial" color="909090">type</font> *tree, int (*subcomparator)(<font  face="Arial" color="909090">type</font> *, <font  face="Arial" color="909090">type</font> *), <font  face="Arial" color="909090">type</font> *equalto)</b></code>
+<br>
+<br>
+initialize an iterator <code>it</code> to run over those elements of the <code>tree</code> which are
+equal to <code>equalto</code>. The equality is considered with respect to the
+<code>subcomparator</code> which must be a <a href="#subcomparator">subcomparator</a>
+of the <font  face="Arial" size=-1 color="909090">comparator</font>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+
+<dd><code>tree</code> - the tree.
+
+<dd><code>subcomparator</code> - the comparator used to find equal elements.
+<dd><code>equalto</code> - the element used as filter.
+</dt>
+<dt><b>Returns:</b>
+<dd>The first iterated element or <code>NULL</code> if there is no element equal to <code>equalto</code>.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+
+
+
+
+
+
+<tr><td VALIGN="top" WIDTH="1%">
+<code><b>sglib_<font face="Arial" color="909090">type</font>_it_next</b></code>
+</td><td VALIGN="top" WIDTH="1%"><i>function</i></b>
+</td><td VALIGN="top" WIDTH="70%">
+<a name="sglib_rbtree_type_it_next"></a>
+<code><b><font  face="Arial" color="909090">type</font> *sglib_<font  face="Arial" color="909090">type</font>_it_next(struct sglib_<font  face="Arial" color="909090">type</font>_iterator *it)</b></code>
+<br>
+<br>
+get the next element from the iterator <code>it</code>.
+<dd><dl>
+<dt><b>Parameters:</b>
+
+<dd><code>it</code> - the iterator.
+
+</dt>
+<dt><b>Returns:</b>
+<dd>The next iterated element or <code>NULL</code> if there is no next element.
+</dt>
+<hr size=1 width=70%>
+<font  face="Arial" size=-1 color="909090">
+<dt>Generated by <a href="#SGLIB_DEFINE_RBTREE_FUNCTIONS"><b>SGLIB_DEFINE_RBTREE_FUNCTIONS</b></a>
+<dt><b>Parameters:</b>
+
+<dd><code>type</code> - the type of tree elements.
+<dd><code>left</code> - the name of the field containing <a href="#left_right_element">left</a> subtree of a node.
+<dd><code>right</code> - the name of the field containing <a href="#left_right_element">right</a> subtree of a node.
+<dd><code>colorbit</code> - the name of the field containing the <a href="#rb_color">color</a> of a node.
+<dd><code>comparator</code> - a <a href="#comparator">comparator</a> used to compare elements.
+
+</dt>
+</font>
+</td></tr>
+
+
+</table>
+
+</td></tr>
+</table>
+
+
+
+<br><br>
+<br><br>
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="examples"></a>
+
+<br><br>
+<h2>Simple Examples</h2>
+
+
+<a name="array_exam"></a>
+
+<br><br>
+<h2>Arrays samples</h2>
+
+<center>
+
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program sorts its parameters using 
+// array sort level 0 interface. 
+// For example:
+//   a.out 6 7 3 4 1 5
+// writes
+//   1 3 4 5 6 7
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include "sglib.h"
+
+#define MAX_ELEMS 1000
+
+int main(int argc, char **argv) {
+  int i,size;
+  int a[MAX_ELEMS];
+  size = argc-1;
+  for (i=0; i&lt;size; i++) {
+    sscanf(argv[i+1],"%d", &a[i]);
+  }
+  SGLIB_ARRAY_SINGLE_QUICK_SORT(int, a, size, SGLIB_NUMERIC_COMPARATOR);
+  for (i=0; i&lt;size; i++) {
+    printf("%d ", a[i]);
+  }
+  printf("\n");
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+<br>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program sorts its parameters using
+// array sort level 1 interface. 
+// For example:
+//   a.out 6 7 3 4 1 5
+// writes
+//   1 3 4 5 6 7
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include "sglib.h"
+
+#define MAX_ELEMS 1000
+
+SGLIB_DEFINE_ARRAY_SORTING_FUNCTIONS(int, SGLIB_NUMERIC_COMPARATOR)
+
+int main(int argc, char **argv) {
+  int i,size;
+  int a[MAX_ELEMS];
+  size = argc-1;
+  for (i=0; i&lt;size; i++) {
+    sscanf(argv[i+1],"%d", &a[i]);
+  }
+  sglib_int_array_heap_sort(a, size);
+  for (i=0; i&lt;size; i++) {
+    printf("%d ", a[i]);
+  }
+  printf("\n");
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+<br>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program sorts its parameters using
+// binary search to implement insert sort.
+// For example:
+//   a.out 6 7 3 4 1 5
+// writes
+//   1 3 4 5 6 7
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;string.h>
+#include "sglib.h"
+
+#define MAX_ELEMS 1000
+
+int main(int argc, char **argv) {
+  int i, size, found, index, tmp;
+  int a[MAX_ELEMS];
+  size = argc-1;
+  for (i=0; i&lt;size; i++) {
+    sscanf(argv[i+1],"%d", &a[i]);
+  }
+  for(i=1; i&lt;size; i++) {
+    tmp = a[i];
+    SGLIB_ARRAY_BINARY_SEARCH(int, a, 0, i, tmp, SGLIB_NUMERIC_COMPARATOR, found, index);
+    memmove(a+index+1, a+index, (i-index)*sizeof(int));
+    a[index]=tmp;
+  }
+  for (i=0; i&lt;size; i++) {
+    printf("%d ", a[i]);
+  }
+  printf("\n");
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+</center>
+
+
+
+
+<a name="list_exam"></a>
+
+<br><br>
+<h2>List Sample</h2>
+
+<center>
+
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program sorts its parameters using 
+// list sort (level 0 interface).
+// For example:
+//   a.out 6 7 3 4 1 5
+// writes
+//   1 3 4 5 6 7
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;malloc.h>
+#include "sglib.h"
+
+struct ilist {
+    int i;
+    struct ilist *next_ptr;
+};
+
+#define ILIST_COMPARATOR(e1, e2) (e1->i - e2->i)
+
+int main(int argc, char **argv) {
+  int i,a;
+  struct ilist *l, *the_list, *ll;
+  the_list = NULL;
+  for (i=1; i&lt;argc; i++) {
+    sscanf(argv[i],"%d", &a);
+    l = malloc(sizeof(struct ilist));
+    l->i = a;
+    SGLIB_LIST_ADD(struct ilist, the_list, l, next_ptr);
+  }
+  // it is useless, but anyway, get parameters in the right order
+  SGLIB_LIST_REVERSE(struct ilist, the_list, next_ptr);
+  // now sort them
+  SGLIB_LIST_SORT(struct ilist, the_list, ILIST_COMPARATOR, next_ptr);
+  // print the list
+  SGLIB_LIST_MAP_ON_ELEMENTS(struct ilist, the_list, ll, next_ptr, {
+    printf("%d ", ll->i);
+  });
+  printf("\n");
+  // free all
+  SGLIB_LIST_MAP_ON_ELEMENTS(struct ilist, the_list, ll, next_ptr, {
+    free(ll);
+  });
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+</center>
+
+<a name="sorted_list_exam"></a>
+
+<br><br>
+<h2>Sorted List Samples</h2>
+
+
+<center>
+<br>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program sorts its parameters using 
+// insertion into sorted list (level 0 interface). 
+// For example:
+//   a.out 6 7 3 4 1 5
+// writes
+//   1 3 4 5 6 7
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;malloc.h>
+#include "sglib.h"
+
+struct ilist {
+    int i;
+    struct ilist *next_ptr;
+};
+
+#define ILIST_COMPARATOR(e1, e2) (e1->i - e2->i)
+
+int main(int argc, char **argv) {
+  int i,a;
+  struct ilist *l, *the_list, *ll;
+  the_list = NULL;
+  for (i=1; i&lt;argc; i++) {
+    sscanf(argv[i],"%d", &a);
+    l = malloc(sizeof(struct ilist));
+    l->i = a;
+    // insert the new element into the list while keeping it sorted
+    SGLIB_SORTED_LIST_ADD(struct ilist, the_list, l, ILIST_COMPARATOR, next_ptr);
+  }
+  SGLIB_LIST_MAP_ON_ELEMENTS(struct ilist, the_list, ll, next_ptr, {
+    printf("%d ", ll->i);
+  });
+  printf("\n");
+  SGLIB_LIST_MAP_ON_ELEMENTS(struct ilist, the_list, ll, next_ptr, {
+    free(ll);
+  });
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+<br>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program sorts its parameters using 
+// insertion into sorted list (level 1 interface). 
+// For example:
+//   a.out 6 7 3 4 1 5
+// writes
+//   1 3 4 5 6 7
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;malloc.h>
+#include "sglib.h"
+
+typedef struct ilist {
+    int i;
+    struct ilist *next_ptr;
+} iListType;
+
+#define ILIST_COMPARATOR(e1, e2) (e1->i - e2->i)
+
+SGLIB_DEFINE_SORTED_LIST_PROTOTYPES(iListType, ILIST_COMPARATOR, next_ptr)
+SGLIB_DEFINE_SORTED_LIST_FUNCTIONS(iListType, ILIST_COMPARATOR, next_ptr)
+
+int main(int argc, char **argv) {
+  int                               i,a;
+  struct ilist                      *l, *the_list;
+  struct sglib_iListType_iterator   it;
+  the_list = NULL;
+  for (i=1; i&lt;argc; i++) {
+    sscanf(argv[i],"%d", &a);
+    l = malloc(sizeof(struct ilist));
+    l->i = a;
+    // insert the new element into the list while keeping it sorted
+    sglib_iListType_add(&the_list, l);
+  }
+  // print the list
+  for (l=the_list; l!=NULL; l=l->next_ptr) {
+    printf("%d ", l->i);
+  }
+  printf("\n");
+  // free all
+  for(l=sglib_iListType_it_init(&it,the_list); l!=NULL; l=sglib_iListType_it_next(&it)) {
+    free(l);  
+  }
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+</center>
+
+<a name="dl_list_exam"></a>
+
+<br><br>
+<h2>Double Linked List Sample</h2>
+
+
+<center>
+<br>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program reads parameters, sorts them
+// and write them in both directions.
+// The program is using level 1 interface.
+// For example:
+//   a.out 6 7 3 4 1 5
+// writes
+//   1 3 4 5 6 7
+//   7 6 5 4 3 1
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;malloc.h>
+#include "sglib.h"
+
+typedef struct dllist {
+    int i;
+    struct dllist *ptr_to_next;
+    struct dllist *ptr_to_previous;
+} dllist;
+
+#define DLLIST_COMPARATOR(e1, e2) (e1->i - e2->i)
+
+SGLIB_DEFINE_DL_LIST_PROTOTYPES(dllist, DLLIST_COMPARATOR, ptr_to_previous, ptr_to_next);
+SGLIB_DEFINE_DL_LIST_FUNCTIONS(dllist, DLLIST_COMPARATOR, ptr_to_previous, ptr_to_next);
+
+int main(int argc, char **argv) {
+  int                           i,a;
+  dllist                        *l, *the_list;
+  struct sglib_dllist_iterator  it;
+
+  the_list = NULL;
+  for (i=1; i&lt;argc; i++) {
+    sscanf(argv[i],"%d", &a);
+    l = malloc(sizeof(dllist));
+    l->i = a;
+    sglib_dllist_add(&the_list, l);
+  }
+  // sort the list
+  sglib_dllist_sort(&the_list);
+  // print the list
+  for(l=sglib_dllist_get_first(the_list); l!=NULL; l=l->ptr_to_next) printf("%d ", l->i);
+  printf("\n");
+  // print the list in reversed direction
+  for(l=sglib_dllist_get_last(the_list); l!=NULL; l=l->ptr_to_previous) printf("%d ", l->i);
+  printf("\n");
+  // free the list
+  for(l=sglib_dllist_it_init(&it,the_list); l!=NULL; l=sglib_dllist_it_next(&it)) {
+    free(l);
+  }
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+</center>
+
+
+
+
+
+<a name="hashed_container_exam"></a>
+
+<br><br>
+<h2>Hashed Container Sample</h2>
+
+<center>
+
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program uses hash table containing lists
+// to remove multiple occurences of its parameters
+// For example:
+//   a.out 1 3 1 5 2 3 1 7 11 33 11
+// writes:
+//   11 1 2 33 3 5 7
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;malloc.h>
+#include "sglib.h"
+
+#define HASH_TAB_SIZE  10
+
+typedef struct ilist {
+  int i;
+  struct ilist *next;
+} ilist;
+
+ilist *htab[HASH_TAB_SIZE];
+
+#define ILIST_COMPARATOR(e1, e2)    (e1->i - e2->i)
+
+unsigned int ilist_hash_function(ilist *e) {
+  return(e->i);
+}
+
+SGLIB_DEFINE_LIST_PROTOTYPES(ilist, ILIST_COMPARATOR, next)
+SGLIB_DEFINE_LIST_FUNCTIONS(ilist, ILIST_COMPARATOR, next)
+SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(ilist, HASH_TAB_SIZE, ilist_hash_function)
+SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(ilist, HASH_TAB_SIZE, ilist_hash_function)
+
+int main(int argc, char **argv) {
+  int                                   i, ai,aj, n;
+  struct ilist                          ii, *nn, *ll;
+  struct sglib_hashed_ilist_iterator    it;
+
+  sglib_hashed_ilist_init(htab);
+
+  for (i=1; i&lt;argc; i++) {
+    sscanf(argv[i],"%d", &n);
+    ii.i = n;
+    if (sglib_hashed_ilist_find_member(htab, &ii) == NULL) {
+      nn = malloc(sizeof(struct ilist));
+      nn->i = n;
+      sglib_hashed_ilist_add(htab, nn);
+    }
+  }
+
+  for(ll=sglib_hashed_ilist_it_init(&it,htab); ll!=NULL; ll=sglib_hashed_ilist_it_next(&it)) {
+      printf("%d ", ll->i);
+  }
+  printf("\n");
+
+  for(ll=sglib_hashed_ilist_it_init(&it,htab); ll!=NULL; ll=sglib_hashed_ilist_it_next(&it)) {
+      free(ll);
+  }
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+</center>
+
+
+
+
+
+<a name="rbtree_exam"></a>
+
+<br><br>
+<h2>Red Black Tree Sample</h2>
+
+
+<center>
+<br>
+<table width=90% border=1 CELLPADDING="10" CELLSPACING="1">
+<tr><td>
+<pre>
+// This program uses red-black tree to
+// remove multiple occurences of the same
+// value from its paramaters.
+// For example:
+//   a.out 6 7 3 4 1 4 1 3 5
+// writes:
+//   1 3 4 5 6 7
+
+
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include "sglib.h"
+
+
+typedef struct rbtree {
+  int n;
+  char color_field;
+  struct rbtree *left;
+  struct rbtree *right;
+} rbtree;
+
+#define CMPARATOR(x,y) ((x->n)-(y->n))
+
+SGLIB_DEFINE_RBTREE_PROTOTYPES(rbtree, left, right, color_field, CMPARATOR);
+SGLIB_DEFINE_RBTREE_FUNCTIONS(rbtree, left, right, color_field, CMPARATOR);
+
+int main(int argc, char **argv) {
+  int                           i,a;
+  struct rbtree                 e, *t, *the_tree, *te;
+  struct sglib_rbtree_iterator  it;
+
+  the_tree = NULL;
+  for (i=1; i&lt;argc; i++) {
+    sscanf(argv[i],"%d", &a);
+    e.n = a;
+    if (sglib_rbtree_find_member(the_tree, &e)==NULL) {
+      t = malloc(sizeof(struct rbtree));
+      t->n = a;
+      sglib_rbtree_add(&the_tree, t);
+    }
+  }
+
+  for(te=sglib_rbtree_it_init_inorder(&it,the_tree); te!=NULL; te=sglib_rbtree_it_next(&it)) {
+    printf("%d ", te->n);
+  }
+  printf("\n");
+
+  for(te=sglib_rbtree_it_init(&it,the_tree); te!=NULL; te=sglib_rbtree_it_next(&it)) {
+    free(te);
+  }
+
+  return(0);
+}
+<pre>
+</td></tr>
+</table>
+
+</center>
+
+
+
+
+
+</body>
+</html>

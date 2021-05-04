@@ -39,6 +39,11 @@ the installation:
     sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
     sudo apt-get build-dep glfw
 
+Docs:
+
+    sudo pip install sphinx
+    sudo apt-get install doxygen python-breathe
+
 #### Windows
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
@@ -62,6 +67,8 @@ terminal.
     cmake .
     make
     ./craft
+    # For docs
+    make doc-all|doc-man|doc-html|doc-tex # Craft/doc/sphinx/build
 
 ### Multiplayer
 

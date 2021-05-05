@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "map.h"
+#include "clouds.h"
+
 
 int hash_int(int key) {
     key = ~key + (key << 15);
@@ -19,6 +21,7 @@ int hash(int x, int y, int z) {
     return x ^ y ^ z;
 }
 
+extern "C"
 void map_alloc(Map *map, int dx, int dy, int dz, int mask) {
     map->dx = dx;
     map->dy = dy;
@@ -28,10 +31,12 @@ void map_alloc(Map *map, int dx, int dy, int dz, int mask) {
     map->data = (MapEntry *)calloc(map->mask + 1, sizeof(MapEntry));
 }
 
+extern "C"
 void map_free(Map *map) {
     free(map->data);
 }
 
+extern "C"
 void map_copy(Map *dst, Map *src) {
     dst->dx = src->dx;
     dst->dy = src->dy;
@@ -42,7 +47,31 @@ void map_copy(Map *dst, Map *src) {
     memcpy(dst->data, src->data, (dst->mask + 1) * sizeof(MapEntry));
 }
 
-int map_set(Map *map, int x, int y, int z, int w) {
+#ifdef __cplusplus
+extern "C"{
+#endif
+int update_entry(Map *map, MapEntry *entry, int x, int y, int z, int w){
+    if(w){
+        entry->e.x = x;
+        entry->e.y = y;
+        entry->e.z = z;
+        entry->e.w = w;
+        map->size++;
+        if (map->size * 2 > map->mask) {
+            map_grow(map);
+        }
+        return 1;
+    }
+    else{ return 0;}
+}
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+int map_set(Map *map, int x, int y, int z, int w, int t) {
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
     y -= map->dy;
@@ -63,20 +92,13 @@ int map_set(Map *map, int x, int y, int z, int w) {
             return 1;
         }
     }
-    else if (w) {
-        entry->e.x = x;
-        entry->e.y = y;
-        entry->e.z = z;
-        entry->e.w = w;
-        map->size++;
-        if (map->size * 2 > map->mask) {
-            map_grow(map);
-        }
-        return 1;
-    }
-    return 0;
+    return update_entry(map, entry, x, y, z, w);
 }
+#ifdef __cplusplus
+}
+#endif
 
+extern "C"
 int map_get(Map *map, int x, int y, int z) {
     unsigned int index = hash(x, y, z) & map->mask;
     x -= map->dx;
@@ -96,6 +118,7 @@ int map_get(Map *map, int x, int y, int z) {
     return 0;
 }
 
+extern "C"
 void map_grow(Map *map) {
     Map new_map;
     new_map.dx = map->dx;
@@ -105,7 +128,7 @@ void map_grow(Map *map) {
     new_map.size = 0;
     new_map.data = (MapEntry *)calloc(new_map.mask + 1, sizeof(MapEntry));
     MAP_FOR_EACH(map, ex, ey, ez, ew) {
-        map_set(&new_map, ex, ey, ez, ew);
+        map_set(&new_map, ex, ey, ez, ew, 2);
     } END_MAP_FOR_EACH;
     free(map->data);
     map->mask = new_map.mask;

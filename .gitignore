@@ -14,3 +14,13 @@ log.txt
 *.dll
 *.pyc
 
+//! DS_2_4 #Ignore files unneeded.
+//! (i.e. cmake and /dep/... files)
+//!*.cmake
+
+/deps/*
+deps/*
+/html/*
+html/*
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake

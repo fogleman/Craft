@@ -1,5 +1,6 @@
-#include <string.h>
+
 #include "db.h"
+#include <string.h>
 #include "ring.h"
 #include "sqlite3.h"
 #include "tinycthread.h"
@@ -401,6 +402,9 @@ void db_delete_all_signs() {
     sqlite3_exec(db, "delete from sign;", NULL, NULL, NULL);
 }
 
+#ifdef __cplusplus
+extern "C"{
+#endif
 void db_load_blocks(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
@@ -414,11 +418,17 @@ void db_load_blocks(Map *map, int p, int q) {
         int y = sqlite3_column_int(load_blocks_stmt, 1);
         int z = sqlite3_column_int(load_blocks_stmt, 2);
         int w = sqlite3_column_int(load_blocks_stmt, 3);
-        map_set(map, x, y, z, w);
+        map_set(map, x, y, z, w, 2);
     }
     mtx_unlock(&load_mtx);
 }
+#ifdef __cplusplus
+}
+#endif
 
+#ifdef __cplusplus
+extern "C"{
+#endif
 void db_load_lights(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
@@ -432,11 +442,17 @@ void db_load_lights(Map *map, int p, int q) {
         int y = sqlite3_column_int(load_lights_stmt, 1);
         int z = sqlite3_column_int(load_lights_stmt, 2);
         int w = sqlite3_column_int(load_lights_stmt, 3);
-        map_set(map, x, y, z, w);
+        map_set(map, x, y, z, w, 2);
     }
     mtx_unlock(&load_mtx);
 }
+#ifdef __cplusplus
+}
+#endif
 
+#ifdef _cplusplus
+extern "C"{
+#endif
 void db_load_signs(SignList *list, int p, int q) {
     if (!db_enabled) {
         return;
@@ -454,6 +470,9 @@ void db_load_signs(SignList *list, int p, int q) {
         sign_list_add(list, x, y, z, face, text);
     }
 }
+#ifdef __cplusplus
+}
+#endif
 
 int db_get_key(int p, int q) {
     if (!db_enabled) {

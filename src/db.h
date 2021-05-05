@@ -1,8 +1,14 @@
 #ifndef _db_h_
 #define _db_h_
 
-#include "map.h"
-#include "sign.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+    #include "map.h"
+    #include "sign.h"
+#ifdef __cplusplus
+}
+#endif
 
 void db_enable();
 void db_disable();
@@ -28,13 +34,34 @@ void db_insert_sign(
 void db_delete_sign(int x, int y, int z, int face);
 void db_delete_signs(int x, int y, int z);
 void db_delete_all_signs();
+
+#ifdef __cplusplus
+extern "C"{
+#endif
 void db_load_blocks(Map *map, int p, int q);
+#ifdef _cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+extern "C"{
+#endif
 void db_load_lights(Map *map, int p, int q);
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef _cplusplus
+extern "C"{
+#endif
 void db_load_signs(SignList *list, int p, int q);
+#ifdef __cplusplus
+}
+#endif
+
 int db_get_key(int p, int q);
 void db_set_key(int p, int q, int key);
 void db_worker_start();
 void db_worker_stop();
 int db_worker_run(void *arg);
-
 #endif

@@ -25,6 +25,9 @@ const int items[] = {
     SUN_FLOWER,
     WHITE_FLOWER,
     BLUE_FLOWER,
+    TNT,
+    ICE,
+    COMPACT_SNOW,
     COLOR_00,
     COLOR_01,
     COLOR_02,
@@ -87,9 +90,9 @@ const int blocks[256][6] = {
     {0, 0, 0, 0, 0, 0}, // 21
     {0, 0, 0, 0, 0, 0}, // 22
     {0, 0, 0, 0, 0, 0}, // 23
-    {0, 0, 0, 0, 0, 0}, // 24
-    {0, 0, 0, 0, 0, 0}, // 25
-    {0, 0, 0, 0, 0, 0}, // 26
+    {80, 80, 96, 64, 80, 80}, // 24 - TNT
+    {65, 65, 65, 65, 65, 65}, // 25 - ice
+    {66, 66, 66, 66, 66, 66}, // 26 - compact_snow
     {0, 0, 0, 0, 0, 0}, // 27
     {0, 0, 0, 0, 0, 0}, // 28
     {0, 0, 0, 0, 0, 0}, // 29
@@ -182,6 +185,7 @@ int is_transparent(int w) {
         case EMPTY:
         case GLASS:
         case LEAVES:
+        case CLOUD:             //see comment below
             return 1;
         default:
             return 0;
@@ -191,9 +195,9 @@ int is_transparent(int w) {
 int is_destructable(int w) {
     switch (w) {
         case EMPTY:
-        case CLOUD:
-            return 0;
-        default:
+        /*case CLOUD:*/         //US 2.2.2 Make Fog Not Transparent - while this makes
+            return 0;           //the fog remain transparent, it resolves the bug of
+        default:                //seeing through the map and the fog.
             return 1;
     }
 }

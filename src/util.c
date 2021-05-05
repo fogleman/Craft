@@ -36,7 +36,7 @@ char *load_file(const char *path) {
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
-    char *data = calloc(length + 1, sizeof(char));
+    char *data = (char*)calloc(length + 1, sizeof(char));
     fread(data, 1, length, file);
     fclose(file);
     return data;
@@ -56,7 +56,7 @@ void del_buffer(GLuint buffer) {
 }
 
 GLfloat *malloc_faces(int components, int faces) {
-    return malloc(sizeof(GLfloat) * 6 * components * faces);
+    return (GLfloat*)malloc(sizeof(GLfloat) * 6 * components * faces);
 }
 
 GLuint gen_faces(int components, int faces, GLfloat *data) {
@@ -75,7 +75,7 @@ GLuint make_shader(GLenum type, const char *source) {
     if (status == GL_FALSE) {
         GLint length;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        GLchar *info = calloc(length, sizeof(GLchar));
+        GLchar *info = (GLchar*)calloc(length, sizeof(GLchar));
         glGetShaderInfoLog(shader, length, NULL, info);
         fprintf(stderr, "glCompileShader failed:\n%s\n", info);
         free(info);
@@ -100,7 +100,7 @@ GLuint make_program(GLuint shader1, GLuint shader2) {
     if (status == GL_FALSE) {
         GLint length;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
-        GLchar *info = calloc(length, sizeof(GLchar));
+        GLchar *info = (GLchar*)calloc(length, sizeof(GLchar));
         glGetProgramInfoLog(program, length, NULL, info);
         fprintf(stderr, "glLinkProgram failed: %s\n", info);
         free(info);
@@ -124,7 +124,7 @@ void flip_image_vertical(
 {
     unsigned int size = width * height * 4;
     unsigned int stride = sizeof(char) * width * 4;
-    unsigned char *new_data = malloc(sizeof(unsigned char) * size);
+    unsigned char *new_data = (unsigned char*)malloc(sizeof(unsigned char) * size);
     for (unsigned int i = 0; i < height; i++) {
         unsigned int j = height - i - 1;
         memcpy(new_data + j * stride, data + i * stride, stride);
@@ -191,7 +191,7 @@ int string_width(const char *input) {
 
 int wrap(const char *input, int max_width, char *output, int max_length) {
     *output = '\0';
-    char *text = malloc(sizeof(char) * (strlen(input) + 1));
+    char *text = (char*)malloc(sizeof(char) * (strlen(input) + 1));
     strcpy(text, input);
     int space_width = char_width(' ');
     int line_number = 0;

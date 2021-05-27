@@ -1,4 +1,7 @@
-#version 120
+#ifdef GL_ES
+precision mediump float;
+precision mediump int;
+#endif
 
 uniform sampler2D sampler;
 uniform sampler2D sky_sampler;

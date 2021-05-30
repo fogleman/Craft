@@ -1,6 +1,6 @@
 //========================================================================
 // Multi-threading test
-// Copyright (c) Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -30,6 +30,7 @@
 
 #include "tinycthread.h"
 
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -44,11 +45,17 @@ typedef struct
     thrd_t id;
 } Thread;
 
-static volatile GLboolean running = GL_TRUE;
+static volatile int running = GLFW_TRUE;
 
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
+}
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 static int thread_main(void* data)
@@ -87,7 +94,7 @@ int main(void)
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     for (i = 0;  i < count;  i++)
     {
@@ -100,9 +107,18 @@ int main(void)
             exit(EXIT_FAILURE);
         }
 
+        glfwSetKeyCallback(threads[i].window, key_callback);
+
         glfwSetWindowPos(threads[i].window, 200 + 250 * i, 200);
         glfwShowWindow(threads[i].window);
+    }
 
+    glfwMakeContextCurrent(threads[0].window);
+    gladLoadGL(glfwGetProcAddress);
+    glfwMakeContextCurrent(NULL);
+
+    for (i = 0;  i < count;  i++)
+    {
         if (thrd_create(&threads[i].id, thread_main, threads + i) !=
             thrd_success)
         {
@@ -120,7 +136,7 @@ int main(void)
         for (i = 0;  i < count;  i++)
         {
             if (glfwWindowShouldClose(threads[i].window))
-                running = GL_FALSE;
+                running = GLFW_FALSE;
         }
     }
 

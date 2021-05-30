@@ -1,6 +1,6 @@
 //========================================================================
 // UTF-8 window title test
-// Copyright (c) Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -27,6 +27,7 @@
 //
 //========================================================================
 
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -35,11 +36,6 @@
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
-}
-
-static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
 }
 
 int main(void)
@@ -59,9 +55,8 @@ int main(void)
     }
 
     glfwMakeContextCurrent(window);
+    gladLoadGL(glfwGetProcAddress);
     glfwSwapInterval(1);
-
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     while (!glfwWindowShouldClose(window))
     {

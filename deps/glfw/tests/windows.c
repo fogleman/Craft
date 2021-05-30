@@ -1,6 +1,6 @@
 //========================================================================
 // Simple multi-window test
-// Copyright (c) Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -27,10 +27,13 @@
 //
 //========================================================================
 
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "getopt.h"
 
 static const char* titles[] =
 {
@@ -50,6 +53,15 @@ static const struct
     {   0.f, 0.68f, 0.94f },
     { 0.98f, 0.74f, 0.04f }
 };
+
+static void usage(void)
+{
+    printf("Usage: windows [-h] [-b] [-f] \n");
+    printf("Options:\n");
+    printf("  -b create decorated windows\n");
+    printf("  -f set focus on show off for all but first window\n");
+    printf("  -h show this help\n");
+}
 
 static void error_callback(int error, const char* description)
 {
@@ -72,28 +84,51 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         }
 
         case GLFW_KEY_ESCAPE:
-            glfwSetWindowShouldClose(window, GL_TRUE);
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
             break;
     }
 }
 
 int main(int argc, char** argv)
 {
-    int i;
-    GLboolean running = GL_TRUE;
+    int i, ch;
+    int decorated = GLFW_FALSE;
+    int focusOnShow = GLFW_TRUE;
+    int running = GLFW_TRUE;
     GLFWwindow* windows[4];
+
+    while ((ch = getopt(argc, argv, "bfh")) != -1)
+    {
+        switch (ch)
+        {
+            case 'b':
+                decorated = GLFW_TRUE;
+                break;
+            case 'f':
+                focusOnShow = GLFW_FALSE;
+                break;
+            case 'h':
+                usage();
+                exit(EXIT_SUCCESS);
+            default:
+                usage();
+                exit(EXIT_FAILURE);
+        }
+    }
 
     glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_DECORATED, GL_FALSE);
-    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    glfwWindowHint(GLFW_DECORATED, decorated);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     for (i = 0;  i < 4;  i++)
     {
         int left, top, right, bottom;
+        if (i)
+            glfwWindowHint(GLFW_FOCUS_ON_SHOW, focusOnShow);
 
         windows[i] = glfwCreateWindow(200, 200, titles[i], NULL, NULL);
         if (!windows[i])
@@ -105,6 +140,7 @@ int main(int argc, char** argv)
         glfwSetKeyCallback(windows[i], key_callback);
 
         glfwMakeContextCurrent(windows[i]);
+        gladLoadGL(glfwGetProcAddress);
         glClearColor(colors[i].r, colors[i].g, colors[i].b, 1.f);
 
         glfwGetWindowFrameSize(windows[i], &left, &top, &right, &bottom);
@@ -125,10 +161,10 @@ int main(int argc, char** argv)
             glfwSwapBuffers(windows[i]);
 
             if (glfwWindowShouldClose(windows[i]))
-                running = GL_FALSE;
+                running = GLFW_FALSE;
         }
 
-        glfwPollEvents();
+        glfwWaitEvents();
     }
 
     glfwTerminate();

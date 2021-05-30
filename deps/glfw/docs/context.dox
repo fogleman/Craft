@@ -1,16 +1,18 @@
 /*!
 
-@page context Context guide
+@page context_guide Context guide
 
 @tableofcontents
 
 This guide introduces the OpenGL and OpenGL ES context related functions of
-GLFW.  There are also guides for the other areas of the GLFW API.
+GLFW.  For details on a specific function in this category, see the @ref
+context.  There are also guides for the other areas of the GLFW API.
 
- - @ref intro
- - @ref window
- - @ref monitor
- - @ref input
+ - @ref intro_guide
+ - @ref window_guide
+ - @ref vulkan_guide
+ - @ref monitor_guide
+ - @ref input_guide
 
 
 @section context_object Context objects
@@ -25,6 +27,11 @@ as the context handle.
 
 To test the creation of various kinds of contexts and see their properties, run
 the `glfwinfo` test program.
+
+@note Vulkan does not have a context and the Vulkan instance is created via the
+Vulkan API itself.  If you will be using Vulkan to render to a window, disable
+context creation by setting the [GLFW_CLIENT_API](@ref GLFW_CLIENT_API_hint)
+hint to `GLFW_NO_API`.  For more information, see the @ref vulkan_guide.
 
 
 @subsection context_hints Context creation hints
@@ -49,22 +56,22 @@ platforms where it is possible to choose which types of objects are shared, GLFW
 requests that all types are shared.
 
 See the relevant chapter of the [OpenGL](https://www.opengl.org/registry/) or
-[OpenGL ES](http://www.khronos.org/opengles/) reference documents for more
+[OpenGL ES](https://www.khronos.org/opengles/) reference documents for more
 information.  The name and number of this chapter unfortunately varies between
 versions and APIs, but has at times been named _Shared Objects and Multiple
 Contexts_.
 
-GLFW comes with a simple object sharing test program called `sharing`.
+GLFW comes with a barebones object sharing example program called `sharing`.
 
 
 @subsection context_offscreen Offscreen contexts
 
 GLFW doesn't support creating contexts without an associated window.  However,
 contexts with hidden windows can be created with the
-[GLFW_VISIBLE](@ref window_hints_wnd) window hint.
+[GLFW_VISIBLE](@ref GLFW_VISIBLE_hint) window hint.
 
 @code
-glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
 GLFWwindow* offscreen_context = glfwCreateWindow(640, 480, "", NULL, NULL);
 @endcode
@@ -74,10 +81,20 @@ offscreen context.  Depending on the window manager, the size of a hidden
 window's framebuffer may not be usable or modifiable, so framebuffer
 objects are recommended for rendering with such contexts.
 
-__OS X:__ The first time a window is created the menu bar is populated with
-common commands like Hide, Quit and About.  This is not desirable for example
-when writing a command-line only application.  The menu bar setup can be
-disabled with a [compile-time option](@ref compile_options_osx).
+You should still [process events](@ref events) as long as you have at least one
+window, even if none of them are visible.
+
+@macos The first time a window is created the menu bar is created.  This is not
+desirable for example when writing a command-line only application.  Menu bar
+creation can be disabled with the @ref GLFW_COCOA_MENUBAR init hint.
+
+
+@subsection context_less Windows without contexts
+
+You can disable context creation by setting the
+[GLFW_CLIENT_API](@ref GLFW_CLIENT_API_hint) hint to `GLFW_NO_API`.  Windows
+without contexts must not be passed to @ref glfwMakeContextCurrent or @ref
+glfwSwapBuffers.
 
 
 @section context_current Current context
@@ -85,6 +102,9 @@ disabled with a [compile-time option](@ref compile_options_osx).
 Before you can make OpenGL or OpenGL ES calls, you need to have a current
 context of the correct type.  A context can only be current for a single thread
 at a time, and a thread can only have a single context current at a time.
+
+When moving a context between threads, you must make it non-current on the old
+thread before making it current on the new one.
 
 The context of a window is made current with @ref glfwMakeContextCurrent.
 
@@ -109,13 +129,12 @@ error.
 
 @section context_swap Buffer swapping
 
-Buffer swapping is part of the window and framebuffer, not the context.  See
-@ref buffer_swap.
+See @ref buffer_swap in the window guide.
 
 
 @section context_glext OpenGL and OpenGL ES extensions
 
-One of the benefits of OpenGL and OpenGL ES are their extensibility.
+One of the benefits of OpenGL and OpenGL ES is their extensibility.
 Hardware vendors may include extensions in their implementations that extend the
 API before that functionality is included in a new version of the OpenGL or
 OpenGL ES specification, and some extensions are never included and remain
@@ -132,7 +151,7 @@ for official extensions.  The extension above was created by the ARB, but there
 are many different affixes, like `NV` for Nvidia and `AMD` for, well, AMD.  Any
 group may also use the generic `EXT` affix.  Lists of extensions, together with
 their specifications, can be found at the
-[OpenGL Registry](http://www.opengl.org/registry/) and
+[OpenGL Registry](https://www.opengl.org/registry/) and
 [OpenGL ES Registry](https://www.khronos.org/registry/gles/).
 
 
@@ -142,7 +161,7 @@ An extension loader library is the easiest and best way to access both OpenGL an
 OpenGL ES extensions and modern versions of the core OpenGL or OpenGL ES APIs.
 They will take care of all the details of declaring and loading everything you
 need.  One such library is [glad](https://github.com/Dav1dde/glad) and there are
-several others.  
+several others.
 
 The following example will use glad but all extension loader libraries work
 similarly.
@@ -158,9 +177,10 @@ python main.py --generator c --no-loader --out-path output
 @endcode
 
 The `--no-loader` option is added because GLFW already provides a function for
-loading OpenGL and OpenGL ES function pointers and glad can call this instead of
-having to implement its own.  There are several other command-line options as
-well.  See the glad documentation for details.
+loading OpenGL and OpenGL ES function pointers, one that automatically uses the
+selected context creation API, and glad can call this instead of having to
+implement its own.  There are several other command-line options as well.  See
+the glad documentation for details.
 
 Add the generated `output/src/glad.c`, `output/include/glad/glad.h` and
 `output/include/KHR/khrplatform.h` files to your build.  Then you need to
@@ -235,7 +255,7 @@ of OpenGL ES extensions is identical except for the name of the extension header
 
 The `glext.h` extension header is a continually updated file that defines the
 interfaces for all OpenGL extensions.  The latest version of this can always be
-found at the [OpenGL Registry](http://www.opengl.org/registry/).  There are also
+found at the [OpenGL Registry](https://www.opengl.org/registry/).  There are also
 extension headers for the various versions of OpenGL ES at the
 [OpenGL ES Registry](https://www.khronos.org/registry/gles/).  It it strongly
 recommended that you use your own copy of the extension header, as the one
@@ -247,8 +267,8 @@ supports.  These have names like `PFNGLGETDEBUGMESSAGELOGARBPROC` (for
 `glGetDebugMessageLogARB`), i.e. the name is made uppercase and `PFN` (pointer
 to function) and `PROC` (procedure) are added to the ends.
 
-To include the extension header, define [GLFW_INCLUDE_GLEXT](@ref build_macros)
-before including the GLFW header.
+To include the extension header, define @ref GLFW_INCLUDE_GLEXT before including
+the GLFW header.
 
 @code
 #define GLFW_INCLUDE_GLEXT
@@ -271,8 +291,8 @@ if (glfwExtensionSupported("GL_ARB_debug_output"))
 @endcode
 
 The argument is a null terminated ASCII string with the extension name.  If the
-extension is supported, @ref glfwExtensionSupported returns `GL_TRUE`, otherwise
-it returns `GL_FALSE`.
+extension is supported, @ref glfwExtensionSupported returns `GLFW_TRUE`,
+otherwise it returns `GLFW_FALSE`.
 
 
 @subsubsection context_glext_proc Fetching function pointers

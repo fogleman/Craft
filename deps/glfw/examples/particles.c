@@ -1,7 +1,7 @@
 //========================================================================
 // A simple particle engine with threaded physics
 // Copyright (c) Marcus Geelnard
-// Copyright (c) Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -27,8 +27,6 @@
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
  #define _USE_MATH_DEFINES
-#elif __GNUC__
- #define _GNU_SOURCE
 #endif
 
 #include <stdlib.h>
@@ -41,6 +39,7 @@
 #include <getopt.h>
 #include <linmath.h>
 
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 // Define tokens for GL_EXT_separate_specular_color if not already defined
@@ -458,7 +457,9 @@ static void draw_particles(GLFWwindow* window, double t, float dt)
     {
         struct timespec ts;
         clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_nsec += 100000000;
+        ts.tv_nsec += 100 * 1000 * 1000;
+        ts.tv_sec += ts.tv_nsec / (1000 * 1000 * 1000);
+        ts.tv_nsec %= 1000 * 1000 * 1000;
         cnd_timedwait(&thread_sync.p_done, &thread_sync.particles_lock, &ts);
     }
 
@@ -877,7 +878,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         switch (key)
         {
             case GLFW_KEY_ESCAPE:
-                glfwSetWindowShouldClose(window, GL_TRUE);
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
                 break;
             case GLFW_KEY_W:
                 wireframe = !wireframe;
@@ -909,7 +910,9 @@ static int physics_thread_main(void* arg)
         {
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_nsec += 100000000;
+            ts.tv_nsec += 100 * 1000 * 1000;
+            ts.tv_sec += ts.tv_nsec / (1000 * 1000 * 1000);
+            ts.tv_nsec %= 1000 * 1000 * 1000;
             cnd_timedwait(&thread_sync.d_done, &thread_sync.particles_lock, &ts);
         }
 
@@ -991,6 +994,7 @@ int main(int argc, char** argv)
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwMakeContextCurrent(window);
+    gladLoadGL(glfwGetProcAddress);
     glfwSwapInterval(1);
 
     glfwSetFramebufferSizeCallback(window, resize_callback);

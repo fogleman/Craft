@@ -733,7 +733,39 @@ int collide(int height, float *x, float *y, float *z) {
         if (pz > pad && is_obstacle(map_get(map, nx, ny - dy, nz + 1))) {
             *z = nz + pad;
         }
+        
+        // check the 4 diagonally neighboring blocks for obstacle as well
+        if (px < -pad && pz > pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz + 1))) {
+            if(ABS(px) < ABS(pz)){
+                *x = nx - pad;
+            } else {
+                *z = nz + pad;
+            }
+        }
+        if (px > pad && pz > pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz + 1))) {
+            if(ABS(px) < ABS(pz)){            
+                *x = nx + pad;
+            } else {
+                *z = nz + pad;
+            }
+        }
+        if (px < -pad && pz < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz - 1))) {
+            if(ABS(px) < ABS(pz)){ 
+                *x = nx - pad;
+            } else {
+                *z = nz - pad;
+            }
+        }
+        if (px > pad && pz < -pad && is_obstacle(map_get(map, nx + 1, ny - dy, nz - 1))) {
+            if(ABS(px) < ABS(pz)){             
+                *x = nx + pad;
+            } else {
+                *z = nz - pad;
+            }
+        }
     }
+    // If result == 1, that means the player is on the ground
+    // and can therefore jump in the next frame.
     return result;
 }
 
@@ -2446,6 +2478,7 @@ void handle_movement(double dt) {
     int step = MAX(8, estimate);
     float ut = dt / step;
     vx = vx * ut * speed;
+	//printf("ut:%f, dt:%f, step:%d, vx:%f\n", ut, dt, step, vx);
     vy = vy * ut * speed;
     vz = vz * ut * speed;
     for (int i = 0; i < step; i++) {
@@ -2460,6 +2493,7 @@ void handle_movement(double dt) {
         s->y += vy + dy * ut;
         s->z += vz;
         if (collide(2, &s->x, &s->y, &s->z)) {
+	//printf("collide\n");
             dy = 0;
         }
     }

@@ -151,6 +151,8 @@ typedef struct {
     Block block1;
     Block copy0;
     Block copy1;
+    int show_info_text;
+    int show_ui;
 } Model;
 
 static Model model;
@@ -2200,6 +2202,12 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
     }
+    if (key == CRAFT_KEY_DEBUG) {
+        g->show_info_text = !g->show_info_text;
+    }
+    if (key == CRAFT_KEY_UI) {
+        g->show_ui = !g->show_ui;
+    }
     if (key == GLFW_KEY_ENTER) {
         if (g->typing) {
             if (mods & GLFW_MOD_SHIFT) {
@@ -2581,6 +2589,8 @@ void reset_model() {
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
+    g->show_info_text = SHOW_INFO_TEXT;
+    g->show_ui = 1;
 }
 
 int main(int argc, char **argv) {
@@ -2838,16 +2848,16 @@ int main(int argc, char **argv) {
             render_signs(&text_attrib, player);
             render_sign(&text_attrib, player);
             render_players(&block_attrib, player);
-            if (SHOW_WIREFRAME) {
+            if (SHOW_WIREFRAME && g->show_ui) {
                 render_wireframe(&line_attrib, player);
             }
 
             // RENDER HUD //
             glClear(GL_DEPTH_BUFFER_BIT);
-            if (SHOW_CROSSHAIRS) {
+            if (SHOW_CROSSHAIRS && g->show_ui) {
                 render_crosshairs(&line_attrib);
             }
-            if (SHOW_ITEM) {
+            if (SHOW_ITEM && g->show_ui) {
                 render_item(&block_attrib);
             }
 
@@ -2856,7 +2866,7 @@ int main(int argc, char **argv) {
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
-            if (SHOW_INFO_TEXT) {
+            if (g->show_info_text && g->show_ui) {
                 int hour = time_of_day() * 24;
                 char am_pm = hour < 12 ? 'a' : 'p';
                 hour = hour % 12;
@@ -2870,7 +2880,7 @@ int main(int argc, char **argv) {
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }
-            if (SHOW_CHAT_TEXT) {
+            if (SHOW_CHAT_TEXT && g->show_ui) {
                 for (int i = 0; i < MAX_MESSAGES; i++) {
                     int index = (g->message_index + i) % MAX_MESSAGES;
                     if (strlen(g->messages[index])) {
@@ -2885,7 +2895,7 @@ int main(int argc, char **argv) {
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }
-            if (SHOW_PLAYER_NAMES) {
+            if (SHOW_PLAYER_NAMES && g->show_ui) {
                 if (player != me) {
                     render_text(&text_attrib, ALIGN_CENTER,
                         g->width / 2, ts, ts, player->name);

@@ -30,6 +30,7 @@ void map_alloc(Map *map, int dx, int dy, int dz, int mask) {
 
 void map_free(Map *map) {
     free(map->data);
+    map->data =NULL;            //Added by Josh Strozzi, this is what it should do after freeing
 }
 
 void map_copy(Map *dst, Map *src) {

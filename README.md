@@ -26,6 +26,12 @@ See below to run from source.
 
 ### Install Dependencies
 
+#### FreeBSD
+
+Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)
+
+    pkg install cmake curl
+
 #### Mac OS X
 
 Download and install [CMake](http://www.cmake.org/cmake/resources/software.html)

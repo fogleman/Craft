@@ -139,7 +139,7 @@ def get_identity():
         return row
     raise Exception('No identities found.')
 
-class Client(object):
+class Client:
     def __init__(self, host, port):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect((host, port))
@@ -152,7 +152,7 @@ class Client(object):
             'identity_token': identity_token,
         }
         response = requests.post(url, data=payload)
-        if response.status_code == 200 and response.text.isalnum():
+        if response.ok and response.text.isalnum():
             access_token = response.text
             self.conn.sendall('A,%s,%s\n' % (username, access_token))
         else:
@@ -173,7 +173,7 @@ class Client(object):
             z = sz if dz1 else z
             for c in row:
                 w = lookup.get(c)
-                if w is not None:
+                if w:
                     self.set_block(x, y, z, w)
                 x, y, z = x + dx1, y + dy1, z + dz1
             x, y, z = x + dx2, y + dy2, z + dz2

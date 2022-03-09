@@ -1,0 +1,13 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: GLFW
+Description: A multi-platform library for OpenGL, window and input
+Version: 3.1.2
+URL: http://www.glfw.org/
+Requires.private:  x11 xrandr xinerama xi xxf86vm xcursor gl
+Libs: -L${libdir} -lglfw3
+Libs.private:  -lrt -lm -ldl
+Cflags: -I${includedir}

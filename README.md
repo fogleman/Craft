@@ -1,12 +1,18 @@
 ## Craft
 
-Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.
+Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). 
 
-http://www.michaelfogleman.com/craft/
+Credit to Michael Fogleman for the bulk of the code used in this forked project.
 
 ![Screenshot](https://i.imgur.com/SH7wcas.png)
 
-### Features
+### Contributors to This Forked Project
+
+* Ronni Hartlage
+
+### Features Added By Ronni, Mad, and Ben
+
+### Features by Michael Fogleman
 
 * Simple but nice looking terrain generation using perlin / simplex noise.
 * More than 10 types of blocks and more can be added easily.
@@ -15,14 +21,6 @@ http://www.michaelfogleman.com/craft/
 * Day / night cycles and a textured sky dome.
 * World changes persisted in a sqlite3 database.
 * Multiplayer support!
-
-### Download
-
-Mac and Windows binaries are available on the website.
-
-http://www.michaelfogleman.com/craft/
-
-See below to run from source.
 
 ### Install Dependencies
 
@@ -62,10 +60,6 @@ terminal.
     cmake .
     make
     ./craft
-
-### Multiplayer
-
-After many years, craft.michaelfogleman.com has been taken down. See the [Server](#server) section for info on self-hosting.
 
 #### Client
 
@@ -184,14 +178,6 @@ The main database table is named “block” and has columns p, q, x, y, z, w. (
 In game, the chunks store their blocks in a hash map. An (x, y, z) key maps to a (w) value.
 
 The y-position of blocks are limited to 0 <= y < 256. The upper limit is mainly an artificial limitation to prevent users from building unnecessarily tall structures. Users are not allowed to destroy blocks at y = 0 to avoid falling underneath the world.
-
-#### Multiplayer
-
-Multiplayer mode is implemented using plain-old sockets. A simple, ASCII, line-based protocol is used. Each line is made up of a command code and zero or more comma-separated arguments. The client requests chunks from the server with a simple command: C,p,q,key. “C” means “Chunk” and (p, q) identifies the chunk. The key is used for caching - the server will only send block updates that have been performed since the client last asked for that chunk. Block updates (in realtime or as part of a chunk request) are sent to the client in the format: B,p,q,x,y,z,w. After sending all of the blocks for a requested chunk, the server will send an updated cache key in the format: K,p,q,key. The client will store this key and use it the next time it needs to ask for that chunk. Player positions are sent in the format: P,pid,x,y,z,rx,ry. The pid is the player ID and the rx and ry values indicate the player’s rotation in two different axes. The client interpolates player positions from the past two position updates for smoother animation. The client sends its position to the server at most every 0.1 seconds (less if not moving).
-
-Client-side caching to the sqlite database can be performance intensive when connecting to a server for the first time. For this reason, sqlite writes are performed on a background thread. All writes occur in a transaction for performance. The transaction is committed every 5 seconds as opposed to some logical amount of work completed. A ring / circular buffer is used as a queue for what data is to be written to the database.
-
-In multiplayer mode, players can observe one another in the main view or in a picture-in-picture view. Implementation of the PnP was surprisingly simple - just change the viewport and render the scene again from the other player’s point of view.
 
 #### Collision Testing
 

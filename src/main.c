@@ -19,6 +19,7 @@
 #include "tinycthread.h"
 #include "util.h"
 #include "world.h"
+#include <stdbool.h>
 
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
@@ -2408,11 +2409,14 @@ void handle_mouse_input() {
     }
 }
 
-void handle_movement(double dt) {
+void handle_movement(double dt, bool *is_auto_walking_ptr, bool *allow_next_autowalk_press_ptr, bool *do_auto_walk_ptr) {
     static float dy = 0;
     State *s = &g->players->state;
     int sz = 0;
     int sx = 0;
+    int autoWalkState = glfwGetKey(g->window, CRAFT_KEY_ACTIVATE_AUTOWALK);
+
+
     if (!g->typing) {
         float m = dt * 1.0;
         g->ortho = glfwGetKey(g->window, CRAFT_KEY_ORTHO) ? 64 : 0;
@@ -2425,9 +2429,44 @@ void handle_movement(double dt) {
         if (glfwGetKey(g->window, GLFW_KEY_RIGHT)) s->rx += m;
         if (glfwGetKey(g->window, GLFW_KEY_UP)) s->ry += m;
         if (glfwGetKey(g->window, GLFW_KEY_DOWN)) s->ry -= m;
+        
+        if (autoWalkState == GLFW_PRESS)
+        {
+        	if(*is_auto_walking_ptr == false && *allow_next_autowalk_press_ptr == true) 
+        	{
+        	
+        	*is_auto_walking_ptr = true;
+        	*do_auto_walk_ptr = true;
+        	}
+        	else if(*is_auto_walking_ptr == true && *allow_next_autowalk_press_ptr == true) 
+        	{
+        	
+        	*is_auto_walking_ptr = false;
+        	*do_auto_walk_ptr = false;
+        	
+        	}
+		*allow_next_autowalk_press_ptr = false;
+        	
+        	//*allow_next_autowalk_press_ptr = false; //saftey net, takes care of holding down button
+        	
+        }
+        else if (autoWalkState == GLFW_RELEASE) {
+        	*allow_next_autowalk_press_ptr = true;
+        }//end auto walk
+        	
     }
     float vx, vy, vz;
-    get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    
+    //New system overrides this code piece
+    //get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    
+    if(*do_auto_walk_ptr == true) {
+    	get_motion_vector(g->flying, -1, sx, s->rx, s->ry, &vx, &vy, &vz);
+    }//end if
+    else if (*do_auto_walk_ptr == false) {
+    	get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    }//end else if
+    
     if (!g->typing) {
         if (glfwGetKey(g->window, CRAFT_KEY_JUMP)) {
             if (g->flying) {
@@ -2763,6 +2802,10 @@ int craft_main(int argc, char **argv) {
         me->name[0] = '\0';
         me->buffer = 0;
         g->player_count = 1;
+        //AUTO WALK
+        bool is_auto_walking = false;
+        bool allow_next_autowalk_press = false;
+        bool do_auto_walk = false;
 
         // LOAD STATE FROM DATABASE //
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
@@ -2797,7 +2840,17 @@ int craft_main(int argc, char **argv) {
             handle_mouse_input();
 
             // HANDLE MOVEMENT //
-            handle_movement(dt);
+            
+            
+            //AUTO WALKING BOOLEANS
+            bool *is_auto_walking_ptr;
+            bool *allow_next_autowalk_press_ptr;
+            bool *do_auto_walk_ptr;
+            is_auto_walking_ptr = &is_auto_walking;
+            allow_next_autowalk_press_ptr = &allow_next_autowalk_press;
+            do_auto_walk_ptr = &do_auto_walk;
+            
+            handle_movement(dt, is_auto_walking_ptr, allow_next_autowalk_press_ptr, do_auto_walk_ptr);
 
             // HANDLE DATA FROM SERVER //
             char *buffer = client_recv();

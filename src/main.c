@@ -2409,14 +2409,13 @@ void handle_mouse_input() {
     }
 }
 
-void handle_movement(double dt, int *movement_speed_ptr, bool *allow_next_press_ptr, 
-		     bool *is_running_ptr) 
+void handle_movement(double dt, int *movement_speed_ptr, bool *allow_next_run_key_press_ptr, bool *is_running_ptr) 
 {
     static float dy = 0;
     State *s = &g->players->state;
     int sz = 0;
     int sx = 0;
-    int state = glfwGetKey(g->window, CRAFT_KEY_ACTIVATE_RUN);
+    int run_key_state = glfwGetKey(g->window, CRAFT_KEY_ACTIVATE_RUN);
 
     if (!g->typing) {
         float m = dt * 1.0;
@@ -2430,24 +2429,27 @@ void handle_movement(double dt, int *movement_speed_ptr, bool *allow_next_press_
         if (glfwGetKey(g->window, GLFW_KEY_RIGHT)) s->rx += m;
         if (glfwGetKey(g->window, GLFW_KEY_UP)) s->ry += m;
         if (glfwGetKey(g->window, GLFW_KEY_DOWN)) s->ry -= m;
-    	if (state == GLFW_PRESS)
+    	
+	// PLAYER RUNNING ABILITY //
+	if (run_key_state == GLFW_PRESS)
         {
-                if(*is_running_ptr == false && *allow_next_press_ptr == true)
+                if(*is_running_ptr == false && *allow_next_run_key_press_ptr == true)
                 {
                         *movement_speed_ptr = 10;
                         *is_running_ptr = true;
                 }
-                else if(*is_running_ptr == true && *allow_next_press_ptr == true)
+                else if(*is_running_ptr == true && *allow_next_run_key_press_ptr == true)
                 {
                         *movement_speed_ptr = 5;
                         *is_running_ptr = false;
                 }
-                *allow_next_press_ptr = false;
+                *allow_next_run_key_press_ptr = false;
         }
-        else if (state == GLFW_RELEASE)
+        else if (run_key_state == GLFW_RELEASE)
         {
-                *allow_next_press_ptr = true;
+                *allow_next_run_key_press_ptr = true;
         }
+
 
     }
     float vx, vy, vz;
@@ -2788,7 +2790,7 @@ int main(int argc, char **argv) {
         me->buffer = 0;
         g->player_count = 1;
 	int movement_speed = 5;
-        bool allow_next_press = true;
+        bool allow_next_run_key_press = true;
         bool is_running = false;
 
         // LOAD STATE FROM DATABASE //
@@ -2825,12 +2827,13 @@ int main(int argc, char **argv) {
 
             // HANDLE MOVEMENT //
             int *movement_speed_ptr;
-            bool *allow_next_press_ptr;
+            bool *allow_next_run_key_press_ptr;
             bool *is_running_ptr;
             movement_speed_ptr = &movement_speed;
-            allow_next_press_ptr = &allow_next_press;
+            allow_next_run_key_press_ptr = &allow_next_run_key_press;
             is_running_ptr = &is_running;
-            handle_movement(dt,movement_speed_ptr,allow_next_press_ptr,is_running_ptr);
+
+            handle_movement(dt, movement_speed_ptr, allow_next_run_key_press_ptr, is_running_ptr);
 
             // HANDLE DATA FROM SERVER //
             char *buffer = client_recv();

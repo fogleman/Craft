@@ -2609,7 +2609,7 @@ void reset_model() {
     g->time_changed = 1;
 }
 
-int main(int argc, char **argv) {
+int craft_main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));
@@ -2789,7 +2789,7 @@ int main(int argc, char **argv) {
         me->name[0] = '\0';
         me->buffer = 0;
         g->player_count = 1;
-	int movement_speed = 5;
+int movement_speed = 5;
         bool allow_next_run_key_press = true;
         bool is_running = false;
 

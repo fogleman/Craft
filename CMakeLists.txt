@@ -3,10 +3,36 @@ cmake_minimum_required(VERSION 2.8)
 project(craft)
 
 FILE(GLOB SOURCE_FILES src/*.c)
+include_directories(googletest/include) # this is so we can #include <gtest/gtest.h>
+#include_directories(include)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+###############################################################################
+add_executable(tests) 
+target_include_directories(tests PUBLIC model)
+target_sources(tests PUBLIC 
+	${SOURCE_FILES}
+	tests/tests.cpp
+	src/deleteme.c
+	deps/glew/src/glew.c
+        deps/lodepng/lodepng.c
+        deps/noise/noise.c
+        deps/sqlite/sqlite3.c
+        deps/tinycthread/tinycthread.c)
+
+target_link_libraries(tests PRIVATE gtest) # link google test to this executable
+set_property(TARGET tests PROPERTY CXX_STANDARD 11)
 
 add_executable(
     craft
     ${SOURCE_FILES}
+    tests/craft_main.c
     deps/glew/src/glew.c
     deps/lodepng/lodepng.c
     deps/noise/noise.c
@@ -47,3 +73,9 @@ if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
+
+if(UNIX)
+    target_link_libraries(tests dl glfw
+        ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
+endif()
+

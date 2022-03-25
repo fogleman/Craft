@@ -13,4 +13,8 @@ log.txt
 *.exe
 *.dll
 *.pyc
-
+html
+build
+deps
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake

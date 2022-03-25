@@ -1,4 +1,13 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.16.3)
+
+###############################################################################
+set(CMAKE_C_COMPILER /usr/bin/clang)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "-g -O0 -std=c++11 -U__STRICT_ANSI__ -fprofile-instr-generate -fcoverage-mapping")
+
 
 project(craft)
 
@@ -28,6 +37,20 @@ target_sources(tests PUBLIC
 
 target_link_libraries(tests PRIVATE gtest) # link google test to this executable
 set_property(TARGET tests PROPERTY CXX_STANDARD 11)
+
+###############################################################################
+add_custom_target(coverage
+	COMMAND ln -f -s ../textures .
+		COMMAND ln -f -s ../shaders .
+		COMMAND ./tests
+		    COMMAND llvm-profdata merge -sparse default.profraw -o cumulative.profdata
+		        COMMAND llvm-cov show -ignore-filename-regex='../google*/*' -format="html" ./tests -instr-profile=cumulative.profdata > coverageLines.html
+			    COMMAND llvm-cov report -show-region-summary=false -ignore-filename-regex='../google*/*'  ./tests -instr-profile=cumulative.profdata > coverageSummary.txt
+			        COMMAND cat coverageSummary.txt
+				    COMMAND cd build
+				    )
+			    add_dependencies(coverage tests)
+
 
 add_executable(
     craft
@@ -65,7 +88,7 @@ if(APPLE)
 endif()
 
 if(UNIX)
-    target_link_libraries(craft dl glfw
+	target_link_libraries(craft PUBLIC dl PUBLIC glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 
@@ -75,7 +98,7 @@ if(MINGW)
 endif()
 
 if(UNIX)
-    target_link_libraries(tests dl glfw
+	target_link_libraries(tests PUBLIC dl PUBLIC glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
 

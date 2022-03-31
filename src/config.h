@@ -42,6 +42,10 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+#define CRAFT_KEY_INCREMENT_DPI '='
+#define CRAFT_KEY_DECREMENT_DPI '-'
+#define CRAFT_KEY_SET_DEFAULT_DPI GLFW_KEY_RIGHT_SHIFT
+#define CRAFT_KEY_VIEW_KEYBINDS '\\'
 
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10

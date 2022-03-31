@@ -20,6 +20,9 @@
 #include "util.h"
 #include "world.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #define MAX_CHUNKS 8192
 #define MAX_PLAYERS 128
 #define WORKERS 4
@@ -38,6 +41,9 @@
 #define WORKER_IDLE 0
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
+
+double keyDPIMultiplier = 1.1;
+double mouseDPIMultiplier = .0001;
 
 typedef struct {
     Map map;
@@ -2174,6 +2180,49 @@ void on_middle_click() {
     }
 }
 
+int isDefinedCraftKey(char* str, int start, int end)
+{
+    char str2[end - start];
+    for (int i = 0; i < (end - start); i++)
+    {
+        str2[i] = str[start + i];
+    }
+    int tru = 1;
+    if (str2[0] != 'C')
+        tru = 0;
+    if (str2[1] != 'R')
+        tru = 0;
+    if (str2[2] != 'A')
+        tru = 0;
+    if (str2[3] != 'F')
+        tru = 0;
+    if (str2[4] != 'T')
+        tru = 0;
+    return tru;
+}
+
+void parseConfigToPrintKeybinds()
+{
+    int filedes = open("/home/user/Craft/src/config.h", O_RDONLY);
+    char buffer[2048];
+    read(filedes, buffer, 2048);
+    char* token;
+    const char s[2] = "\n";
+    token = strtok(buffer, s);
+    while (token != NULL)
+    {
+        if (strlen(token) >= 14)
+        {
+            if (isDefinedCraftKey(token, 8, 13) == 1)
+            {
+                printf("%s\n", token);
+            }
+        }
+        token = strtok(NULL, s); 
+    }
+    close(filedes);
+}
+
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
     int exclusive =
@@ -2247,6 +2296,60 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if (!g->typing) {
+        if (key == CRAFT_KEY_VIEW_KEYBINDS)
+        {
+            parseConfigToPrintKeybinds();
+        }
+        if (key == CRAFT_KEY_INCREMENT_DPI)
+        {
+            if (mouseDPIMultiplier < .001)
+            {
+                mouseDPIMultiplier += .0001;
+                printf("Mouse DPI Multiplier: %f\n", mouseDPIMultiplier);
+            }
+            else
+            {
+                printf("Cannot increment mouse DPI multiplier any further!\n");
+            }
+            if (keyDPIMultiplier < 2.0)
+            {
+                keyDPIMultiplier += .1;
+                printf("Key DPI Multiplier: %f\n", keyDPIMultiplier);
+            }
+            else
+            {
+                printf("Cannot increment key DPI multiplier any further!\n");
+            }
+        }
+        if (key == CRAFT_KEY_DECREMENT_DPI)
+        {
+            if (mouseDPIMultiplier > .0001)
+            {
+                mouseDPIMultiplier -= .0001;
+                printf("Mouse DPI Multiplier: %f\n", mouseDPIMultiplier);
+            }
+            else
+            {
+                printf("Cannot decrement mouse DPI multiplier any further!\n");
+            }
+            if (keyDPIMultiplier > 1.0)
+            {
+                keyDPIMultiplier -= .1;
+                printf("Key DPI Multiplier: %f\n", keyDPIMultiplier);
+            }
+            else
+            {
+                printf("Cannot decrement key DPI multiplier any further!\n");
+            }
+        }
+        if (key == CRAFT_KEY_SET_DEFAULT_DPI)
+        {
+            mouseDPIMultiplier = .0001;
+            printf("Mouse DPI Multiplier set to default: .0001\n");
+
+            keyDPIMultiplier = 1.1;
+            printf("Key DPI multiplier set to default: 1.1\n");
+        }
         if (key == CRAFT_KEY_FLY) {
             g->flying = !g->flying;
         }
@@ -2384,13 +2487,12 @@ void handle_mouse_input() {
     if (exclusive && (px || py)) {
         double mx, my;
         glfwGetCursorPos(g->window, &mx, &my);
-        float m = 0.0025;
-        s->rx += (mx - px) * m;
+        s->rx += (mx - px) * mouseDPIMultiplier;
         if (INVERT_MOUSE) {
-            s->ry += (my - py) * m;
+            s->ry += (my - py) * mouseDPIMultiplier;
         }
         else {
-            s->ry -= (my - py) * m;
+            s->ry -= (my - py) * mouseDPIMultiplier;
         }
         if (s->rx < 0) {
             s->rx += RADIANS(360);
@@ -2414,7 +2516,7 @@ void handle_movement(double dt) {
     int sz = 0;
     int sx = 0;
     if (!g->typing) {
-        float m = dt * 1.0;
+        float m = dt * keyDPIMultiplier;
         g->ortho = glfwGetKey(g->window, CRAFT_KEY_ORTHO) ? 64 : 0;
         g->fov = glfwGetKey(g->window, CRAFT_KEY_ZOOM) ? 15 : 65;
         if (glfwGetKey(g->window, CRAFT_KEY_FORWARD)) sz--;

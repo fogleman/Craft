@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 #include "auth.h"
 #include "client.h"
 #include "config.h"
@@ -2408,6 +2409,66 @@ void handle_mouse_input() {
     }
 }
 
+int getZAxisChange(bool forward, bool backward){
+    int direction = 0;
+    if(forward){
+        direction--;
+    }
+    if(backward){
+        direction++;
+    }
+
+    return direction;
+}
+
+int getXAxisChange(bool left, bool right)
+{
+    int direction = 0;
+    if (left)
+    {
+        direction--;
+    }
+    if (right)
+    {
+        direction++;
+    }
+    return direction;
+}
+
+float getHorizontalCameraChange(bool left, bool right, float m)
+{
+    float change = 0;
+    if(left){
+        change -= m;
+    }
+    if(right){
+        change += m;
+    }
+    return change;
+}
+
+float getVerticalCameraChange(bool up, bool down, float m)
+{
+    float change = 0;
+    if (up)
+    {
+        change += m;
+    }
+    if (down)
+    {
+        change -= m;
+    }
+    return change;
+}
+
+int getOrtho(bool ortho){
+    return ortho ? 64 : 0;
+}
+
+int getFOV(bool fov){
+    return fov ? 15 : 65;
+}
+
 void handle_movement(double dt) {
     static float dy = 0;
     State *s = &g->players->state;
@@ -2415,16 +2476,19 @@ void handle_movement(double dt) {
     int sx = 0;
     if (!g->typing) {
         float m = dt * 1.0;
-        g->ortho = glfwGetKey(g->window, CRAFT_KEY_ORTHO) ? 64 : 0;
-        g->fov = glfwGetKey(g->window, CRAFT_KEY_ZOOM) ? 15 : 65;
-        if (glfwGetKey(g->window, CRAFT_KEY_FORWARD)) sz--;
-        if (glfwGetKey(g->window, CRAFT_KEY_BACKWARD)) sz++;
-        if (glfwGetKey(g->window, CRAFT_KEY_LEFT)) sx--;
-        if (glfwGetKey(g->window, CRAFT_KEY_RIGHT)) sx++;
-        if (glfwGetKey(g->window, GLFW_KEY_LEFT)) s->rx -= m;
-        if (glfwGetKey(g->window, GLFW_KEY_RIGHT)) s->rx += m;
-        if (glfwGetKey(g->window, GLFW_KEY_UP)) s->ry += m;
-        if (glfwGetKey(g->window, GLFW_KEY_DOWN)) s->ry -= m;
+        g->ortho = getOrtho(glfwGetKey(g->window, CRAFT_KEY_ORTHO));
+        g->fov = getFOV(glfwGetKey(g->window, CRAFT_KEY_ZOOM));
+        sz = getZAxisChange(glfwGetKey(g->window, CRAFT_KEY_FORWARD), glfwGetKey(g->window, CRAFT_KEY_BACKWARD));
+        sx = getXAxisChange(glfwGetKey(g->window, CRAFT_KEY_LEFT), glfwGetKey(g->window, CRAFT_KEY_RIGHT));
+
+      /*  if (glfwGetKey(g->window, GLFW_KEY_LEFT))
+            s->rx -= m;
+        if (glfwGetKey(g->window, GLFW_KEY_RIGHT))
+            s->rx += m;*/
+        //s->rx += getHorizontalCameraChange(glfwGetKey(g->window, GLFW_KEY_LEFT), glfwGetKey(g->window, GLFW_KEY_RIGHT), m);
+        s->rx += getHorizontalCameraChange(glfwGetKey(g->window, GLFW_KEY_LEFT), glfwGetKey(g->window, GLFW_KEY_RIGHT), m);
+
+        s->ry += getVerticalCameraChange(glfwGetKey(g->window, GLFW_KEY_UP), glfwGetKey(g->window, GLFW_KEY_DOWN), m);
     }
     float vx, vy, vz;
     get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);

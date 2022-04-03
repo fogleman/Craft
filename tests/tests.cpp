@@ -20,6 +20,15 @@ TEST(tests, issueBar){
 	bool returnValue = func_1;
 	EXPECT_EQ(true, returnValue);
 }
+
+TEST(tests, issueBar)
+{
+	bool returnValue = func_1;
+	EXPECT_EQ(true, returnValue);
+
+
+}
+
 extern "C" int craft_main(int argc, char* argv[]);
 
 //----------------------------------------------------

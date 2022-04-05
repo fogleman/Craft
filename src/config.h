@@ -42,9 +42,15 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+
+/// As a part of [Issue 7]: https://github.com/Team-10-But-Better/Craft/issues/7
+/// The following three keys add the ability for the user to adjust the mouse/key DPI
 #define CRAFT_KEY_INCREMENT_DPI '='
 #define CRAFT_KEY_DECREMENT_DPI '-'
 #define CRAFT_KEY_SET_DEFAULT_DPI GLFW_KEY_RIGHT_SHIFT
+
+/// As a part of [Issue 41]: https://github.com/Team-10-But-Better/Craft/issues/41
+/// The following keybind adds the ability to view all current CRAFT keybinds
 #define CRAFT_KEY_VIEW_KEYBINDS '\\'
 
 // advanced parameters

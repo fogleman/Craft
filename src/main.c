@@ -2180,6 +2180,9 @@ void on_middle_click() {
     }
 }
 
+/// As a part of [Issue #41]: https://github.com/Team-10-But-Better/Craft/issues/41
+/// To assist the parseConfigToPrintKeybinds() function, this function looks at a one line of the config.h function
+/// and determines if the line is a #define statement defining a Craft keybind.
 int isDefinedCraftKey(char* str, int start, int end)
 {
     char str2[end - start];
@@ -2201,6 +2204,9 @@ int isDefinedCraftKey(char* str, int start, int end)
     return tru;
 }
 
+/// As a part of [Issue #41]: https://github.com/Team-10-But-Better/Craft/issues/41
+/// Since keybinds are created as "#defines" in the config.h file, read all lines of the config.h file
+/// and print all lines of which define Craft keybinds.
 void parseConfigToPrintKeybinds()
 {
     int filedes = open("/home/user/Craft/src/config.h", O_RDONLY);
@@ -2221,6 +2227,65 @@ void parseConfigToPrintKeybinds()
         token = strtok(NULL, s); 
     }
     close(filedes);
+}
+
+/// As a part of [Issue #7]: https://github.com/Team-10-But-Better/Craft/issues/7
+/// Increment the mouse and key DPI by raising the value of the multiplier used to calculate the DPI.
+void incrementDPI()
+{
+    if (mouseDPIMultiplier < .001)
+    {
+        mouseDPIMultiplier += .0001;
+        printf("Mouse DPI Multiplier: %f\n", mouseDPIMultiplier);
+    }
+    else
+    {
+        printf("Cannot increment mouse DPI multiplier any further!\n");
+    }
+    if (keyDPIMultiplier < 2.0)
+    {
+        keyDPIMultiplier += .1;
+        printf("Key DPI Multiplier: %f\n", keyDPIMultiplier);
+    }
+    else
+    {
+        printf("Cannot increment key DPI multiplier any further!\n");
+    }
+}
+
+/// As a part of [Issue #7]: https://github.com/Team-10-But-Better/Craft/issues/7
+/// Decrement the mouse and key DPI by lowering the value of the multiplier used to calculate the DPI.
+void decrementDPI()
+{
+    if (mouseDPIMultiplier >= .0001)
+    {
+        mouseDPIMultiplier -= .0001;
+        printf("Mouse DPI Multiplier: %f\n", mouseDPIMultiplier);
+    }
+    else
+    {
+        printf("Cannot decrement mouse DPI multiplier any further!\n");
+    }
+    if (keyDPIMultiplier > 1)
+    {
+        keyDPIMultiplier -= .1;
+        printf("Key DPI Multiplier: %f\n", keyDPIMultiplier);
+    }
+    else
+    {
+        printf("Cannot decrement key DPI multiplier any further!\n");
+    }
+}
+
+/// As a part of [Issue #7]: https://github.com/Team-10-But-Better/Craft/issues/7
+/// Set the mouse and key DPI by changing the DPI multiplier used to calculate DPI to a predetermined default value.
+void setDefaultDPI()
+{
+    mouseDPIMultiplier = .0001;
+    printf("Mouse DPI Multiplier set to default: .0001\n");
+
+    keyDPIMultiplier = 1.1;
+    printf("Key DPI multiplier set to default: 1.1\n");
 }
 
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -2302,53 +2367,15 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
         if (key == CRAFT_KEY_INCREMENT_DPI)
         {
-            if (mouseDPIMultiplier < .001)
-            {
-                mouseDPIMultiplier += .0001;
-                printf("Mouse DPI Multiplier: %f\n", mouseDPIMultiplier);
-            }
-            else
-            {
-                printf("Cannot increment mouse DPI multiplier any further!\n");
-            }
-            if (keyDPIMultiplier < 2.0)
-            {
-                keyDPIMultiplier += .1;
-                printf("Key DPI Multiplier: %f\n", keyDPIMultiplier);
-            }
-            else
-            {
-                printf("Cannot increment key DPI multiplier any further!\n");
-            }
+            incrementDPI();
         }
         if (key == CRAFT_KEY_DECREMENT_DPI)
         {
-            if (mouseDPIMultiplier > .0001)
-            {
-                mouseDPIMultiplier -= .0001;
-                printf("Mouse DPI Multiplier: %f\n", mouseDPIMultiplier);
-            }
-            else
-            {
-                printf("Cannot decrement mouse DPI multiplier any further!\n");
-            }
-            if (keyDPIMultiplier > 1.0)
-            {
-                keyDPIMultiplier -= .1;
-                printf("Key DPI Multiplier: %f\n", keyDPIMultiplier);
-            }
-            else
-            {
-                printf("Cannot decrement key DPI multiplier any further!\n");
-            }
+            decrementDPI();
         }
         if (key == CRAFT_KEY_SET_DEFAULT_DPI)
         {
-            mouseDPIMultiplier = .0001;
-            printf("Mouse DPI Multiplier set to default: .0001\n");
-
-            keyDPIMultiplier = 1.1;
-            printf("Key DPI multiplier set to default: 1.1\n");
+            setDefaultDPI();
         }
         if (key == CRAFT_KEY_FLY) {
             g->flying = !g->flying;

@@ -57,6 +57,7 @@ void make_cube_faces(
     int faces[6] = {left, right, top, bottom, front, back};
     int tiles[6] = {wleft, wright, wtop, wbottom, wfront, wback};
     for (int i = 0; i < 6; i++) {
+		// Do not generate faces which were not specified.
         if (faces[i] == 0) {
             continue;
         }
@@ -84,6 +85,7 @@ void make_cube(
     int left, int right, int top, int bottom, int front, int back,
     float x, float y, float z, float n, int w)
 {
+	// Get blocks texture faces (blocks array is defined in item.c)
     int wleft = blocks[w][0];
     int wright = blocks[w][1];
     int wtop = blocks[w][2];

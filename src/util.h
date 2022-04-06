@@ -20,9 +20,9 @@
 #endif
 
 typedef struct {
-    unsigned int fps;
-    unsigned int frames;
-    double since;
+    unsigned int fps; // frames per second
+    unsigned int frames; // number of frames collected (since...)
+    double since;  // last time the frames per second was updated
 } FPS;
 
 int rand_int(int n);

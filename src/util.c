@@ -6,6 +6,8 @@
 #include "matrix.h"
 #include "util.h"
 
+// TODO: how is n used? what is the range of outputs? should n always be
+// positive?
 int rand_int(int n) {
     int result;
     while (n <= (result = rand() / (RAND_MAX / n)));
@@ -16,6 +18,7 @@ double rand_double() {
     return (double)rand() / (double)RAND_MAX;
 }
 
+// Update frames per second info
 void update_fps(FPS *fps) {
     fps->frames++;
     double now = glfwGetTime();
@@ -27,16 +30,20 @@ void update_fps(FPS *fps) {
     }
 }
 
+// Load all file data from path
+// Returns a newly allocated pointer which must be free'd
 char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");
     if (!file) {
-        fprintf(stderr, "fopen %s failed: %d %s\n", path, errno, strerror(errno));
+        fprintf(stderr, "fopen %s failed: %d %s\n",
+				path, errno, strerror(errno));
         exit(1);
     }
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
     char *data = calloc(length + 1, sizeof(char));
+	// TODO: assert new data pointer is not NULL (?)
     fread(data, 1, length, file);
     fclose(file);
     return data;
@@ -112,6 +119,10 @@ GLuint make_program(GLuint shader1, GLuint shader2) {
     return program;
 }
 
+// Loads a shader program from files.
+// Parameters:
+// - path1 : vertex shader file path
+// - path2 : fragment shader file path
 GLuint load_program(const char *path1, const char *path2) {
     GLuint shader1 = load_shader(GL_VERTEX_SHADER, path1);
     GLuint shader2 = load_shader(GL_FRAGMENT_SHADER, path2);
@@ -139,7 +150,8 @@ void load_png_texture(const char *file_name) {
     unsigned int width, height;
     error = lodepng_decode32_file(&data, &width, &height, file_name);
     if (error) {
-        fprintf(stderr, "load_png_texture %s failed, error %u: %s\n", file_name, error, lodepng_error_text(error));
+        fprintf(stderr, "load_png_texture %s failed, error %u: %s\n",
+				file_name, error, lodepng_error_text(error));
         exit(1);
     }
     flip_image_vertical(data, width, height);
@@ -148,6 +160,8 @@ void load_png_texture(const char *file_name) {
     free(data);
 }
 
+// TODO: document how this function works to tokenize a string.
+// This function is special.
 char *tokenize(char *str, const char *delim, char **key) {
     char *result;
     if (str == NULL) {
@@ -189,7 +203,12 @@ int string_width(const char *input) {
     return result;
 }
 
+// Wrap input text using the maximum line width max_width (where a character's
+// width is determined by the char_width function) and maximum output text
+// length in characters.
+// Returns: the number of lines that the output text uses.
 int wrap(const char *input, int max_width, char *output, int max_length) {
+	// (?) Always terminate the output string
     *output = '\0';
     char *text = malloc(sizeof(char) * (strlen(input) + 1));
     strcpy(text, input);
@@ -223,3 +242,4 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
     free(text);
     return line_number;
 }
+

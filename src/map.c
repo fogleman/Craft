@@ -2,6 +2,8 @@
 #include <string.h>
 #include "map.h"
 
+// This file contains code for a hash map that maps (x, y, z) locations to w block ids
+
 int hash_int(int key) {
     key = ~key + (key << 15);
     key = key ^ (key >> 12);
@@ -112,3 +114,4 @@ void map_grow(Map *map) {
     map->size = new_map.size;
     map->data = new_map.data;
 }
+

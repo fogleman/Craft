@@ -40,16 +40,16 @@
 #define WORKER_DONE 2
 
 typedef struct {
-    Map map;
-    Map lights;
-    SignList signs;
-    int p;
-    int q;
-    int faces;
-    int sign_faces;
-    int dirty;
-    int miny;
-    int maxy;
+    Map map;        // block hash map
+    Map lights;     // light hash map
+    SignList signs; // signs in this chunk
+    int p;          // chunk x coordinate
+    int q;          // chunk y coordinate
+    int faces;      // number of faces
+    int sign_faces; // number of sign face
+    int dirty;      // dirty flag
+    int miny;       // minimum Y value with by any block
+    int maxy;       // maximum Y value held by any block
     GLuint buffer;
     GLuint sign_buffer;
 } Chunk;
@@ -76,19 +76,19 @@ typedef struct {
 } Worker;
 
 typedef struct {
-    int x;
+    int x; // x, y, z location (y is up)
     int y;
     int z;
-    int w;
+    int w; // block id
 } Block;
 
 typedef struct {
-    float x;
+    float x; // player x, y, z location
     float y;
     float z;
-    float rx;
+    float rx; // rx, ry rotation
     float ry;
-    float t;
+    float t; // TODO: what is this for?
 } State;
 
 typedef struct {
@@ -97,7 +97,7 @@ typedef struct {
     State state;
     State state1;
     State state2;
-    GLuint buffer;
+    GLuint buffer; // TODO: what is this for?
 } Player;
 
 typedef struct {
@@ -115,6 +115,7 @@ typedef struct {
     GLuint extra4;
 } Attrib;
 
+// Program state model
 typedef struct {
     GLFWwindow *window;
     Worker workers[WORKERS];
@@ -156,6 +157,7 @@ typedef struct {
 static Model model;
 static Model *g = &model;
 
+// Convert a value in block space to chunk space
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }

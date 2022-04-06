@@ -2,6 +2,7 @@
 #include <string.h>
 #include "ring.h"
 
+// Allocate ring with a set initial capacity (which can grow)
 void ring_alloc(Ring *ring, int capacity) {
     ring->capacity = capacity;
     ring->start = 0;
@@ -13,10 +14,12 @@ void ring_free(Ring *ring) {
     free(ring->data);
 }
 
+// Predicate function for if the right is empty
 int ring_empty(Ring *ring) {
     return ring->start == ring->end;
 }
 
+// Predicate function for if the right is full
 int ring_full(Ring *ring) {
     return ring->start == (ring->end + 1) % ring->capacity;
 }
@@ -30,6 +33,7 @@ int ring_size(Ring *ring) {
     }
 }
 
+// Note: this function is mutually recursive with ring_put
 void ring_grow(Ring *ring) {
     Ring new_ring;
     RingEntry entry;
@@ -44,6 +48,7 @@ void ring_grow(Ring *ring) {
     ring->data = new_ring.data;
 }
 
+// Note: this function is mutually recursive with ring_grow
 void ring_put(Ring *ring, RingEntry *entry) {
     if (ring_full(ring)) {
         ring_grow(ring);
@@ -98,6 +103,11 @@ void ring_put_exit(Ring *ring) {
     ring_put(ring, &entry);
 }
 
+// Retrieves and removes the next RingEntry from the ring and copies it to the
+// entry argument.
+// Returns:
+// - 0 if an entry was not retrieved
+// - 1 if an entry was retrieved
 int ring_get(Ring *ring, RingEntry *entry) {
     if (ring_empty(ring)) {
         return 0;
@@ -107,3 +117,4 @@ int ring_get(Ring *ring, RingEntry *entry) {
     ring->start = (ring->start + 1) % ring->capacity;
     return 1;
 }
+

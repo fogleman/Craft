@@ -19,10 +19,10 @@
 typedef union {
     unsigned int value;
     struct {
-        unsigned char x;
+        unsigned char x;  // x, y, z location
         unsigned char y;
         unsigned char z;
-        char w;
+        char w;           // block id
     } e;
 } MapEntry;
 

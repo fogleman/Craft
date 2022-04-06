@@ -2,7 +2,7 @@
 #include "util.h"
 
 const int items[] = {
-    // items the user can build
+    // items (blocks) the user can build
     GRASS,
     SAND,
     STONE,
@@ -62,7 +62,7 @@ const int items[] = {
 const int item_count = sizeof(items) / sizeof(int);
 
 const int blocks[256][6] = {
-    // w => (left, right, top, bottom, front, back) tiles
+    // maps w (block id) => (left, right, top, bottom, front, back) tiles
     {0, 0, 0, 0, 0, 0}, // 0 - empty
     {16, 16, 32, 0, 16, 16}, // 1 - grass
     {1, 1, 1, 1, 1, 1}, // 2 - sand
@@ -130,7 +130,7 @@ const int blocks[256][6] = {
 };
 
 const int plants[256] = {
-    // w => tile
+    // w (block id) => tile
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0 - 16
     48, // 17 - tall grass
     49, // 18 - yellow flower
@@ -141,6 +141,7 @@ const int plants[256] = {
     54, // 23 - blue flower
 };
 
+// Predicate function for whether a block id is a plant type
 int is_plant(int w) {
     switch (w) {
         case TALL_GRASS:
@@ -156,6 +157,7 @@ int is_plant(int w) {
     }
 }
 
+// Predicate function for whether a block id is an obstacle (blocking movement)
 int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
@@ -170,6 +172,7 @@ int is_obstacle(int w) {
     }
 }
 
+// Predicate function for whether a block id is transparent
 int is_transparent(int w) {
     if (w == EMPTY) {
         return 1;
@@ -188,6 +191,7 @@ int is_transparent(int w) {
     }
 }
 
+// Predicate function for whether a block id is destructable
 int is_destructable(int w) {
     switch (w) {
         case EMPTY:
@@ -197,3 +201,4 @@ int is_destructable(int w) {
             return 1;
     }
 }
+

@@ -166,6 +166,9 @@ int is_plant(int w) {
 	case TRIANGLE_FLOWER:
 	case WILD_PLANT:
 	case SNOWY_WILD_PLANT:
+	case COLUMN_BOTTOM:
+	case COLUMN_MIDDLE:
+	case COLUMN_TOP:
             return 1;
         default:
             return 0;
@@ -175,7 +178,15 @@ int is_plant(int w) {
 int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
-        return 0;
+	switch(w) {
+	case COLUMN_BOTTOM:
+	case COLUMN_MIDDLE:
+	case COLUMN_TOP:
+	  return 1;
+	default:
+	  return 0;
+	}//end switch statement
+
     }
     switch (w) {
         case EMPTY:

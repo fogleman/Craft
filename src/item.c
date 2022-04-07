@@ -152,6 +152,9 @@ const int plants[256] = {
     58, // 27 - triangle flower
     59, // 28 - wild plant
     60  // 29 - wild plant snowy
+    61, // column bottom
+    62, //column middle
+    63 //column top
 };
 
 int is_plant(int w) {

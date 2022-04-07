@@ -48,7 +48,7 @@ typedef struct {
     int faces;      // number of faces
     int sign_faces; // number of sign face
     int dirty;      // dirty flag
-    int miny;       // minimum Y value with by any block
+    int miny;       // minimum Y value held by any block
     int maxy;       // maximum Y value held by any block
     GLuint buffer;
     GLuint sign_buffer;
@@ -69,9 +69,9 @@ typedef struct {
 typedef struct {
     int index;
     int state;
-    thrd_t thrd;
-    mtx_t mtx;
-    cnd_t cnd;
+    thrd_t thrd; // thread
+    mtx_t mtx;   // mutex
+    cnd_t cnd;   // condition variable
     WorkerItem item;
 } Worker;
 
@@ -2601,6 +2601,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+	// Initialize the graphical user interface with GLFW
     glfwMakeContextCurrent(g->window);
     glfwSwapInterval(VSYNC);
     glfwSetInputMode(g->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -2713,6 +2714,7 @@ int main(int argc, char **argv) {
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
     }
 
+	// Configure game radius settings
     g->create_radius = CREATE_CHUNK_RADIUS;
     g->render_radius = RENDER_CHUNK_RADIUS;
     g->delete_radius = DELETE_CHUNK_RADIUS;
@@ -2729,12 +2731,16 @@ int main(int argc, char **argv) {
     }
 
     // OUTER LOOP //
+	// This outer loop is necessary because the game can switch between online
+	// and offline mode any time and needs to shutdown and re-init the db and
+	// other resources.
     int running = 1;
     while (running) {
         // DATABASE INITIALIZATION //
         if (g->mode == MODE_OFFLINE || USE_CACHE) {
             db_enable();
             if (db_init(g->db_path)) {
+				// db initialization failed
                 return -1;
             }
             if (g->mode == MODE_ONLINE) {
@@ -2759,6 +2765,7 @@ int main(int argc, char **argv) {
         double last_update = glfwGetTime();
         GLuint sky_buffer = gen_sky_buffer();
 
+		// Init local player
         Player *me = g->players;
         State *s = &g->players->state;
         me->id = 0;
@@ -2858,6 +2865,7 @@ int main(int argc, char **argv) {
             float ts = 12 * g->scale;
             float tx = ts / 2;
             float ty = g->height - ts;
+			// Technical info text
             if (SHOW_INFO_TEXT) {
                 int hour = time_of_day() * 24;
                 char am_pm = hour < 12 ? 'a' : 'p';
@@ -2872,6 +2880,7 @@ int main(int argc, char **argv) {
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
                 ty -= ts * 2;
             }
+			// Chat text
             if (SHOW_CHAT_TEXT) {
                 for (int i = 0; i < MAX_MESSAGES; i++) {
                     int index = (g->message_index + i) % MAX_MESSAGES;
@@ -2882,6 +2891,7 @@ int main(int argc, char **argv) {
                     }
                 }
             }
+			// Current typing text
             if (g->typing) {
                 snprintf(text_buffer, 1024, "> %s", g->typing_buffer);
                 render_text(&text_attrib, ALIGN_LEFT, tx, ty, ts, text_buffer);
@@ -2938,17 +2948,22 @@ int main(int argc, char **argv) {
             // SWAP AND POLL //
             glfwSwapBuffers(g->window);
             glfwPollEvents();
-            if (glfwWindowShouldClose(g->window)) {
+			// When closing the window, break this inner loop to shutdown and do
+			// not re-init.
+			if (glfwWindowShouldClose(g->window)) {
                 running = 0;
                 break;
             }
-            if (g->mode_changed) {
+			// If online/offline mode changed, break this inner loop to shutdown
+			// and re-init.
+			if (g->mode_changed) {
                 g->mode_changed = 0;
                 break;
             }
         }
 
         // SHUTDOWN //
+		// Shutdown of current game mode
         db_save_state(s->x, s->y, s->z, s->rx, s->ry);
         db_close();
         db_disable();
@@ -2959,6 +2974,7 @@ int main(int argc, char **argv) {
         delete_all_players();
     }
 
+	// Final program closing
     glfwTerminate();
     curl_global_cleanup();
     return 0;

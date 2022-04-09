@@ -19,8 +19,8 @@ int db_auth_get(
 int db_auth_get_selected(
     char *username, int username_length,
     char *identity_token, int identity_token_length);
-void db_save_state(float x, float y, float z, float rx, float ry);
-int db_load_state(float *x, float *y, float *z, float *rx, float *ry);
+void db_save_state(float x, float y, float z, float rx, float ry, int flying);
+int db_load_state(float *x, float *y, float *z, float *rx, float *ry, int *flying);
 void db_insert_block(int p, int q, int x, int y, int z, int w);
 void db_insert_light(int p, int q, int x, int y, int z, int w);
 void db_insert_sign(

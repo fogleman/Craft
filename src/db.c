@@ -54,7 +54,8 @@ int db_init(char *path) {
         "   y float not null,"
         "   z float not null,"
         "   rx float not null,"
-        "   ry float not null"
+        "   ry float not null,"
+		"   flying int not null"
         ");"
         "create table if not exists block ("
         "    p int not null,"
@@ -273,12 +274,12 @@ int db_auth_get_selected(
     return result;
 }
 
-void db_save_state(float x, float y, float z, float rx, float ry) {
+void db_save_state(float x, float y, float z, float rx, float ry, int flying) {
     if (!db_enabled) {
         return;
     }
     static const char *query =
-        "insert into state (x, y, z, rx, ry) values (?, ?, ?, ?, ?);";
+        "insert into state (x, y, z, rx, ry, flying) values (?, ?, ?, ?, ?, ?);";
     sqlite3_stmt *stmt;
     sqlite3_exec(db, "delete from state;", NULL, NULL, NULL);
     sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
@@ -287,16 +288,17 @@ void db_save_state(float x, float y, float z, float rx, float ry) {
     sqlite3_bind_double(stmt, 3, z);
     sqlite3_bind_double(stmt, 4, rx);
     sqlite3_bind_double(stmt, 5, ry);
+    sqlite3_bind_int(stmt, 6, flying);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
 }
 
-int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
+int db_load_state(float *x, float *y, float *z, float *rx, float *ry, int *flying) {
     if (!db_enabled) {
         return 0;
     }
     static const char *query =
-        "select x, y, z, rx, ry from state;";
+        "select x, y, z, rx, ry, flying from state;";
     int result = 0;
     sqlite3_stmt *stmt;
     sqlite3_prepare_v2(db, query, -1, &stmt, NULL);
@@ -306,6 +308,7 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
         *z = sqlite3_column_double(stmt, 2);
         *rx = sqlite3_column_double(stmt, 3);
         *ry = sqlite3_column_double(stmt, 4);
+        *flying = sqlite3_column_int(stmt, 5);
         result = 1;
     }
     sqlite3_finalize(stmt);

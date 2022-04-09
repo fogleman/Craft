@@ -2873,7 +2873,7 @@ int main(int argc, char **argv) {
         g->player_count = 1;
 
         // LOAD STATE FROM DATABASE //
-        int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
+        int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry, &s->flying);
         force_chunks(me);
         if (!loaded) {
             s->y = highest_block(s->x, s->z) + 2;
@@ -3063,7 +3063,7 @@ int main(int argc, char **argv) {
 
         // SHUTDOWN //
         // Shutdown of current game mode
-        db_save_state(s->x, s->y, s->z, s->rx, s->ry);
+        db_save_state(s->x, s->y, s->z, s->rx, s->ry, s->flying);
         db_close();
         db_disable();
         client_stop();

@@ -246,10 +246,19 @@ static Model model;
 static Model *g = &model;
 
 // Convert a value in block space to chunk space
+// Arguments:
+// - x: block coordinate
+// Returns:
+// - chunk coordinate the block coordinate is in
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }
 
+// Get the current time of day
+// Depends on glfwGetTime()
+// Arguments: none
+// Returns:
+// - time value between 0.0 and 1.0
 float time_of_day() {
     if (g->day_length <= 0) {
         return 0.5;
@@ -261,6 +270,9 @@ float time_of_day() {
     return t;
 }
 
+// Arguments: none
+// Returns:
+// - daylight value
 float get_daylight() {
     float timer = time_of_day();
     if (timer < 0.5) {
@@ -273,6 +285,10 @@ float get_daylight() {
     }
 }
 
+// Note: depends on window size and frame buffer size
+// Arguments: none
+// Returns:
+// - scale factor
 int get_scale_factor() {
     int window_width, window_height;
     int buffer_width, buffer_height;
@@ -284,6 +300,13 @@ int get_scale_factor() {
     return result;
 }
 
+// Arguments:
+// - rx: rotation x
+// - ry: rotation y
+// Returns:
+// - vx: vector x
+// - vy: vector y
+// - vz: vector z
 void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
     float m = cosf(ry);
     *vx = cosf(rx - RADIANS(90)) * m;
@@ -291,6 +314,17 @@ void get_sight_vector(float rx, float ry, float *vx, float *vy, float *vz) {
     *vz = sinf(rx - RADIANS(90)) * m;
 }
 
+// Get the motion vector for a player's state
+// Arguments:
+// - flying: whether the player is flying
+// - sz: strafe z
+// - sx: strafe x
+// - rx: rotation x
+// - ry: rotation y
+// Returns:
+// - vx: vector x
+// - vy: vector y
+// - vz: vector z
 void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     float *vx, float *vy, float *vz) {
     *vx = 0; *vy = 0; *vz = 0;

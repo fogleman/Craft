@@ -36,14 +36,14 @@ char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");
     if (!file) {
         fprintf(stderr, "fopen %s failed: %d %s\n",
-				path, errno, strerror(errno));
+                path, errno, strerror(errno));
         exit(1);
     }
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
     char *data = calloc(length + 1, sizeof(char));
-	// TODO: assert new data pointer is not NULL (?)
+    // TODO: assert new data pointer is not NULL (?)
     fread(data, 1, length, file);
     fclose(file);
     return data;
@@ -130,6 +130,7 @@ GLuint load_program(const char *path1, const char *path2) {
     return program;
 }
 
+// Notes: assumes 4 channels per image pixel.
 void flip_image_vertical(
     unsigned char *data, unsigned int width, unsigned int height)
 {
@@ -144,6 +145,7 @@ void flip_image_vertical(
     free(new_data);
 }
 
+// Loads a PNG file as a 2D texture for the current OpenGL texture context.
 void load_png_texture(const char *file_name) {
     unsigned int error;
     unsigned char *data;
@@ -151,7 +153,7 @@ void load_png_texture(const char *file_name) {
     error = lodepng_decode32_file(&data, &width, &height, file_name);
     if (error) {
         fprintf(stderr, "load_png_texture %s failed, error %u: %s\n",
-				file_name, error, lodepng_error_text(error));
+                file_name, error, lodepng_error_text(error));
         exit(1);
     }
     flip_image_vertical(data, width, height);
@@ -208,7 +210,7 @@ int string_width(const char *input) {
 // length in characters.
 // Returns: the number of lines that the output text uses.
 int wrap(const char *input, int max_width, char *output, int max_length) {
-	// (?) Always terminate the output string
+    // (?) Always terminate the output string
     *output = '\0';
     char *text = malloc(sizeof(char) * (strlen(input) + 1));
     strcpy(text, input);

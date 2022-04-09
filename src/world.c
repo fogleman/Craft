@@ -14,6 +14,7 @@ void create_world(int p, int q, world_func func, void *arg) {
 	// Loop for each (x, z) location in chunk (p, q):
     for (int dx = -pad; dx < CHUNK_SIZE + pad; dx++) {
         for (int dz = -pad; dz < CHUNK_SIZE + pad; dz++) {
+			// Why is flag either +1 or -1?
             int flag = 1;
             if (dx < 0 || dz < 0 || dx >= CHUNK_SIZE || dz >= CHUNK_SIZE) {
                 flag = -1;
@@ -78,7 +79,8 @@ void create_world(int p, int q, world_func func, void *arg) {
                     if (simplex3(
                         x * 0.01, y * 0.1, z * 0.01, 8, 0.5, 2) > 0.75)
                     {
-                        func(x, y, z, 16 * flag, arg); // block id 16 is cloud
+						// Block id 16 is cloud
+                        func(x, y, z, 16 * flag, arg);
                     }
                 }
             }

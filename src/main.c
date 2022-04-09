@@ -44,7 +44,7 @@
 // - lights: light hash map
 // - signs: signs in this chunk
 // - p: chunk x coordinate
-// - q: chunk y coordinate
+// - q: chunk z coordinate
 // - faces: number of faces
 // - sign_faces: number of sign face
 // - dirty: dirty flag

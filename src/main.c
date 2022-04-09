@@ -121,6 +121,7 @@ typedef struct {
     float rx;
     float ry;
     float t; 
+    int flying;
 } State;
 
 // Player
@@ -222,7 +223,6 @@ typedef struct {
     int height;
     int observe1;
     int observe2;
-    int flying;
     int item_index;
     int scale;
     int ortho;
@@ -2346,9 +2346,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if (!g->typing) {
-        if (key == CRAFT_KEY_FLY) {
-            g->flying = !g->flying;
-        }
+        if (key == CRAFT_KEY_FLY)
+		{
+			State *s = &g->players->state;
+			s->flying = !s->flying;
+		}
         if (key >= '1' && key <= '9') {
             g->item_index = key - '1';
         }
@@ -2526,10 +2528,10 @@ void handle_movement(double dt) {
         if (glfwGetKey(g->window, GLFW_KEY_DOWN)) s->ry -= m;
     }
     float vx, vy, vz;
-    get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    get_motion_vector(s->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
     if (!g->typing) {
         if (glfwGetKey(g->window, CRAFT_KEY_JUMP)) {
-            if (g->flying) {
+            if (s->flying) {
                 vy = 1;
             }
             else if (dy == 0) {
@@ -2537,7 +2539,7 @@ void handle_movement(double dt) {
             }
         }
     }
-    float speed = g->flying ? 20 : 5;
+    float speed = s->flying ? 20 : 5;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +
@@ -2548,7 +2550,7 @@ void handle_movement(double dt) {
     vy = vy * ut * speed;
     vz = vz * ut * speed;
     for (int i = 0; i < step; i++) {
-        if (g->flying) {
+        if (s->flying) {
             dy = 0;
         }
         else {
@@ -2671,7 +2673,6 @@ void reset_model() {
     g->player_count = 0;
     g->observe1 = 0;
     g->observe2 = 0;
-    g->flying = 0;
     g->item_index = 0;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;

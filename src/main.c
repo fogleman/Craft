@@ -39,17 +39,30 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
+// World chunk data (big area of blocks)
+// - map: block hash map
+// - lights: light hash map
+// - signs: signs in this chunk
+// - p: chunk x coordinate
+// - q: chunk y coordinate
+// - faces: number of faces
+// - sign_faces: number of sign face
+// - dirty: dirty flag
+// - miny: minimum Y value held by any block
+// - maxy: maximum Y value held by any block
+// - buffer:
+// - sign_buffer:
 typedef struct {
-    Map map;        // block hash map
-    Map lights;     // light hash map
-    SignList signs; // signs in this chunk
-    int p;          // chunk x coordinate
-    int q;          // chunk y coordinate
-    int faces;      // number of faces
-    int sign_faces; // number of sign face
-    int dirty;      // dirty flag
-    int miny;       // minimum Y value held by any block
-    int maxy;       // maximum Y value held by any block
+    Map map;
+    Map lights;
+    SignList signs;
+    int p;
+    int q;
+    int faces;
+    int sign_faces;
+    int dirty;
+    int miny;
+    int maxy;
     GLuint buffer;
     GLuint sign_buffer;
 } Chunk;
@@ -66,40 +79,79 @@ typedef struct {
     GLfloat *data;
 } WorkerItem;
 
+// Worker data (for multi-threading)
+// - index:
+// - state:
+// - thrd: thread
+// - mtx: mutex
+// - cnd: condition variable
+// - item:
 typedef struct {
     int index;
     int state;
-    thrd_t thrd; // thread
-    mtx_t mtx;   // mutex
-    cnd_t cnd;   // condition variable
+    thrd_t thrd;
+    mtx_t mtx;
+    cnd_t cnd;
     WorkerItem item;
 } Worker;
 
+// Block data
+// - x: x position
+// - y: y position
+// - z: z position
+// - w: block id / value
 typedef struct {
-    int x; // x, y, z location (y is up)
+    int x;
     int y;
     int z;
-    int w; // block id
+    int w;
 } Block;
 
+// State for a player
+// - x: x position
+// - y: y position
+// - z: z position
+// - rx: rotation x
+// - ry: rotation y
+// - t: keep track of time, for interpolation
 typedef struct {
-    float x; // player x, y, z location
+    float x; 
     float y;
     float z;
-    float rx; // rx, ry rotation
+    float rx;
     float ry;
-    float t; // TODO: what is this for?
+    float t; 
 } State;
 
+// Player
+// - id
+// - name: name string buffer
+// - state: current player position state
+// - state1: another state, for interpolation
+// - state2: another state, for interpolation
+// - buffer: some GL buffer id (?)
 typedef struct {
     int id;
     char name[MAX_NAME_LENGTH];
     State state;
     State state1;
     State state2;
-    GLuint buffer; // TODO: what is this for?
+    GLuint buffer;
 } Player;
 
+// OpenGL attribute
+// - program:
+// - position:
+// - normal:
+// - uv:
+// - matrix:
+// - sampler:
+// - camera:
+// - timer:
+// - extra1:
+// - extra2:
+// - extra3:
+// - extra4:
 typedef struct {
     GLuint program;
     GLuint position;
@@ -116,6 +168,41 @@ typedef struct {
 } Attrib;
 
 // Program state model
+// - window:
+// - workers:
+// - chunks:
+// - chunk_count:
+// - create_radius:
+// - render_radius:
+// - delete_radius:
+// - sign_radius:
+// - players:
+// - player_count:
+// - typing:
+// - typing_buffer:
+// - message_index:
+// - messages:
+// - width:
+// - height:
+// - observe1:
+// - observe2:
+// - flying:
+// - item_index:
+// - scale:
+// - ortho:
+// - fov:
+// - suppress_char:
+// - mode:
+// - mode_changed:
+// - db_path:
+// - server_addr:
+// - server_port:
+// - day_length:
+// - time_changed:
+// - block0:
+// - block1:
+// - copy0:
+// - copy1:
 typedef struct {
     GLFWwindow *window;
     Worker workers[WORKERS];
@@ -154,6 +241,7 @@ typedef struct {
     Block copy1;
 } Model;
 
+// The main game state is kept here
 static Model model;
 static Model *g = &model;
 
@@ -420,6 +508,15 @@ Player *find_player(int id) {
     return 0;
 }
 
+// Update a player with a new position and rotation.
+// Arguments:
+// - player: player to modify
+// - x: new position x
+// - y: new position y
+// - z: new position z
+// - rx: new rotation x
+// - ry: new rotation y
+// - interpolate: whether to interpolate position
 void update_player(Player *player,
     float x, float y, float z, float rx, float ry, int interpolate)
 {

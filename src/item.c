@@ -1,8 +1,9 @@
 #include "item.h"
 #include "util.h"
 
+// The list of block ids the player can build.
+// Note: the player cannot build every block type (such as clouds).
 const int items[] = {
-    // items (blocks) the user can build
     GRASS,
     SAND,
     STONE,
@@ -142,6 +143,10 @@ const int plants[256] = {
 };
 
 // Predicate function for whether a block id is a plant type
+// Arguments:
+// - w: block id (block type)
+// Returns:
+// - boolean whether block type is a plant
 int is_plant(int w) {
     switch (w) {
         case TALL_GRASS:
@@ -158,6 +163,10 @@ int is_plant(int w) {
 }
 
 // Predicate function for whether a block id is an obstacle (blocking movement)
+// Arguments:
+// - w: block id (block type)
+// Returns:
+// - boolean whether block type is obstacle
 int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
@@ -173,6 +182,10 @@ int is_obstacle(int w) {
 }
 
 // Predicate function for whether a block id is transparent
+// Arguments:
+// - w: block id (block type)
+// Returns:
+// - boolean whether block type is transparent
 int is_transparent(int w) {
     if (w == EMPTY) {
         return 1;
@@ -192,6 +205,10 @@ int is_transparent(int w) {
 }
 
 // Predicate function for whether a block id is destructable
+// Arguments:
+// - w: block id (block type)
+// Returns:
+// - boolean whether block type is destructable
 int is_destructable(int w) {
     switch (w) {
         case EMPTY:

@@ -7,8 +7,8 @@
 // Make a complete cube model.
 // Arguments:
 // - data: output pointer
-// - ao: TODO what exactly is ao?
-// - light: TODO what exactly is light?
+// - ao
+// - light
 // - left: whether to generate a left face
 // - right: whether to generate a right face
 // - top: whether to generate a top face
@@ -108,9 +108,7 @@ void make_cube_faces(
             // Write the texture UV 2-vector
             *(d++) = du + (uvs[i][j][0] ? b : a);
             *(d++) = dv + (uvs[i][j][1] ? b : a);
-            // TODO: comment what the next line does
             *(d++) = ao[i][j];
-            // TODO: comment what the next line does
             *(d++) = light[i][j];
         }
     }
@@ -119,8 +117,8 @@ void make_cube_faces(
 // Make a cube model for a block
 // Arguments:
 // - data: output pointer
-// - ao: TODO what exactly is ao?
-// - light: TODO what exactly is light?
+// - ao
+// - light
 // - left: whether to generate a left face
 // - right: whether to generate a right face
 // - top: whether to generate a top face
@@ -156,8 +154,8 @@ void make_cube(
 // Make a plant model
 // Arguments:
 // - data: output pointer
-// - ao: TODO what exactly is ao?
-// - light: TODO what exactly is light?
+// - ao
+// - light
 // - px:
 // - py:
 // - pz:
@@ -355,7 +353,7 @@ void make_character(
 // - x: character center x
 // - y: character center y
 // - z: character center z
-// - n: TODO what is n exactly for?
+// - n: scale
 // - face: which cube face the text is on
 // - c: ASCII character value
 // Returns:

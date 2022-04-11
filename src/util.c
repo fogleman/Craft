@@ -6,14 +6,12 @@
 #include "matrix.h"
 #include "util.h"
 
-// TODO: how is n used? what is the range of outputs?
 int rand_int(int n) {
     int result;
     while (n <= (result = rand() / (RAND_MAX / n)));
     return result;
 }
 
-// TODO: what is the range of outputs?
 double rand_double() {
     return (double)rand() / (double)RAND_MAX;
 }
@@ -51,7 +49,6 @@ char *load_file(const char *path) {
     int length = ftell(file);
     rewind(file);
     char *data = calloc(length + 1, sizeof(char));
-    // TODO: assert new data pointer is not NULL (?)
     fread(data, 1, length, file);
     fclose(file);
     return data;
@@ -78,7 +75,6 @@ void del_buffer(GLuint buffer) {
 // Returns:
 // - newly allocated space for floats
 GLfloat *malloc_faces(int components, int faces) {
-    // TODO: why multiply by 6?
     return malloc(sizeof(GLfloat) * 6 * components * faces);
 }
 
@@ -90,7 +86,6 @@ GLfloat *malloc_faces(int components, int faces) {
 // Returns:
 // - OpenGL buffer handle
 GLuint gen_faces(int components, int faces, GLfloat *data) {
-    // TODO: why multiply by 6?
     GLuint buffer = gen_buffer(
         sizeof(GLfloat) * 6 * components * faces, data);
     free(data);

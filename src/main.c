@@ -333,6 +333,7 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
     }
     float strafe = atan2f(sz, sx);
     if (flying) {
+        // Flying motion
         float m = cosf(ry);
         float y = sinf(ry);
         if (sx) {
@@ -349,12 +350,17 @@ void get_motion_vector(int flying, int sz, int sx, float rx, float ry,
         *vz = sinf(rx + strafe) * m;
     }
     else {
+        // Walking motion
         *vx = cosf(rx + strafe);
         *vy = 0;
         *vz = sinf(rx + strafe);
     }
 }
 
+// Generate the position buffer for the crosshairs in the middle of the screen.
+// Arguments: none
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_crosshair_buffer() {
     int x = g->width / 2;
     int y = g->height / 2;
@@ -366,19 +372,42 @@ GLuint gen_crosshair_buffer() {
     return gen_buffer(sizeof(data), data);
 }
 
+// Create a new cube wireframe buffer
+// Arguments:
+// - x: cube x position
+// - y: cube y position
+// - z: cube z position
+// - n: cube scale, distance from center to faces
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_wireframe_buffer(float x, float y, float z, float n) {
     float data[72];
     make_cube_wireframe(data, x, y, z, n);
     return gen_buffer(sizeof(data), data);
 }
 
+// Create the sky buffer (sphere shape)
+// Arguments: none
+// Returns: OpenGL buffer handle
 GLuint gen_sky_buffer() {
+    // The size of this data array should match the detail parameter in make_sphere()
     float data[12288];
     make_sphere(data, 1, 3);
     return gen_buffer(sizeof(data), data);
 }
 
+// Create a new cube buffer
+// Arguments:
+// - x: cube x position
+// - y: cube y position
+// - z: cube z position
+// - n: cube scale, distance from center to faces
+// - w: block id for textures
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
+    // Each face has 10 component float properties.
+    // A cube model has 6 faces
     GLfloat *data = malloc_faces(10, 6);
     float ao[6][4] = {0};
     float light[6][4] = {
@@ -393,7 +422,18 @@ GLuint gen_cube_buffer(float x, float y, float z, float n, int w) {
     return gen_faces(10, 6, data);
 }
 
+// Generate a buffer for a plant block model at a given location
+// Arguments:
+// - x: block x position
+// - y: block y position
+// - z: block z position
+// - n: scale, distance from center to rectangle edge
+// - w: plant block type
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
+    // Each face has 10 component float properties.
+    // A plant model has 4 faces because there are 2 squares each with 2 sides
     GLfloat *data = malloc_faces(10, 4);
     float ao = 0;
     float light = 1;
@@ -401,16 +441,37 @@ GLuint gen_plant_buffer(float x, float y, float z, float n, int w) {
     return gen_faces(10, 4, data);
 }
 
+// Create buffer for player model
+// Arguments:
+// - x: player x position
+// - y: player y position
+// - z: player z position
+// - rx: player rotation x
+// - ry: player rotation y
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_player_buffer(float x, float y, float z, float rx, float ry) {
+    // Player model is just a cube
+    // Each face has 10 component float properties.
+    // A cube model has 6 faces
     GLfloat *data = malloc_faces(10, 6);
     make_player(data, x, y, z, rx, ry);
     return gen_faces(10, 6, data);
 }
 
+// Create a 2D screen model for a text string
+// Arguments:
+// - x: screen x
+// - y: screen y
+// - n: scale
+// - text: text data to be displayed
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_text_buffer(float x, float y, float n, char *text) {
     int length = strlen(text);
     GLfloat *data = malloc_faces(4, length);
     for (int i = 0; i < length; i++) {
+		// Multiply by 24 because there are 24 properties per character
         make_character(data + i * 24, x, y, n / 2, n, text[i]);
         x += n;
     }
@@ -532,6 +593,11 @@ void draw_player(Attrib *attrib, Player *player) {
     draw_cube(attrib, player->buffer);
 }
 
+// Find a player with a certain id
+// Arguments:
+// - id: player id of the player to find
+// Returns:
+// - pointer to the player in the game model
 Player *find_player(int id) {
     for (int i = 0; i < g->player_count; i++) {
         Player *player = g->players + i;

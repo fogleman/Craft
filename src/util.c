@@ -82,6 +82,13 @@ GLfloat *malloc_faces(int components, int faces) {
     return malloc(sizeof(GLfloat) * 6 * components * faces);
 }
 
+// Create and initialize face data
+// Arguments:
+// - components: number of components per face
+// - faces: number of faces
+// - data: data to bind to OpenGL context
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_faces(int components, int faces, GLfloat *data) {
     // TODO: why multiply by 6?
     GLuint buffer = gen_buffer(

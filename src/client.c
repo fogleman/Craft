@@ -50,6 +50,7 @@ int get_client_enabled() {
     return client_enabled;
 }
 
+// Client send all data
 // Arguments:
 // - sd
 // - data
@@ -73,6 +74,7 @@ int client_sendall(int sd, char *data, int length) {
     return 0;
 }
 
+// Client send a data string
 // Arguments:
 // - data
 // Returns: none
@@ -86,6 +88,7 @@ void client_send(char *data) {
     }
 }
 
+// Client send version
 // Arguments:
 // - version
 // Returns: none
@@ -98,6 +101,7 @@ void client_version(int version) {
     client_send(buffer);
 }
 
+// Client send authenticate login with identity
 // Arguments:
 // - username
 // - identity_token
@@ -111,6 +115,7 @@ void client_login(const char *username, const char *identity_token) {
     client_send(buffer);
 }
 
+// Client send player position
 // Arguments:
 // - x
 // - y
@@ -138,6 +143,7 @@ void client_position(float x, float y, float z, float rx, float ry) {
     client_send(buffer);
 }
 
+// Client send request for chunk
 // Arguments:
 // - p
 // - q
@@ -152,6 +158,7 @@ void client_chunk(int p, int q, int key) {
     client_send(buffer);
 }
 
+// Client send block update
 // Arguments:
 // - x
 // - y
@@ -167,6 +174,7 @@ void client_block(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+// Client send lighting update
 // Arguments:
 // - x
 // - y
@@ -182,6 +190,7 @@ void client_light(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+// Client send sign creation
 // Arguments:
 // - x
 // - y
@@ -198,6 +207,7 @@ void client_sign(int x, int y, int z, int face, const char *text) {
     client_send(buffer);
 }
 
+// Client send chat message
 // Arguments:
 // - text
 // Returns: none
@@ -213,6 +223,7 @@ void client_talk(const char *text) {
     client_send(buffer);
 }
 
+// Client receive data
 // Arguments: none
 // Returns:
 // - ?
@@ -240,6 +251,7 @@ char *client_recv() {
     return result;
 }
 
+// Receive worker
 // Arguments:
 // - arg
 // Returns:
@@ -277,6 +289,7 @@ int recv_worker(void *arg) {
     return 0;
 }
 
+// Client connect to server
 // Arguments:
 // - hostname
 // - port

@@ -7,6 +7,14 @@
 #define MAX_POST_LENGTH 1024
 #define MAX_RESPONSE_LENGTH 1024
 
+// Write function callback for curl
+// Arguments:
+// - data: data source pointer
+// - size: size of each data element
+// - count: number of data elements
+// - arg
+// Returns:
+// - an integer value
 size_t write_function(char *data, size_t size, size_t count, void *arg) {
     size_t length = size * count;
     char *dst = (char *)arg;
@@ -18,6 +26,15 @@ size_t write_function(char *data, size_t size, size_t count, void *arg) {
     return length;
 }
 
+// Get access token
+// Arguments:
+// - result: output pointer
+// - length: maximum data length to use in result pointer
+// - username: string username to authenticate
+// - identity_token: string id token to authenticate
+// Returns:
+// - non-zero upon success
+// - writes response data to result
 int get_access_token(
     char *result, int length, char *username, char *identity_token)
 {
@@ -47,3 +64,4 @@ int get_access_token(
     }
     return 0;
 }
+

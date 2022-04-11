@@ -504,7 +504,7 @@ void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
 
 // Draw triangles for 3D text
 // Arguments:
-// - attrib
+// - attrib: attributes to be used for rendering
 // - buffer
 // - count: number of triangles
 // Returns: none
@@ -524,7 +524,7 @@ void draw_triangles_3d_text(Attrib *attrib, GLuint buffer, int count) {
 
 // Draw 3D (textured) triangle models
 // Arguments:
-// - attrib
+// - attrib: attributes to be used for rendering
 // - buffer
 // - count
 // Returns: none
@@ -548,7 +548,7 @@ void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
 
 // Draw 2D (textured) triangle models
 // Arguments:
-// - attrib
+// - attrib: attributes to be used for rendering
 // - buffer
 // - count: number of triangles
 // Returns: none
@@ -568,7 +568,7 @@ void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
 
 // Draw lines
 // Arguments:
-// - attrib
+// - attrib: attributes to be used for rendering
 // - buffer
 // - components
 // - count
@@ -643,7 +643,7 @@ void draw_plant(Attrib *attrib, GLuint buffer) {
 
 // Draw a player model
 // Arguments:
-// - attrib
+// - attrib: attributes to be used for rendering
 // - player
 // Returns: none
 void draw_player(Attrib *attrib, Player *player) {
@@ -797,6 +797,15 @@ int chunk_distance(Chunk *chunk, int p, int q) {
     return MAX(dp, dq);
 }
 
+// Predicate function to determine if a chunk is visible within the given frustrum planes.
+// Arguments:
+// - planes: frustrum planes to check if the chunk is visible within
+// - p: chunk x coordinate
+// - q: chunk z coordinate
+// - miny: minimum block y coordinate in the chunk
+// - maxy: maximum block y coordinate in the chunk
+// Returns:
+// - non-zero if the chunk is visible
 int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     int x = p * CHUNK_SIZE - 1;
     int z = q * CHUNK_SIZE - 1;
@@ -1509,6 +1518,9 @@ void delete_chunks() {
     g->chunk_count = count;
 }
 
+// Delete all chunk data
+// Arguments: none
+// Returns: none
 void delete_all_chunks() {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
@@ -3219,6 +3231,7 @@ int main(int argc, char **argv) {
 
         // SHUTDOWN //
         // Shutdown of current game mode
+        // (The game may or may not continue after this)
         db_save_state(s->x, s->y, s->z, s->rx, s->ry);
         db_close();
         db_disable();
@@ -3234,3 +3247,4 @@ int main(int argc, char **argv) {
     curl_global_cleanup();
     return 0;
 }
+

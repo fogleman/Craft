@@ -4,7 +4,8 @@
 #include "sqlite3.h"
 #include "tinycthread.h"
 
-// Database code to save and load worlds
+// Database code to save and load worlds.
+// Only player-made changes from the original generated world are saved in the db.
 
 static int db_enabled = 0;
 

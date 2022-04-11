@@ -139,7 +139,7 @@ typedef struct {
     GLuint buffer;
 } Player;
 
-// OpenGL attribute
+// OpenGL attribute data
 // - program:
 // - position:
 // - normal:
@@ -471,13 +471,19 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     int length = strlen(text);
     GLfloat *data = malloc_faces(4, length);
     for (int i = 0; i < length; i++) {
-		// Multiply by 24 because there are 24 properties per character
+        // Multiply by 24 because there are 24 properties per character
         make_character(data + i * 24, x, y, n / 2, n, text[i]);
         x += n;
     }
     return gen_faces(4, length, data);
 }
 
+// Draws 3D triangle models
+// Arguments:
+// - attrib: attributes to be used for rendering the triangles
+// - buffer: triangles data
+// - count: number of triangles
+// Returns: none
 void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -496,6 +502,12 @@ void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// Draw triangles for 3D text
+// Arguments:
+// - attrib
+// - buffer
+// - count: number of triangles
+// Returns: none
 void draw_triangles_3d_text(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -510,6 +522,12 @@ void draw_triangles_3d_text(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// Draw 3D (textured) triangle models
+// Arguments:
+// - attrib
+// - buffer
+// - count
+// Returns: none
 void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -528,6 +546,12 @@ void draw_triangles_3d(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// Draw 2D (textured) triangle models
+// Arguments:
+// - attrib
+// - buffer
+// - count: number of triangles
+// Returns: none
 void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -542,6 +566,13 @@ void draw_triangles_2d(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// Draw lines
+// Arguments:
+// - attrib
+// - buffer
+// - components
+// - count
+// Returns: none
 void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -552,14 +583,23 @@ void draw_lines(Attrib *attrib, GLuint buffer, int components, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+// Draw a game chunk (of blocks)
+// Arguments:
+// Returns: none
 void draw_chunk(Attrib *attrib, Chunk *chunk) {
     draw_triangles_3d_ao(attrib, chunk->buffer, chunk->faces * 6);
 }
 
+// Draw a block (item), which can be a plant shape or a cube shape
+// Arguments:
+// Returns: none
 void draw_item(Attrib *attrib, GLuint buffer, int count) {
     draw_triangles_3d_ao(attrib, buffer, count);
 }
 
+// Draw 2D text
+// Arguments:
+// Returns: none
 void draw_text(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -567,6 +607,9 @@ void draw_text(Attrib *attrib, GLuint buffer, int length) {
     glDisable(GL_BLEND);
 }
 
+// Draw the signs in a given chunk
+// Arguments:
+// Returns: none
 void draw_signs(Attrib *attrib, Chunk *chunk) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-8, -1024);
@@ -574,6 +617,9 @@ void draw_signs(Attrib *attrib, Chunk *chunk) {
     glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
+// Draw a single sign model
+// Arguments:
+// Returns: none
 void draw_sign(Attrib *attrib, GLuint buffer, int length) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-8, -1024);
@@ -581,14 +627,25 @@ void draw_sign(Attrib *attrib, GLuint buffer, int length) {
     glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
+// Draw a cube block model
+// Arguments:
+// Returns: none
 void draw_cube(Attrib *attrib, GLuint buffer) {
     draw_item(attrib, buffer, 36);
 }
 
+// Draw a plant block model
+// Arguments:
+// Returns: none
 void draw_plant(Attrib *attrib, GLuint buffer) {
     draw_item(attrib, buffer, 24);
 }
 
+// Draw a player model
+// Arguments:
+// - attrib
+// - player
+// Returns: none
 void draw_player(Attrib *attrib, Player *player) {
     draw_cube(attrib, player->buffer);
 }

@@ -17,6 +17,7 @@
 #define QUEUE_SIZE 1048576
 #define RECV_SIZE 4096
 
+// Client state (not available to outside code)
 static int client_enabled = 0;
 static int running = 0;
 static int sd = 0;
@@ -27,18 +28,34 @@ static int qsize = 0;
 static thrd_t recv_thread;
 static mtx_t mutex;
 
+// Sets the client state to be enabled.
+// Arguments: none
+// Returns: none
 void client_enable() {
     client_enabled = 1;
 }
 
+// Sets the client state to be disabled.
+// Arguments: none
+// Returns: none
 void client_disable() {
     client_enabled = 0;
 }
 
+// Get whether the client is enabled or not.
+// Arguments: none
+// Returns:
+// - boolean (non-zero) if the client is enabled
 int get_client_enabled() {
     return client_enabled;
 }
 
+// Arguments:
+// - sd
+// - data
+// - length
+// Returns:
+// - ?
 int client_sendall(int sd, char *data, int length) {
     if (!client_enabled) {
         return 0;
@@ -56,6 +73,9 @@ int client_sendall(int sd, char *data, int length) {
     return 0;
 }
 
+// Arguments:
+// - data
+// Returns: none
 void client_send(char *data) {
     if (!client_enabled) {
         return;
@@ -66,6 +86,9 @@ void client_send(char *data) {
     }
 }
 
+// Arguments:
+// - version
+// Returns: none
 void client_version(int version) {
     if (!client_enabled) {
         return;
@@ -75,6 +98,10 @@ void client_version(int version) {
     client_send(buffer);
 }
 
+// Arguments:
+// - username
+// - identity_token
+// Returns: none
 void client_login(const char *username, const char *identity_token) {
     if (!client_enabled) {
         return;
@@ -84,6 +111,13 @@ void client_login(const char *username, const char *identity_token) {
     client_send(buffer);
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - rx
+// - ry
+// Returns: none
 void client_position(float x, float y, float z, float rx, float ry) {
     if (!client_enabled) {
         return;
@@ -104,6 +138,11 @@ void client_position(float x, float y, float z, float rx, float ry) {
     client_send(buffer);
 }
 
+// Arguments:
+// - p
+// - q
+// - key
+// Returns: none
 void client_chunk(int p, int q, int key) {
     if (!client_enabled) {
         return;
@@ -113,6 +152,12 @@ void client_chunk(int p, int q, int key) {
     client_send(buffer);
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void client_block(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;
@@ -122,6 +167,12 @@ void client_block(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void client_light(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;
@@ -131,6 +182,13 @@ void client_light(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - face
+// - text
+// Returns: none
 void client_sign(int x, int y, int z, int face, const char *text) {
     if (!client_enabled) {
         return;
@@ -140,6 +198,9 @@ void client_sign(int x, int y, int z, int face, const char *text) {
     client_send(buffer);
 }
 
+// Arguments:
+// - text
+// Returns: none
 void client_talk(const char *text) {
     if (!client_enabled) {
         return;
@@ -152,6 +213,9 @@ void client_talk(const char *text) {
     client_send(buffer);
 }
 
+// Arguments: none
+// Returns:
+// - ?
 char *client_recv() {
     if (!client_enabled) {
         return 0;
@@ -176,6 +240,10 @@ char *client_recv() {
     return result;
 }
 
+// Arguments:
+// - arg
+// Returns:
+// - ?
 int recv_worker(void *arg) {
     char *data = malloc(sizeof(char) * RECV_SIZE);
     while (1) {
@@ -209,6 +277,10 @@ int recv_worker(void *arg) {
     return 0;
 }
 
+// Arguments:
+// - hostname
+// - port
+// Returns: none
 void client_connect(char *hostname, int port) {
     if (!client_enabled) {
         return;
@@ -233,6 +305,9 @@ void client_connect(char *hostname, int port) {
     }
 }
 
+// Start the client.
+// Arguments: none
+// Returns: none
 void client_start() {
     if (!client_enabled) {
         return;
@@ -247,6 +322,9 @@ void client_start() {
     }
 }
 
+// Stop the client.
+// Arguments: none
+// Returns: none
 void client_stop() {
     if (!client_enabled) {
         return;
@@ -263,3 +341,4 @@ void client_stop() {
     // printf("Bytes Sent: %d, Bytes Received: %d\n",
     //     bytes_sent, bytes_received);
 }
+

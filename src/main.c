@@ -157,6 +157,8 @@ typedef struct {
 static Model model;
 static Model *g = &model;
 
+int autoWalkGlobal;
+
 int chunked(float x) {
     return floorf(roundf(x) / CHUNK_SIZE);
 }
@@ -2409,13 +2411,16 @@ void handle_mouse_input() {
     }
 }
 
+
 void handle_movement(double dt, bool *is_auto_walking_ptr, bool *allow_next_autowalk_press_ptr, bool *do_auto_walk_ptr) {
     static float dy = 0;
     State *s = &g->players->state;
     int sz = 0;
     int sx = 0;
     int autoWalkState = glfwGetKey(g->window, CRAFT_KEY_ACTIVATE_AUTOWALK);
-
+    if (autoWalkState == 1) {
+        autoWalkGlobal = 1;
+    }
 
     if (!g->typing) {
         float m = dt * 1.0;

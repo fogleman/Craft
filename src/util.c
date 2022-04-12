@@ -6,12 +6,21 @@
 #include "matrix.h"
 #include "util.h"
 
+// Return pseudo-random number between 0 and "n".
+// Arguments:
+// - n: maximum random value
+// Returns:
+// - a pseudo-random integer
 int rand_int(int n) {
     int result;
     while (n <= (result = rand() / (RAND_MAX / n)));
     return result;
 }
 
+// Return pseudo-random number between 0.0 and 1.0.
+// Arguments: none
+// Returns:
+// - pseudo-random value between 0.0 and 1.0
 double rand_double() {
     return (double)rand() / (double)RAND_MAX;
 }
@@ -45,15 +54,23 @@ char *load_file(const char *path) {
                 path, errno, strerror(errno));
         exit(1);
     }
+	// Get file content's size
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
+	// Allocate space and read in the data
     char *data = calloc(length + 1, sizeof(char));
     fread(data, 1, length, file);
     fclose(file);
     return data;
 }
 
+// Create a single OpenGL data buffer and add data
+// Arguments:
+// - size
+// - data
+// Returns:
+// - new OpenGL buffer handle
 GLuint gen_buffer(GLsizei size, GLfloat *data) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
@@ -63,6 +80,10 @@ GLuint gen_buffer(GLsizei size, GLfloat *data) {
     return buffer;
 }
 
+// Delete a single OpenGL data buffer
+// Arguments:
+// - buffer: OpenGL buffer handle of the buffer to delete
+// Returns: none
 void del_buffer(GLuint buffer) {
     glDeleteBuffers(1, &buffer);
 }
@@ -102,6 +123,7 @@ GLuint make_shader(GLenum type, const char *source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
+	// Get shader status so we can print an error if compiling it failed
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
@@ -170,7 +192,15 @@ GLuint load_program(const char *path1, const char *path2) {
     return program;
 }
 
+// Flip an image vertically
 // Notes: assumes 4 channels per image pixel.
+// Arguments:
+// - data: image pixel data
+// - width: image width
+// - height: image height
+// Returns:
+// - no return value
+// - modifies data
 void flip_image_vertical(
     unsigned char *data, unsigned int width, unsigned int height)
 {
@@ -204,6 +234,8 @@ void load_png_texture(const char *file_name) {
     flip_image_vertical(data, width, height);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, data);
+	// Free the data because lodepng_decode32_file() allocated it,
+	// and we copied the data over to OpenGL.
     free(data);
 }
 
@@ -233,8 +265,9 @@ char *tokenize(char *str, const char *delim, char **key) {
     }
     result = str;
     str += strcspn(str, delim);
+	// Null-terminate the current token so that the returned tokens
+	// are always proper C strings.
     if (*str) {
-        // Null-terminate the current token
         *str++ = '\0';
     }
     // Save the current token position to key
@@ -243,6 +276,7 @@ char *tokenize(char *str, const char *delim, char **key) {
 }
 
 // Calculate width of an ASCII character
+// NOTE: expects input character value to be in the range 0 to 128.
 // Arguments:
 // - input: character
 // Returns:
@@ -261,13 +295,13 @@ int char_width(char input) {
     return lookup[input];
 }
 
-
 // Calculate width of a text string in screen space
 // Arguments:
 // - input: null-terminated string to measure
 // Returns:
 // - total string width in screen space
 int string_width(const char *input) {
+	// Sum up the character width of each character in the input string
     int result = 0;
     int length = strlen(input);
     for (int i = 0; i < length; i++) {
@@ -276,7 +310,7 @@ int string_width(const char *input) {
     return result;
 }
 
-// Wrap text using the maximum line width
+// Wrap text using the maximum line width based on character size
 // Arguments:
 // - input: input text to wrap
 // - max_width: maximum string line width, in screen space

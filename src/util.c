@@ -54,11 +54,11 @@ char *load_file(const char *path) {
                 path, errno, strerror(errno));
         exit(1);
     }
-	// Get file content's size
+    // Get file content's size
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
-	// Allocate space and read in the data
+    // Allocate space and read in the data
     char *data = calloc(length + 1, sizeof(char));
     fread(data, 1, length, file);
     fclose(file);
@@ -123,7 +123,7 @@ GLuint make_shader(GLenum type, const char *source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
-	// Get shader status so we can print an error if compiling it failed
+    // Get shader status so we can print an error if compiling it failed
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
@@ -234,8 +234,8 @@ void load_png_texture(const char *file_name) {
     flip_image_vertical(data, width, height);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, data);
-	// Free the data because lodepng_decode32_file() allocated it,
-	// and we copied the data over to OpenGL.
+    // Free the data because lodepng_decode32_file() allocated it,
+    // and we copied the data over to OpenGL.
     free(data);
 }
 
@@ -265,8 +265,8 @@ char *tokenize(char *str, const char *delim, char **key) {
     }
     result = str;
     str += strcspn(str, delim);
-	// Null-terminate the current token so that the returned tokens
-	// are always proper C strings.
+    // Null-terminate the current token so that the returned tokens
+    // are always proper C strings.
     if (*str) {
         *str++ = '\0';
     }
@@ -301,7 +301,7 @@ int char_width(char input) {
 // Returns:
 // - total string width in screen space
 int string_width(const char *input) {
-	// Sum up the character width of each character in the input string
+    // Sum up the character width of each character in the input string
     int result = 0;
     int length = strlen(input);
     for (int i = 0; i < length; i++) {

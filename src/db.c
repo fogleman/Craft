@@ -336,6 +336,8 @@ void db_save_state(float x, float y, float z, float rx, float ry) {
 // - z: pointer to z position to load value into
 // - rx: pointer to rotation x to load value into
 // - ry: pointer to rotation y to load value into
+// Returns:
+// - non-zero if the state entry was successfully found and loaded
 int db_load_state(float *x, float *y, float *z, float *rx, float *ry) {
     if (!db_enabled) {
         return 0;

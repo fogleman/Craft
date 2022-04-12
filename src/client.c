@@ -14,13 +14,18 @@
 #include "client.h"
 #include "tinycthread.h"
 
+// "QUEUE_SIZE" is the number of chars in the send queue
 #define QUEUE_SIZE 1048576
 #define RECV_SIZE 4096
 
 // Client state (not available to outside code)
+
 static int client_enabled = 0;
 static int running = 0;
+
+// Socket descriptor
 static int sd = 0;
+
 static int bytes_sent = 0;
 static int bytes_received = 0;
 static char *queue = 0;
@@ -50,13 +55,14 @@ int get_client_enabled() {
     return client_enabled;
 }
 
-// Client send all data
+// Send all data socket descriptor.
+// Not meant to usually be called directly, but meant to be called by client_send().
 // Arguments:
-// - sd
-// - data
-// - length
+// - sd: socket descriptor to send data through
+// - data: string data to send
+// - length: length of the string data
 // Returns:
-// - ?
+// - 0 upon completion/success
 int client_sendall(int sd, char *data, int length) {
     if (!client_enabled) {
         return 0;
@@ -290,6 +296,7 @@ int recv_worker(void *arg) {
 }
 
 // Client connect to server
+// Note: this is where the socket descriptor "sd" is initialized.
 // Arguments:
 // - hostname
 // - port
@@ -298,6 +305,7 @@ void client_connect(char *hostname, int port) {
     if (!client_enabled) {
         return;
     }
+    // Get host address
     struct hostent *host;
     struct sockaddr_in address;
     if ((host = gethostbyname(hostname)) == 0) {
@@ -308,10 +316,12 @@ void client_connect(char *hostname, int port) {
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = ((struct in_addr *)(host->h_addr_list[0]))->s_addr;
     address.sin_port = htons(port);
+    // Create socket
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         perror("socket");
         exit(1);
     }
+    // Connect
     if (connect(sd, (struct sockaddr *)&address, sizeof(address)) == -1) {
         perror("connect");
         exit(1);
@@ -326,6 +336,7 @@ void client_start() {
         return;
     }
     running = 1;
+    // Create the queue
     queue = (char *)calloc(QUEUE_SIZE, sizeof(char));
     qsize = 0;
     mtx_init(&mutex, mtx_plain);

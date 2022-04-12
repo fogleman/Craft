@@ -2126,6 +2126,14 @@ void paste() {
     }
 }
 
+// (Used as a chat command).
+// Arguments:
+// - b1
+// - b2
+// - xc
+// - yc
+// - zc
+// Returns: none
 void array(Block *b1, Block *b2, int xc, int yc, int zc) {
     if (b1->w != b2->w) {
         return;
@@ -2149,6 +2157,12 @@ void array(Block *b1, Block *b2, int xc, int yc, int zc) {
     }
 }
 
+// Place a cube made out of blocks (Used as a chat command).
+// Arguments:
+// - b1
+// - b2
+// - fill
+// Returns: none
 void cube(Block *b1, Block *b2, int fill) {
     if (b1->w != b2->w) {
         return;
@@ -2179,6 +2193,15 @@ void cube(Block *b1, Block *b2, int fill) {
     }
 }
 
+// Place a sphere at a block location. (Used as a chat command)
+// Arguments:
+// - center: a block to take the center block position from
+// - radius: sphere radius
+// - fill
+// - fx
+// - fy
+// - fz
+// Returns: none
 void sphere(Block *center, int radius, int fill, int fx, int fy, int fz) {
     static const float offsets[8][3] = {
         {-0.5, -0.5, -0.5},
@@ -2228,6 +2251,13 @@ void sphere(Block *center, int radius, int fill, int fx, int fy, int fz) {
     }
 }
 
+// Place a cylinder made out of blocks (Used as a chat command).
+// Arguments:
+// - b1
+// - b2
+// - radius
+// - fill
+// Returns: none
 void cylinder(Block *b1, Block *b2, int radius, int fill) {
     if (b1->w != b2->w) {
         return;
@@ -2266,6 +2296,10 @@ void cylinder(Block *b1, Block *b2, int radius, int fill) {
     }
 }
 
+// Place a tree at a block location. (Used as a chat command)
+// Arguments:
+// - block: a block to take the base block position from
+// Returns: none
 void tree(Block *block) {
     int bx = block->x;
     int by = block->y;
@@ -2286,6 +2320,11 @@ void tree(Block *block) {
     }
 }
 
+// Parse a player chat command
+// Arguments:
+// - buffer: command string buffer to parse
+// - forward: whether to forward the command as a chat message if the command is invalid
+// Returns: none
 void parse_command(const char *buffer, int forward) {
     char username[128] = {0};
     char token[128] = {0};
@@ -2442,6 +2481,14 @@ void on_middle_click() {
     }
 }
 
+// Handle key press callback
+// Arguments:
+// - window
+// - key
+// - scancode
+// - action
+// - mods
+// Returns: none
 void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
     int exclusive =
@@ -2542,6 +2589,11 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
     }
 }
 
+// Handle character callback
+// Arguments:
+// - window
+// - u
+// Returns: none
 void on_char(GLFWwindow *window, unsigned int u) {
     if (g->suppress_char) {
         g->suppress_char = 0;
@@ -2575,6 +2627,12 @@ void on_char(GLFWwindow *window, unsigned int u) {
     }
 }
 
+// Handle mouse scroll callback, scroll through block items
+// Arguments:
+// - window: window the click happened in
+// - xdelta: scroll x change since last time
+// - ydelta: scroll y change since last time
+// Returns: none
 void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     static double ypos = 0;
     ypos += ydelta;
@@ -2591,6 +2649,13 @@ void on_scroll(GLFWwindow *window, double xdelta, double ydelta) {
     }
 }
 
+// Handle mouse button press callback
+// Arguments:
+// - window: window the click happened in
+// - button
+// - action
+// - mods
+// Returns: none
 void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     int control = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER);
     int exclusive =
@@ -2600,6 +2665,7 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (exclusive) {
+            // Control + left click simulates a right click
             if (control) {
                 on_right_click();
             }
@@ -2833,6 +2899,11 @@ void parse_buffer(char *buffer) {
     }
 }
 
+// Reset the game model
+// Arguments: none
+// Returns:
+// - no return value
+// - modifies game model
 void reset_model() {
     memset(g->chunks, 0, sizeof(Chunk) * MAX_CHUNKS);
     g->chunk_count = 0;
@@ -3231,7 +3302,7 @@ int main(int argc, char **argv) {
 
         // SHUTDOWN //
         // Shutdown of current game mode
-        // (The game may or may not continue after this)
+        // (The outer game loop may or may not continue after this)
         db_save_state(s->x, s->y, s->z, s->rx, s->ry);
         db_close();
         db_disable();

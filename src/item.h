@@ -1,6 +1,7 @@
 #ifndef _item_h_
 #define _item_h_
 
+// Block ids/types
 #define EMPTY 0
 #define GRASS 1
 #define SAND 2
@@ -63,9 +64,9 @@ extern const int item_count;
 extern const int blocks[256][6];
 extern const int plants[256];
 
-int is_plant(int w); // Predicate function for whether a block id is a plant type
-int is_obstacle(int w); // Predicate function for whether a block id is an obstacle (blocking movement)
-int is_transparent(int w); // Predicate function for whether a block id is transparent
-int is_destructable(int w); // Predicate function for whether a block id is destructable
+int is_plant(int w);
+int is_obstacle(int w);
+int is_transparent(int w);
+int is_destructable(int w);
 
 #endif

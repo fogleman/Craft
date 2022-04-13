@@ -4,6 +4,9 @@
 #include "sqlite3.h"
 #include "tinycthread.h"
 
+// Database code to save and load worlds.
+// Only player-made changes from the original generated world are saved in the db.
+
 static int db_enabled = 0;
 
 static sqlite3 *db;
@@ -24,18 +27,37 @@ static mtx_t mtx;
 static cnd_t cnd;
 static mtx_t load_mtx;
 
+// Enable the database
+// (Used because the variable db_enabled is private to this file).
+// Arguments: none
+// Returns: none
 void db_enable() {
     db_enabled = 1;
 }
 
+// Disable the database
+// (Used because the variable db_enabled is private to this file).
+// Arguments: none
+// Returns: none
 void db_disable() {
     db_enabled = 0;
 }
 
+// Get whether the database is enabled or not.
+// (Used because the variable db_enabled is private to this file).
+// Arguments: none
+// Returns:
+// - whether the database is enabled
 int get_db_enabled() {
     return db_enabled;
 }
 
+// Initialize a database stored in the a file with the given path (file may or may not exist).
+// If the file exists, this creates each database table only if it does not already exist.
+// Arguments:
+// - path: path to database file to use or create if non-existent
+// Returns:
+// - non-zero if there was a database error
 int db_init(char *path) {
     if (!db_enabled) {
         return 0;
@@ -151,6 +173,9 @@ int db_init(char *path) {
     return 0;
 }
 
+// Close the database and save pending commits
+// Arguments: none
+// Returns: none
 void db_close() {
     if (!db_enabled) {
         return;
@@ -170,6 +195,9 @@ void db_close() {
     sqlite3_close(db);
 }
 
+// Let one of the workers do the database commit.
+// Arguments: none
+// Returns: none
 void db_commit() {
     if (!db_enabled) {
         return;
@@ -180,6 +208,9 @@ void db_commit() {
     mtx_unlock(&mtx);
 }
 
+// Actually do a database commit.
+// Arguments: none
+// Returns: none
 void _db_commit() {
     sqlite3_exec(db, "commit; begin;", NULL, NULL, NULL);
 }
@@ -274,6 +305,14 @@ int db_auth_get_selected(
     return result;
 }
 
+// Save the player state to the database.
+// Arguments:
+// - x: x position to save
+// - y: y position to save
+// - z: z position to save
+// - rx: rotation x to save
+// - ry: rotation y to save
+// - flying: flag for whether the player is flying
 void db_save_state(float x, float y, float z, float rx, float ry, int flying) {
     if (!db_enabled) {
         return;
@@ -293,6 +332,16 @@ void db_save_state(float x, float y, float z, float rx, float ry, int flying) {
     sqlite3_finalize(stmt);
 }
 
+// Load the player state from the database.
+// Arguments:
+// - x: pointer to x position to load value into
+// - y: pointer to y position to load value into
+// - z: pointer to z position to load value into
+// - rx: pointer to rotation x to load value into
+// - ry: pointer to rotation y to load value into
+// - flying: pointer to flying flag to load value into
+// Returns:
+// - non-zero if the state entry was successfully found and loaded
 int db_load_state(float *x, float *y, float *z, float *rx, float *ry, int *flying) {
     if (!db_enabled) {
         return 0;
@@ -315,6 +364,14 @@ int db_load_state(float *x, float *y, float *z, float *rx, float *ry, int *flyin
     return result;
 }
 
+// Let one of the workers insert a block into the database.
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// - x: block x position
+// - y: block y position
+// - z: block z position
+// - w: block id
 void db_insert_block(int p, int q, int x, int y, int z, int w) {
     if (!db_enabled) {
         return;
@@ -325,6 +382,14 @@ void db_insert_block(int p, int q, int x, int y, int z, int w) {
     mtx_unlock(&mtx);
 }
 
+// Actually insert a block into the database.
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// - x: block x position
+// - y: block y position
+// - z: block z position
+// - w: block id value
 void _db_insert_block(int p, int q, int x, int y, int z, int w) {
     sqlite3_reset(insert_block_stmt);
     sqlite3_bind_int(insert_block_stmt, 1, p);
@@ -336,6 +401,14 @@ void _db_insert_block(int p, int q, int x, int y, int z, int w) {
     sqlite3_step(insert_block_stmt);
 }
 
+// Let one of the workers insert a light into the database.
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// - x: block x position
+// - y: block y position
+// - z: block z position
+// - w: light value
 void db_insert_light(int p, int q, int x, int y, int z, int w) {
     if (!db_enabled) {
         return;
@@ -346,6 +419,14 @@ void db_insert_light(int p, int q, int x, int y, int z, int w) {
     mtx_unlock(&mtx);
 }
 
+// Actually insert a light into the database.
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// - x: block x position
+// - y: block y position
+// - z: block z position
+// - w: light value
 void _db_insert_light(int p, int q, int x, int y, int z, int w) {
     sqlite3_reset(insert_light_stmt);
     sqlite3_bind_int(insert_light_stmt, 1, p);
@@ -357,6 +438,15 @@ void _db_insert_light(int p, int q, int x, int y, int z, int w) {
     sqlite3_step(insert_light_stmt);
 }
 
+// Insert a sign on the given block and face from the database
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// - x: block x position
+// - y: block y position
+// - z: block z position
+// - face: which face of the block the sign is to be on
+// - text: the sign's text content
 void db_insert_sign(
     int p, int q, int x, int y, int z, int face, const char *text)
 {
@@ -374,6 +464,12 @@ void db_insert_sign(
     sqlite3_step(insert_sign_stmt);
 }
 
+// Delete a sign on the given block and face from the database
+// Arguments:
+// - x: block x position
+// - y: block y position
+// - z: block z position
+// - face: which face of the block the sign to delete is on
 void db_delete_sign(int x, int y, int z, int face) {
     if (!db_enabled) {
         return;
@@ -386,6 +482,11 @@ void db_delete_sign(int x, int y, int z, int face) {
     sqlite3_step(delete_sign_stmt);
 }
 
+// Delete signs on given block from the database
+// Arguments:
+// - x: block x position
+// - y: block y position
+// - z: block z position
 void db_delete_signs(int x, int y, int z) {
     if (!db_enabled) {
         return;
@@ -397,6 +498,9 @@ void db_delete_signs(int x, int y, int z) {
     sqlite3_step(delete_signs_stmt);
 }
 
+// Delete all signs from the database
+// Arguments: none
+// Returns: none
 void db_delete_all_signs() {
     if (!db_enabled) {
         return;
@@ -404,6 +508,12 @@ void db_delete_all_signs() {
     sqlite3_exec(db, "delete from sign;", NULL, NULL, NULL);
 }
 
+// Load all of the blocks from database in chunk
+// Arguments:
+// - map: block map destination to load block values into
+// - p: chunk x position
+// - q: chunk z position
+// Returns: none
 void db_load_blocks(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
@@ -422,6 +532,13 @@ void db_load_blocks(Map *map, int p, int q) {
     mtx_unlock(&load_mtx);
 }
 
+// Load all of the lights from database in chunk
+// Arguments:
+// - map: light map pointer to output light values into
+// - p: chunk x position
+// - q: chunk z position
+// Returns:
+// - modifies lights in given map pointer
 void db_load_lights(Map *map, int p, int q) {
     if (!db_enabled) {
         return;
@@ -440,6 +557,13 @@ void db_load_lights(Map *map, int p, int q) {
     mtx_unlock(&load_mtx);
 }
 
+// Load all of the signs from database in chunk
+// Arguments:
+// - list: pointer to output list of signs into
+// - p: chunk x position
+// - q: chunk z position
+// Returns:
+// - adds sign entries to list
 void db_load_signs(SignList *list, int p, int q) {
     if (!db_enabled) {
         return;
@@ -458,6 +582,12 @@ void db_load_signs(SignList *list, int p, int q) {
     }
 }
 
+// Get the key value for the chunk at the given position
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// Returns:
+// - key value
 int db_get_key(int p, int q) {
     if (!db_enabled) {
         return 0;
@@ -471,6 +601,12 @@ int db_get_key(int p, int q) {
     return 0;
 }
 
+// Let one of the workers set a key for a chunk
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// - key: ket to be set for the chunk
+// Returns: none
 void db_set_key(int p, int q, int key) {
     if (!db_enabled) {
         return;
@@ -481,6 +617,12 @@ void db_set_key(int p, int q, int key) {
     mtx_unlock(&mtx);
 }
 
+// Actually set a key for a chunk
+// Arguments:
+// - p: chunk x position
+// - q: chunk z position
+// - key: ket to be set for the chunk
+// Returns: none
 void _db_set_key(int p, int q, int key) {
     sqlite3_reset(set_key_stmt);
     sqlite3_bind_int(set_key_stmt, 1, p);
@@ -489,6 +631,10 @@ void _db_set_key(int p, int q, int key) {
     sqlite3_step(set_key_stmt);
 }
 
+// Start a worker with the database
+// Arguments:
+// - path: argument to pass to the worker
+// Returns: none
 void db_worker_start(char *path) {
     if (!db_enabled) {
         return;
@@ -500,6 +646,9 @@ void db_worker_start(char *path) {
     thrd_create(&thrd, db_worker_run, path);
 }
 
+// Stop workers from using the database.
+// Arguments: none
+// Returns: none
 void db_worker_stop() {
     if (!db_enabled) {
         return;
@@ -515,6 +664,11 @@ void db_worker_stop() {
     ring_free(&ring);
 }
 
+// This is where a worker will fetch and perform database operations.
+// Arguments:
+// - arg: unused in this function
+// Returns:
+// - 0
 int db_worker_run(void *arg) {
     int running = 1;
     while (running) {
@@ -544,3 +698,4 @@ int db_worker_run(void *arg) {
     }
     return 0;
 }
+

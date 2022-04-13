@@ -14,12 +14,18 @@
 #include "client.h"
 #include "tinycthread.h"
 
+// "QUEUE_SIZE" is the number of chars in the send queue
 #define QUEUE_SIZE 1048576
 #define RECV_SIZE 4096
 
+// Client state (not available to outside code)
+
 static int client_enabled = 0;
 static int running = 0;
+
+// Socket descriptor
 static int sd = 0;
+
 static int bytes_sent = 0;
 static int bytes_received = 0;
 static char *queue = 0;
@@ -27,18 +33,36 @@ static int qsize = 0;
 static thrd_t recv_thread;
 static mtx_t mutex;
 
+// Sets the client state to be enabled.
+// Arguments: none
+// Returns: none
 void client_enable() {
     client_enabled = 1;
 }
 
+// Sets the client state to be disabled.
+// Arguments: none
+// Returns: none
 void client_disable() {
     client_enabled = 0;
 }
 
+// Get whether the client is enabled or not.
+// Arguments: none
+// Returns:
+// - boolean (non-zero) if the client is enabled
 int get_client_enabled() {
     return client_enabled;
 }
 
+// Send all data socket descriptor.
+// Not meant to usually be called directly, but meant to be called by client_send().
+// Arguments:
+// - sd: socket descriptor to send data through
+// - data: string data to send
+// - length: length of the string data
+// Returns:
+// - 0 upon completion/success
 int client_sendall(int sd, char *data, int length) {
     if (!client_enabled) {
         return 0;
@@ -56,6 +80,10 @@ int client_sendall(int sd, char *data, int length) {
     return 0;
 }
 
+// Client send a data string
+// Arguments:
+// - data
+// Returns: none
 void client_send(char *data) {
     if (!client_enabled) {
         return;
@@ -66,6 +94,10 @@ void client_send(char *data) {
     }
 }
 
+// Client send version
+// Arguments:
+// - version
+// Returns: none
 void client_version(int version) {
     if (!client_enabled) {
         return;
@@ -75,6 +107,11 @@ void client_version(int version) {
     client_send(buffer);
 }
 
+// Client send authenticate login with identity
+// Arguments:
+// - username
+// - identity_token
+// Returns: none
 void client_login(const char *username, const char *identity_token) {
     if (!client_enabled) {
         return;
@@ -84,6 +121,14 @@ void client_login(const char *username, const char *identity_token) {
     client_send(buffer);
 }
 
+// Client send player position
+// Arguments:
+// - x
+// - y
+// - z
+// - rx
+// - ry
+// Returns: none
 void client_position(float x, float y, float z, float rx, float ry) {
     if (!client_enabled) {
         return;
@@ -104,6 +149,12 @@ void client_position(float x, float y, float z, float rx, float ry) {
     client_send(buffer);
 }
 
+// Client send request for chunk
+// Arguments:
+// - p
+// - q
+// - key
+// Returns: none
 void client_chunk(int p, int q, int key) {
     if (!client_enabled) {
         return;
@@ -113,6 +164,13 @@ void client_chunk(int p, int q, int key) {
     client_send(buffer);
 }
 
+// Client send block update
+// Arguments:
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void client_block(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;
@@ -122,6 +180,13 @@ void client_block(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+// Client send lighting update
+// Arguments:
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void client_light(int x, int y, int z, int w) {
     if (!client_enabled) {
         return;
@@ -131,6 +196,14 @@ void client_light(int x, int y, int z, int w) {
     client_send(buffer);
 }
 
+// Client send sign creation
+// Arguments:
+// - x
+// - y
+// - z
+// - face
+// - text
+// Returns: none
 void client_sign(int x, int y, int z, int face, const char *text) {
     if (!client_enabled) {
         return;
@@ -140,6 +213,10 @@ void client_sign(int x, int y, int z, int face, const char *text) {
     client_send(buffer);
 }
 
+// Client send chat message
+// Arguments:
+// - text
+// Returns: none
 void client_talk(const char *text) {
     if (!client_enabled) {
         return;
@@ -152,6 +229,10 @@ void client_talk(const char *text) {
     client_send(buffer);
 }
 
+// Client receive data
+// Arguments: none
+// Returns:
+// - ?
 char *client_recv() {
     if (!client_enabled) {
         return 0;
@@ -176,6 +257,11 @@ char *client_recv() {
     return result;
 }
 
+// Receive worker
+// Arguments:
+// - arg
+// Returns:
+// - ?
 int recv_worker(void *arg) {
     char *data = malloc(sizeof(char) * RECV_SIZE);
     while (1) {
@@ -209,10 +295,17 @@ int recv_worker(void *arg) {
     return 0;
 }
 
+// Client connect to server
+// Note: this is where the socket descriptor "sd" is initialized.
+// Arguments:
+// - hostname
+// - port
+// Returns: none
 void client_connect(char *hostname, int port) {
     if (!client_enabled) {
         return;
     }
+    // Get host address
     struct hostent *host;
     struct sockaddr_in address;
     if ((host = gethostbyname(hostname)) == 0) {
@@ -223,21 +316,27 @@ void client_connect(char *hostname, int port) {
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = ((struct in_addr *)(host->h_addr_list[0]))->s_addr;
     address.sin_port = htons(port);
+    // Create socket
     if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         perror("socket");
         exit(1);
     }
+    // Connect
     if (connect(sd, (struct sockaddr *)&address, sizeof(address)) == -1) {
         perror("connect");
         exit(1);
     }
 }
 
+// Start the client.
+// Arguments: none
+// Returns: none
 void client_start() {
     if (!client_enabled) {
         return;
     }
     running = 1;
+    // Create the queue
     queue = (char *)calloc(QUEUE_SIZE, sizeof(char));
     qsize = 0;
     mtx_init(&mutex, mtx_plain);
@@ -247,6 +346,9 @@ void client_start() {
     }
 }
 
+// Stop the client.
+// Arguments: none
+// Returns: none
 void client_stop() {
     if (!client_enabled) {
         return;
@@ -263,3 +365,4 @@ void client_stop() {
     // printf("Bytes Sent: %d, Bytes Received: %d\n",
     //     bytes_sent, bytes_received);
 }
+

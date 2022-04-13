@@ -6,19 +6,31 @@
 #include "matrix.h"
 #include "util.h"
 
-// TODO: how is n used? what is the range of outputs? should n always be
-// positive?
+// Return pseudo-random number between 0 and "n".
+// Arguments:
+// - n: maximum random value
+// Returns:
+// - a pseudo-random integer
 int rand_int(int n) {
     int result;
     while (n <= (result = rand() / (RAND_MAX / n)));
     return result;
 }
 
+// Return pseudo-random number between 0.0 and 1.0.
+// Arguments: none
+// Returns:
+// - pseudo-random value between 0.0 and 1.0
 double rand_double() {
     return (double)rand() / (double)RAND_MAX;
 }
 
 // Update frames per second info
+// Arguments:
+// - fps: fps context pointer
+// Returns:
+// - no return value
+// - modifies fps context
 void update_fps(FPS *fps) {
     fps->frames++;
     double now = glfwGetTime();
@@ -31,7 +43,10 @@ void update_fps(FPS *fps) {
 }
 
 // Load all file data from path
-// Returns a newly allocated pointer which must be free'd
+// Arguments:
+// - path: file path to open and to load data from
+// Returns:
+// - a newly allocated data pointer which must be free'd
 char *load_file(const char *path) {
     FILE *file = fopen(path, "rb");
     if (!file) {
@@ -39,16 +54,23 @@ char *load_file(const char *path) {
                 path, errno, strerror(errno));
         exit(1);
     }
+    // Get file content's size
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
     rewind(file);
+    // Allocate space and read in the data
     char *data = calloc(length + 1, sizeof(char));
-    // TODO: assert new data pointer is not NULL (?)
     fread(data, 1, length, file);
     fclose(file);
     return data;
 }
 
+// Create a single OpenGL data buffer and add data
+// Arguments:
+// - size
+// - data
+// Returns:
+// - new OpenGL buffer handle
 GLuint gen_buffer(GLsizei size, GLfloat *data) {
     GLuint buffer;
     glGenBuffers(1, &buffer);
@@ -58,14 +80,32 @@ GLuint gen_buffer(GLsizei size, GLfloat *data) {
     return buffer;
 }
 
+// Delete a single OpenGL data buffer
+// Arguments:
+// - buffer: OpenGL buffer handle of the buffer to delete
+// Returns: none
 void del_buffer(GLuint buffer) {
     glDeleteBuffers(1, &buffer);
 }
 
+// Allocate memory for faces where each face has a certain number
+// of float component properties.
+// Arguments:
+// - components: the number of components each face has
+// - faces: number of faces
+// Returns:
+// - newly allocated space for floats
 GLfloat *malloc_faces(int components, int faces) {
     return malloc(sizeof(GLfloat) * 6 * components * faces);
 }
 
+// Create and initialize face data
+// Arguments:
+// - components: number of components per face
+// - faces: number of faces
+// - data: data to bind to OpenGL context
+// Returns:
+// - OpenGL buffer handle
 GLuint gen_faces(int components, int faces, GLfloat *data) {
     GLuint buffer = gen_buffer(
         sizeof(GLfloat) * 6 * components * faces, data);
@@ -73,10 +113,17 @@ GLuint gen_faces(int components, int faces, GLfloat *data) {
     return buffer;
 }
 
+// Create a shader program from its source code
+// Arguments:
+// - type: vertex or fragment shader
+// - source: program source code string
+// Returns:
+// - OpenGL shader handle
 GLuint make_shader(GLenum type, const char *source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
+    // Get shader status so we can print an error if compiling it failed
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
@@ -90,6 +137,12 @@ GLuint make_shader(GLenum type, const char *source) {
     return shader;
 }
 
+// Load a shader program from a file
+// Arguments:
+// - type: vertex or fragment shader
+// - path: file path to load the shader program from
+// Returns:
+// - OpenGL shader handle
 GLuint load_shader(GLenum type, const char *path) {
     char *data = load_file(path);
     GLuint result = make_shader(type, data);
@@ -97,6 +150,13 @@ GLuint load_shader(GLenum type, const char *path) {
     return result;
 }
 
+
+// Arguments:
+// - shader1: a shader handle to attach
+// - shader2: a shader handle to attach
+// Returns:
+// - returns OpenGL program handle
+// - deletes shader1 and shader2 from the context
 GLuint make_program(GLuint shader1, GLuint shader2) {
     GLuint program = glCreateProgram();
     glAttachShader(program, shader1);
@@ -120,9 +180,11 @@ GLuint make_program(GLuint shader1, GLuint shader2) {
 }
 
 // Loads a shader program from files.
-// Parameters:
+// Arguments:
 // - path1 : vertex shader file path
 // - path2 : fragment shader file path
+// Returns:
+// - OpenGL program handle
 GLuint load_program(const char *path1, const char *path2) {
     GLuint shader1 = load_shader(GL_VERTEX_SHADER, path1);
     GLuint shader2 = load_shader(GL_FRAGMENT_SHADER, path2);
@@ -130,7 +192,15 @@ GLuint load_program(const char *path1, const char *path2) {
     return program;
 }
 
+// Flip an image vertically
 // Notes: assumes 4 channels per image pixel.
+// Arguments:
+// - data: image pixel data
+// - width: image width
+// - height: image height
+// Returns:
+// - no return value
+// - modifies data
 void flip_image_vertical(
     unsigned char *data, unsigned int width, unsigned int height)
 {
@@ -146,6 +216,11 @@ void flip_image_vertical(
 }
 
 // Loads a PNG file as a 2D texture for the current OpenGL texture context.
+// Arguments:
+// - file_name: the png file to load the texture from
+// Returns:
+// - no return value
+// - modifies OpenGL state by loading the image data into the current 2D texture
 void load_png_texture(const char *file_name) {
     unsigned int error;
     unsigned char *data;
@@ -159,29 +234,53 @@ void load_png_texture(const char *file_name) {
     flip_image_vertical(data, width, height);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, data);
+    // Free the data because lodepng_decode32_file() allocated it,
+    // and we copied the data over to OpenGL.
     free(data);
 }
 
-// TODO: document how this function works to tokenize a string.
-// This function is special.
+// Tokenize a string by a delimiter
+// NOTE: may modify data in "str"
+// Arguments:
+// - str: input string to tokenize (may be modified). If the argument "str" is
+//   NULL, then tokenization continues from where the argument "key" points to.
+// - delim: null-terminated character list of delimiter characters to use as 
+//   token separators
+// - key: pointer to keep track of where in the string is currently being
+//   tokenized
+// Returns:
+// - a null-terminated C string token
+// - modifies "str" so that there are null-terminators after each token
+// - modifies where "key" points to
 char *tokenize(char *str, const char *delim, char **key) {
     char *result;
+    // If str is not given, use the position saved in key
     if (str == NULL) {
         str = *key;
     }
+    // Skip over the length of the delimiter substring found
     str += strspn(str, delim);
     if (*str == '\0') {
         return NULL;
     }
     result = str;
     str += strcspn(str, delim);
+    // Null-terminate the current token so that the returned tokens
+    // are always proper C strings.
     if (*str) {
         *str++ = '\0';
     }
+    // Save the current token position to key
     *key = str;
     return result;
 }
 
+// Calculate width of an ASCII character
+// NOTE: expects input character value to be in the range 0 to 128.
+// Arguments:
+// - input: character
+// Returns:
+// - character width in screen space
 int char_width(char input) {
     static const int lookup[128] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -196,7 +295,13 @@ int char_width(char input) {
     return lookup[input];
 }
 
+// Calculate width of a text string in screen space
+// Arguments:
+// - input: null-terminated string to measure
+// Returns:
+// - total string width in screen space
 int string_width(const char *input) {
+    // Sum up the character width of each character in the input string
     int result = 0;
     int length = strlen(input);
     for (int i = 0; i < length; i++) {
@@ -205,26 +310,39 @@ int string_width(const char *input) {
     return result;
 }
 
-// Wrap input text using the maximum line width max_width (where a character's
-// width is determined by the char_width function) and maximum output text
-// length in characters.
-// Returns: the number of lines that the output text uses.
+// Wrap text using the maximum line width based on character size
+// Arguments:
+// - input: input text to wrap
+// - max_width: maximum string line width, in screen space
+// - output: output string buffer
+// - max_length: maximum length to write to the string buffer
+// Returns:
+// - output: character buffer is written to
+// - the number of lines that the output text uses.
 int wrap(const char *input, int max_width, char *output, int max_length) {
-    // (?) Always terminate the output string
+    // Always terminate the output string, in case there are no tokens
     *output = '\0';
+    // Create a copy of the input string because tokenization modifies the given
+    // string in order to add null-termination to the end of tokens.
     char *text = malloc(sizeof(char) * (strlen(input) + 1));
     strcpy(text, input);
     int space_width = char_width(' ');
+    // Count the number of lines created
     int line_number = 0;
     char *key1, *key2;
+    // Begin tokenizing each line by line breaks
     char *line = tokenize(text, "\r\n", &key1);
     while (line) {
+        // Keep track of the current line width in screen space
         int line_width = 0;
+        // Begin tokenizing each word by spaces
         char *token = tokenize(line, " ", &key2);
         while (token) {
             int token_width = string_width(token);
             if (line_width) {
                 if (line_width + token_width > max_width) {
+                    // If the width goes over the max line width, create a new
+                    // line.
                     line_width = 0;
                     line_number++;
                     strncat(output, "\n", max_length - strlen(output) - 1);
@@ -235,12 +353,15 @@ int wrap(const char *input, int max_width, char *output, int max_length) {
             }
             strncat(output, token, max_length - strlen(output) - 1);
             line_width += token_width + space_width;
+            // Next word token
             token = tokenize(NULL, " ", &key2);
         }
         line_number++;
         strncat(output, "\n", max_length - strlen(output) - 1);
+        // Next line token
         line = tokenize(NULL, "\r\n", &key1);
     }
+    // Free the copy of the input text
     free(text);
     return line_number;
 }

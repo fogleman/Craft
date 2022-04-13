@@ -1,6 +1,7 @@
 #ifndef _item_h_
 #define _item_h_
 
+// Block ids/types
 #define EMPTY 0
 #define GRASS 1
 #define SAND 2

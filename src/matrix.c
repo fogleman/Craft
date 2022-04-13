@@ -3,11 +3,18 @@
 #include "matrix.h"
 #include "util.h"
 
+// Normalize a vector, (x, y, z)
+// (So it has magnitude of 1).
 void normalize(float *x, float *y, float *z) {
     float d = sqrtf((*x) * (*x) + (*y) * (*y) + (*z) * (*z));
     *x /= d; *y /= d; *z /= d;
 }
 
+// Set the given matrix reference to a 4x4 identity matrix
+//   ( 1 0 0 0 )
+//   ( 0 1 0 0 )
+//   ( 0 0 1 0 )
+//   ( 0 0 0 1 )
 void mat_identity(float *matrix) {
     matrix[0] = 1;
     matrix[1] = 0;
@@ -208,6 +215,19 @@ void set_matrix_2d(float *matrix, int width, int height) {
     mat_ortho(matrix, 0, width, 0, height, -1, 1);
 }
 
+// Set matrix reference to a 3D view, either orthographic or perspective.
+// Aguments:
+// - matrix: matrix to modify
+// - width: target viewport width
+// - height: target viewport height
+// - x
+// - y
+// - z
+// - rx: rotation x
+// - ry: rotation y
+// - fov: field of view
+// - ortho: flag to indicate an orthographic view
+// - radius
 void set_matrix_3d(
     float *matrix, int width, int height,
     float x, float y, float z, float rx, float ry,
@@ -257,3 +277,4 @@ void set_matrix_item(float *matrix, int width, int height, int scale) {
     mat_identity(matrix);
     mat_multiply(matrix, a, matrix);
 }
+

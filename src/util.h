@@ -19,6 +19,10 @@
     #define LOG(...)
 #endif
 
+// Frames-per-second context
+// - fps: frames per second
+// - frames: number of frames collected (since last time)
+// - since: the last time the frames per second was updated
 typedef struct {
     unsigned int fps;
     unsigned int frames;

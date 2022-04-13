@@ -16,13 +16,21 @@
 
 #define END_MAP_FOR_EACH }
 
+// Data value entry in the Map structure
+// UNION of:
+// - value
+// OR:
+// - x block x position
+// - y block y position
+// - z block z position
+// - w: block id (or light value?)
 typedef union {
     unsigned int value;
     struct {
-        unsigned char x;  // x, y, z location
+        unsigned char x;
         unsigned char y;
         unsigned char z;
-        char w;           // block id
+        char w;
     } e;
 } MapEntry;
 

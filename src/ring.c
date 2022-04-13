@@ -67,15 +67,15 @@ int ring_size(Ring *ring) {
 void ring_grow(Ring *ring) {
     Ring new_ring;
     RingEntry entry;
-	// Create a new ring with double the capacity
+    // Create a new ring with double the capacity
     ring_alloc(&new_ring, ring->capacity * 2);
-	// Copy the entries from the old ring to the new
+    // Copy the entries from the old ring to the new
     while (ring_get(ring, &entry)) {
         ring_put(&new_ring, &entry);
     }
-	// Free the old ring's data
+    // Free the old ring's data
     free(ring->data);
-	// Make the old ring have the new ring's values
+    // Make the old ring have the new ring's values
     ring->capacity = new_ring.capacity;
     ring->start = new_ring.start;
     ring->end = new_ring.end;
@@ -89,14 +89,14 @@ void ring_grow(Ring *ring) {
 // Returns:
 // - modifies the structure that ring points to
 void ring_put(Ring *ring, RingEntry *entry) {
-	// Ensure there is room for a new entry
+    // Ensure there is room for a new entry
     if (ring_full(ring)) {
         ring_grow(ring);
     }
-	// Copy the new entry to the end of the ring
+    // Copy the new entry to the end of the ring
     RingEntry *e = ring->data + ring->end;
     memcpy(e, entry, sizeof(RingEntry));
-	// Increment the end pointer
+    // Increment the end pointer
     ring->end = (ring->end + 1) % ring->capacity;
 }
 

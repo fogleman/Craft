@@ -77,7 +77,7 @@ int db_init(char *path) {
         "   z float not null,"
         "   rx float not null,"
         "   ry float not null,"
-		"   flying int not null"
+        "   flying int not null"
         ");"
         "create table if not exists block ("
         "    p int not null,"

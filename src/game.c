@@ -2699,11 +2699,10 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
     if (!g->typing) {
-        if (key == CRAFT_KEY_FLY)
-		{
-			State *s = &g->players->state;
-			s->flying = !s->flying;
-		}
+        if (key == CRAFT_KEY_FLY) {
+            State *s = &g->players->state;
+            s->flying = !s->flying;
+        }
         if (key >= '1' && key <= '9') {
             g->item_index = key - '1';
         }

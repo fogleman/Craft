@@ -67,6 +67,16 @@ typedef struct {
     GLuint sign_buffer;
 } Chunk;
 
+// A single item that a Worker can work on
+// - p: chunk x coordinate
+// - q: chunk y coordinate
+// - load
+// - block_maps
+// - light_maps
+// - miny
+// - maxy
+// - faces
+// - data
 typedef struct {
     int p;
     int q;
@@ -108,9 +118,9 @@ typedef struct {
 } Block;
 
 // State for a player
-// - x: x position
-// - y: y position
-// - z: z position
+// - x: x position (player feet level)
+// - y: y position (player feet level)
+// - z: z position (player feet level)
 // - rx: rotation x
 // - ry: rotation y
 // - t: keep track of time, for interpolation
@@ -187,7 +197,7 @@ typedef struct {
 // - observe1:
 // - observe2:
 // - flying:
-// - item_index:
+// - item_index: current selected block to place next
 // - scale:
 // - ortho:
 // - fov:
@@ -698,6 +708,9 @@ void update_player(Player *player,
     }
 }
 
+// Arguments:
+// - player
+// Returns: none
 void interpolate_player(Player *player) {
     State *s1 = &player->state1;
     State *s2 = &player->state2;
@@ -716,6 +729,10 @@ void interpolate_player(Player *player) {
         0);
 }
 
+// Look for a player with the given id and remove that player's data
+// Arguments:
+// - id: id of the player to delete
+// Returns: none
 void delete_player(int id) {
     Player *player = find_player(id);
     if (!player) {
@@ -728,6 +745,9 @@ void delete_player(int id) {
     g->player_count = count;
 }
 
+// Delete all of the current players
+// Arguments: none
+// Returns: none
 void delete_all_players() {
     for (int i = 0; i < g->player_count; i++) {
         Player *player = g->players + i;
@@ -736,15 +756,28 @@ void delete_all_players() {
     g->player_count = 0;
 }
 
+// Get the distance between 2 players.
+// Arguments:
+// - p1: a player
+// - p2: another player
+// Returns:
+// - distance
 float player_player_distance(Player *p1, Player *p2) {
     State *s1 = &p1->state;
     State *s2 = &p2->state;
+    // Calculate magnitude of the vector from p2 position to p1 position
     float x = s2->x - s1->x;
     float y = s2->y - s1->y;
     float z = s2->z - s1->z;
     return sqrtf(x * x + y * y + z * z);
 }
 
+// Get the distance between where p1 is looking and p2's position.
+// Arguments:
+// - p1
+// - p2
+// Returns:
+// - distance
 float player_crosshair_distance(Player *p1, Player *p2) {
     State *s1 = &p1->state;
     State *s2 = &p2->state;
@@ -760,6 +793,12 @@ float player_crosshair_distance(Player *p1, Player *p2) {
     return sqrtf(x * x + y * y + z * z);
 }
 
+// Find the player that the given player is looking at.
+// Arguments:
+// - player: the given player
+// Returns:
+// - the closest player that is in range and that the given player is looking
+//   near.
 Player *player_crosshair(Player *player) {
     Player *result = 0;
     float threshold = RADIANS(5);
@@ -781,6 +820,12 @@ Player *player_crosshair(Player *player) {
     return result;
 }
 
+// Try to find a chunk with at specific chunk coordinates
+// Arguments:
+// - p: chunk x
+// - q: chunk z
+// Returns:
+// - chunk pointer
 Chunk *find_chunk(int p, int q) {
     for (int i = 0; i < g->chunk_count; i++) {
         Chunk *chunk = g->chunks + i;
@@ -791,13 +836,22 @@ Chunk *find_chunk(int p, int q) {
     return 0;
 }
 
+// Get the "distance" of a chunk from the given chunk coordinates.
+// Arguments:
+// - chunk: chunk to test distance the distance from (p, q)
+// - p: chunk x
+// - q: chunk z
+// Returns:
+// - distance in chunk space, where "distance" means the maximum value of the
+//   change in p and the change in q.
 int chunk_distance(Chunk *chunk, int p, int q) {
     int dp = ABS(chunk->p - p);
     int dq = ABS(chunk->q - q);
     return MAX(dp, dq);
 }
 
-// Predicate function to determine if a chunk is visible within the given frustrum planes.
+// Predicate function to determine if a chunk is visible within the given
+// frustrum planes.
 // Arguments:
 // - planes: frustrum planes to check if the chunk is visible within
 // - p: chunk x coordinate
@@ -847,6 +901,12 @@ int chunk_visible(float planes[6][4], int p, int q, int miny, int maxy) {
     return 1;
 }
 
+// Find the highest y position of a block at a given (x,z) position.
+// Arguments:
+// - x
+// - z
+// Returns:
+// - highest y value, or -1 if not found
 int highest_block(float x, float z) {
     int result = -1;
     int nx = roundf(x);
@@ -865,6 +925,24 @@ int highest_block(float x, float z) {
     return result;
 }
 
+// Finds the closest block in a map found by casting a hit ray.
+// Meant to be called by hit_test().
+// Arguments:
+// - map: map to search for hitting blocks in
+// - max_distance
+// - previous: boolean
+// - x: ray start x
+// - y: ray start y
+// - z: ray start z
+// - vx: ray x direction
+// - vy: ray y direction
+// - vz: ray z direction
+// - hx: pointer to output hit x position
+// - hy: pointer to output hit y position
+// - hz: pointer to output hit z position
+// Returns:
+// - the block type that was hit, returns 0 if there was no block found
+// - writes hit output to hx, hy, and hz
 int _hit_test(
     Map *map, float max_distance, int previous,
     float x, float y, float z,
@@ -897,6 +975,19 @@ int _hit_test(
     return 0;
 }
 
+// Finds the closest block found by casting a hit ray.
+// Arguments:
+// - previous: boolean
+// - x: ray start x
+// - y: ray start y
+// - z: ray start z
+// - rx: ray x direction
+// - ry: ray y direction
+// - bx: pointer to output hit x position
+// - by: pointer to output hit y position
+// - bz: pointer to output hit z position
+// Returns:
+// - the block type that was hit, returns 0 if no block was found
 int hit_test(
     int previous, float x, float y, float z, float rx, float ry,
     int *bx, int *by, int *bz)
@@ -928,6 +1019,15 @@ int hit_test(
     return result;
 }
 
+// See which block face a player is looking at
+// Arguments:
+// - player
+// - x: output pointer to the x position of the hit block
+// - y: output pointer to the y position of the hit block
+// - z: output pointer to the z position of the hit block
+// - face: output pointer to the face number of the hit block
+// Returns:
+// - non-zero if a face was hit
 int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
     State *s = &player->state;
     int w = hit_test(0, s->x, s->y, s->z, s->rx, s->ry, x, y, z);
@@ -961,8 +1061,19 @@ int hit_test_face(Player *player, int *x, int *y, int *z, int *face) {
     return 0;
 }
 
+// Do block collision for a player.
+// Arguments:
+// - height: player height in blocks
+// - x: pointer to current player x position of feet
+// - y: pointer to current player y position of feet
+// - z: pointer to current player z position of feet
+// Returns:
+// - non-zero if the player collided with a block
+// - may modify the x, y, and z values
 int collide(int height, float *x, float *y, float *z) {
+    // Default result: no collision
     int result = 0;
+    // Find the block map that the position is in
     int p = chunked(*x);
     int q = chunked(*z);
     Chunk *chunk = find_chunk(p, q);
@@ -970,6 +1081,7 @@ int collide(int height, float *x, float *y, float *z) {
         return result;
     }
     Map *map = &chunk->map;
+    // Get the nearest block position
     int nx = roundf(*x);
     int ny = roundf(*y);
     int nz = roundf(*z);
@@ -977,6 +1089,7 @@ int collide(int height, float *x, float *y, float *z) {
     float py = *y - ny;
     float pz = *z - nz;
     float pad = 0.25;
+    // Check each block position within the player's height
     for (int dy = 0; dy < height; dy++) {
         if (px < -pad && is_obstacle(map_get(map, nx - 1, ny - dy, nz))) {
             *x = nx - pad;
@@ -1002,6 +1115,18 @@ int collide(int height, float *x, float *y, float *z) {
     return result;
 }
 
+// Predicate function to return whether a player position instersects the given
+// block position.
+// Arguments:
+// - height
+// - x: player x position
+// - y: player y position
+// - z: player z position
+// - hx: block x position to test
+// - hy: block y position to test
+// - hz: block z position to test
+// Returns:
+// - non-zero if the player intersects the given block position
 int player_intersects_block(
     int height,
     float x, float y, float z,
@@ -1018,14 +1143,24 @@ int player_intersects_block(
     return 0;
 }
 
+// Generate the buffer data for a single sign model
+// Arguments:
+// - data: pointer to write the data to
+// - x
+// - y
+// - z
+// - face
+// - text: sign ASCII text string (null-terminated)
+// Returns:
+// - number of character faces
 int _gen_sign_buffer(
     GLfloat *data, float x, float y, float z, int face, const char *text)
 {
-    static const int glyph_dx[8] = {0, 0, -1, 1, 1, 0, -1, 0};
-    static const int glyph_dz[8] = {1, -1, 0, 0, 0, -1, 0, 1};
-    static const int line_dx[8] = {0, 0, 0, 0, 0, 1, 0, -1};
-    static const int line_dy[8] = {-1, -1, -1, -1, 0, 0, 0, 0};
-    static const int line_dz[8] = {0, 0, 0, 0, 1, 0, -1, 0};
+    static const int glyph_dx[8] = { 0,  0, -1,  1, 1,  0, -1,  0 };
+    static const int glyph_dz[8] = { 1, -1,  0,  0, 0, -1,  0,  1 };
+    static const int line_dx[8] = { 0,  0,  0,  0, 0,  1,  0, -1 };
+    static const int line_dy[8] = {-1, -1, -1, -1, 0,  0,  0,  0 };
+    static const int line_dz[8] = { 0,  0,  0,  0, 1,  0, -1,  0 };
     if (face < 0 || face >= 8) {
         return 0;
     }
@@ -1081,6 +1216,10 @@ int _gen_sign_buffer(
     return count;
 }
 
+// Create the game's sign buffer for a chunk
+// Arguments:
+// - chunk: the chunk to generate the sign models for
+// Returns: none
 void gen_sign_buffer(Chunk *chunk) {
     SignList *signs = &chunk->signs;
 
@@ -1105,6 +1244,11 @@ void gen_sign_buffer(Chunk *chunk) {
     chunk->sign_faces = faces;
 }
 
+// Predicate function for whether a given chunk has any block light values
+// Arguments:
+// - chunk: the chunk to check
+// Returns:
+// - non-zero if the chunk has lights
 int has_lights(Chunk *chunk) {
     if (!SHOW_LIGHTS) {
         return 0;
@@ -1127,6 +1271,10 @@ int has_lights(Chunk *chunk) {
     return 0;
 }
 
+// Mark a chunk as dirty and also potentially mark the neighboring chunks
+// Arguments:
+// - chunk: chunk to mark as dirty
+// Returns: none
 void dirty_chunk(Chunk *chunk) {
     chunk->dirty = 1;
     if (has_lights(chunk)) {
@@ -1141,6 +1289,13 @@ void dirty_chunk(Chunk *chunk) {
     }
 }
 
+// Arguments:
+// - neighbors
+// - lights
+// - shades
+// - ao
+// - light
+// Returns: none
 void occlusion(
     char neighbors[27], char lights[27], float shades[27],
     float ao[6][4], float light[6][4])
@@ -1192,6 +1347,15 @@ void occlusion(
 #define XYZ(x, y, z) ((y) * XZ_SIZE * XZ_SIZE + (x) * XZ_SIZE + (z))
 #define XZ(x, z) ((x) * XZ_SIZE + (z))
 
+// Arguments:
+// - opaque
+// - light
+// - x
+// - y
+// - z
+// - w
+// - force
+// Returns: none
 void light_fill(
     char *opaque, char *light,
     int x, int y, int z, int w, int force)
@@ -1220,6 +1384,9 @@ void light_fill(
     light_fill(opaque, light, x, y, z + 1, w, 0);
 }
 
+// Arguments:
+// - item
+// Returns: none
 void compute_chunk(WorkerItem *item) {
     char *opaque = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
     char *light = (char *)calloc(XZ_SIZE * XZ_SIZE * Y_SIZE, sizeof(char));
@@ -1398,6 +1565,10 @@ void compute_chunk(WorkerItem *item) {
     item->data = data;
 }
 
+// Arguments:
+// - chunk
+// - item
+// Returns: none
 void generate_chunk(Chunk *chunk, WorkerItem *item) {
     chunk->miny = item->miny;
     chunk->maxy = item->maxy;
@@ -1407,6 +1578,9 @@ void generate_chunk(Chunk *chunk, WorkerItem *item) {
     gen_sign_buffer(chunk);
 }
 
+// Arguments:
+// - chunk
+// Returns: none
 void gen_chunk_buffer(Chunk *chunk) {
     WorkerItem _item;
     WorkerItem *item = &_item;
@@ -1433,11 +1607,24 @@ void gen_chunk_buffer(Chunk *chunk) {
     chunk->dirty = 0;
 }
 
+// Callback function used for world generation
+// Arguments:
+// - x: x position
+// - y: y position
+// - z: z position
+// - w: block type
+// - arg: pointer to map (is void* so that world gen doesn't need to know the type)
+// Returns:
+// - no return value
+// - modifies the Map pointed to by "arg"
 void map_set_func(int x, int y, int z, int w, void *arg) {
     Map *map = (Map *)arg;
     map_set(map, x, y, z, w);
 }
 
+// Arguments:
+// - item
+// Returns: none
 void load_chunk(WorkerItem *item) {
     int p = item->p;
     int q = item->q;
@@ -1448,11 +1635,20 @@ void load_chunk(WorkerItem *item) {
     db_load_lights(light_map, p, q);
 }
 
+// Arguments:
+// - p
+// - q
+// Returns: none
 void request_chunk(int p, int q) {
     int key = db_get_key(p, q);
     client_chunk(p, q, key);
 }
 
+// Arguments:
+// - chunk
+// - p
+// - q
+// Returns: none
 void init_chunk(Chunk *chunk, int p, int q) {
     chunk->p = p;
     chunk->q = q;
@@ -1473,6 +1669,11 @@ void init_chunk(Chunk *chunk, int p, int q) {
     map_alloc(light_map, dx, dy, dz, 0xf);
 }
 
+// Arguments:
+// - chunk
+// - p
+// - q
+// Returns: none
 void create_chunk(Chunk *chunk, int p, int q) {
     init_chunk(chunk, p, q);
 
@@ -1487,6 +1688,9 @@ void create_chunk(Chunk *chunk, int p, int q) {
     request_chunk(p, q);
 }
 
+// Delete the chunks that should be deleted (because they are out of range)
+// Arguments: none
+// Returns: none
 void delete_chunks() {
     int count = g->chunk_count;
     State *s1 = &g->players->state;
@@ -1496,6 +1700,8 @@ void delete_chunks() {
     for (int i = 0; i < count; i++) {
         Chunk *chunk = g->chunks + i;
         int delete = 1;
+        // Do not delete a chunk if the chunk is in range
+        // for any of the player's position states.
         for (int j = 0; j < 3; j++) {
             State *s = states[j];
             int p = chunked(s->x);
@@ -1533,6 +1739,8 @@ void delete_all_chunks() {
     g->chunk_count = 0;
 }
 
+// Arguments: none
+// Returns: none
 void check_workers() {
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
@@ -1572,6 +1780,10 @@ void check_workers() {
     }
 }
 
+// Force the chunks around the given player to generate on this main thread.
+// Arguments:
+// - player: player to generate chunks for
+// Returns: none
 void force_chunks(Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
@@ -1596,6 +1808,10 @@ void force_chunks(Player *player) {
     }
 }
 
+// Arguments:
+// - player
+// - worker
+// Returns: none
 void ensure_chunks_worker(Player *player, Worker *worker) {
     State *s = &player->state;
     float matrix[16];
@@ -1683,6 +1899,9 @@ void ensure_chunks_worker(Player *player, Worker *worker) {
     cnd_signal(&worker->cnd);
 }
 
+// Arguments:
+// - player
+// Returns: none
 void ensure_chunks(Player *player) {
     check_workers();
     force_chunks(player);
@@ -1696,6 +1915,10 @@ void ensure_chunks(Player *player) {
     }
 }
 
+// Arguments:
+// - arg
+// Returns:
+// - integer
 int worker_run(void *arg) {
     Worker *worker = (Worker *)arg;
     int running = 1;
@@ -1717,6 +1940,11 @@ int worker_run(void *arg) {
     return 0;
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// Returns: none
 void unset_sign(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1733,6 +1961,12 @@ void unset_sign(int x, int y, int z) {
     }
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - face
+// Returns: none
 void unset_sign_face(int x, int y, int z, int face) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1749,6 +1983,16 @@ void unset_sign_face(int x, int y, int z, int face) {
     }
 }
 
+// Arguments:
+// - p
+// - q
+// - x
+// - y
+// - z
+// - face
+// - text
+// - dirty
+// Returns: none
 void _set_sign(
     int p, int q, int x, int y, int z, int face, const char *text, int dirty)
 {
@@ -1767,6 +2011,13 @@ void _set_sign(
     db_insert_sign(p, q, x, y, z, face, text);
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - face
+// - text
+// Returns: none
 void set_sign(int x, int y, int z, int face, const char *text) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1774,6 +2025,11 @@ void set_sign(int x, int y, int z, int face, const char *text) {
     client_sign(x, y, z, face, text);
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// Returns: none
 void toggle_light(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1788,6 +2044,14 @@ void toggle_light(int x, int y, int z) {
     }
 }
 
+// Arguments:
+// - p
+// - q
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void set_light(int p, int q, int x, int y, int z, int w) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
@@ -1802,6 +2066,15 @@ void set_light(int p, int q, int x, int y, int z, int w) {
     }
 }
 
+// Arguments:
+// - p
+// - q
+// - x
+// - y
+// - z
+// - w
+// - dirty
+// Returns: none
 void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     Chunk *chunk = find_chunk(p, q);
     if (chunk) {
@@ -1816,12 +2089,19 @@ void _set_block(int p, int q, int x, int y, int z, int w, int dirty) {
     else {
         db_insert_block(p, q, x, y, z, w);
     }
+    // If a block is removed, then remove any signs and light source from that block.
     if (w == 0 && chunked(x) == p && chunked(z) == q) {
         unset_sign(x, y, z);
         set_light(p, q, x, y, z, 0);
     }
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void set_block(int x, int y, int z, int w) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1843,6 +2123,12 @@ void set_block(int x, int y, int z, int w) {
     client_block(x, y, z, w);
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void record_block(int x, int y, int z, int w) {
     memcpy(&g->block1, &g->block0, sizeof(Block));
     g->block0.x = x;
@@ -1851,6 +2137,12 @@ void record_block(int x, int y, int z, int w) {
     g->block0.w = w;
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// Returns:
+// - w
 int get_block(int x, int y, int z) {
     int p = chunked(x);
     int q = chunked(z);
@@ -1862,6 +2154,12 @@ int get_block(int x, int y, int z) {
     return 0;
 }
 
+// Arguments:
+// - x
+// - y
+// - z
+// - w
+// Returns: none
 void builder_block(int x, int y, int z, int w) {
     if (y <= 0 || y >= 256) {
         return;
@@ -1874,6 +2172,11 @@ void builder_block(int x, int y, int z, int w) {
     }
 }
 
+// Arguments:
+// - attrib
+// - player
+// Returns:
+// - number of faces
 int render_chunks(Attrib *attrib, Player *player) {
     int result = 0;
     State *s = &player->state;
@@ -1912,6 +2215,10 @@ int render_chunks(Attrib *attrib, Player *player) {
     return result;
 }
 
+// Arguments:
+// - attrib
+// - player
+// Returns: none
 void render_signs(Attrib *attrib, Player *player) {
     State *s = &player->state;
     int p = chunked(s->x);
@@ -1940,6 +2247,10 @@ void render_signs(Attrib *attrib, Player *player) {
     }
 }
 
+// Arguments:
+// - attrib
+// - player
+// Returns: none
 void render_sign(Attrib *attrib, Player *player) {
     if (!g->typing || g->typing_buffer[0] != CRAFT_KEY_SIGN) {
         return;
@@ -1967,6 +2278,10 @@ void render_sign(Attrib *attrib, Player *player) {
     del_buffer(buffer);
 }
 
+// Arguments:
+// - attrib
+// - player
+// Returns: none
 void render_players(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -1986,6 +2301,11 @@ void render_players(Attrib *attrib, Player *player) {
     }
 }
 
+// Arguments:
+// - attrib
+// - player
+// - buffer
+// Returns: none
 void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     State *s = &player->state;
     float matrix[16];
@@ -1999,6 +2319,10 @@ void render_sky(Attrib *attrib, Player *player, GLuint buffer) {
     draw_triangles_3d(attrib, buffer, 512 * 3);
 }
 
+// Arguments:
+// - attrib
+// - player
+// Returns: none
 void render_wireframe(Attrib *attrib, Player *player) {
     State *s = &player->state;
     float matrix[16];
@@ -2019,6 +2343,9 @@ void render_wireframe(Attrib *attrib, Player *player) {
     }
 }
 
+// Arguments:
+// - attrib
+// Returns: none
 void render_crosshairs(Attrib *attrib) {
     float matrix[16];
     set_matrix_2d(matrix, g->width, g->height);
@@ -2032,6 +2359,9 @@ void render_crosshairs(Attrib *attrib) {
     glDisable(GL_COLOR_LOGIC_OP);
 }
 
+// Arguments:
+// - attrib
+// Returns: none
 void render_item(Attrib *attrib) {
     float matrix[16];
     set_matrix_item(matrix, g->width, g->height, g->scale);
@@ -2053,6 +2383,14 @@ void render_item(Attrib *attrib) {
     }
 }
 
+// Arguments:
+// - attrib
+// - justify
+// - x
+// - y
+// - n
+// - text
+// Returns: none
 void render_text(
     Attrib *attrib, int justify, float x, float y, float n, char *text)
 {
@@ -2069,6 +2407,9 @@ void render_text(
     del_buffer(buffer);
 }
 
+// Arguments:
+// - text
+// Returns: none
 void add_message(const char *text) {
     printf("%s\n", text);
     snprintf(
@@ -2076,6 +2417,8 @@ void add_message(const char *text) {
     g->message_index = (g->message_index + 1) % MAX_MESSAGES;
 }
 
+// Arguments: none
+// Returns:
 void login() {
     char username[128] = {0};
     char identity_token[128] = {0};
@@ -2099,11 +2442,13 @@ void login() {
     }
 }
 
+// Player copies block
 void copy() {
     memcpy(&g->copy0, &g->block0, sizeof(Block));
     memcpy(&g->copy1, &g->block1, sizeof(Block));
 }
 
+// Player pastes structure
 void paste() {
     Block *c1 = &g->copy1;
     Block *c2 = &g->copy0;
@@ -2329,6 +2674,7 @@ void parse_command(const char *buffer, int forward) {
     char username[128] = {0};
     char token[128] = {0};
     char server_addr[MAX_ADDR_LENGTH];
+    // Note: DEFAULT_PORT is defined in "client.h"
     int server_port = DEFAULT_PORT;
     char filename[MAX_PATH_LENGTH];
     int radius, count, xc, yc, zc;
@@ -2370,6 +2716,7 @@ void parse_command(const char *buffer, int forward) {
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
     }
     else if (sscanf(buffer, "/view %d", &radius) == 1) {
+        // Set view radius
         if (radius >= 1 && radius <= 24) {
             g->create_radius = radius;
             g->render_radius = radius;
@@ -2386,6 +2733,7 @@ void parse_command(const char *buffer, int forward) {
         paste();
     }
     else if (strcmp(buffer, "/tree") == 0) {
+        // Place tree
         tree(&g->block0);
     }
     else if (sscanf(buffer, "/array %d %d %d", &xc, &yc, &zc) == 3) {
@@ -2395,46 +2743,61 @@ void parse_command(const char *buffer, int forward) {
         array(&g->block1, &g->block0, count, count, count);
     }
     else if (strcmp(buffer, "/fcube") == 0) {
+        // Place a filled cube
         cube(&g->block0, &g->block1, 1);
     }
     else if (strcmp(buffer, "/cube") == 0) {
+        // Place an unfilled cube
         cube(&g->block0, &g->block1, 0);
     }
     else if (sscanf(buffer, "/fsphere %d", &radius) == 1) {
+        // Place a filled sphere with a radius
         sphere(&g->block0, radius, 1, 0, 0, 0);
     }
     else if (sscanf(buffer, "/sphere %d", &radius) == 1) {
+        // Place an unfilled sphere with a radius
         sphere(&g->block0, radius, 0, 0, 0, 0);
     }
     else if (sscanf(buffer, "/fcirclex %d", &radius) == 1) {
+        // Place a filled circle on the x-axis with a radius
         sphere(&g->block0, radius, 1, 1, 0, 0);
     }
     else if (sscanf(buffer, "/circlex %d", &radius) == 1) {
+        // Place an unfilled circle on the x-axis with a radius
         sphere(&g->block0, radius, 0, 1, 0, 0);
     }
     else if (sscanf(buffer, "/fcircley %d", &radius) == 1) {
+        // Place a filled circle on the y-axis with a radius
         sphere(&g->block0, radius, 1, 0, 1, 0);
     }
     else if (sscanf(buffer, "/circley %d", &radius) == 1) {
+        // Place an unfilled circle on the y-axis with a radius
         sphere(&g->block0, radius, 0, 0, 1, 0);
     }
     else if (sscanf(buffer, "/fcirclez %d", &radius) == 1) {
+        // Place a filled circle on the z-axis with a radius
         sphere(&g->block0, radius, 1, 0, 0, 1);
     }
     else if (sscanf(buffer, "/circlez %d", &radius) == 1) {
+        // Place an unfilled circle on the z-axis with a radius
         sphere(&g->block0, radius, 0, 0, 0, 1);
     }
     else if (sscanf(buffer, "/fcylinder %d", &radius) == 1) {
+        // Place a filled cylinder with a radius
         cylinder(&g->block0, &g->block1, radius, 1);
     }
     else if (sscanf(buffer, "/cylinder %d", &radius) == 1) {
+        // Place an unfilled cylinder with a radius
         cylinder(&g->block0, &g->block1, radius, 0);
     }
     else if (forward) {
+        // If no command was found, maybe send it as a chat message
         client_talk(buffer);
     }
 }
 
+// Arguments: none
+// Returns: none
 void on_light() {
     State *s = &g->players->state;
     int hx, hy, hz;
@@ -2444,6 +2807,8 @@ void on_light() {
     }
 }
 
+// Arguments: none
+// Returns: none
 void on_left_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
@@ -2457,6 +2822,8 @@ void on_left_click() {
     }
 }
 
+// Arguments: none
+// Returns: none
 void on_right_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
@@ -2469,6 +2836,8 @@ void on_right_click() {
     }
 }
 
+// Arguments: none
+// Returns: none
 void on_middle_click() {
     State *s = &g->players->state;
     int hx, hy, hz;
@@ -2694,6 +3063,8 @@ void on_mouse_button(GLFWwindow *window, int button, int action, int mods) {
     }
 }
 
+// Arguments: none
+// Returns: none
 void create_window() {
     int window_width = WINDOW_WIDTH;
     int window_height = WINDOW_HEIGHT;
@@ -2709,6 +3080,8 @@ void create_window() {
         window_width, window_height, "Craft", monitor, NULL);
 }
 
+// Arguments: none
+// Returns: none
 void handle_mouse_input() {
     int exclusive =
         glfwGetInputMode(g->window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
@@ -2742,6 +3115,9 @@ void handle_mouse_input() {
     }
 }
 
+// Arguments:
+// - dt: delta time
+// Returns: none
 void handle_movement(double dt) {
     static float dy = 0;
     State *s = &g->players->state;
@@ -2802,14 +3178,39 @@ void handle_movement(double dt) {
     }
 }
 
+// Parse response string from server
+// Arguments:
+// - buffer: the response string to parse
+// Returns: none
+// Note:
+//   multiplayer: A simple, ASCII, line-based protocol is used. Each line is
+//   made up of a command code and zero or more comma-separated arguments.
+// Server Commands/responses:
+// - B,p,q,x,y,z,w         : block update in chunk (p, q) at (x, y, z) of block
+//                           type "w"
+// - D,pid                 : delete player with id "pid"
+// - E,e,d                 : time elapse "e" with day length "d"
+// - K,p,q,key             : set "key" for chunk (p, q)
+// - L,p,q,x,y,z,w         : light update in chunk (p, q) at (x, y, z) of block
+//                           type "w"
+// - N,pid,name            : player name for player with id
+// - P,pid,x,y,z,rx,ry     : player movement update
+// - R,p,q                 : mark chunk at (p, q) as dirty
+// - S,p,q,x,y,z,face,text : sign placement
+// - T,s                   : chat message "s"
+// - U,pid,x,y,z,rx,ry     : response to set this client's player position
+//                           (maybe upon joining the server?)
 void parse_buffer(char *buffer) {
     Player *me = g->players;
     State *s = &g->players->state;
     char *key;
     char *line = tokenize(buffer, "\n", &key);
     while (line) {
+        // Try and parse this line as a server response/command
+        // If the response does not match anything, the line is ignored.
         int pid;
         float ux, uy, uz, urx, ury;
+        // Set this client's player position
         if (sscanf(line, "U,%d,%f,%f,%f,%f,%f",
             &pid, &ux, &uy, &uz, &urx, &ury) == 6)
         {
@@ -2820,6 +3221,7 @@ void parse_buffer(char *buffer) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
         }
+        // Block update
         int bp, bq, bx, by, bz, bw;
         if (sscanf(line, "B,%d,%d,%d,%d,%d,%d",
             &bp, &bq, &bx, &by, &bz, &bw) == 6)
@@ -2829,11 +3231,13 @@ void parse_buffer(char *buffer) {
                 s->y = highest_block(s->x, s->z) + 2;
             }
         }
+        // Light update
         if (sscanf(line, "L,%d,%d,%d,%d,%d,%d",
             &bp, &bq, &bx, &by, &bz, &bw) == 6)
         {
             set_light(bp, bq, bx, by, bz, bw);
         }
+        // Player position update
         float px, py, pz, prx, pry;
         if (sscanf(line, "P,%d,%f,%f,%f,%f,%f",
             &pid, &px, &py, &pz, &prx, &pry) == 6)
@@ -2851,19 +3255,23 @@ void parse_buffer(char *buffer) {
                 update_player(player, px, py, pz, prx, pry, 1);
             }
         }
+        // Delete player id
         if (sscanf(line, "D,%d", &pid) == 1) {
             delete_player(pid);
         }
+        // Chunk key
         int kp, kq, kk;
         if (sscanf(line, "K,%d,%d,%d", &kp, &kq, &kk) == 3) {
             db_set_key(kp, kq, kk);
         }
+        // Dirty chunk
         if (sscanf(line, "R,%d,%d", &kp, &kq) == 2) {
             Chunk *chunk = find_chunk(kp, kq);
             if (chunk) {
                 dirty_chunk(chunk);
             }
         }
+        // Time sync
         double elapsed;
         int day_length;
         if (sscanf(line, "E,%lf,%d", &elapsed, &day_length) == 2) {
@@ -2871,11 +3279,13 @@ void parse_buffer(char *buffer) {
             g->day_length = day_length;
             g->time_changed = 1;
         }
+        // Chat message
         if (line[0] == 'T' && line[1] == ',') {
             char *text = line + 2;
             add_message(text);
         }
         char format[64];
+        // Player name
         snprintf(
             format, sizeof(format), "N,%%d,%%%ds", MAX_NAME_LENGTH - 1);
         char name[MAX_NAME_LENGTH];
@@ -2885,6 +3295,7 @@ void parse_buffer(char *buffer) {
                 strncpy(player->name, name, MAX_NAME_LENGTH);
             }
         }
+        // Sign placement
         snprintf(
             format, sizeof(format),
             "S,%%d,%%d,%%d,%%d,%%d,%%d,%%%d[^\n]", MAX_SIGN_LENGTH - 1);
@@ -2895,6 +3306,7 @@ void parse_buffer(char *buffer) {
         {
             _set_sign(bp, bq, bx, by, bz, face, text, 0);
         }
+        // Get next line
         line = tokenize(NULL, "\n", &key);
     }
 }
@@ -2922,6 +3334,12 @@ void reset_model() {
     g->time_changed = 1;
 }
 
+// Main program code
+// Arguments:
+// - argc
+// - argv
+// Returns:
+// - zero upon success, non-zero upon failure
 int main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -3181,6 +3599,7 @@ int main(int argc, char **argv) {
             glClear(GL_DEPTH_BUFFER_BIT);
             render_sky(&sky_attrib, player, sky_buffer);
             glClear(GL_DEPTH_BUFFER_BIT);
+            // Get the face count while rendering for displaying the number on screen
             int face_count = render_chunks(&block_attrib, player);
             render_signs(&text_attrib, player);
             render_sign(&text_attrib, player);

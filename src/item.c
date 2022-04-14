@@ -56,7 +56,16 @@ const int items[] = {
     COLOR_28,
     COLOR_29,
     COLOR_30,
-    COLOR_31
+    COLOR_31,
+    GLASS2,
+    CLEAR_GLASS,
+    SPIRALED_GLASS,
+    TRIANGLE_FLOWER,
+    WILD_PLANT,
+    SNOWY_WILD_PLANT,
+    COLUMN_BOTTOM,
+    COLUMN_MIDDLE,
+    COLUMN_TOP
 };
 
 const int item_count = sizeof(items) / sizeof(int);
@@ -139,6 +148,13 @@ const int plants[256] = {
     52, // 21 - sun flower
     53, // 22 - white flower
     54, // 23 - blue flower
+    //new plants
+    58, // 27 - triangle flower
+    59, // 28 - wild plant
+    60, // 29 - wild plant snowy
+    61, // column bottom
+    62, //column middle
+    63 //column top
 };
 
 int is_plant(int w) {
@@ -150,6 +166,12 @@ int is_plant(int w) {
         case SUN_FLOWER:
         case WHITE_FLOWER:
         case BLUE_FLOWER:
+	case TRIANGLE_FLOWER:
+	case WILD_PLANT:
+	case SNOWY_WILD_PLANT:
+	case COLUMN_BOTTOM:
+	case COLUMN_MIDDLE:
+	case COLUMN_TOP:
             return 1;
         default:
             return 0;
@@ -159,7 +181,15 @@ int is_plant(int w) {
 int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
-        return 0;
+	switch(w) {
+	case COLUMN_BOTTOM:
+	case COLUMN_MIDDLE:
+	case COLUMN_TOP:
+	  return 1;
+	default:
+	  return 0;
+	}//end switch statement
+
     }
     switch (w) {
         case EMPTY:

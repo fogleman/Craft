@@ -2,7 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <curl/curl.h>
 #include <math.h>
-#include <stdio.h>
+#include <stdio.h>Determine D0
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -2452,7 +2452,7 @@ void handle_movement(double dt, bool *is_auto_walking_ptr, bool *allow_next_auto
         	}
 		*allow_next_autowalk_press_ptr = false;
         	
-        	//*allow_next_autowalk_press_ptr = false; //saftey net, takes care of holding down button
+        	
         	
         }
         else if (autoWalkState == GLFW_RELEASE) {
@@ -2462,8 +2462,7 @@ void handle_movement(double dt, bool *is_auto_walking_ptr, bool *allow_next_auto
     }
     float vx, vy, vz;
     
-    //New system overrides this code piece
-    //get_motion_vector(g->flying, sz, sx, s->rx, s->ry, &vx, &vy, &vz);
+    
     
     if(*do_auto_walk_ptr == true) {
     	get_motion_vector(g->flying, -1, sx, s->rx, s->ry, &vx, &vy, &vz);

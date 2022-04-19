@@ -7,19 +7,15 @@
 //#include "../src/deleteme.c"
 //#include "../src/main.c" <--- SO MANY ERRORS!!!!!!!!!!!!!.
 
-extern "C" bool helloWorld;
-extern "C" bool func_1();
-//----------------------------------------------------
-TEST(Assert, empty) { GTEST_ASSERT_EQ(true, true); }
+
+extern "C" int item_count;
+
 
 //----------------------------------------------------
-TEST(tests, issueFoo){
-	EXPECT_EQ(helloWorld, true);
+TEST(tests, issue13){
+	EXPECT_EQ(item_count, 63);
 }
-TEST(tests, issueBar){
-	bool returnValue = func_1;
-	EXPECT_EQ(true, returnValue);
-}
+
 extern "C" int craft_main(int argc, char* argv[]);
 
 //----------------------------------------------------

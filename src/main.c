@@ -2583,7 +2583,7 @@ void reset_model() {
     g->time_changed = 1;
 }
 
-int main(int argc, char **argv) {
+int craft_main(int argc, char **argv) {
     // INITIALIZATION //
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));

@@ -56,7 +56,16 @@ const int items[] = {
     COLOR_28,
     COLOR_29,
     COLOR_30,
-    COLOR_31
+    COLOR_31,
+    GLASS2,
+    CLEAR_GLASS,
+    SPIRALED_GLASS,
+    TRIANGLE_FLOWER,
+    WILD_PLANT,
+    SNOWY_WILD_PLANT,
+    COLUMN_BOTTOM,
+    COLUMN_MIDDLE,
+    COLUMN_TOP
 };
 
 const int item_count = sizeof(items) / sizeof(int);
@@ -80,7 +89,7 @@ const int blocks[256][6] = {
     {13, 13, 13, 13, 13, 13}, // 14 - chest
     {14, 14, 14, 14, 14, 14}, // 15 - leaves
     {15, 15, 15, 15, 15, 15}, // 16 - cloud
-    {0, 0, 0, 0, 0, 0}, // 17
+    {0, 0, 0, 0, 0, 0}, // 17 
     {0, 0, 0, 0, 0, 0}, // 18
     {0, 0, 0, 0, 0, 0}, // 19
     {0, 0, 0, 0, 0, 0}, // 20
@@ -126,7 +135,10 @@ const int blocks[256][6] = {
     {204, 204, 204, 204, 204, 204}, // 60
     {205, 205, 205, 205, 205, 205}, // 61
     {206, 206, 206, 206, 206, 206}, // 62
-    {207, 207, 207, 207, 207, 207}, // 63
+    {207, 207, 207, 207, 207, 207}, // 63 end colors
+    {55, 55, 55, 55, 55, 55}, // 64 - glass 2
+    {56, 56, 56, 56, 56, 56}, // 65 - clear glass
+    {57, 57, 57, 57, 57, 57}, // 66 - spiral glass
 };
 
 const int plants[256] = {
@@ -139,6 +151,16 @@ const int plants[256] = {
     52, // 21 - sun flower
     53, // 22 - white flower
     54, // 23 - blue flower
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,// 24 - 34
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,// 35 - 45
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,// 46 - 56
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 57 - 66
+    58, // 27 - triangle flower
+    59, // 28 - wild plant
+    60, // 29 - wild plant snowy
+    61, // column bottom
+    62, //column middle     for columns, they need plant texture type, but are considered blocks in placement
+    63 //column top
 };
 
 int is_plant(int w) {
@@ -150,6 +172,12 @@ int is_plant(int w) {
         case SUN_FLOWER:
         case WHITE_FLOWER:
         case BLUE_FLOWER:
+	case TRIANGLE_FLOWER:
+	case WILD_PLANT:
+	case SNOWY_WILD_PLANT:
+	case COLUMN_BOTTOM:
+	case COLUMN_MIDDLE:
+	case COLUMN_TOP:
             return 1;
         default:
             return 0;
@@ -159,7 +187,15 @@ int is_plant(int w) {
 int is_obstacle(int w) {
     w = ABS(w);
     if (is_plant(w)) {
-        return 0;
+	switch(w) {
+	case COLUMN_BOTTOM:
+	case COLUMN_MIDDLE:
+	case COLUMN_TOP:
+	  return 1;
+	default:
+	  return 0;
+	}//end switch statement
+
     }
     switch (w) {
         case EMPTY:

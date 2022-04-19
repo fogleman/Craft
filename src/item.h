@@ -57,6 +57,15 @@
 #define COLOR_29 61
 #define COLOR_30 62
 #define COLOR_31 63
+#define GLASS2 64
+#define CLEAR_GLASS 65
+#define SPIRALED_GLASS 66
+#define TRIANGLE_FLOWER 67
+#define WILD_PLANT 68
+#define SNOWY_WILD_PLANT 69
+#define COLUMN_BOTTOM 70
+#define COLUMN_MIDDLE 71
+#define COLUMN_TOP 72
 
 extern const int items[];
 extern const int item_count;

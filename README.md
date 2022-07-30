@@ -37,7 +37,7 @@ the installation:
 #### Linux (Ubuntu)
 
     sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
-    sudo apt-get build-dep glfw
+    sudo apt-get build-dep glfw3
 
 #### Windows
 

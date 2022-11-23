@@ -1,7 +1,7 @@
 from math import floor
 from world import World
-import Queue
-import SocketServer
+import queue
+import socketserver
 import datetime
 import random
 import re
@@ -56,18 +56,22 @@ try:
 except ImportError:
     pass
 
+
 def log(*args):
     now = datetime.datetime.utcnow()
     line = ' '.join(map(str, (now,) + args))
-    print line
+    print(line)
     with open(LOG_PATH, 'a') as fp:
         fp.write('%s\n' % line)
+
 
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
 
+
 def packet(*args):
-    return '%s\n' % ','.join(map(str, args))
+    return ('%s\n' % ','.join(map(str, args))).encode("UTF-8")
+
 
 class RateLimiter(object):
     def __init__(self, rate, per):
@@ -75,6 +79,7 @@ class RateLimiter(object):
         self.per = float(per)
         self.allowance = self.rate
         self.last_check = time.time()
+
     def tick(self):
         if not RATE_LIMIT:
             return False
@@ -85,16 +90,18 @@ class RateLimiter(object):
         if self.allowance > self.rate:
             self.allowance = self.rate
         if self.allowance < 1:
-            return True # too fast
+            return True  # too fast
         else:
             self.allowance -= 1
-            return False # okay
+            return False  # okay
 
-class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+
+class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-class Handler(SocketServer.BaseRequestHandler):
+
+class Handler(socketserver.BaseRequestHandler):
     def setup(self):
         self.position_limiter = RateLimiter(100, 5)
         self.limiter = RateLimiter(1000, 10)
@@ -102,26 +109,29 @@ class Handler(SocketServer.BaseRequestHandler):
         self.client_id = None
         self.user_id = None
         self.nick = None
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.running = True
         self.start()
+
     def handle(self):
         model = self.server.model
         model.enqueue(model.on_connect, self)
         try:
-            buf = []
+            buf = b''
             while True:
                 data = self.request.recv(BUFFER_SIZE)
                 if not data:
                     break
-                buf.extend(data.replace('\r\n', '\n'))
-                while '\n' in buf:
-                    index = buf.index('\n')
-                    line = ''.join(buf[:index])
+                buf += data.replace(b'\r\n', b'\n')
+                while b'\n' in buf:
+                    index = buf.index(b'\n')
+                    line = buf[:index]
                     buf = buf[index + 1:]
                     if not line:
                         continue
-                    if line[0] == POSITION:
+
+                    command = line.decode("utf-8")
+                    if command[0] == POSITION:
                         if self.position_limiter.tick():
                             log('RATE', self.client_id)
                             self.stop()
@@ -131,46 +141,52 @@ class Handler(SocketServer.BaseRequestHandler):
                             log('RATE', self.client_id)
                             self.stop()
                             return
-                    model.enqueue(model.on_data, self, line)
+                    model.enqueue(model.on_data, self, command)
         finally:
             model.enqueue(model.on_disconnect, self)
+
     def finish(self):
         self.running = False
+
     def stop(self):
         self.request.close()
+
     def start(self):
         thread = threading.Thread(target=self.run)
         thread.setDaemon(True)
         thread.start()
+
     def run(self):
         while self.running:
             try:
-                buf = []
+                buf = b''
                 try:
-                    buf.append(self.queue.get(timeout=5))
+                    buf += self.queue.get(timeout=5)
                     try:
                         while True:
-                            buf.append(self.queue.get(False))
-                    except Queue.Empty:
+                            buf += self.queue.get_nowait()
+                    except queue.Empty:
                         pass
-                except Queue.Empty:
+                except queue.Empty:
                     continue
-                data = ''.join(buf)
-                self.request.sendall(data)
+                self.request.sendall(buf)
             except Exception:
                 self.request.close()
                 raise
+
     def send_raw(self, data):
         if data:
             self.queue.put(data)
+
     def send(self, *args):
         self.send_raw(packet(*args))
+
 
 class Model(object):
     def __init__(self, seed):
         self.world = World(seed)
         self.clients = []
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.commands = {
             AUTHENTICATE: self.on_authenticate,
             CHUNK: self.on_chunk,
@@ -189,10 +205,12 @@ class Model(object):
             (re.compile(r'^/help(?:\s+(\S+))?$'), self.on_help),
             (re.compile(r'^/list$'), self.on_list),
         ]
+
     def start(self):
         thread = threading.Thread(target=self.run)
         thread.setDaemon(True)
         thread.start()
+
     def run(self):
         self.connection = sqlite3.connect(DB_PATH)
         self.create_tables()
@@ -204,19 +222,24 @@ class Model(object):
                 self.dequeue()
             except Exception:
                 traceback.print_exc()
+
     def enqueue(self, func, *args, **kwargs):
         self.queue.put((func, args, kwargs))
+
     def dequeue(self):
         try:
             func, args, kwargs = self.queue.get(timeout=5)
             func(*args, **kwargs)
-        except Queue.Empty:
+        except queue.Empty:
             pass
+
     def execute(self, *args, **kwargs):
         return self.connection.execute(*args, **kwargs)
+
     def commit(self):
         self.last_commit = time.time()
         self.connection.commit()
+
     def create_tables(self):
         queries = [
             'create table if not exists block ('
@@ -262,10 +285,12 @@ class Model(object):
         ]
         for query in queries:
             self.execute(query)
+
     def get_default_block(self, x, y, z):
         p, q = chunked(x), chunked(z)
         chunk = self.world.get_chunk(p, q)
         return chunk.get((x, y, z), 0)
+
     def get_block(self, x, y, z):
         query = (
             'select w from block where '
@@ -276,12 +301,14 @@ class Model(object):
         if rows:
             return rows[0][0]
         return self.get_default_block(x, y, z)
+
     def next_client_id(self):
         result = 1
         client_ids = set(x.client_id for x in self.clients)
         while result in client_ids:
             result += 1
         return result
+
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
@@ -296,18 +323,21 @@ class Model(object):
         self.send_positions(client)
         self.send_nick(client)
         self.send_nicks(client)
-    def on_data(self, client, data):
+
+    def on_data(self, client, data: str):
         #log('RECV', client.client_id, data)
         args = data.split(',')
         command, args = args[0], args[1:]
         if command in self.commands:
             func = self.commands[command]
             func(client, *args)
+
     def on_disconnect(self, client):
         log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
         self.send_talk('%s has disconnected from the server.' % client.nick)
+
     def on_version(self, client, version):
         if client.version is not None:
             return
@@ -317,7 +347,9 @@ class Model(object):
             return
         client.version = version
         # TODO: client.start() here
+
     def on_authenticate(self, client, username, access_token):
+        print(client, username, access_token)
         user_id = None
         if username and access_token:
             payload = {
@@ -336,8 +368,9 @@ class Model(object):
         self.send_nick(client)
         # TODO: has left message if was already authenticated
         self.send_talk('%s has joined the game.' % client.nick)
+
     def on_chunk(self, client, p, q, key=0):
-        packets = []
+        packets = b''
         p, q, key = map(int, (p, q, key))
         query = (
             'select rowid, x, y, z, w from block where '
@@ -348,7 +381,7 @@ class Model(object):
         blocks = 0
         for rowid, x, y, z, w in rows:
             blocks += 1
-            packets.append(packet(BLOCK, p, q, x, y, z, w))
+            packets += packet(BLOCK, p, q, x, y, z, w)
             max_rowid = max(max_rowid, rowid)
         query = (
             'select x, y, z, w from light where '
@@ -358,7 +391,7 @@ class Model(object):
         lights = 0
         for x, y, z, w in rows:
             lights += 1
-            packets.append(packet(LIGHT, p, q, x, y, z, w))
+            packets += packet(LIGHT, p, q, x, y, z, w)
         query = (
             'select x, y, z, face, text from sign where '
             'p = :p and q = :q;'
@@ -367,13 +400,14 @@ class Model(object):
         signs = 0
         for x, y, z, face, text in rows:
             signs += 1
-            packets.append(packet(SIGN, p, q, x, y, z, face, text))
+            packets += packet(SIGN, p, q, x, y, z, face, text)
         if blocks:
-            packets.append(packet(KEY, p, q, max_rowid))
+            packets += packet(KEY, p, q, max_rowid)
         if blocks or lights or signs:
-            packets.append(packet(REDRAW, p, q))
-        packets.append(packet(CHUNK, p, q))
-        client.send_raw(''.join(packets))
+            packets += packet(REDRAW, p, q)
+        packets += packet(CHUNK, p, q)
+        client.send_raw(packets)
+
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
@@ -402,7 +436,7 @@ class Model(object):
         )
         if RECORD_HISTORY:
             self.execute(query, dict(timestamp=time.time(),
-                user_id=client.user_id, x=x, y=y, z=z, w=w))
+                                     user_id=client.user_id, x=x, y=y, z=z, w=w))
         query = (
             'insert or replace into block (p, q, x, y, z, w) '
             'values (:p, :q, :x, :y, :z, :w);'
@@ -431,6 +465,7 @@ class Model(object):
                 'x = :x and y = :y and z = :z;'
             )
             self.execute(query, dict(x=x, y=y, z=z))
+
     def on_light(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
@@ -453,6 +488,7 @@ class Model(object):
         )
         self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
         self.send_light(client, p, q, x, y, z, w)
+
     def on_sign(self, client, x, y, z, face, *args):
         if AUTH_REQUIRED and client.user_id is None:
             client.send(TALK, 'Only logged in users are allowed to build.')
@@ -472,7 +508,7 @@ class Model(object):
                 'values (:p, :q, :x, :y, :z, :face, :text);'
             )
             self.execute(query,
-                dict(p=p, q=q, x=x, y=y, z=z, face=face, text=text))
+                         dict(p=p, q=q, x=x, y=y, z=z, face=face, text=text))
         else:
             query = (
                 'delete from sign where '
@@ -480,10 +516,12 @@ class Model(object):
             )
             self.execute(query, dict(x=x, y=y, z=z, face=face))
         self.send_sign(client, p, q, x, y, z, face, text)
+
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
+
     def on_talk(self, client, *args):
         text = ','.join(args)
         if text.startswith('/'):
@@ -505,6 +543,7 @@ class Model(object):
                 client.send(TALK, 'Unrecognized nick: "%s"' % nick)
         else:
             self.send_talk('%s> %s' % (client.nick, text))
+
     def on_nick(self, client, nick=None):
         if AUTH_REQUIRED:
             client.send(TALK, 'You cannot change your nick on this server.')
@@ -515,10 +554,12 @@ class Model(object):
             self.send_talk('%s is now known as %s' % (client.nick, nick))
             client.nick = nick
             self.send_nick(client)
+
     def on_spawn(self, client):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
+
     def on_goto(self, client, nick=None):
         if nick is None:
             clients = [x for x in self.clients if x != client]
@@ -530,6 +571,7 @@ class Model(object):
             client.position = other.position
             client.send(YOU, client.client_id, *client.position)
             self.send_position(client)
+
     def on_pq(self, client, p, q):
         p, q = map(int, (p, q))
         if abs(p) > 1000 or abs(q) > 1000:
@@ -537,32 +579,39 @@ class Model(object):
         client.position = (p * CHUNK_SIZE, 0, q * CHUNK_SIZE, 0, 0)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
+
     def on_help(self, client, topic=None):
         if topic is None:
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
-            client.send(TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /nick')
-            client.send(TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn, /view N')
+            client.send(
+                TALK, '/goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /nick')
+            client.send(
+                TALK, '/offline [FILE], /online HOST [PORT], /pq P Q, /spawn, /view N')
             return
         topic = topic.lower().strip()
         if topic == 'goto':
             client.send(TALK, 'Help: /goto [NAME]')
             client.send(TALK, 'Teleport to another user.')
-            client.send(TALK, 'If NAME is unspecified, a random user is chosen.')
+            client.send(
+                TALK, 'If NAME is unspecified, a random user is chosen.')
         elif topic == 'list':
             client.send(TALK, 'Help: /list')
             client.send(TALK, 'Display a list of connected users.')
         elif topic == 'login':
             client.send(TALK, 'Help: /login NAME')
             client.send(TALK, 'Switch to another registered username.')
-            client.send(TALK, 'The login server will be re-contacted. The username is case-sensitive.')
+            client.send(
+                TALK, 'The login server will be re-contacted. The username is case-sensitive.')
         elif topic == 'logout':
             client.send(TALK, 'Help: /logout')
             client.send(TALK, 'Unauthenticate and become a guest user.')
-            client.send(TALK, 'Automatic logins will not occur again until the /login command is re-issued.')
+            client.send(
+                TALK, 'Automatic logins will not occur again until the /login command is re-issued.')
         elif topic == 'offline':
             client.send(TALK, 'Help: /offline [FILE]')
             client.send(TALK, 'Switch to offline mode.')
-            client.send(TALK, 'FILE specifies the save file to use and defaults to "craft".')
+            client.send(
+                TALK, 'FILE specifies the save file to use and defaults to "craft".')
         elif topic == 'online':
             client.send(TALK, 'Help: /online HOST [PORT]')
             client.send(TALK, 'Connect to the specified server.')
@@ -578,53 +627,64 @@ class Model(object):
         elif topic == 'view':
             client.send(TALK, 'Help: /view N')
             client.send(TALK, 'Set viewing distance, 1 - 24.')
+
     def on_list(self, client):
         client.send(TALK,
-            'Players: %s' % ', '.join(x.nick for x in self.clients))
+                    'Players: %s' % ', '.join(x.nick for x in self.clients))
+
     def send_positions(self, client):
         for other in self.clients:
             if other == client:
                 continue
             client.send(POSITION, other.client_id, *other.position)
+
     def send_position(self, client):
         for other in self.clients:
             if other == client:
                 continue
             other.send(POSITION, client.client_id, *client.position)
+
     def send_nicks(self, client):
         for other in self.clients:
             if other == client:
                 continue
             client.send(NICK, other.client_id, other.nick)
+
     def send_nick(self, client):
         for other in self.clients:
             other.send(NICK, client.client_id, client.nick)
+
     def send_disconnect(self, client):
         for other in self.clients:
             if other == client:
                 continue
             other.send(DISCONNECT, client.client_id)
+
     def send_block(self, client, p, q, x, y, z, w):
         for other in self.clients:
             if other == client:
                 continue
             other.send(BLOCK, p, q, x, y, z, w)
             other.send(REDRAW, p, q)
+
     def send_light(self, client, p, q, x, y, z, w):
         for other in self.clients:
             if other == client:
                 continue
             other.send(LIGHT, p, q, x, y, z, w)
             other.send(REDRAW, p, q)
+
     def send_sign(self, client, p, q, x, y, z, face, text):
         for other in self.clients:
             if other == client:
                 continue
             other.send(SIGN, p, q, x, y, z, face, text)
+
     def send_talk(self, text):
         log(text)
         for client in self.clients:
             client.send(TALK, text)
+
 
 def cleanup():
     world = World(None)
@@ -636,7 +696,7 @@ def cleanup():
     count = 0
     total = 0
     delete_query = 'delete from block where x = %d and y = %d and z = %d;'
-    print 'begin;'
+    print('begin;')
     for p, q in chunks:
         chunk = world.create_chunk(p, q)
         query = 'select x, y, z, w from block where p = :p and q = :q;'
@@ -650,10 +710,11 @@ def cleanup():
             original = chunk.get((x, y, z), 0)
             if w == original or original in INDESTRUCTIBLE_ITEMS:
                 count += 1
-                print delete_query % (x, y, z)
+                print(delete_query % (x, y, z))
     conn.close()
-    print 'commit;'
+    print('commit;')
     print >> sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
+
 
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':
@@ -670,6 +731,7 @@ def main():
     server = Server((host, port), Handler)
     server.model = model
     server.serve_forever()
+
 
 if __name__ == '__main__':
     main()

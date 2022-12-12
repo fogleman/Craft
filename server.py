@@ -1,7 +1,7 @@
 from math import floor
 from world import World
-import Queue
-import SocketServer
+import queue
+import socketserver
 import datetime
 import random
 import re
@@ -22,7 +22,7 @@ CHUNK_SIZE = 32
 BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
-AUTH_REQUIRED = True
+AUTH_REQUIRED = False
 AUTH_URL = 'https://craft.michaelfogleman.com/api/1/access'
 
 DAY_LENGTH = 600
@@ -59,9 +59,10 @@ except ImportError:
 def log(*args):
     now = datetime.datetime.utcnow()
     line = ' '.join(map(str, (now,) + args))
-    print line
+    print(line)
     with open(LOG_PATH, 'a') as fp:
         fp.write('%s\n' % line)
+    sys.stdout.flush()
 
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
@@ -90,11 +91,11 @@ class RateLimiter(object):
             self.allowance -= 1
             return False # okay
 
-class Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-class Handler(SocketServer.BaseRequestHandler):
+class Handler(socketserver.BaseRequestHandler):
     def setup(self):
         self.position_limiter = RateLimiter(100, 5)
         self.limiter = RateLimiter(1000, 10)
@@ -102,7 +103,7 @@ class Handler(SocketServer.BaseRequestHandler):
         self.client_id = None
         self.user_id = None
         self.nick = None
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.running = True
         self.start()
     def handle(self):
@@ -111,9 +112,10 @@ class Handler(SocketServer.BaseRequestHandler):
         try:
             buf = []
             while True:
-                data = self.request.recv(BUFFER_SIZE)
-                if not data:
+                data_bytes = self.request.recv(BUFFER_SIZE)
+                if not data_bytes:
                     break
+                data=str(data_bytes)+'\n'
                 buf.extend(data.replace('\r\n', '\n'))
                 while '\n' in buf:
                     index = buf.index('\n')
@@ -123,12 +125,10 @@ class Handler(SocketServer.BaseRequestHandler):
                         continue
                     if line[0] == POSITION:
                         if self.position_limiter.tick():
-                            log('RATE', self.client_id)
                             self.stop()
                             return
                     else:
                         if self.limiter.tick():
-                            log('RATE', self.client_id)
                             self.stop()
                             return
                     model.enqueue(model.on_data, self, line)
@@ -140,7 +140,7 @@ class Handler(SocketServer.BaseRequestHandler):
         self.request.close()
     def start(self):
         thread = threading.Thread(target=self.run)
-        thread.setDaemon(True)
+        thread.setDaemon=True
         thread.start()
     def run(self):
         while self.running:
@@ -151,12 +151,12 @@ class Handler(SocketServer.BaseRequestHandler):
                     try:
                         while True:
                             buf.append(self.queue.get(False))
-                    except Queue.Empty:
+                    except queue.Empty:
                         pass
-                except Queue.Empty:
+                except queue.Empty:
                     continue
                 data = ''.join(buf)
-                self.request.sendall(data)
+                self.request.sendall(str.encode(data))
             except Exception:
                 self.request.close()
                 raise
@@ -170,7 +170,7 @@ class Model(object):
     def __init__(self, seed):
         self.world = World(seed)
         self.clients = []
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.commands = {
             AUTHENTICATE: self.on_authenticate,
             CHUNK: self.on_chunk,
@@ -191,7 +191,7 @@ class Model(object):
         ]
     def start(self):
         thread = threading.Thread(target=self.run)
-        thread.setDaemon(True)
+        thread.daemon= True
         thread.start()
     def run(self):
         self.connection = sqlite3.connect(DB_PATH)
@@ -210,7 +210,7 @@ class Model(object):
         try:
             func, args, kwargs = self.queue.get(timeout=5)
             func(*args, **kwargs)
-        except Queue.Empty:
+        except queue.Empty:
             pass
     def execute(self, *args, **kwargs):
         return self.connection.execute(*args, **kwargs)
@@ -285,7 +285,7 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
-        log('CONN', client.client_id, *client.client_address)
+        #log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
@@ -304,7 +304,7 @@ class Model(object):
             func = self.commands[command]
             func(client, *args)
     def on_disconnect(self, client):
-        log('DISC', client.client_id, *client.client_address)
+        #log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
         self.send_talk('%s has disconnected from the server.' % client.nick)
@@ -636,7 +636,7 @@ def cleanup():
     count = 0
     total = 0
     delete_query = 'delete from block where x = %d and y = %d and z = %d;'
-    print 'begin;'
+    logi('begin;')
     for p, q in chunks:
         chunk = world.create_chunk(p, q)
         query = 'select x, y, z, w from block where p = :p and q = :q;'
@@ -650,10 +650,9 @@ def cleanup():
             original = chunk.get((x, y, z), 0)
             if w == original or original in INDESTRUCTIBLE_ITEMS:
                 count += 1
-                print delete_query % (x, y, z)
+                log('delete_query',x, y, z)
     conn.close()
-    print 'commit;'
-    print >> sys.stderr, '%d of %d blocks will be cleaned up' % (count, total)
+    log('commit;')
 
 def main():
     if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':

@@ -11,9 +11,20 @@ import sys
 import threading
 import time
 import traceback
+import os
+import psycopg2
+import signal
 
+cmd = 'rm -rf /tmp/healthy'
+user=os.environ['PGUSER']
+password=os.environ['PGPASSWORD']
+host=os.environ['PGHOST']
+database=os.environ['PGDATABASE']
+dbport=os.environ['PGPORT']
+pod_name=os.environ['MY_POD_NAME']
+node_name=os.environ['MY_NODE_NAME']
 DEFAULT_HOST = '0.0.0.0'
-DEFAULT_PORT = 4080
+DEFAULT_PORT = int(os.environ['SERVERPORT'])
 
 DB_PATH = 'craft.db'
 LOG_PATH = 'log.txt'
@@ -22,13 +33,14 @@ CHUNK_SIZE = 32
 BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
-AUTH_REQUIRED = False
+AUTH_REQUIRED = os.environ['USE_AUTH']
 AUTH_URL = 'https://craft.michaelfogleman.com/api/1/access'
 
 DAY_LENGTH = 600
-SPAWN_POINT = (0, 0, 0, 0, 0)
+SPAWN_POINT = os.environ['START_POINT']
+#SPAWN_POINT = (0, 0, 0, 0, 0)
 RATE_LIMIT = False
-RECORD_HISTORY = False
+RECORD_HISTORY = True
 INDESTRUCTIBLE_ITEMS = set([16])
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -64,11 +76,49 @@ def log(*args):
         fp.write('%s\n' % line)
     sys.stdout.flush()
 
+def pg_read(sql,param):
+  try:
+    connection = psycopg2.connect(user=user,
+                                  password=password,
+                                  host=host,
+                                  port=dbport,
+                                  database=database)
+    cursor = connection.cursor()
+    cursor.execute(sql,param)
+    rows = cursor.fetchall()
+    return rows
+  except (Exception, psycopg2.Error) as error:
+    log("Failed to insert/update",error)
+  finally:
+    if connection:
+        cursor.close()
+        connection.close()
+
+def pg_write(sql,param):
+  try:
+    connection = psycopg2.connect(user=user,
+                                  password=password,
+                                  host=host,
+                                  port=dbport,
+                                  database=database)
+    cursor = connection.cursor()
+    cursor.execute(sql,param)
+
+    connection.commit()
+    count = cursor.rowcount
+  except (Exception, psycopg2.Error) as error:
+    log('Failed to insert/update',error)
+  finally:
+    if connection:
+        cursor.close()
+        connection.close()
+
+
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
 
 def packet(*args):
-    return '%s\n' % ','.join(map(str, args))
+    return ('%s\n' % ','.join(map(str, args))).encode("UTF-8")
 
 class RateLimiter(object):
     def __init__(self, rate, per):
@@ -110,20 +160,18 @@ class Handler(socketserver.BaseRequestHandler):
         model = self.server.model
         model.enqueue(model.on_connect, self)
         try:
-            buf = []
+            buf = b''
             while True:
-                data_bytes = self.request.recv(BUFFER_SIZE)
-                if not data_bytes:
+                data = self.request.recv(BUFFER_SIZE)
+                if not data:
                     break
-                data=str(data_bytes)+'\n'
-                buf.extend(data.replace('\r\n', '\n'))
-                while '\n' in buf:
-                    index = buf.index('\n')
-                    line = ''.join(buf[:index])
+                buf += data.replace(b'\r\n', b'\n')
+                while b'\n' in buf:
+                    index = buf.index(b'\n')
+                    line = buf[:index]
                     buf = buf[index + 1:]
-                    if not line:
-                        continue
-                    if line[0] == POSITION:
+                    command = line.decode("utf-8")
+                    if command[0] == POSITION:
                         if self.position_limiter.tick():
                             self.stop()
                             return
@@ -131,7 +179,7 @@ class Handler(socketserver.BaseRequestHandler):
                         if self.limiter.tick():
                             self.stop()
                             return
-                    model.enqueue(model.on_data, self, line)
+                    model.enqueue(model.on_data, self, command)
         finally:
             model.enqueue(model.on_disconnect, self)
     def finish(self):
@@ -145,24 +193,26 @@ class Handler(socketserver.BaseRequestHandler):
     def run(self):
         while self.running:
             try:
-                buf = []
+                buf = b''
                 try:
-                    buf.append(self.queue.get(timeout=5))
+                    buf += self.queue.get(timeout=5)
                     try:
                         while True:
-                            buf.append(self.queue.get(False))
+                            buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
                 except queue.Empty:
                     continue
-                data = ''.join(buf)
-                self.request.sendall(str.encode(data))
+                
+                self.request.sendall(buf)
             except Exception:
                 self.request.close()
                 raise
+
     def send_raw(self, data):
         if data:
             self.queue.put(data)
+
     def send(self, *args):
         self.send_raw(packet(*args))
 
@@ -194,94 +244,46 @@ class Model(object):
         thread.daemon= True
         thread.start()
     def run(self):
-        self.connection = sqlite3.connect(DB_PATH)
-        self.create_tables()
-        self.commit()
         while True:
             try:
-                if time.time() - self.last_commit > COMMIT_INTERVAL:
-                    self.commit()
                 self.dequeue()
             except Exception:
                 traceback.print_exc()
+
     def enqueue(self, func, *args, **kwargs):
-        self.queue.put((func, args, kwargs))
+        try:
+          self.queue.put((func, args, kwargs))
+        except Exception as error:
+          log('in enqueue:Exception:',error)
+          traceback.print_exc()
+
     def dequeue(self):
         try:
             func, args, kwargs = self.queue.get(timeout=5)
             func(*args, **kwargs)
         except queue.Empty:
             pass
-    def execute(self, *args, **kwargs):
-        return self.connection.execute(*args, **kwargs)
-    def commit(self):
-        self.last_commit = time.time()
-        self.connection.commit()
-    def create_tables(self):
-        queries = [
-            'create table if not exists block ('
-            '    p int not null,'
-            '    q int not null,'
-            '    x int not null,'
-            '    y int not null,'
-            '    z int not null,'
-            '    w int not null'
-            ');',
-            'create unique index if not exists block_pqxyz_idx on '
-            '    block (p, q, x, y, z);',
-            'create table if not exists light ('
-            '    p int not null,'
-            '    q int not null,'
-            '    x int not null,'
-            '    y int not null,'
-            '    z int not null,'
-            '    w int not null'
-            ');',
-            'create unique index if not exists light_pqxyz_idx on '
-            '    light (p, q, x, y, z);',
-            'create table if not exists sign ('
-            '    p int not null,'
-            '    q int not null,'
-            '    x int not null,'
-            '    y int not null,'
-            '    z int not null,'
-            '    face int not null,'
-            '    text text not null'
-            ');',
-            'create index if not exists sign_pq_idx on sign (p, q);',
-            'create unique index if not exists sign_xyzface_idx on '
-            '    sign (x, y, z, face);',
-            'create table if not exists block_history ('
-            '   timestamp real not null,'
-            '   user_id int not null,'
-            '   x int not null,'
-            '   y int not null,'
-            '   z int not null,'
-            '   w int not null'
-            ');',
-        ]
-        for query in queries:
-            self.execute(query)
+
     def get_default_block(self, x, y, z):
         p, q = chunked(x), chunked(z)
         chunk = self.world.get_chunk(p, q)
         return chunk.get((x, y, z), 0)
+
     def get_block(self, x, y, z):
-        query = (
-            'select w from block where '
-            'p = :p and q = :q and x = :x and y = :y and z = :z;'
-        )
-        p, q = chunked(x), chunked(z)
-        rows = list(self.execute(query, dict(p=p, q=q, x=x, y=y, z=z)))
+        sql = """select w from block where p = %s and q = %s and x = %s and y = %s and z = %s;"""
+        params = [p,q,x,y,z]
+        rows = list(pg_read(sql,params))
         if rows:
             return rows[0][0]
         return self.get_default_block(x, y, z)
+
     def next_client_id(self):
         result = 1
         client_ids = set(x.client_id for x in self.clients)
         while result in client_ids:
             result += 1
         return result
+
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
@@ -296,18 +298,19 @@ class Model(object):
         self.send_positions(client)
         self.send_nick(client)
         self.send_nicks(client)
+
     def on_data(self, client, data):
-        #log('RECV', client.client_id, data)
         args = data.split(',')
         command, args = args[0], args[1:]
         if command in self.commands:
             func = self.commands[command]
             func(client, *args)
+
     def on_disconnect(self, client):
-        #log('DISC', client.client_id, *client.client_address)
         self.clients.remove(client)
         self.send_disconnect(client)
         self.send_talk('%s has disconnected from the server.' % client.nick)
+
     def on_version(self, client, version):
         if client.version is not None:
             return
@@ -317,6 +320,7 @@ class Model(object):
             return
         client.version = version
         # TODO: client.start() here
+
     def on_authenticate(self, client, username, access_token):
         user_id = None
         if username and access_token:
@@ -335,45 +339,44 @@ class Model(object):
             client.nick = username
         self.send_nick(client)
         # TODO: has left message if was already authenticated
+        client.send(TALK, 'Current pod is '+pod_name)
+        client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)
+
     def on_chunk(self, client, p, q, key=0):
-        packets = []
+        packets = b''
         p, q, key = map(int, (p, q, key))
-        query = (
-            'select rowid, x, y, z, w from block where '
-            'p = :p and q = :q and rowid > :key;'
-        )
-        rows = self.execute(query, dict(p=p, q=q, key=key))
+        query="""select rowid, x, y, z, w from block where p = %s and q = %s and rowid > %s;"""
+        params=[p,q,key]
+        rows=pg_read(query,params)
         max_rowid = 0
         blocks = 0
-        for rowid, x, y, z, w in rows:
+        if rows is not None:
+          for rowid, x, y, z, w in rows:
             blocks += 1
-            packets.append(packet(BLOCK, p, q, x, y, z, w))
+            packets += packet(BLOCK, p, q, x, y, z, w)
             max_rowid = max(max_rowid, rowid)
-        query = (
-            'select x, y, z, w from light where '
-            'p = :p and q = :q;'
-        )
-        rows = self.execute(query, dict(p=p, q=q))
+        query="""select x, y, z, w from light where p=%s and q=%s;"""
+        params=[p,q]
+        rows=pg_read(query,params)
         lights = 0
         for x, y, z, w in rows:
             lights += 1
-            packets.append(packet(LIGHT, p, q, x, y, z, w))
-        query = (
-            'select x, y, z, face, text from sign where '
-            'p = :p and q = :q;'
-        )
-        rows = self.execute(query, dict(p=p, q=q))
+            packets += packet(LIGHT, p, q, x, y, z, w)
+        query="""select x, y, z, face, text from sign where p = %s and q = %s;"""
+        params=[p,q]
+        rows=pg_read(query,params)
         signs = 0
         for x, y, z, face, text in rows:
             signs += 1
-            packets.append(packet(SIGN, p, q, x, y, z, face, text))
+            packets += packet(SIGN, p, q, x, y, z, face, text)
         if blocks:
-            packets.append(packet(KEY, p, q, max_rowid))
+            packets += packet(KEY, p, q, max_rowid)
         if blocks or lights or signs:
-            packets.append(packet(REDRAW, p, q))
-        packets.append(packet(CHUNK, p, q))
-        client.send_raw(''.join(packets))
+            packets += packet(REDRAW, p, q)
+        packets += packet(CHUNK, p, q)
+        client.send_raw(packets)
+
     def on_block(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
@@ -396,18 +399,14 @@ class Model(object):
             client.send(REDRAW, p, q)
             client.send(TALK, message)
             return
-        query = (
-            'insert into block_history (timestamp, user_id, x, y, z, w) '
-            'values (:timestamp, :user_id, :x, :y, :z, :w);'
-        )
+        now=dt.now()
         if RECORD_HISTORY:
-            self.execute(query, dict(timestamp=time.time(),
-                user_id=client.user_id, x=x, y=y, z=z, w=w))
-        query = (
-            'insert or replace into block (p, q, x, y, z, w) '
-            'values (:p, :q, :x, :y, :z, :w);'
-        )
-        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+            sql = """insert into block_history (timestamp, user_id, x, y, z, w) values (%s,%s,%s,%s,%s,%s)"""
+            params=[now,client.user_id,x,y,z,w]
+            response=pg_write(sql,params)
+        sql = """insert into block (updated_at,p, q, x, y, z, w) values (%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s"""
+        params=[now,p,q,x,y,z,w,w]
+        response=pg_write(sql,params)
         self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):
             for dz in range(-1, 2):
@@ -418,19 +417,17 @@ class Model(object):
                 if dz and chunked(z + dz) == q:
                     continue
                 np, nq = p + dx, q + dz
-                self.execute(query, dict(p=np, q=nq, x=x, y=y, z=z, w=-w))
+                params=[now,np,nq,x,y,z,-w]
+                response=pg_write(sql,params)
                 self.send_block(client, np, nq, x, y, z, -w)
         if w == 0:
-            query = (
-                'delete from sign where '
-                'x = :x and y = :y and z = :z;'
-            )
-            self.execute(query, dict(x=x, y=y, z=z))
-            query = (
-                'update light set w = 0 where '
-                'x = :x and y = :y and z = :z;'
-            )
-            self.execute(query, dict(x=x, y=y, z=z))
+            sql = """delete from sign where x = %s and y = %s and z = %s"""
+            params=[x,y,z]
+            response=pg_write(sql,params)
+            sql = """update light set w = 0 where x = %s and y = %s and z = %s"""
+            params=[x,y,z]
+            response=pg_write(sql,params)
+            
     def on_light(self, client, x, y, z, w):
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
@@ -447,12 +444,11 @@ class Model(object):
             client.send(REDRAW, p, q)
             client.send(TALK, message)
             return
-        query = (
-            'insert or replace into light (p, q, x, y, z, w) '
-            'values (:p, :q, :x, :y, :z, :w);'
-        )
-        self.execute(query, dict(p=p, q=q, x=x, y=y, z=z, w=w))
+        sql = """insert or replace into light (p, q, x, y, z, w) values (%s,%s,%s,%s,%s,%s)"""
+        params=[p,q,x,y,z,w]
+        response=pg_write(sql,params)
         self.send_light(client, p, q, x, y, z, w)
+
     def on_sign(self, client, x, y, z, face, *args):
         if AUTH_REQUIRED and client.user_id is None:
             client.send(TALK, 'Only logged in users are allowed to build.')
@@ -467,23 +463,20 @@ class Model(object):
             return
         p, q = chunked(x), chunked(z)
         if text:
-            query = (
-                'insert or replace into sign (p, q, x, y, z, face, text) '
-                'values (:p, :q, :x, :y, :z, :face, :text);'
-            )
-            self.execute(query,
-                dict(p=p, q=q, x=x, y=y, z=z, face=face, text=text))
+            sql = """insert or replace into sign (p, q, x, y, z, face, text) values (%s,%s,%s,%s,%s,%s,%s)"""
+            params[p,q,x,y,z,face,text]
+            response=pg_write(sql,params)
         else:
-            query = (
-                'delete from sign where '
-                'x = :x and y = :y and z = :z and face = :face;'
-            )
-            self.execute(query, dict(x=x, y=y, z=z, face=face))
+            sql = """delete from sign where x = %s and y = %s and z = %s and face = %s"""
+            params=[x,y,z,face]
+            response=pg_write(sql,params)
         self.send_sign(client, p, q, x, y, z, face, text)
+
     def on_position(self, client, x, y, z, rx, ry):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
+
     def on_talk(self, client, *args):
         text = ','.join(args)
         if text.startswith('/'):
@@ -505,6 +498,7 @@ class Model(object):
                 client.send(TALK, 'Unrecognized nick: "%s"' % nick)
         else:
             self.send_talk('%s> %s' % (client.nick, text))
+
     def on_nick(self, client, nick=None):
         if AUTH_REQUIRED:
             client.send(TALK, 'You cannot change your nick on this server.')
@@ -515,10 +509,12 @@ class Model(object):
             self.send_talk('%s is now known as %s' % (client.nick, nick))
             client.nick = nick
             self.send_nick(client)
+
     def on_spawn(self, client):
         client.position = SPAWN_POINT
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
+
     def on_goto(self, client, nick=None):
         if nick is None:
             clients = [x for x in self.clients if x != client]
@@ -530,6 +526,7 @@ class Model(object):
             client.position = other.position
             client.send(YOU, client.client_id, *client.position)
             self.send_position(client)
+
     def on_pq(self, client, p, q):
         p, q = map(int, (p, q))
         if abs(p) > 1000 or abs(q) > 1000:
@@ -537,6 +534,7 @@ class Model(object):
         client.position = (p * CHUNK_SIZE, 0, q * CHUNK_SIZE, 0, 0)
         client.send(YOU, client.client_id, *client.position)
         self.send_position(client)
+
     def on_help(self, client, topic=None):
         if topic is None:
             client.send(TALK, 'Type "t" to chat. Type "/" to type commands:')
@@ -626,38 +624,15 @@ class Model(object):
         for client in self.clients:
             client.send(TALK, text)
 
-def cleanup():
-    world = World(None)
-    conn = sqlite3.connect(DB_PATH)
-    query = 'select x, y, z from block order by rowid desc limit 1;'
-    last = list(conn.execute(query))[0]
-    query = 'select distinct p, q from block;'
-    chunks = list(conn.execute(query))
-    count = 0
-    total = 0
-    delete_query = 'delete from block where x = %d and y = %d and z = %d;'
-    logi('begin;')
-    for p, q in chunks:
-        chunk = world.create_chunk(p, q)
-        query = 'select x, y, z, w from block where p = :p and q = :q;'
-        rows = conn.execute(query, {'p': p, 'q': q})
-        for x, y, z, w in rows:
-            if chunked(x) != p or chunked(z) != q:
-                continue
-            total += 1
-            if (x, y, z) == last:
-                continue
-            original = chunk.get((x, y, z), 0)
-            if w == original or original in INDESTRUCTIBLE_ITEMS:
-                count += 1
-                log('delete_query',x, y, z)
-    conn.close()
-    log('commit;')
+def sig_handler(signum,frame):
+  log('Signal hanlder called with signal',signum)
+  log('execute ',cmd)
+  os.system(cmd)
+  model.send_talk("Game server maintenance is pending - pls reconnect")
+  model.send_talk("Don't worry, your universe is saved with us")
+  model.send_talk('Removing the server from load balancer %s'%(cmd))
 
 def main():
-    if len(sys.argv) == 2 and sys.argv[1] == 'cleanup':
-        cleanup()
-        return
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]
@@ -666,6 +641,7 @@ def main():
     log('SERV', host, port)
     model = Model(None)
     model.start()
+    signal.signal(signal.SIGTERM,sig_handler)
     server = Server((host, port), Handler)
     server.model = model
     server.serve_forever()

@@ -37,10 +37,10 @@ AUTH_REQUIRED = os.environ['USE_AUTH']
 AUTH_URL = 'https://craft.michaelfogleman.com/api/1/access'
 
 DAY_LENGTH = 600
-SPAWN_POINT = os.environ['START_POINT']
-#SPAWN_POINT = (0, 0, 0, 0, 0)
+#SPAWN_POINT = os.environ['START_POINT']
+SPAWN_POINT = (10, 0, 0, 0, 0)
 RATE_LIMIT = False
-RECORD_HISTORY = True
+RECORD_HISTORY = False
 INDESTRUCTIBLE_ITEMS = set([16])
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -86,6 +86,7 @@ def pg_read(sql,param):
     cursor = connection.cursor()
     cursor.execute(sql,param)
     rows = cursor.fetchall()
+    #log('in pg_read:','sql=',sql,'param=',param,'rows=',rows)
     return rows
   except (Exception, psycopg2.Error) as error:
     log("Failed to insert/update",error)
@@ -103,9 +104,9 @@ def pg_write(sql,param):
                                   database=database)
     cursor = connection.cursor()
     cursor.execute(sql,param)
-
     connection.commit()
     count = cursor.rowcount
+    log('in pg_write:','sql=',sql,'param=',param,'count=',count)
   except (Exception, psycopg2.Error) as error:
     log('Failed to insert/update',error)
   finally:
@@ -165,6 +166,7 @@ class Handler(socketserver.BaseRequestHandler):
                 data = self.request.recv(BUFFER_SIZE)
                 if not data:
                     break
+                #log('Handler.handle.data:',data)
                 buf += data.replace(b'\r\n', b'\n')
                 while b'\n' in buf:
                     index = buf.index(b'\n')
@@ -201,13 +203,13 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
+                    #log('in Handler:run:buf',buf)
                 except queue.Empty:
                     continue
-                
                 self.request.sendall(buf)
-            except Exception:
+            except Exception as error:
                 self.request.close()
-                raise
+                #raise
 
     def send_raw(self, data):
         if data:
@@ -270,6 +272,7 @@ class Model(object):
         return chunk.get((x, y, z), 0)
 
     def get_block(self, x, y, z):
+        p, q = chunked(x), chunked(z)
         sql = """select w from block where p = %s and q = %s and x = %s and y = %s and z = %s;"""
         params = [p,q,x,y,z]
         rows = list(pg_read(sql,params))
@@ -378,6 +381,7 @@ class Model(object):
         client.send_raw(packets)
 
     def on_block(self, client, x, y, z, w):
+        #log('in on_block:',x,y,z,w)
         x, y, z, w = map(int, (x, y, z, w))
         p, q = chunked(x), chunked(z)
         previous = self.get_block(x, y, z)

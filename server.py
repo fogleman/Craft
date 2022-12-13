@@ -34,11 +34,11 @@ BUFFER_SIZE = 4096
 COMMIT_INTERVAL = 5
 
 AUTH_REQUIRED = os.environ['USE_AUTH']
-AUTH_URL = 'https://craft.michaelfogleman.com/api/1/access'
+AUTH_URL = os.environ['AUTH_SRV']
 
 DAY_LENGTH = 600
-#SPAWN_POINT = os.environ['START_POINT']
-SPAWN_POINT = (10, 0, 0, 0, 0)
+SPAWN_POINT = os.environ['START_POINT']
+#SPAWN_POINT = (10, 0, 0, 0, 0)
 RATE_LIMIT = False
 RECORD_HISTORY = False
 INDESTRUCTIBLE_ITEMS = set([16])
@@ -312,7 +312,6 @@ class Model(object):
     def on_disconnect(self, client):
         self.clients.remove(client)
         self.send_disconnect(client)
-        self.send_talk('%s has disconnected from the server.' % client.nick)
 
     def on_version(self, client, version):
         if client.version is not None:

@@ -338,11 +338,11 @@ class Model(object):
         client.user_id = user_id
         if user_id is None:
             client.nick = 'guest%d' % client.client_id
+            client.user_id='guest%d' % client.client_id
             client.send(TALK, 'Visit craft.michaelfogleman.com to register!')
         else:
             client.nick = username
         self.send_nick(client)
-        # TODO: has left message if was already authenticated
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)

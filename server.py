@@ -388,7 +388,7 @@ class Model(object):
         previous = self.get_block(x, y, z)
         message = None
         if AUTH_REQUIRED and client.user_id is None:
-            message = 'Only logged in users are allowed to build.'
+            message = 'in on_block - Only logged in users are allowed to build. client.user_id='+client.user_id+' AUTH_REQUIRED='+AUTH_REQUIRED
         elif y <= 0 or y > 255:
             message = 'Invalid block coordinates.'
         elif w not in ALLOWED_ITEMS:

@@ -324,12 +324,14 @@ class Model(object):
         # TODO: client.start() here
 
     def on_authenticate(self, client, username, access_token):
+        log("on_authenticate",client,username,access_token)
         user_id = None
         if username and access_token:
             payload = {
                 'username': username,
                 'access_token': access_token,
             }
+            log("on_authenticate",payload)
             response = requests.post(AUTH_URL, data=payload)
             if response.status_code == 200 and response.text.isdigit():
                 user_id = int(response.text)
@@ -636,6 +638,8 @@ def sig_handler(signum,frame):
   model.send_talk('Removing the server from load balancer %s'%(cmd))
 
 def main():
+    log("main","AUTH_REQUIRED",AUTH_REQUIRED)
+    log("main","AUTH_URL",AUTH_URL)
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]

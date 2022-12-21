@@ -14,7 +14,7 @@ import traceback
 import os
 import psycopg2
 import signal
-from datetime import datetime as dt
+from datetime import datetime, timezone
 
 cmd = 'rm -rf /tmp/healthy'
 user=os.environ['PGUSER']
@@ -407,7 +407,7 @@ class Model(object):
             client.send(TALK, message)
             return
         #now = datetime.datetime.utcnow()
-        now=dt.now()
+        now = datetime.now(timezone.utc)
         if RECORD_HISTORY:
             sql = """insert into block_history (timestamp, user_id, x, y, z, w) values (%s,%s,%s,%s,%s,%s)"""
             params=[now,client.user_id,x,y,z,w]

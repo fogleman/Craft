@@ -72,7 +72,7 @@ except ImportError:
     pass
 
 def log(*args):
-    now = datetime.datetime.utcnow()
+    now = dt.now()
     line = ' '.join(map(str, (now,) + args))
     print(line)
     with open(LOG_PATH, 'a') as fp:

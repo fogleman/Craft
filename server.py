@@ -43,7 +43,7 @@ DAY_LENGTH = 600
 SPAWN_POINT = os.environ['START_POINT']
 #SPAWN_POINT = (10, 0, 0, 0, 0)
 RATE_LIMIT = False
-RECORD_HISTORY = False
+RECORD_HISTORY =os.environ['RECORD_HISTORY']
 INDESTRUCTIBLE_ITEMS = set([16])
 ALLOWED_ITEMS = set([
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -411,11 +411,11 @@ class Model(object):
         #now = datetime.datetime.utcnow()
         now = dt.now()
         if RECORD_HISTORY:
-            sql = """insert into block_history (timestamp,user_id,x,y,z,w) values (%s,%s,%s,%s,%s,%s)"""
+            sql = """insert into block_history (created_at,user_id,x,y,z,w) values (%s,%s,%s,%s,%s,%s)"""
             params=[now,client.user_id,x,y,z,w]
             response=pg_write(sql,params)
-        sql = """insert into block (updated_at,p,q,x,y,z,w) values (%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s,updated_at=%s"""
-        params=[now,p,q,x,y,z,w,w,now]
+        sql = """insert into block (updated_at,user_id,p,q,x,y,z,w) values (%s,%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s,updated_at=%s"""
+        params=[now,user_id,p,q,x,y,z,w,w,now]
         response=pg_write(sql,params)
         self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):

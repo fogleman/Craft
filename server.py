@@ -14,6 +14,7 @@ import traceback
 import os
 import psycopg2
 import signal
+import datetime
 from datetime import datetime, timezone
 
 cmd = 'rm -rf /tmp/healthy'

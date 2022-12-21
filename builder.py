@@ -163,6 +163,8 @@ class Client(object):
         string='B,%d,%d,%d,%d\n' % (x, y, z, w)
         buf=bytes(string,'utf-8')
         self.conn.sendall(buf)
+        print(string)
+        sys.stdout.flush()
         #self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
     def set_blocks(self, blocks, w):
         key = lambda block: (block[1], block[0], block[2])

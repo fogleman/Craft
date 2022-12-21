@@ -16,6 +16,7 @@ import psycopg2
 import signal
 import datetime
 from datetime import datetime, timezone
+from datetime import datetime as dt
 
 cmd = 'rm -rf /tmp/healthy'
 user=os.environ['PGUSER']
@@ -408,13 +409,13 @@ class Model(object):
             client.send(TALK, message)
             return
         #now = datetime.datetime.utcnow()
-        now = datetime.now(timezone.utc)
+        now = dt.now()
         if RECORD_HISTORY:
-            sql = """insert into block_history (timestamp, user_id, x, y, z, w) values (%s,%s,%s,%s,%s,%s)"""
+            sql = """insert into block_history (timestamp,user_id,x,y,z,w) values (%s,%s,%s,%s,%s,%s)"""
             params=[now,client.user_id,x,y,z,w]
             response=pg_write(sql,params)
-        sql = """insert into block (updated_at,p, q, x, y, z, w) values (%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s"""
-        params=[now,p,q,x,y,z,w]
+        sql = """insert into block (updated_at,p,q,x,y,z,w) values (%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s,updated_at=%s"""
+        params=[now,p,q,x,y,z,w,w,now]
         response=pg_write(sql,params)
         self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):

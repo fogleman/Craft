@@ -406,7 +406,8 @@ class Model(object):
             client.send(REDRAW, p, q)
             client.send(TALK, message)
             return
-        now = datetime.datetime.utcnow()
+        #now = datetime.datetime.utcnow()
+        now=dt.now()
         if RECORD_HISTORY:
             sql = """insert into block_history (timestamp, user_id, x, y, z, w) values (%s,%s,%s,%s,%s,%s)"""
             params=[now,client.user_id,x,y,z,w]

@@ -144,7 +144,7 @@ class Client(object):
     def __init__(self, host, port):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect((host, port))
-        self.authenticate()
+        #self.authenticate()
     def authenticate(self):
         username, identity_token = get_identity()
         url = 'https://craft.michaelfogleman.com/api/1/identity'

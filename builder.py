@@ -159,7 +159,10 @@ class Client(object):
         else:
             raise Exception('Failed to authenticate.')
     def set_block(self, x, y, z, w):
-        self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
+        buf=b''
+        buf +='B,%d,%d,%d,%d\n' % (x, y, z, w)
+        self.conn.sendall(buf)
+        #self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
     def set_blocks(self, blocks, w):
         key = lambda block: (block[1], block[0], block[2])
         for x, y, z in sorted(blocks, key=key):

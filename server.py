@@ -336,16 +336,17 @@ class Model(object):
             if response.status_code == 200 and response.text.isdigit():
                 user_id = int(response.text)
         client.user_id = user_id
-        #if user_id is None:
-        client.nick = 'guest%d' % client.client_id
-        client.user_id='guest%d' % client.client_id
-        client.send(TALK, 'Visit craft.michaelfogleman.com to register!')
-        #else:
-        #    client.nick = username
-        self.send_nick(client)
+        if user_id is None:
+          client.nick = 'guest%d' % client.client_id
+          client.user_id='guest%d' % client.client_id
+          client.send(TALK, 'Visit craft.michaelfogleman.com to register!')
+        else:
+          client.nick = username
+          self.send_nick(client)
+
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
-        self.send_talk('%s has joined the game.' % client.user_id)
+        self.send_talk('%s has joined the game.' % client.nick)
 
     def on_chunk(self, client, p, q, key=0):
         packets = b''

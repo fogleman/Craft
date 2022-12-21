@@ -90,7 +90,7 @@ def pg_read(sql,param):
     #log('in pg_read:','sql=',sql,'param=',param,'rows=',rows)
     return rows
   except (Exception, psycopg2.Error) as error:
-    log("Failed to insert/update",error)
+    log("Failed to select",sql,param,error)
   finally:
     if connection:
         cursor.close()
@@ -107,9 +107,9 @@ def pg_write(sql,param):
     cursor.execute(sql,param)
     connection.commit()
     count = cursor.rowcount
-    log('in pg_write:','sql=',sql,'param=',param,'count=',count)
+    #log('in pg_write:','sql=',sql,'param=',param,'count=',count)
   except (Exception, psycopg2.Error) as error:
-    log('Failed to insert/update',error)
+    log('Failed to insert/update',sql,param,error)
   finally:
     if connection:
         cursor.close()

@@ -5,6 +5,7 @@ import requests
 import socket
 import sqlite3
 import sys
+import os
 
 DEFAULT_HOST = os.environ['CRAFT_HOST']
 DEFAULT_PORT = 4080

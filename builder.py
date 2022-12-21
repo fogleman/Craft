@@ -160,7 +160,8 @@ class Client(object):
             raise Exception('Failed to authenticate.')
     def set_block(self, x, y, z, w):
         buf=b''
-        buf +='B,%d,%d,%d,%d\n' % (x, y, z, w)
+        string='B,%d,%d,%d,%d\n' % (x, y, z, w)
+        buf=bytes(string,'utf-8')
         self.conn.sendall(buf)
         #self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
     def set_blocks(self, blocks, w):

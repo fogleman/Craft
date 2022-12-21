@@ -413,7 +413,7 @@ class Model(object):
             params=[now,client.user_id,x,y,z,w]
             response=pg_write(sql,params)
         sql = """insert into block (updated_at,p, q, x, y, z, w) values (%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s"""
-        params=[now,p,q,x,y,z,w,w]
+        params=[now,p,q,x,y,z,w]
         response=pg_write(sql,params)
         self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):

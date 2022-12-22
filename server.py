@@ -112,6 +112,7 @@ def pg_write(sql,param):
     #log('in pg_write:','sql=',sql,'param=',param,'count=',count)
   except (Exception, psycopg2.Error) as error:
     log('Failed to insert/update:',error,' sql:',sql,' param:',param)
+    traceback.print_exc()
   finally:
     if connection:
         cursor.close()

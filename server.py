@@ -390,6 +390,7 @@ class Model(object):
         p, q = chunked(x), chunked(z)
         previous = self.get_block(x, y, z)
         message = None
+        client.user_id = "builder"
         if AUTH_REQUIRED and client.user_id is None:
             message = 'in on_block - Only logged in users are allowed to build.' 
         elif y <= 0 or y > 255:

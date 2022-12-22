@@ -6,6 +6,7 @@ import socket
 import sqlite3
 import sys
 import os
+import time
 
 DEFAULT_HOST = os.environ['CRAFT_HOST']
 DEFAULT_PORT = 4080
@@ -155,16 +156,22 @@ class Client(object):
         response = requests.post(url, data=payload)
         if response.status_code == 200 and response.text.isalnum():
             access_token = response.text
-            self.conn.sendall('A,%s,%s\n' % (username, access_token))
+            buf=b''
+            string='A,%s,%s\n' % (username, access_token)
+            buf=bytes(string,'utf-8')
+            self.conn.sendall(buf)
+            print(buf)
+            sys.stdout.flush()
         else:
             raise Exception('Failed to authenticate.')
     def set_block(self, x, y, z, w):
         buf=b''
         string='B,%d,%d,%d,%d\n' % (x, y, z, w)
         buf=bytes(string,'utf-8')
-        self.conn.sendall(buf)
-        print(string)
+        r=self.conn.sendall(buf)
+        print('buf={},r={}'.format(buf,r))
         sys.stdout.flush()
+        time.sleep(2)
         #self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
     def set_blocks(self, blocks, w):
         key = lambda block: (block[1], block[0], block[2])

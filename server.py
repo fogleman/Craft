@@ -89,10 +89,10 @@ def pg_read(sql,param):
     cursor = connection.cursor()
     cursor.execute(sql,param)
     rows = cursor.fetchall()
-    #log('in pg_read:','sql=',sql,'param=',param,'rows=',rows)
+    log('in pg_read:','sql=',sql,'param=',param,'rows=',rows)
     return rows
   except (Exception, psycopg2.Error) as error:
-    log("Failed to select",sql,param,error)
+    log('Failed to select:',error,' sql:',sql,' param:',param)
   finally:
     if connection:
         cursor.close()
@@ -169,7 +169,6 @@ class Handler(socketserver.BaseRequestHandler):
                 data = self.request.recv(BUFFER_SIZE)
                 if not data:
                     break
-                #log('Handler.handle.data:',data)
                 buf += data.replace(b'\r\n', b'\n')
                 while b'\n' in buf:
                     index = buf.index(b'\n')
@@ -206,7 +205,7 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    #log('in Handler:run:buf',buf)
+                    log('in Handler:run:buf',buf)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)

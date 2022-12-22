@@ -392,7 +392,7 @@ class Model(object):
         previous = self.get_block(x, y, z)
         message = None
         if AUTH_REQUIRED and client.user_id is None:
-            message = 'in on_block - Only logged in users are allowed to build. client.user_id='+client.user_id+' AUTH_REQUIRED='+AUTH_REQUIRED
+            message = 'in on_block - Only logged in users are allowed to build. client.user_id='+client.user_id
         elif y <= 0 or y > 255:
             message = 'Invalid block coordinates.'
         elif w not in ALLOWED_ITEMS:
@@ -445,7 +445,7 @@ class Model(object):
         message = None
         if AUTH_REQUIRED and client.user_id is None:
             #message = 'Only logged in users are allowed to build.'
-            message = 'in on_block - Only logged in users are allowed to build. client.user_id='+client.user_id+' AUTH_REQUIRED='+AUTH_REQUIRED
+            message = 'in on_block - Only logged in users are allowed to build. client.user_id='+client.user_id
         elif block == 0:
             message = 'Lights must be placed on a block.'
         elif w < 0 or w > 15:
@@ -463,7 +463,7 @@ class Model(object):
     def on_sign(self, client, x, y, z, face, *args):
         if AUTH_REQUIRED and client.user_id is None:
             # client.send(TALK, 'Only logged in users are allowed to build.')
-            client.send(TALK, 'in on_block - Only logged in users are allowed to build. client.user_id='+client.user_id+' AUTH_REQUIRED='+AUTH_REQUIRED)
+            client.send(TALK, 'in on_block - Only logged in users are allowed to build. client.user_id='+client.user_id
             return
         text = ','.join(args)
         x, y, z, face = map(int, (x, y, z, face))

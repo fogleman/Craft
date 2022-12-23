@@ -207,7 +207,7 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    #log('in Handler:run:buf',buf)
+                    log('in Handler:run:buf',buf)
                     agones("Handler:run",http,"health")
                 except queue.Empty:
                     continue

@@ -171,7 +171,7 @@ class Client(object):
         r=self.conn.sendall(buf)
         print('buf={},r={}'.format(buf,r))
         sys.stdout.flush()
-        time.sleep(2)
+        time.sleep(1)
         #self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
     def set_blocks(self, blocks, w):
         key = lambda block: (block[1], block[0], block[2])

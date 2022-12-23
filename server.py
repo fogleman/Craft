@@ -40,7 +40,7 @@ AUTH_REQUIRED = os.environ['USE_AUTH']
 AUTH_URL = os.environ['AUTH_SRV']
 
 DAY_LENGTH = 600
-SPAWN_POINT = os.environ['START_POINT']
+SPAWN_POINT = tuple(os.environ['START_POINT'])
 #SPAWN_POINT = (10, 0, 0, 0, 0)
 RATE_LIMIT = False
 RECORD_HISTORY =os.environ['RECORD_HISTORY']
@@ -391,7 +391,9 @@ class Model(object):
         p, q = chunked(x), chunked(z)
         previous = self.get_block(x, y, z)
         message = None
-        client.user_id = "builder"
+        #TODO: remove after builder is done
+        if client.user_id is None:
+          client.user_id = "builder"
         if AUTH_REQUIRED and client.user_id is None:
             message = 'in on_block - Only logged in users are allowed to build.' 
         elif y <= 0 or y > 255:

@@ -208,7 +208,7 @@ class Handler(socketserver.BaseRequestHandler):
                     except queue.Empty:
                         pass
                     #log('in Handler:run:buf',buf)
-                    agones_health("Handler:run",http)
+                    agones("Handler:run",http,"health")
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)
@@ -641,9 +641,11 @@ class Model(object):
         for client in self.clients:
             client.send(TALK, text)
 
-def agones_health(func,pool):
-  r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/health')  
-  log('agones_health',' calling from ',func,' status:',r.status,' data:',r.data)
+def agones(func,pool,action):
+  #see https://agones.dev/site/docs/guides/client-sdks/#lifecycle-management
+  # action = {health,allocate}
+  r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/'+action)  
+  log('agones_',action,' calling from ',func,' status:',r.status,' data:',r.data)
 
 def sig_handler(signum,frame):
   log('Signal hanlder called with signal',signum)

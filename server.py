@@ -119,6 +119,11 @@ def pg_write(sql,param):
         cursor.close()
         connection.close()
 
+def agones(func,pool,action):
+  #see https://agones.dev/site/docs/guides/client-sdks/#lifecycle-management
+  # action = {health,allocate}
+  r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/'+action)  
+  log('agones_',action,' calling from ',func,' status:',r.status,' data:',r.data)
 
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
@@ -641,11 +646,6 @@ class Model(object):
         for client in self.clients:
             client.send(TALK, text)
 
-def agones(func,pool,action):
-  #see https://agones.dev/site/docs/guides/client-sdks/#lifecycle-management
-  # action = {health,allocate}
-  r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/'+action)  
-  log('agones_',action,' calling from ',func,' status:',r.status,' data:',r.data)
 
 def sig_handler(signum,frame):
   log('Signal hanlder called with signal',signum)

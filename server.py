@@ -6,7 +6,6 @@ import datetime
 import random
 import re
 import requests
-import sqlite3
 import sys
 import threading
 import time
@@ -17,6 +16,7 @@ import signal
 import datetime
 from datetime import datetime, timezone
 from datetime import datetime as dt
+import urllib3
 
 cmd = 'rm -rf /tmp/healthy'
 user=os.environ['PGUSER']
@@ -28,6 +28,7 @@ pod_name=os.environ['MY_POD_NAME']
 node_name=os.environ['MY_NODE_NAME']
 DEFAULT_HOST = '0.0.0.0'
 DEFAULT_PORT = int(os.environ['SERVERPORT'])
+AGONES_SDK_HTTP_PORT=os.environ['AGONES_SDK_HTTP_PORT']
 
 DB_PATH = 'craft.db'
 LOG_PATH = 'log.txt'
@@ -639,6 +640,10 @@ class Model(object):
         for client in self.clients:
             client.send(TALK, text)
 
+def agones_health(pool):
+  r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/health')  
+  log('agones_health','status:',r.status,' data:',r.data)
+
 def sig_handler(signum,frame):
   log('Signal hanlder called with signal',signum)
   log('execute ',cmd)
@@ -656,6 +661,8 @@ def main():
     if len(sys.argv) > 2:
         port = int(sys.argv[2])
     log('SERV', host, port)
+    http=urllib3.PoolManager()
+    agones_health(http)
     model = Model(None)
     model.start()
     signal.signal(signal.SIGTERM,sig_handler)

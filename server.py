@@ -122,6 +122,7 @@ def pg_write(sql,param):
 def agones(func,pool,action):
   #see https://agones.dev/site/docs/guides/client-sdks/#lifecycle-management
   # action = {health,allocate}
+  log('agones_',action)
   r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/'+action)  
   log('agones_',action,' calling from ',func,' status:',r.status,' data:',r.data)
 

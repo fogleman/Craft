@@ -89,7 +89,7 @@ def pg_read(sql,param):
     cursor = connection.cursor()
     cursor.execute(sql,param)
     rows = cursor.fetchall()
-    log('in pg_read:','sql=',sql,'param=',param,'rows=',rows)
+    #log('in pg_read:','sql=',sql,'param=',param,'rows=',rows)
     return rows
   except (Exception, psycopg2.Error) as error:
     log('Failed to select:',error,' sql:',sql,' param:',param)
@@ -409,15 +409,14 @@ class Model(object):
             client.send(REDRAW, p, q)
             client.send(TALK, message)
             return
-        #now = datetime.datetime.utcnow()
         now = dt.now()
         if RECORD_HISTORY:
             sql = """insert into block_history (created_at,user_id,p,q,x,y,z,w) values (%s,%s,%s,%s,%s,%s,%s,%s)"""
-            history_params=[now,client.user_id,p,q,x,y,z,w]
-            response=pg_write(sql,history_params)
+            params=[now,client.user_id,p,q,x,y,z,w]
+            response=pg_write(sql,params)
         sql = """insert into block (updated_at,user_id,p,q,x,y,z,w) values (%s,%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s,updated_at=%s"""
-        block_params=[now,client.user_id,p,q,x,y,z,w,w,now]
-        response=pg_write(sql,block_params)
+        params=[now,client.user_id,p,q,x,y,z,w,w,now]
+        response=pg_write(sql,params)
         self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):
             for dz in range(-1, 2):
@@ -428,7 +427,8 @@ class Model(object):
                 if dz and chunked(z + dz) == q:
                     continue
                 np, nq = p + dx, q + dz
-                params=[now,np,nq,x,y,z,-w]
+                #params=[now,np,nq,x,y,z,-w]
+                params=[now,client.user_id,np,nq,x,y,z,-w,-w,now]
                 response=pg_write(sql,params)
                 self.send_block(client, np, nq, x, y, z, -w)
         if w == 0:

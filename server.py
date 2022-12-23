@@ -214,7 +214,7 @@ class Handler(socketserver.BaseRequestHandler):
                         pass
                     headers={'accept':'application/json','Content-Type':'application/json'}
                     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
-                    r=requests.get(url,headers=headers)
+                    r=requests.post(url,headers=headers,data={})
                     log('in Handler:run:response-agones:url:',url, 'response:',r)
                     log('in Handler:run:buf',buf)
                     #agones("Handler:run",http,"health")

@@ -208,6 +208,7 @@ class Handler(socketserver.BaseRequestHandler):
                     except queue.Empty:
                         pass
                     #log('in Handler:run:buf',buf)
+                    agones_health("Handler:run",http)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)
@@ -640,9 +641,9 @@ class Model(object):
         for client in self.clients:
             client.send(TALK, text)
 
-def agones_health(pool):
+def agones_health(func,pool):
   r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/health')  
-  log('agones_health','status:',r.status,' data:',r.data)
+  log('agones_health',' calling from ',func,' status:',r.status,' data:',r.data)
 
 def sig_handler(signum,frame):
   log('Signal hanlder called with signal',signum)
@@ -662,7 +663,6 @@ def main():
         port = int(sys.argv[2])
     log('SERV', host, port)
     http=urllib3.PoolManager()
-    agones_health(http)
     model = Model(None)
     model.start()
     signal.signal(signal.SIGTERM,sig_handler)

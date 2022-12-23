@@ -213,11 +213,10 @@ class Handler(socketserver.BaseRequestHandler):
                     except queue.Empty:
                         pass
                     headers={'accept':'application/json','Content-Type':'application/json'}
-                    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+                    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
                     r=requests.post(url,headers=headers,data={})
                     log('in Handler:run:response-agones:url:',url, 'response:',r)
-                    log('in Handler:run:buf',buf)
-                    #agones("Handler:run",http,"health")
+                    #log('in Handler:run:buf',buf)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)

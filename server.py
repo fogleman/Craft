@@ -206,7 +206,7 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    log('in Handler:run:buf',buf)
+                    #log('in Handler:run:buf',buf)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)
@@ -295,6 +295,7 @@ class Model(object):
         client.nick = 'guest%d' % client.client_id
         #log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
+        log("on_connect: client.position:",client.position)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)
@@ -327,7 +328,7 @@ class Model(object):
         # TODO: client.start() here
 
     def on_authenticate(self, client, username, access_token):
-        log("on_authenticate",client,username,access_token)
+        #log("on_authenticate",client,username,access_token)
         user_id = None
         if username and access_token:
             payload = {

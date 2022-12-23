@@ -295,7 +295,6 @@ class Model(object):
         client.nick = 'guest%d' % client.client_id
         #log('CONN', client.client_id, *client.client_address)
         client.position = SPAWN_POINT
-        log("on_connect: client.position:",client.position)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)

@@ -16,7 +16,6 @@ import signal
 import datetime
 from datetime import datetime, timezone
 from datetime import datetime as dt
-import urllib3
 
 cmd = 'rm -rf /tmp/healthy'
 user=os.environ['PGUSER']
@@ -122,9 +121,9 @@ def pg_write(sql,param):
 def agones(func,pool,action):
   #see https://agones.dev/site/docs/guides/client-sdks/#lifecycle-management
   # action = {health,allocate}
-  log('agones_',action)
-  r=pool.request('GET','http://localhost:'+AGONES_SDK_HTTP_PORT+'/'+action)  
-  log('agones_',action,' calling from ',func,' status:',r.status,' data:',r.data)
+  headers={'accept':'application/json','Content-Type':'application/json'}
+  r=requests.get('http://localhost:'+AGONES_SDK_HTTP_PORT+'/'+action,headers=headers)
+  log('agones_',action,' calling from ',func,' status:',r)
 
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
@@ -665,7 +664,6 @@ def main():
     if len(sys.argv) > 2:
         port = int(sys.argv[2])
     log('SERV', host, port)
-    http=urllib3.PoolManager()
     model = Model(None)
     model.start()
     signal.signal(signal.SIGTERM,sig_handler)

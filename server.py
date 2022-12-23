@@ -413,11 +413,11 @@ class Model(object):
         now = dt.now()
         if RECORD_HISTORY:
             sql = """insert into block_history (created_at,user_id,p,q,x,y,z,w) values (%s,%s,%s,%s,%s,%s,%s,%s)"""
-            params=[now,client.user_id,p,q,x,y,z,w]
-            response=pg_write(sql,params)
+            history_params=[now,client.user_id,p,q,x,y,z,w]
+            response=pg_write(sql,history_params)
         sql = """insert into block (updated_at,user_id,p,q,x,y,z,w) values (%s,%s,%s,%s,%s,%s,%s,%s) on conflict on constraint unique_block_pqxyz do UPDATE SET w =%s,updated_at=%s"""
-        params=[now,client.user_id,p,q,x,y,z,w,w,now]
-        response=pg_write(sql,params)
+        block_params=[now,client.user_id,p,q,x,y,z,w,w,now]
+        response=pg_write(sql,block_params)
         self.send_block(client, p, q, x, y, z, w)
         for dx in range(-1, 2):
             for dz in range(-1, 2):

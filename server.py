@@ -205,11 +205,10 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    if not AGONES_SDK_HTTP_PORT:
-                      headers={'Content-Type':'application/json'}
-                      url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
-                      r=requests.post(url,headers=headers,json={})
-                      log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
+                    headers={'Content-Type':'application/json'}
+                    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+                    r=requests.post(url,headers=headers,json={})
+                    log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)

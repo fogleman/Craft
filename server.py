@@ -342,7 +342,7 @@ class Model(object):
         client.nick = 'guest%d' % client.client_id
         #log('CONN', client.client_id, *client.client_address)
         if IS_AGONES == 'True':
-          agones_player(client.nick,'connect')
+          self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)

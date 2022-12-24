@@ -199,7 +199,7 @@ class Handler(socketserver.BaseRequestHandler):
                     model.enqueue(model.on_data, self, command)
         finally:
             model.enqueue(model.on_disconnect, self)
-    def agones_shutdown():
+    def agones_shutdown(self):
       try:
         headers={'Content-Type':'application/json'}
         url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'

@@ -205,7 +205,7 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    if AGONES_SDK_HTTP_PORT is not None:
+                    if not AGONES_SDK_HTTP_PORT:
                       headers={'Content-Type':'application/json'}
                       url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
                       r=requests.post(url,headers=headers,json={})

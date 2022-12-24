@@ -168,6 +168,7 @@ class Handler(socketserver.BaseRequestHandler):
         self.queue = queue.Queue()
         self.running = True
         self.start()
+        self.start_agones_health()
     def handle(self):
         model = self.server.model
         model.enqueue(model.on_connect, self)
@@ -202,6 +203,21 @@ class Handler(socketserver.BaseRequestHandler):
         thread = threading.Thread(target=self.run)
         thread.setDaemon=True
         thread.start()
+    def start_agones_health(self):
+        thread = threading.Thread(target=self.agones_health)
+        thread.setDaemon=True
+        thread.start()
+    def agones_health(self):
+      while self.running:
+        try:
+          headers={'Content-Type':'application/json'}
+          url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+          r=requests.post(url,headers=headers,json={})
+          log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
+          time.sleep(10)
+        except Exception as error:
+          log('agones_health:error',error)
+
     def run(self):
         while self.running:
             try:
@@ -213,10 +229,6 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    #headers={'Content-Type':'application/json'}
-                    #url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
-                    #r=requests.post(url,headers=headers,json={})
-                    #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
                     log('in Handler:run:buf:',buf)
                 except queue.Empty:
                     continue

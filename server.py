@@ -363,7 +363,7 @@ class Model(object):
 
     def on_disconnect(self, client):
         if IS_AGONES == 'True':
-          agones_player(client.nick,'disconnect')
+          self.agones_player(client.nick,'disconnect')
         self.clients.remove(client)
         self.send_disconnect(client)
 

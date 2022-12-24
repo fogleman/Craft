@@ -118,13 +118,6 @@ def pg_write(sql,param):
         cursor.close()
         connection.close()
 
-def agones(func,pool,action):
-  #see https://agones.dev/site/docs/guides/client-sdks/#lifecycle-management
-  # action = {health,allocate}
-  headers={'accept':'application/json','Content-Type':'application/json'}
-  r=requests.get('http://localhost:'+AGONES_SDK_HTTP_PORT+'/'+action,headers=headers)
-  log('agones_',action,' calling from ',func,' status:',r)
-
 def chunked(x):
     return int(floor(round(x) / CHUNK_SIZE))
 
@@ -212,11 +205,11 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    headers={'accept':'application/json','Content-Type':'application/json'}
-                    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
-                    r=requests.post(url,headers=headers,data={})
-                    log('in Handler:run:response-agones:url:',url, 'response:',r)
-                    #log('in Handler:run:buf',buf)
+                    if AGONES_SDK_HTTP_PORT is not None:
+                      headers={'Content-Type':'application/json'}
+                      url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+                      r=requests.post(url,headers=headers,json={})
+                      log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)

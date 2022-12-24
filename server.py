@@ -209,6 +209,7 @@ class Handler(socketserver.BaseRequestHandler):
                     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
                     r=requests.post(url,headers=headers,json={})
                     log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
+                    log('in Handler:run:buf:',buf)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)

@@ -79,6 +79,14 @@ def log(*args):
         fp.write('%s\n' % line)
     sys.stdout.flush()
 
+def sig_handler(signum,frame):
+  log('Signal hanlder called with signal',signum)
+  log('execute ',cmd)
+  os.system(cmd)
+  model.send_talk("Game server maintenance is pending - pls reconnect")
+  model.send_talk("Don't worry, your universe is saved with us")
+  model.send_talk('Removing the server from load balancer %s'%(cmd))
+
 def pg_read(sql,param):
   try:
     connection = psycopg2.connect(user=user,
@@ -205,10 +213,10 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    headers={'Content-Type':'application/json'}
-                    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
-                    r=requests.post(url,headers=headers,json={})
-                    log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
+                    #headers={'Content-Type':'application/json'}
+                    #url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+                    #r=requests.post(url,headers=headers,json={})
+                    #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:'.r.headers)
                     log('in Handler:run:buf:',buf)
                 except queue.Empty:
                     continue
@@ -643,13 +651,6 @@ class Model(object):
             client.send(TALK, text)
 
 
-def sig_handler(signum,frame):
-  log('Signal hanlder called with signal',signum)
-  log('execute ',cmd)
-  os.system(cmd)
-  model.send_talk("Game server maintenance is pending - pls reconnect")
-  model.send_talk("Don't worry, your universe is saved with us")
-  model.send_talk('Removing the server from load balancer %s'%(cmd))
 
 def main():
     log("main","AUTH_REQUIRED",AUTH_REQUIRED)

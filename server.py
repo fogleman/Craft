@@ -209,7 +209,7 @@ class Handler(socketserver.BaseRequestHandler):
         log('agones_shutdown:',error)
     def finish(self):
         if IS_AGONES == 'True':
-          agones_shutdown()
+          self.agones_shutdown()
         self.running = False
     def stop(self):
         self.request.close()

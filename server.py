@@ -208,8 +208,8 @@ class Handler(socketserver.BaseRequestHandler):
       except Exception as error:
         log('agones_shutdown:',error)
     def finish(self):
-        if IS_AGONES == 'True':
-          self.agones_shutdown()
+        #if IS_AGONES == 'True':
+        #  self.agones_shutdown()
         self.running = False
     def stop(self):
         self.request.close()
@@ -341,8 +341,8 @@ class Model(object):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
         #log('CONN', client.client_id, *client.client_address)
-        if IS_AGONES == 'True':
-          self.agones_player(client.nick,'connect')
+        #if IS_AGONES == 'True':
+        #  self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
@@ -362,8 +362,8 @@ class Model(object):
             func(client, *args)
 
     def on_disconnect(self, client):
-        if IS_AGONES == 'True':
-          self.agones_player(client.nick,'disconnect')
+        #if IS_AGONES == 'True':
+        #  self.agones_player(client.nick,'disconnect')
         self.clients.remove(client)
         self.send_disconnect(client)
 

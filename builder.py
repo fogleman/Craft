@@ -9,8 +9,9 @@ import os
 import time
 import boto3
 
+QUEUE_URL = os.environ['SQS_CHECKPOINT_QUEUE_URL']
 DEFAULT_HOST = os.environ['CRAFT_HOST']
-DEFAULT_PORT = 4080
+DEFAULT_PORT = os.environ['CRAFT_PORT']
 
 EMPTY = 0
 GRASS = 1
@@ -47,6 +48,23 @@ OFFSETS = [
     (0.5, 0.5, -0.5),
     (0.5, 0.5, 0.5),
 ]
+
+sqs=boto3.client('sqs')
+
+def store_checkpoint(checkpoint):
+  response=sqs.send_message(
+    QueueUrl=QUEUE_URL,
+    DelaySeconds=10,
+    MessageAttributes={
+      'checkpoint':{
+        'DataType':'Number',
+        'StringValue':checkpoint
+      }
+    },
+    MessageBody=('Craft builder checkpoint')
+  )
+  print(response['MessageId'])
+  sys.stdout.flush()
 
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
     result = set()
@@ -204,6 +222,7 @@ def main():
     client = get_client()
     set_block = client.set_block
     set_blocks = client.set_blocks
+    store_checkpoint(1)
     set_blocks(circle_y(0, 32, 0, 16, True), STONE)
     set_blocks(circle_y(0, 33, 0, 16), BRICK)
     set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)

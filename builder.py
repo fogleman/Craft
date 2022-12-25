@@ -57,8 +57,8 @@ def store_checkpoint(checkpoint):
     DelaySeconds=10,
     MessageAttributes={
       'checkpoint':{
-        'DataType':'Number',
-        'NumberValue':checkpoint
+        'DataType':'String',
+        'StringValue':checkpoint
       }
     },
     MessageBody=('Craft builder checkpoint')
@@ -222,7 +222,7 @@ def main():
     client = get_client()
     set_block = client.set_block
     set_blocks = client.set_blocks
-    store_checkpoint(1)
+    store_checkpoint('1')
     set_blocks(circle_y(0, 32, 0, 16, True), STONE)
     set_blocks(circle_y(0, 33, 0, 16), BRICK)
     set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)

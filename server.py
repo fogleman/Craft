@@ -340,7 +340,7 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
-        #log('CONN', client.client_id, *client.client_address)
+        log('on_connect', client.client_id, *client.client_address)
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
@@ -362,6 +362,7 @@ class Model(object):
             func(client, *args)
 
     def on_disconnect(self, client):
+        log('on_disconnect:',self.next_client_id())
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'disconnect')
         self.clients.remove(client)
@@ -378,15 +379,16 @@ class Model(object):
         # TODO: client.start() here
 
     def on_authenticate(self, client, username, access_token):
-        #log("on_authenticate",client,username,access_token)
+        log('on_authenticate:',client,username,access_token)
         user_id = None
         if username and access_token:
             payload = {
                 'username': username,
                 'access_token': access_token,
             }
-            log("on_authenticate",payload)
-            response = requests.post(AUTH_URL, data=payload)
+            log('on_authenticate:',payload)
+            response = requests.post(AUTH_URL, json=payload)
+            log('on_authenticate:response.status_code',response.status_code)
             if response.status_code == 200 and response.text.isdigit():
                 user_id = int(response.text)
         client.user_id = user_id

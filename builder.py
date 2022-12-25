@@ -61,11 +61,30 @@ def store_checkpoint(checkpoint):
         'StringValue':checkpoint
       }
     },
-    MessageBody=('Craft builder checkpoint')
+    MessageBody=('craft:builder:checkpoint')
   )
   print(response['MessageId'])
   sys.stdout.flush()
 
+def pull_checkpoint():
+  response=sqs.receive_message(
+    QueueUrl=QUEUE_URL,
+    MaxNumberOfMessages=1,
+    MessageAttributeNames=[
+      'checkpoint'
+    ],
+    VisibilityTimeout=0,
+    WaitTimeSeconds=0
+  )
+  message=response['Messages'][0]
+  receipt_handle=message['ReceiptHandle']
+
+  sqs.delete_mesaage(
+    QueueUrl=QUEUE_URL,
+    ReceiptHandle=receipt_handle
+  )
+  print('Received and deleted message:%s'%message)
+     
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
     result = set()
     for x in range(cx - r, cx + r + 1):
@@ -223,6 +242,7 @@ def main():
     set_block = client.set_block
     set_blocks = client.set_blocks
     store_checkpoint('1')
+    pull_checkpoint()
     set_blocks(circle_y(0, 32, 0, 16, True), STONE)
     set_blocks(circle_y(0, 33, 0, 16), BRICK)
     set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)

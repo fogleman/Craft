@@ -68,7 +68,6 @@ def pull_checkpoint():
     WaitTimeSeconds=0
   )
   print('response:%s'%response)
-  if response['Messages'][0] == "":
   if 'Messages' in response.keys():
     message=response['Messages'][0]
     receipt_handle=message['ReceiptHandle']

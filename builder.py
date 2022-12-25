@@ -79,7 +79,7 @@ def pull_checkpoint():
   message=response['Messages'][0]
   receipt_handle=message['ReceiptHandle']
 
-  sqs.delete_mesaage(
+  sqs.delete_message(
     QueueUrl=QUEUE_URL,
     ReceiptHandle=receipt_handle
   )

@@ -58,7 +58,7 @@ def store_checkpoint(checkpoint):
     MessageAttributes={
       'checkpoint':{
         'DataType':'Number',
-        'StringValue':checkpoint
+        'NumberValue':checkpoint
       }
     },
     MessageBody=('Craft builder checkpoint')

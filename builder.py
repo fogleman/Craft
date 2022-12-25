@@ -67,7 +67,7 @@ def pull_checkpoint():
     VisibilityTimeout=0,
     WaitTimeSeconds=0
   )
-  print('response:%s'%response)
+  print('in pull_checkpoint:response:%s'%response)
   if 'Messages' in response.keys():
     message=response['Messages'][0]
     receipt_handle=message['ReceiptHandle']
@@ -79,7 +79,7 @@ def pull_checkpoint():
       QueueUrl=QUEUE_URL,
       ReceiptHandle=receipt_handle
     )
-    print('Received and deleted message:%s'%message)
+    print('in pull_checkpoint:Received and deleted message:%s'%message)
     sys.stdout.flush()
   else:
     print('in pull_checkpoint: no previous checkpoints in queue')

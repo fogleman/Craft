@@ -239,53 +239,69 @@ def get_client():
     return client
 
 def main():
-    client = get_client()
-    set_block = client.set_block
-    set_blocks = client.set_blocks
-    store_checkpoint('1')
-    last_checkpoint=pull_checkpoint()
-    print('in main:lastcheckpoint %s',last_checkpoint)
-    set_blocks(circle_y(0, 32, 0, 16, True), STONE)
-    set_blocks(circle_y(0, 33, 0, 16), BRICK)
-    set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)
-    set_blocks(cuboid(-1024, 1024, 32, 32, -3, 3), STONE)
-    set_blocks(cuboid(-3, 3, 32, 32, -1024, 1024), STONE)
-    set_blocks(cuboid(-1024, 1024, 33, 33, -3, -3), BRICK)
-    set_blocks(cuboid(-1024, 1024, 33, 33, 3, 3), BRICK)
-    set_blocks(cuboid(-3, -3, 33, 33, -1024, 1024), BRICK)
-    set_blocks(cuboid(3, 3, 33, 33, -1024, 1024), BRICK)
-    set_blocks(sphere(0, 32, 0, 16), GLASS)
-    for y in range(1, 32):
-        set_blocks(circle_y(0, y, 0, 4, True), CEMENT)
-    set_blocks(circle_x(16, 33, 0, 3), BRICK)
-    set_blocks(circle_x(-16, 33, 0, 3), BRICK)
-    set_blocks(circle_z(0, 33, 16, 3), BRICK)
-    set_blocks(circle_z(0, 33, -16, 3), BRICK)
-    for x in range(0, 1024, 32):
-        set_blocks(cuboid(x - 1, x + 1, 31, 32, -1, 1), CEMENT)
-        set_blocks(cuboid(-x - 1, -x + 1, 31, 32, -1, 1), CEMENT)
-        set_blocks(cuboid(x, x, 1, 32, -1, 1), CEMENT)
-        set_blocks(cuboid(-x, -x, 1, 32, -1, 1), CEMENT)
-    for z in range(0, 1024, 32):
-        set_blocks(cuboid(-1, 1, 31, 32, z - 1, z + 1), CEMENT)
-        set_blocks(cuboid(-1, 1, 31, 32, -z - 1, -z + 1), CEMENT)
-        set_blocks(cuboid(-1, 1, 1, 32, z, z), CEMENT)
-        set_blocks(cuboid(-1, 1, 1, 32, -z, -z), CEMENT)
-    for x in range(0, 1024, 8):
-        set_block(x, 32, 0, CEMENT)
-        set_block(-x, 32, 0, CEMENT)
-    for z in range(0, 1024, 8):
-        set_block(0, 32, z, CEMENT)
-        set_block(0, 32, -z, CEMENT)
-    set_blocks(pyramid(32, 32+64-1, 12, 32, 32+64-1), COBBLE)
-    outer = circle_y(0, 11, 0, 176 + 3, True)
-    inner = circle_y(0, 11, 0, 176 - 3, True)
-    set_blocks(outer - inner, STONE)
-    a = sphere(-32, 48, -32, 24, True)
-    b = sphere(-24, 40, -24, 24, True)
-    set_blocks(a - b, PLANK)
-    set_blocks(cylinder_x(-64, 64, 32, 0, 8), STONE)
-    data = [
+  client = get_client()
+  set_block = client.set_block
+  set_blocks = client.set_blocks
+  #store_checkpoint('1')
+  last_checkpoint=pull_checkpoint()
+  print('in main:lastcheckpoint %s',last_checkpoint)
+  match last_checkpoint: 
+    case '1':  
+      set_blocks(circle_y(0, 32, 0, 16, True), STONE)
+      set_blocks(circle_y(0, 33, 0, 16), BRICK)
+      set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)
+      set_blocks(cuboid(-1024, 1024, 32, 32, -3, 3), STONE)
+      set_blocks(cuboid(-3, 3, 32, 32, -1024, 1024), STONE)
+      set_blocks(cuboid(-1024, 1024, 33, 33, -3, -3), BRICK)
+      set_blocks(cuboid(-1024, 1024, 33, 33, 3, 3), BRICK)
+      set_blocks(cuboid(-3, -3, 33, 33, -1024, 1024), BRICK)
+      set_blocks(cuboid(3, 3, 33, 33, -1024, 1024), BRICK)
+      set_blocks(sphere(0, 32, 0, 16), GLASS)
+      store_checkpoint('1')
+    case '2':
+      for y in range(1, 32):
+          set_blocks(circle_y(0, y, 0, 4, True), CEMENT)
+      set_blocks(circle_x(16, 33, 0, 3), BRICK)
+      set_blocks(circle_x(-16, 33, 0, 3), BRICK)
+      set_blocks(circle_z(0, 33, 16, 3), BRICK)
+      set_blocks(circle_z(0, 33, -16, 3), BRICK)
+      store_checkpoint('2')
+    case '3':
+      for x in range(0, 1024, 32):
+          set_blocks(cuboid(x - 1, x + 1, 31, 32, -1, 1), CEMENT)
+          set_blocks(cuboid(-x - 1, -x + 1, 31, 32, -1, 1), CEMENT)
+          set_blocks(cuboid(x, x, 1, 32, -1, 1), CEMENT)
+          set_blocks(cuboid(-x, -x, 1, 32, -1, 1), CEMENT)
+      store_checkpoint('3')
+    case '4':
+      for z in range(0, 1024, 32):
+          set_blocks(cuboid(-1, 1, 31, 32, z - 1, z + 1), CEMENT)
+          set_blocks(cuboid(-1, 1, 31, 32, -z - 1, -z + 1), CEMENT)
+          set_blocks(cuboid(-1, 1, 1, 32, z, z), CEMENT)
+          set_blocks(cuboid(-1, 1, 1, 32, -z, -z), CEMENT)
+      store_checkpoint('4')
+    case '5':
+      for x in range(0, 1024, 8):
+          set_block(x, 32, 0, CEMENT)
+          set_block(-x, 32, 0, CEMENT)
+      store_checkpoint('5')
+    case '6':
+      for z in range(0, 1024, 8):
+          set_block(0, 32, z, CEMENT)
+          set_block(0, 32, -z, CEMENT)
+      store_checkpoint('6')
+    case '7':
+      set_blocks(pyramid(32, 32+64-1, 12, 32, 32+64-1), COBBLE)
+      outer = circle_y(0, 11, 0, 176 + 3, True)
+      inner = circle_y(0, 11, 0, 176 - 3, True)
+      set_blocks(outer - inner, STONE)
+      a = sphere(-32, 48, -32, 24, True)
+      b = sphere(-24, 40, -24, 24, True)
+      set_blocks(a - b, PLANK)
+      set_blocks(cylinder_x(-64, 64, 32, 0, 8), STONE)
+      store_checkpoint('7')
+    case '8':
+      data = [
         '...............................',
         '..xxx..xxxx...xxx..xxxxx.xxxxx.',
         '.x...x.x...x.x...x.x.......x...',
@@ -293,12 +309,13 @@ def main():
         '.x...x.x..x..x...x.x.......x...',
         '..xxx..x...x.x...x.x.......x...',
         '...............................',
-    ]
-    lookup = {
+      ]
+      lookup = {
         'x': STONE,
         '.': PLANK,
-    }
-    client.bitmap(0, 32, 32, (1, 0, 0), (0, -1, 0), data, lookup)
+      }  
+      client.bitmap(0, 32, 32, (1, 0, 0), (0, -1, 0), data, lookup)
+      store_checkpoint('8')
 
 if __name__ == '__main__':
     main()

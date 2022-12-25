@@ -68,6 +68,9 @@ def pull_checkpoint():
     WaitTimeSeconds=0
   )
   print('response:%s'%response)
+  if response['Messages'][0] == "":
+    print('in pull_checkpoint: no previous checkpoints in queue')
+    return "0"
   message=response['Messages'][0]
   receipt_handle=message['ReceiptHandle']
   last_checkpoint=message['Body']

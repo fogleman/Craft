@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from datetime import datetime as dt
 
 cmd = 'rm -rf /tmp/healthy'
+
 user=os.environ['PGUSER']
 password=os.environ['PGPASSWORD']
 host=os.environ['PGHOST']

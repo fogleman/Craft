@@ -244,7 +244,7 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    #log('in Handler:run:buf:',buf)
+                    log('in Handler:run:buf:',buf)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)

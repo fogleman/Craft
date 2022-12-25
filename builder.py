@@ -67,17 +67,19 @@ def pull_checkpoint():
     VisibilityTimeout=0,
     WaitTimeSeconds=0
   )
-  #receipt_handle=message['ReceiptHandle']
-  message = response['Messages'][0]
-  print('message %s'%message)
+  message=response['Messages'][0]
+  receipt_handle=message['ReceiptHandle']
+  last_checkpoint=message['Body']
+  print('message %s,last_checkpoint %s'%message,last_checkpoint)
   sys.stdout.flush()
 
-  #sqs.delete_message(
-  #  QueueUrl=QUEUE_URL,
-  #  ReceiptHandle=receipt_handle
-  #)
-  #print('Received and deleted message:%s'%message)
-  #sys.stdout.flush()
+  sqs.delete_message(
+    QueueUrl=QUEUE_URL,
+    ReceiptHandle=receipt_handle
+  )
+  print('Received and deleted message:%s'%message)
+  sys.stdout.flush()
+  return last_checkpoint
      
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
     result = set()
@@ -236,7 +238,8 @@ def main():
     set_block = client.set_block
     set_blocks = client.set_blocks
     store_checkpoint('1')
-    pull_checkpoint()
+    last_checkpoint=pull_checkpoint()
+    print('in main:lastcheckpoint %s',last_checkpoint)
     set_blocks(circle_y(0, 32, 0, 16, True), STONE)
     set_blocks(circle_y(0, 33, 0, 16), BRICK)
     set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)

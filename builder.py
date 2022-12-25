@@ -67,17 +67,17 @@ def pull_checkpoint():
     VisibilityTimeout=0,
     WaitTimeSeconds=0
   )
-  message=response['Body']
-  receipt_handle=message['ReceiptHandle']
-  print('message body:%s'%message)
+  #message=response['Body']
+  #receipt_handle=message['ReceiptHandle']
+  print('response %s'%response)
   sys.stdout.flush()
 
-  sqs.delete_message(
-    QueueUrl=QUEUE_URL,
-    ReceiptHandle=receipt_handle
-  )
-  print('Received and deleted message:%s'%message)
-  sys.stdout.flush()
+  #sqs.delete_message(
+  #  QueueUrl=QUEUE_URL,
+  #  ReceiptHandle=receipt_handle
+  #)
+  #print('Received and deleted message:%s'%message)
+  #sys.stdout.flush()
      
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
     result = set()

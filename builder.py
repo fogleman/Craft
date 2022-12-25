@@ -83,7 +83,7 @@ def pull_checkpoint():
     sys.stdout.flush()
   else:
     print('in pull_checkpoint: no previous checkpoints in queue')
-    last_checkpoint="0"
+    last_checkpoint="1"
   return last_checkpoint
      
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
@@ -244,7 +244,7 @@ def main():
   set_blocks = client.set_blocks
   #store_checkpoint('1')
   last_checkpoint=pull_checkpoint()
-  print('in main:lastcheckpoint %s',last_checkpoint)
+  print('in main:lastcheckpoint ',last_checkpoint)
   match last_checkpoint: 
     case '1':  
       set_blocks(circle_y(0, 32, 0, 16, True), STONE)

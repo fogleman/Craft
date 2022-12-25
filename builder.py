@@ -70,7 +70,7 @@ def pull_checkpoint():
   message=response['Messages'][0]
   receipt_handle=message['ReceiptHandle']
   last_checkpoint=message['Body']
-  print('message %s,last_checkpoint %s'%message,last_checkpoint)
+  print('in pull_checkpoint:last_checkpoint %s' % last_checkpoint)
   sys.stdout.flush()
 
   sqs.delete_message(

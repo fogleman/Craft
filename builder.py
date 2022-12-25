@@ -55,13 +55,7 @@ def store_checkpoint(checkpoint):
   response=sqs.send_message(
     QueueUrl=QUEUE_URL,
     DelaySeconds=10,
-    MessageAttributes={
-      'checkpoint':{
-        'DataType':'String',
-        'StringValue':checkpoint
-      }
-    },
-    MessageBody=('craft:builder:checkpoint')
+    MessageBody=(checkpoint)
   )
   print(response['MessageId'])
   sys.stdout.flush()
@@ -70,20 +64,20 @@ def pull_checkpoint():
   response=sqs.receive_message(
     QueueUrl=QUEUE_URL,
     MaxNumberOfMessages=1,
-    MessageAttributeNames=[
-      'checkpoint'
-    ],
     VisibilityTimeout=0,
     WaitTimeSeconds=0
   )
-  message=response['Messages'][0]
+  message=response['Body']
   receipt_handle=message['ReceiptHandle']
+  print('message body:%s'%message)
+  sys.stdout.flush()
 
   sqs.delete_message(
     QueueUrl=QUEUE_URL,
     ReceiptHandle=receipt_handle
   )
   print('Received and deleted message:%s'%message)
+  sys.stdout.flush()
      
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
     result = set()

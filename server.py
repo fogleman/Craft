@@ -341,7 +341,7 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
-        log('on_connect', client.client_id, *client.client_address)
+        log('on_connect:', client.client_id, *client.client_address)
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
@@ -380,7 +380,7 @@ class Model(object):
         # TODO: client.start() here
 
     def on_authenticate(self, client, username, access_token):
-        log('on_authenticate:',client,username,access_token)
+        log('on_authenticate:',' client:',client,' username:',username,' access_token:',access_token)
         user_id = None
         if username and access_token:
             payload = {
@@ -699,7 +699,7 @@ def agones_ready():
     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
     payload={}
     r=requests.post(url,headers=headers,json={})
-    log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+    #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
   except Exception as error:
     log('agones_ready:',error)
 

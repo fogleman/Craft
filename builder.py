@@ -67,9 +67,9 @@ def pull_checkpoint():
     VisibilityTimeout=0,
     WaitTimeSeconds=0
   )
-  #message=response['Body']
   #receipt_handle=message['ReceiptHandle']
-  print('response %s'%response)
+  message = response['Messages'][0]
+  print('message %s'%message)
   sys.stdout.flush()
 
   #sqs.delete_message(

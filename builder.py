@@ -69,20 +69,22 @@ def pull_checkpoint():
   )
   print('response:%s'%response)
   if response['Messages'][0] == "":
-    print('in pull_checkpoint: no previous checkpoints in queue')
-    return "0"
-  message=response['Messages'][0]
-  receipt_handle=message['ReceiptHandle']
-  last_checkpoint=message['Body']
-  print('in pull_checkpoint:last_checkpoint %s' % last_checkpoint)
-  sys.stdout.flush()
+  if 'Messages' in response.keys():
+    message=response['Messages'][0]
+    receipt_handle=message['ReceiptHandle']
+    last_checkpoint=message['Body']
+    print('in pull_checkpoint:last_checkpoint %s' % last_checkpoint)
+    sys.stdout.flush()
 
-  sqs.delete_message(
-    QueueUrl=QUEUE_URL,
-    ReceiptHandle=receipt_handle
-  )
-  print('Received and deleted message:%s'%message)
-  sys.stdout.flush()
+    sqs.delete_message(
+      QueueUrl=QUEUE_URL,
+      ReceiptHandle=receipt_handle
+    )
+    print('Received and deleted message:%s'%message)
+    sys.stdout.flush()
+  else:
+    print('in pull_checkpoint: no previous checkpoints in queue')
+    last_checkpoint="0"
   return last_checkpoint
      
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):

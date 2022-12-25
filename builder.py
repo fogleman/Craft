@@ -67,6 +67,7 @@ def pull_checkpoint():
     VisibilityTimeout=0,
     WaitTimeSeconds=0
   )
+  print('response:%s'%response)
   message=response['Messages'][0]
   receipt_handle=message['ReceiptHandle']
   last_checkpoint=message['Body']

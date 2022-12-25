@@ -7,6 +7,7 @@ import sqlite3
 import sys
 import os
 import time
+import boto3
 
 DEFAULT_HOST = os.environ['CRAFT_HOST']
 DEFAULT_PORT = 4080

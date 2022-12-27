@@ -16,7 +16,7 @@ Generate token:
 ```bash
 curl http://craft.auth.yahav.sa.aws.dev/auth/getoken/?username=yahavb
 ```
-Use the token and username to `login` in the craf game client. 
+Use the token and username to validate your token `/identity username token` in the craf game client. 
 
 
 ## Craft

@@ -83,7 +83,7 @@ def log(*args):
         fp.write('%s\n' % line)
     sys.stdout.flush()
 
-def sig_handler(signum,frame,model):
+def sig_handler(signum,frame):
   log('Signal hanlder called with signal',signum)
   log('execute ',cmd)
   os.system(cmd)

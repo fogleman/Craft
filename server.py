@@ -704,6 +704,8 @@ def agones_ready():
   except Exception as error:
     log('agones_ready:',error)
 
+model = Model(None)
+model.start()
 
 def main():
     #log("main","AUTH_REQUIRED",AUTH_REQUIRED)
@@ -716,8 +718,6 @@ def main():
     log('SERV', host, port)
     if IS_AGONES == 'True':
       agones_ready()
-    model = Model(None)
-    model.start()
     signal.signal(signal.SIGTERM,sig_handler)
     server = Server((host, port), Handler)
     server.model = model

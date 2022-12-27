@@ -21,7 +21,9 @@ size_t write_function(char *data, size_t size, size_t count, void *arg) {
 int get_access_token(
     char *result, int length, char *username, char *identity_token)
 {
-    static char url[] = "https://craft.michaelfogleman.com/api/1/identity";
+    printf("auth.c/get_access_token:username=%s,identity_token=%s\n",username,identity_token);
+    //static char url[] = "https://craft.michaelfogleman.com/api/1/identity";
+    static char url[] = "http://craft.auth.yahav.sa.aws.dev/auth/identity/";
     strncpy(result, "", length);
     CURL *curl = curl_easy_init();
     if (curl) {
@@ -30,6 +32,7 @@ int get_access_token(
         long http_code = 0;
         snprintf(post, MAX_POST_LENGTH, "username=%s&identity_token=%s",
             username, identity_token);
+        printf("auth.c/get_access_token2:username=%s,identity_token=%s\n",username,identity_token);
         #ifdef _WIN32
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         #endif

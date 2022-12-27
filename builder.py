@@ -5,9 +5,13 @@ import requests
 import socket
 import sqlite3
 import sys
+import os
+import time
+import boto3
 
-DEFAULT_HOST = '127.0.0.1'
-DEFAULT_PORT = 4080
+QUEUE_URL = os.environ['SQS_CHECKPOINT_QUEUE_URL']
+DEFAULT_HOST = os.environ['CRAFT_HOST']
+DEFAULT_PORT = os.environ['CRAFT_PORT']
 
 EMPTY = 0
 GRASS = 1
@@ -45,6 +49,43 @@ OFFSETS = [
     (0.5, 0.5, 0.5),
 ]
 
+sqs=boto3.client('sqs')
+
+def store_checkpoint(checkpoint):
+  response=sqs.send_message(
+    QueueUrl=QUEUE_URL,
+    DelaySeconds=10,
+    MessageBody=(checkpoint)
+  )
+  print(response['MessageId'])
+  sys.stdout.flush()
+
+def pull_checkpoint():
+  response=sqs.receive_message(
+    QueueUrl=QUEUE_URL,
+    MaxNumberOfMessages=1,
+    VisibilityTimeout=0,
+    WaitTimeSeconds=0
+  )
+  print('in pull_checkpoint:response:%s'%response)
+  if 'Messages' in response.keys():
+    message=response['Messages'][0]
+    receipt_handle=message['ReceiptHandle']
+    last_checkpoint=message['Body']
+    print('in pull_checkpoint:last_checkpoint %s' % last_checkpoint)
+    sys.stdout.flush()
+
+    sqs.delete_message(
+      QueueUrl=QUEUE_URL,
+      ReceiptHandle=receipt_handle
+    )
+    print('in pull_checkpoint:Received and deleted message:%s'%message)
+    sys.stdout.flush()
+  else:
+    print('in pull_checkpoint: no previous checkpoints in queue')
+    last_checkpoint="1"
+  return last_checkpoint
+     
 def sphere(cx, cy, cz, r, fill=False, fx=False, fy=False, fz=False):
     result = set()
     for x in range(cx - r, cx + r + 1):
@@ -143,7 +184,7 @@ class Client(object):
     def __init__(self, host, port):
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.conn.connect((host, port))
-        self.authenticate()
+        #self.authenticate()
     def authenticate(self):
         username, identity_token = get_identity()
         url = 'https://craft.michaelfogleman.com/api/1/identity'
@@ -154,11 +195,27 @@ class Client(object):
         response = requests.post(url, data=payload)
         if response.status_code == 200 and response.text.isalnum():
             access_token = response.text
-            self.conn.sendall('A,%s,%s\n' % (username, access_token))
+            buf=b''
+            string='A,%s,%s\n' % (username, access_token)
+            buf=bytes(string,'utf-8')
+            self.conn.sendall(buf)
+            print(buf)
+            sys.stdout.flush()
         else:
             raise Exception('Failed to authenticate.')
     def set_block(self, x, y, z, w):
-        self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
+        buf=b''
+        string='B,%d,%d,%d,%d\n' % (x, y, z, w)
+        buf=bytes(string,'utf-8')
+        try:
+          r=self.conn.sendall(buf)
+          print('buf={},r={}'.format(buf,r))
+          sys.stdout.flush()
+          time.sleep(1)
+        except Exception as error:
+          print('in set_block:error:',error)
+          sys.stdout.flush()
+        #self.conn.sendall('B,%d,%d,%d,%d\n' % (x, y, z, w))
     def set_blocks(self, blocks, w):
         key = lambda block: (block[1], block[0], block[2])
         for x, y, z in sorted(blocks, key=key):
@@ -186,63 +243,83 @@ def get_client():
     return client
 
 def main():
-    client = get_client()
-    set_block = client.set_block
-    set_blocks = client.set_blocks
-    # set_blocks(circle_y(0, 32, 0, 16, True), STONE)
-    # set_blocks(circle_y(0, 33, 0, 16), BRICK)
-    # set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)
-    # set_blocks(cuboid(-1024, 1024, 32, 32, -3, 3), STONE)
-    # set_blocks(cuboid(-3, 3, 32, 32, -1024, 1024), STONE)
-    # set_blocks(cuboid(-1024, 1024, 33, 33, -3, -3), BRICK)
-    # set_blocks(cuboid(-1024, 1024, 33, 33, 3, 3), BRICK)
-    # set_blocks(cuboid(-3, -3, 33, 33, -1024, 1024), BRICK)
-    # set_blocks(cuboid(3, 3, 33, 33, -1024, 1024), BRICK)
-    # set_blocks(sphere(0, 32, 0, 16), GLASS)
-    # for y in range(1, 32):
-    #     set_blocks(circle_y(0, y, 0, 4, True), CEMENT)
-    # set_blocks(circle_x(16, 33, 0, 3), BRICK)
-    # set_blocks(circle_x(-16, 33, 0, 3), BRICK)
-    # set_blocks(circle_z(0, 33, 16, 3), BRICK)
-    # set_blocks(circle_z(0, 33, -16, 3), BRICK)
-    # for x in range(0, 1024, 32):
-    #     set_blocks(cuboid(x - 1, x + 1, 31, 32, -1, 1), CEMENT)
-    #     set_blocks(cuboid(-x - 1, -x + 1, 31, 32, -1, 1), CEMENT)
-    #     set_blocks(cuboid(x, x, 1, 32, -1, 1), CEMENT)
-    #     set_blocks(cuboid(-x, -x, 1, 32, -1, 1), CEMENT)
-    # for z in range(0, 1024, 32):
-    #     set_blocks(cuboid(-1, 1, 31, 32, z - 1, z + 1), CEMENT)
-    #     set_blocks(cuboid(-1, 1, 31, 32, -z - 1, -z + 1), CEMENT)
-    #     set_blocks(cuboid(-1, 1, 1, 32, z, z), CEMENT)
-    #     set_blocks(cuboid(-1, 1, 1, 32, -z, -z), CEMENT)
-    # for x in range(0, 1024, 8):
-    #     set_block(x, 32, 0, CEMENT)
-    #     set_block(-x, 32, 0, CEMENT)
-    # for z in range(0, 1024, 8):
-    #     set_block(0, 32, z, CEMENT)
-    #     set_block(0, 32, -z, CEMENT)
-    # set_blocks(pyramid(32, 32+64-1, 12, 32, 32+64-1), COBBLE)
-    # outer = circle_y(0, 11, 0, 176 + 3, True)
-    # inner = circle_y(0, 11, 0, 176 - 3, True)
-    # set_blocks(outer - inner, STONE)
-    # a = sphere(-32, 48, -32, 24, True)
-    # b = sphere(-24, 40, -24, 24, True)
-    # set_blocks(a - b, PLANK)
-    # set_blocks(cylinder_x(-64, 64, 32, 0, 8), STONE)
-    # data = [
-    #     '...............................',
-    #     '..xxx..xxxx...xxx..xxxxx.xxxxx.',
-    #     '.x...x.x...x.x...x.x.......x...',
-    #     '.x.....xxxx..xxxxx.xxx.....x...',
-    #     '.x...x.x..x..x...x.x.......x...',
-    #     '..xxx..x...x.x...x.x.......x...',
-    #     '...............................',
-    # ]
-    # lookup = {
-    #     'x': STONE,
-    #     '.': PLANK,
-    # }
-    # client.bitmap(0, 32, 32, (1, 0, 0), (0, -1, 0), data, lookup)
+  client = get_client()
+  set_block = client.set_block
+  set_blocks = client.set_blocks
+  #store_checkpoint('1')
+  last_checkpoint=pull_checkpoint()
+  print('in main:lastcheckpoint ',last_checkpoint)
+  match last_checkpoint: 
+    case '1':  
+      set_blocks(circle_y(0, 32, 0, 16, True), STONE)
+      set_blocks(circle_y(0, 33, 0, 16), BRICK)
+      set_blocks(cuboid(-1, 1, 1, 31, -1, 1), CEMENT)
+      set_blocks(cuboid(-1024, 1024, 32, 32, -3, 3), STONE)
+      set_blocks(cuboid(-3, 3, 32, 32, -1024, 1024), STONE)
+      set_blocks(cuboid(-1024, 1024, 33, 33, -3, -3), BRICK)
+      set_blocks(cuboid(-1024, 1024, 33, 33, 3, 3), BRICK)
+      set_blocks(cuboid(-3, -3, 33, 33, -1024, 1024), BRICK)
+      set_blocks(cuboid(3, 3, 33, 33, -1024, 1024), BRICK)
+      set_blocks(sphere(0, 32, 0, 16), GLASS)
+      store_checkpoint('1')
+    case '2':
+      for y in range(1, 32):
+          set_blocks(circle_y(0, y, 0, 4, True), CEMENT)
+      set_blocks(circle_x(16, 33, 0, 3), BRICK)
+      set_blocks(circle_x(-16, 33, 0, 3), BRICK)
+      set_blocks(circle_z(0, 33, 16, 3), BRICK)
+      set_blocks(circle_z(0, 33, -16, 3), BRICK)
+      store_checkpoint('2')
+    case '3':
+      for x in range(0, 1024, 32):
+          set_blocks(cuboid(x - 1, x + 1, 31, 32, -1, 1), CEMENT)
+          set_blocks(cuboid(-x - 1, -x + 1, 31, 32, -1, 1), CEMENT)
+          set_blocks(cuboid(x, x, 1, 32, -1, 1), CEMENT)
+          set_blocks(cuboid(-x, -x, 1, 32, -1, 1), CEMENT)
+      store_checkpoint('3')
+    case '4':
+      for z in range(0, 1024, 32):
+          set_blocks(cuboid(-1, 1, 31, 32, z - 1, z + 1), CEMENT)
+          set_blocks(cuboid(-1, 1, 31, 32, -z - 1, -z + 1), CEMENT)
+          set_blocks(cuboid(-1, 1, 1, 32, z, z), CEMENT)
+          set_blocks(cuboid(-1, 1, 1, 32, -z, -z), CEMENT)
+      store_checkpoint('4')
+    case '5':
+      for x in range(0, 1024, 8):
+          set_block(x, 32, 0, CEMENT)
+          set_block(-x, 32, 0, CEMENT)
+      store_checkpoint('5')
+    case '6':
+      for z in range(0, 1024, 8):
+          set_block(0, 32, z, CEMENT)
+          set_block(0, 32, -z, CEMENT)
+      store_checkpoint('6')
+    case '7':
+      set_blocks(pyramid(32, 32+64-1, 12, 32, 32+64-1), COBBLE)
+      outer = circle_y(0, 11, 0, 176 + 3, True)
+      inner = circle_y(0, 11, 0, 176 - 3, True)
+      set_blocks(outer - inner, STONE)
+      a = sphere(-32, 48, -32, 24, True)
+      b = sphere(-24, 40, -24, 24, True)
+      set_blocks(a - b, PLANK)
+      set_blocks(cylinder_x(-64, 64, 32, 0, 8), STONE)
+      store_checkpoint('7')
+    case '8':
+      data = [
+        '...............................',
+        '..xxx..xxxx...xxx..xxxxx.xxxxx.',
+        '.x...x.x...x.x...x.x.......x...',
+        '.x.....xxxx..xxxxx.xxx.....x...',
+        '.x...x.x..x..x...x.x.......x...',
+        '..xxx..x...x.x...x.x.......x...',
+        '...............................',
+      ]
+      lookup = {
+        'x': STONE,
+        '.': PLANK,
+      }  
+      client.bitmap(0, 32, 32, (1, 0, 0), (0, -1, 0), data, lookup)
+      store_checkpoint('8')
 
 if __name__ == '__main__':
     main()

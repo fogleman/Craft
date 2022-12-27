@@ -83,7 +83,7 @@ def log(*args):
         fp.write('%s\n' % line)
     sys.stdout.flush()
 
-def sig_handler(signum,frame):
+def sig_handler(signum,frame,model):
   log('Signal hanlder called with signal',signum)
   log('execute ',cmd)
   os.system(cmd)
@@ -718,7 +718,7 @@ def main():
       agones_ready()
     model = Model(None)
     model.start()
-    signal.signal(signal.SIGTERM,sig_handler)
+    signal.signal(signal.SIGTERM,sig_handler,model)
     server = Server((host, port), Handler)
     server.model = model
     server.serve_forever()

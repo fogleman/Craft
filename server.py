@@ -244,7 +244,7 @@ class Handler(socketserver.BaseRequestHandler):
                             buf += self.queue.get_nowait()
                     except queue.Empty:
                         pass
-                    log('in Handler:run:buf:',buf)
+                    #log('in Handler:run:buf:',buf)
                 except queue.Empty:
                     continue
                 self.request.sendall(buf)
@@ -341,7 +341,7 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
-        log('on_connect:', client.client_id, *client.client_address)
+        #log('on_connect:', client.client_id, *client.client_address)
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
@@ -363,7 +363,7 @@ class Model(object):
             func(client, *args)
 
     def on_disconnect(self, client):
-        log('on_disconnect:',self.next_client_id())
+        #log('on_disconnect:',self.next_client_id())
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'disconnect')
         self.clients.remove(client)

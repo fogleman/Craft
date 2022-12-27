@@ -387,7 +387,7 @@ class Model(object):
                 'username': username,
                 'access_token': access_token,
             }
-            log('on_authenticate:',payload)
+            log('on_authenticate:payload',payload)
             response = requests.post(AUTH_URL, json=payload)
             log('on_authenticate:response.status_code',response.status_code)
             if response.status_code == 200 and response.text.isdigit():
@@ -400,7 +400,7 @@ class Model(object):
         else:
           client.nick = username
           self.send_nick(client)
-
+        log('on_authenticate:client.nick:',client.nick)
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)

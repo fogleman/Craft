@@ -1,3 +1,24 @@
+## Craft fork
+
+Running on python3, using Amazon Aurora PG instead of sqlite, deployed on Agones/NLB and using craft.auth.yahav.sa.aws.dev/auth/identity/ for auth players. 
+
+See all users:
+```bash
+curl http://craft.auth.yahav.sa.aws.dev/auth/allusers/
+```
+
+Create a user:
+```bash
+curl http://craft.auth.yahav.sa.aws.dev/auth/adduser/?username=yahavb
+```
+
+Generate token:
+```bash
+curl http://craft.auth.yahav.sa.aws.dev/auth/getoken/?username=yahavb
+```
+Use the token and username to `login` in the craf game client. 
+
+
 ## Craft
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.

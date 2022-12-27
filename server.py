@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from datetime import datetime as dt
 
 cmd = 'rm -rf /tmp/healthy'
+
 user=os.environ['PGUSER']
 password=os.environ['PGPASSWORD']
 host=os.environ['PGHOST']
@@ -227,7 +228,7 @@ class Handler(socketserver.BaseRequestHandler):
           headers={'Content-Type':'application/json'}
           url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
           r=requests.post(url,headers=headers,json={})
-          log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+          #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
           time.sleep(10)
         except Exception as error:
           log('agones_health:error',error)
@@ -340,7 +341,7 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
-        #log('CONN', client.client_id, *client.client_address)
+        #log('on_connect:', client.client_id, *client.client_address)
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
@@ -362,6 +363,7 @@ class Model(object):
             func(client, *args)
 
     def on_disconnect(self, client):
+        #log('on_disconnect:',self.next_client_id())
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'disconnect')
         self.clients.remove(client)
@@ -378,26 +380,28 @@ class Model(object):
         # TODO: client.start() here
 
     def on_authenticate(self, client, username, access_token):
-        #log("on_authenticate",client,username,access_token)
+        log('on_authenticate:',' client:',client,' username:',username,' access_token:',access_token)
         user_id = None
         if username and access_token:
             payload = {
                 'username': username,
                 'access_token': access_token,
             }
-            log("on_authenticate",payload)
-            response = requests.post(AUTH_URL, data=payload)
-            if response.status_code == 200 and response.text.isdigit():
-                user_id = int(response.text)
-        client.user_id = user_id
+            log('on_authenticate:payload',payload)
+            response = requests.post(AUTH_URL, json=payload)
+            log('on_authenticate:response.status_code',response.status_code)
+            #if response.status_code == 200 and response.text.isdigit():
+            if response.status_code == 200:
+                user_id = username
         if user_id is None:
           client.nick = 'guest%d' % client.client_id
           client.user_id='guest%d' % client.client_id
-          client.send(TALK, 'Visit craft.michaelfogleman.com to register!')
+          client.send(TALK, 'Visit http://craft.auth.yahav.sa.aws.dev/auth/adduser/?username=myuser to register!')
         else:
           client.nick = username
+          client.user_id = user_id
           self.send_nick(client)
-
+        log('on_authenticate:client.nick:',client.nick)
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)
@@ -443,8 +447,8 @@ class Model(object):
         previous = self.get_block(x, y, z)
         message = None
         #TODO: remove after builder is done
-        if client.user_id is None:
-          client.user_id = "builder"
+        #if client.user_id is None:
+        #  client.user_id = "builder"
         if AUTH_REQUIRED and client.user_id is None:
             message = 'in on_block - Only logged in users are allowed to build.' 
         elif y <= 0 or y > 255:
@@ -696,7 +700,7 @@ def agones_ready():
     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
     payload={}
     r=requests.post(url,headers=headers,json={})
-    log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+    #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
   except Exception as error:
     log('agones_ready:',error)
 

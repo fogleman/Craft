@@ -390,15 +390,16 @@ class Model(object):
             log('on_authenticate:payload',payload)
             response = requests.post(AUTH_URL, json=payload)
             log('on_authenticate:response.status_code',response.status_code)
-            if response.status_code == 200 and response.text.isdigit():
-                user_id = int(response.text)
-        client.user_id = user_id
+            #if response.status_code == 200 and response.text.isdigit():
+            if response.status_code == 200:
+                user_id = username
         if user_id is None:
           client.nick = 'guest%d' % client.client_id
           client.user_id='guest%d' % client.client_id
-          client.send(TALK, 'Visit craft.michaelfogleman.com to register!')
+          client.send(TALK, 'Visit http://craft.auth.yahav.sa.aws.dev/auth/adduser/?username=myuser to register!')
         else:
           client.nick = username
+          client.user_id = user_id
           self.send_nick(client)
         log('on_authenticate:client.nick:',client.nick)
         client.send(TALK, 'Current pod is '+pod_name)

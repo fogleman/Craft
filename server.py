@@ -552,7 +552,7 @@ class Model(object):
         if self.is_going_down==1:
           now = dt.now()
           log('on_position:is_going_down:',self.is_going_down,' client.nick:',client.nick,' x,y,z:',x,y,z)
-          sql = """insert into user_recent_pos (updated_at,user_id,x,y,z) values (%s,%s,%s,%s,%s) on conflict unique_username do update set x=%s,y=%s,z=%s"""
+          sql = """insert into user_recent_pos (updated_at,user_id,x,y,z) values (%s,%s,%s,%s,%s) on conflict on constraint unique_username do update set x=%s,y=%s,z=%s"""
           params=[now,client.nick,x,y,z,x,y,z]
           response=pg_write(sql,params)
 

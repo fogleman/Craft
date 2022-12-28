@@ -416,7 +416,7 @@ class Model(object):
           z=rows[0][2]
           SPAWN_POINT=(x,y,z,0,0)
           log('on_authenticate:x,y,z:',x,y,z)
-          log('on_authenticate:SPAWN_POINT:',SPAWN_POINT)
+        log('on_authenticate:SPAWN_POINT:',SPAWN_POINT)
         client.position = SPAWN_POINT
         self.send_position(client)
         self.send_positions(client)

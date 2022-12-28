@@ -62,3 +62,8 @@ SELECT partman.create_parent( p_parent_table => 'public.block_history',
  p_type => 'native',
  p_interval=> 'monthly',
  p_premake => 24);
+
+create table user_recent_pos(updated_at timestamp,user_id varchar(64) not null,x int not null,y int not null,z int not null);
+
+alter table user_recent_pos add constraint unique_username unique (user_id);
+alter table auth_app_user add constraint unique_authappusername unique (username);

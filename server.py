@@ -346,6 +346,8 @@ class Model(object):
         #log('on_connect:', client.client_id, *client.client_address)
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
+
+        #TODO: read the last position from users_last_position table: use username as key; maybe move `client.position = SPAWN_POINT` to on_authenticate
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
@@ -662,7 +664,6 @@ class Model(object):
             if other == client:
                 continue
             other.send(POSITION, client.client_id, *client.position)
-            log('send_position:*client.position:',*client.position)
     def send_nicks(self, client):
         for other in self.clients:
             if other == client:
@@ -709,11 +710,8 @@ def agones_ready():
     log('agones_ready:',error)
 
 model = Model(None)
-model.start()
 
 def main():
-    #log("main","AUTH_REQUIRED",AUTH_REQUIRED)
-    #log("main","AUTH_URL",AUTH_URL)
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]
@@ -723,6 +721,7 @@ def main():
     if IS_AGONES == 'True':
       agones_ready()
     signal.signal(signal.SIGTERM,sig_handler)
+    model.start()
     server = Server((host, port), Handler)
     server.model = model
     server.serve_forever()

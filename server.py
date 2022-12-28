@@ -348,8 +348,6 @@ class Model(object):
         #log('on_connect:', client.client_id, *client.client_address)
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
-
-        #TODO: read the last position from users_last_position table: use username as key; maybe move `client.position = SPAWN_POINT` to on_authenticate
         client.position = SPAWN_POINT
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
@@ -411,7 +409,9 @@ class Model(object):
         sql="""select x,y,z from user_recent_pos where user_id=%s"""
         params=[client.nick]
         rows=list(pg_read(sql,params))
-        log('on_authenticate:client.nick:',client.nick,' last_pos:',rows)
+        if rows:
+          log('on_authenticate:client.nick:',client.nick,' last_pos:',rows,' rows[0][0]=',rows[0][0])
+        client.position = SPAWN_POINT
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)

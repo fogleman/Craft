@@ -382,6 +382,7 @@ class Model(object):
         # TODO: client.start() here
 
     def on_authenticate(self, client, username, access_token):
+        global SPAWN_POINT
         log('on_authenticate:',' client:',client,' username:',username,' access_token:',access_token)
         user_id = None
         if username and access_token:

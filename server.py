@@ -45,7 +45,7 @@ AUTH_URL = os.environ['AUTH_SRV']
 
 DAY_LENGTH = 600
 SPAWN_POINT = tuple(os.environ['START_POINT'])
-SPAWN_POINT = (1, 1, 1, 1, 1)
+#SPAWN_POINT = (1, 1, 1, 1, 1)
 RATE_LIMIT = False
 RECORD_HISTORY =os.environ['RECORD_HISTORY']
 INDESTRUCTIBLE_ITEMS = set([16])

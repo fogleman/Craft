@@ -411,6 +411,12 @@ class Model(object):
         rows=list(pg_read(sql,params))
         if rows:
           log('on_authenticate:client.nick:',client.nick,' last_pos:',rows,' rows[0][0]=',rows[0][0])
+          x=rows[0][0]
+          y=rows[0][1]
+          z=rows[0][2]
+          SPAWN_POINT=(x,y,z,0,0)
+          log('on_authenticate:x,y,z:',x,y,z)
+          log('on_authenticate:SPAWN_POINT:',SPAWN_POINT)
         client.position = SPAWN_POINT
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)

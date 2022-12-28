@@ -418,6 +418,8 @@ class Model(object):
           log('on_authenticate:x,y,z:',x,y,z)
           log('on_authenticate:SPAWN_POINT:',SPAWN_POINT)
         client.position = SPAWN_POINT
+        self.send_position(client)
+        self.send_positions(client)
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)

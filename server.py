@@ -89,6 +89,7 @@ def sig_handler(signum,frame):
   log('Signal hanlder called with signal',signum)
   log('execute ',cmd)
   os.system(cmd)
+  model.is_going_down=1
   model.send_talk("Game server maintenance is pending - pls reconnect")
   model.send_talk("Don't worry, your universe is saved with us")
   model.send_talk('Removing the server from load balancer %s'%(cmd))
@@ -265,6 +266,7 @@ class Model(object):
     def __init__(self, seed):
         self.world = World(seed)
         self.clients = []
+        self.is_going_down=0
         self.queue = queue.Queue()
         self.commands = {
             AUTHENTICATE: self.on_authenticate,
@@ -550,7 +552,7 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
-        log('on_position:client.nick:',client.nick,' x,y,z:',x,y,z)
+        log('on_position:is_going_down:',self.is_going_down,' client.nick:',client.nick,' x,y,z:',x,y,z)
 
     def on_talk(self, client, *args):
         text = ','.join(args)

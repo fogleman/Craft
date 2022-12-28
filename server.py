@@ -44,8 +44,12 @@ AUTH_REQUIRED = os.environ['USE_AUTH']
 AUTH_URL = os.environ['AUTH_SRV']
 
 DAY_LENGTH = 600
-#SPAWN_POINT = (0, 0, 0, 0, 0)
-SPAWN_POINT = tuple(os.environ['START_POINT'])
+SPAWN_X=int(os.environ['SPAWN_X'])
+SPAWN_Y=int(os.environ['SPAWN_Y'])
+SPAWN_Z=int(os.environ['SPAWN_Z'])
+SPAWN_POINT = (SPAWN_X, SPAWN_Y, SPAWN_Z, 0, 0)
+print("SPAWN_POINT",SPAWN_POINT)
+sys.stdout.flush()
 RATE_LIMIT = False
 RECORD_HISTORY =os.environ['RECORD_HISTORY']
 INDESTRUCTIBLE_ITEMS = set([16])
@@ -87,6 +91,7 @@ def sig_handler(signum,frame):
   log('Signal hanlder called with signal',signum)
   log('execute ',cmd)
   os.system(cmd)
+  model.is_going_down=1
   model.send_talk("Game server maintenance is pending - pls reconnect")
   model.send_talk("Don't worry, your universe is saved with us")
   model.send_talk('Removing the server from load balancer %s'%(cmd))
@@ -263,6 +268,7 @@ class Model(object):
     def __init__(self, seed):
         self.world = World(seed)
         self.clients = []
+        self.is_going_down=0
         self.queue = queue.Queue()
         self.commands = {
             AUTHENTICATE: self.on_authenticate,
@@ -344,14 +350,10 @@ class Model(object):
         #log('on_connect:', client.client_id, *client.client_address)
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
-        client.position = SPAWN_POINT
         self.clients.append(client)
-        client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
-        self.send_position(client)
-        self.send_positions(client)
         self.send_nick(client)
         self.send_nicks(client)
 
@@ -380,6 +382,7 @@ class Model(object):
         # TODO: client.start() here
 
     def on_authenticate(self, client, username, access_token):
+        global SPAWN_POINT
         log('on_authenticate:',' client:',client,' username:',username,' access_token:',access_token)
         user_id = None
         if username and access_token:
@@ -401,7 +404,23 @@ class Model(object):
           client.nick = username
           client.user_id = user_id
           self.send_nick(client)
-        log('on_authenticate:client.nick:',client.nick)
+        #log('on_authenticate:client.nick:',client.nick)
+        log('on_authenticate:1:SPAWN_POINT:',SPAWN_POINT)
+        sql="""select x,y,z from user_recent_pos where user_id=%s"""
+        params=[client.nick]
+        rows=list(pg_read(sql,params))
+        if rows:
+          log('on_authenticate:client.nick:',client.nick,' last_pos:',rows,' rows[0][0]=',rows[0][0])
+          x=rows[0][0]
+          y=rows[0][1]
+          z=rows[0][2]
+          SPAWN_POINT=(x,y,z,0,0)
+          log('on_authenticate:x,y,z:',x,y,z)
+        log('on_authenticate:2:SPAWN_POINT:',SPAWN_POINT)
+        client.position = SPAWN_POINT
+        self.send_position(client)
+        self.send_positions(client)
+        client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)
@@ -446,9 +465,6 @@ class Model(object):
         p, q = chunked(x), chunked(z)
         previous = self.get_block(x, y, z)
         message = None
-        #TODO: remove after builder is done
-        #if client.user_id is None:
-        #  client.user_id = "builder"
         if AUTH_REQUIRED and client.user_id is None:
             message = 'in on_block - Only logged in users are allowed to build.' 
         elif y <= 0 or y > 255:
@@ -533,8 +549,8 @@ class Model(object):
             return
         p, q = chunked(x), chunked(z)
         if text:
-            sql = """insert or replace into sign (p, q, x, y, z, face, text) values (%s,%s,%s,%s,%s,%s,%s)"""
-            params[p,q,x,y,z,face,text]
+            sql = """insert into sign (p, q, x, y, z, face, text) values (%s,%s,%s,%s,%s,%s,%s) on conflict on constraint sign_xyzface_idx do update set text=%s"""
+            params[p,q,x,y,z,face,text,text]
             response=pg_write(sql,params)
         else:
             sql = """delete from sign where x = %s and y = %s and z = %s and face = %s"""
@@ -546,6 +562,12 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
+        if self.is_going_down==1:
+          now = dt.now()
+          log('on_position:is_going_down:',self.is_going_down,' client.nick:',client.nick,' x,y,z:',x,y,z)
+          sql = """insert into user_recent_pos (updated_at,user_id,x,y,z) values (%s,%s,%s,%s,%s) on conflict on constraint unique_username do update set x=%s,y=%s,z=%s"""
+          params=[now,client.nick,x,y,z,x,y,z]
+          response=pg_write(sql,params)
 
     def on_talk(self, client, *args):
         text = ','.join(args)
@@ -705,11 +727,9 @@ def agones_ready():
     log('agones_ready:',error)
 
 model = Model(None)
-model.start()
 
 def main():
-    #log("main","AUTH_REQUIRED",AUTH_REQUIRED)
-    #log("main","AUTH_URL",AUTH_URL)
+    log('in main SPAWN_POINT',SPAWN_POINT)
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]
@@ -719,9 +739,12 @@ def main():
     if IS_AGONES == 'True':
       agones_ready()
     signal.signal(signal.SIGTERM,sig_handler)
+    model.start()
     server = Server((host, port), Handler)
     server.model = model
     server.serve_forever()
 
 if __name__ == '__main__':
+    print('in __main__ SPAWN_POINT:',SPAWN_POINT)
+    sys.stdout.flush()
     main()

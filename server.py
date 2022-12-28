@@ -349,25 +349,9 @@ class Model(object):
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
         self.clients.append(client)
-        client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
-        log('on_connect:1:SPAWN_POINT:',SPAWN_POINT)
-        sql="""select x,y,z from user_recent_pos where user_id=%s"""
-        params=[client.nick]
-        rows=list(pg_read(sql,params))
-        if rows:
-          log('on_connect:client.nick:',client.nick,' last_pos:',rows,' rows[0][0]=',rows[0][0])
-          x=rows[0][0]
-          y=rows[0][1]
-          z=rows[0][2]
-          SPAWN_POINT=(x,y,z,0,0)
-          log('on_connect:x,y,z:',x,y,z)
-        log('on_connect:2:SPAWN_POINT:',SPAWN_POINT)
-        client.position = SPAWN_POINT
-        self.send_position(client)
-        self.send_positions(client)
         self.send_nick(client)
         self.send_nicks(client)
 
@@ -418,6 +402,22 @@ class Model(object):
           client.user_id = user_id
           self.send_nick(client)
         #log('on_authenticate:client.nick:',client.nick)
+        log('on_authenticate:1:SPAWN_POINT:',SPAWN_POINT)
+        sql="""select x,y,z from user_recent_pos where user_id=%s"""
+        params=[client.nick]
+        rows=list(pg_read(sql,params))
+        if rows:
+          log('on_authenticate:client.nick:',client.nick,' last_pos:',rows,' rows[0][0]=',rows[0][0])
+          x=rows[0][0]
+          y=rows[0][1]
+          z=rows[0][2]
+          SPAWN_POINT=(x,y,z,0,0)
+          log('on_authenticate:x,y,z:',x,y,z)
+        log('on_authenticate:2:SPAWN_POINT:',SPAWN_POINT)
+        client.position = SPAWN_POINT
+        self.send_position(client)
+        self.send_positions(client)
+        client.send(YOU, client.client_id, *client.position)
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)

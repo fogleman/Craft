@@ -407,7 +407,11 @@ class Model(object):
           client.nick = username
           client.user_id = user_id
           self.send_nick(client)
-        log('on_authenticate:client.nick:',client.nick)
+        #log('on_authenticate:client.nick:',client.nick)
+        sql="""select x,y,z from user_recent_pos where user_id=%s"""
+        params=[client.nick]
+        rows=list(pg_read(sql,params))
+        log('on_authenticate:client.nick:',client.nick,' last_pos:',rows)
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)

@@ -347,14 +347,11 @@ class Model(object):
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
-        log('on_connect:client.position:',client.position)
-        log('on_connect:*client.position:',*client.position)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
-        client.send(TALK, client.client_id, *client.position)
         self.send_position(client)
         self.send_positions(client)
         self.send_nick(client)
@@ -551,6 +548,7 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
+        log('on_position:x,y,z:',x,y,z)
 
     def on_talk(self, client, *args):
         text = ','.join(args)

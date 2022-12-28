@@ -548,7 +548,7 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
-        log('on_position:x,y,z:',x,y,z)
+        log('on_position:client.nick:',client.nick,' x,y,z:',x,y,z)
 
     def on_talk(self, client, *args):
         text = ','.join(args)

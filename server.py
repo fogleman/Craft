@@ -452,9 +452,6 @@ class Model(object):
         p, q = chunked(x), chunked(z)
         previous = self.get_block(x, y, z)
         message = None
-        #TODO: remove after builder is done
-        #if client.user_id is None:
-        #  client.user_id = "builder"
         if AUTH_REQUIRED and client.user_id is None:
             message = 'in on_block - Only logged in users are allowed to build.' 
         elif y <= 0 or y > 255:
@@ -539,8 +536,8 @@ class Model(object):
             return
         p, q = chunked(x), chunked(z)
         if text:
-            sql = """insert or replace into sign (p, q, x, y, z, face, text) values (%s,%s,%s,%s,%s,%s,%s)"""
-            params[p,q,x,y,z,face,text]
+            sql = """insert into sign (p, q, x, y, z, face, text) values (%s,%s,%s,%s,%s,%s,%s) on conflict on constraint sign_xyzface_idx do update set text=%s"""
+            params[p,q,x,y,z,face,text,text]
             response=pg_write(sql,params)
         else:
             sql = """delete from sign where x = %s and y = %s and z = %s and face = %s"""
@@ -552,7 +549,12 @@ class Model(object):
         x, y, z, rx, ry = map(float, (x, y, z, rx, ry))
         client.position = (x, y, z, rx, ry)
         self.send_position(client)
-        log('on_position:is_going_down:',self.is_going_down,' client.nick:',client.nick,' x,y,z:',x,y,z)
+        if self.is_going_down==1:
+          now = dt.now()
+          log('on_position:is_going_down:',self.is_going_down,' client.nick:',client.nick,' x,y,z:',x,y,z)
+          sql = """insert into user_recent_pos (updated_at,user_id,x,y,z) values (%s,%s,%s,%s,%s) on conflict unique_username do update set x=%s,y=%s,z=%s"""
+          params=[now,client.nick,x,y,z,x,y,z]
+          response=pg_write(sql,params)
 
     def on_talk(self, client, *args):
         text = ','.join(args)

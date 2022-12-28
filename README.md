@@ -18,6 +18,17 @@ curl http://craft.auth.yahav.sa.aws.dev/auth/getoken/?username=yahavb
 ```
 Use the token and username to validate your token `/identity username token` in the craf game client. 
 
+### Database setup
+This fork uses postgresql instead of sqlite so some of the sql were adopted to postgresql.
+To spin an aurora postgresql use https://github.com/aws-samples/amazon-aurora-call-to-amazon-sagemaker-sample/tree/master/multiplayer-matchmaker/aurora-pg-cdk
+
+### Making changes 
+branch=mybranch && git checkout -b $branch && git add server.py&&git commit -m $branch && git push --set-upstream origin $branch
+To build a new image manually, use https://github.com/aws-samples/containerized-game-servers/blob/master/craft/ci/craft-server/serverfiles/build.sh. 
+In `aws-samples/containerized-game-servers/blob/master/craft/ci/craft-server/serverfiles`
+```bash
+export GITHUB_CRAFT_BRANCH=mybranch && ./build.sh
+```
 
 ## Craft
 

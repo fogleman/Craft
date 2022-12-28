@@ -345,11 +345,14 @@ class Model(object):
         #if IS_AGONES == 'True':
         #  self.agones_player(client.nick,'connect')
         client.position = SPAWN_POINT
+        log('on_connect:client.position:',client.position)
+        log('on_connect:*client.position:',*client.position)
         self.clients.append(client)
         client.send(YOU, client.client_id, *client.position)
         client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
+        client.send(TALK, client.client_id, *client.position)
         self.send_position(client)
         self.send_positions(client)
         self.send_nick(client)
@@ -659,6 +662,7 @@ class Model(object):
             if other == client:
                 continue
             other.send(POSITION, client.client_id, *client.position)
+            log('send_position:*client.position:',*client.position)
     def send_nicks(self, client):
         for other in self.clients:
             if other == client:

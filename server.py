@@ -354,6 +354,7 @@ class Model(object):
         client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
         client.send(TALK, 'Type "/help" for a list of commands.')
+        log('on_connect:SPAWN_POINT:',SPAWN_POINT)
         self.send_position(client)
         self.send_positions(client)
         self.send_nick(client)

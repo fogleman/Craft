@@ -232,6 +232,7 @@ class Handler(socketserver.BaseRequestHandler):
         thread.start()
     def agones_health(self):
       global AGONES_HEALTH_THREAD
+      log('in agones_health:AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
       while self.running:
         try:
           if AGONES_HEALTH_THREAD == 1:

@@ -32,6 +32,7 @@ IS_AGONES=os.environ['IS_AGONES']
 
 if IS_AGONES == 'True':
   AGONES_SDK_HTTP_PORT=os.environ['AGONES_SDK_HTTP_PORT']
+  AGONES_HEALTH_THREAD=0
 
 DB_PATH = 'craft.db'
 LOG_PATH = 'log.txt'
@@ -86,6 +87,8 @@ def log(*args):
     sys.stdout.flush()
 
 def sig_handler(signum,frame):
+  global AGONES_HEALTH_THREAD
+  AGONES_HEALTH_THREAD=0
   log('Signal hanlder called with signal',signum)
   log('execute ',cmd)
   os.system(cmd)
@@ -166,6 +169,7 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 class Handler(socketserver.BaseRequestHandler):
     def setup(self):
+        global AGONES_HEALTH_THREAD
         self.position_limiter = RateLimiter(100, 5)
         self.limiter = RateLimiter(1000, 10)
         self.version = None
@@ -176,6 +180,7 @@ class Handler(socketserver.BaseRequestHandler):
         self.running = True
         self.start()
         if IS_AGONES == 'True':
+          AGONES_HEALTH_THREAD=1
           self.start_agones_health()
     def handle(self):
         model = self.server.model
@@ -226,12 +231,14 @@ class Handler(socketserver.BaseRequestHandler):
         #thread.setDaemon=True
         thread.start()
     def agones_health(self):
+      global AGONES_HEALTH_THREAD
       while self.running:
         try:
-          headers={'Content-Type':'application/json'}
-          url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
-          r=requests.post(url,headers=headers,json={})
-          #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+          if AGONES_HEALTH_THREAD == 1:
+            headers={'Content-Type':'application/json'}
+            url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+            r=requests.post(url,headers=headers,json={})
+            #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
           time.sleep(10)
         except Exception as error:
           log('agones_health:error',error)

@@ -48,8 +48,6 @@ SPAWN_X=int(os.environ['SPAWN_X'])
 SPAWN_Y=int(os.environ['SPAWN_Y'])
 SPAWN_Z=int(os.environ['SPAWN_Z'])
 SPAWN_POINT = (SPAWN_X, SPAWN_Y, SPAWN_Z, 0, 0)
-print("SPAWN_POINT",SPAWN_POINT)
-sys.stdout.flush()
 RATE_LIMIT = False
 RECORD_HISTORY =os.environ['RECORD_HISTORY']
 INDESTRUCTIBLE_ITEMS = set([16])
@@ -225,7 +223,7 @@ class Handler(socketserver.BaseRequestHandler):
         thread.start()
     def start_agones_health(self):
         thread = threading.Thread(target=self.agones_health)
-        thread.setDaemon=True
+        #thread.setDaemon=True
         thread.start()
     def agones_health(self):
       while self.running:
@@ -729,7 +727,6 @@ def agones_ready():
 model = Model(None)
 
 def main():
-    log('in main SPAWN_POINT',SPAWN_POINT)
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]
@@ -745,6 +742,4 @@ def main():
     server.serve_forever()
 
 if __name__ == '__main__':
-    print('in __main__ SPAWN_POINT:',SPAWN_POINT)
-    sys.stdout.flush()
     main()

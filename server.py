@@ -232,7 +232,7 @@ class Handler(socketserver.BaseRequestHandler):
         thread.start()
     def start_agones_health(self):
         thread = threading.Thread(target=self.agones_health)
-        #thread.setDaemon=True
+        thread.setDaemon=True
         thread.start()
     def agones_health(self):
       global AGONES_HEALTH_THREAD

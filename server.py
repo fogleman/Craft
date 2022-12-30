@@ -99,7 +99,7 @@ def sig_handler(signum,frame):
   headers={'Content-Type':'application/json'}
   url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
   r=requests.post(url,headers=headers,json={})
-  log('in sig_handler:response from agones /shutdown:',r)
+  log('in sig_handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
 
 def pg_read(sql,param):
   try:
@@ -243,7 +243,7 @@ class Handler(socketserver.BaseRequestHandler):
             headers={'Content-Type':'application/json'}
             url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
             r=requests.post(url,headers=headers,json={})
-            #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+            log('in Handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
           else:
             break
           time.sleep(10)
@@ -352,7 +352,7 @@ class Model(object):
           url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/alpha/player/'+action
           payload={"playerID":client_nick}
           r=requests.post(url,headers=headers,json={})
-          log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
+          log('in Model:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
         except Exception as error:
           log('agones_player_',action,':error',error)
         
@@ -435,10 +435,11 @@ class Model(object):
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)
         if IS_AGONES == 'True':
-          self.agones_player(client.nick,'connect')
+          #self.agones_player(client.nick,'connect')
           headers={'Content-Type':'application/json'}
           url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/allocate'
           r=requests.post(url,headers=headers,json={})
+          log('in Model:on_authenticate:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
 
     def on_chunk(self, client, p, q, key=0):
         packets = b''
@@ -737,7 +738,7 @@ def agones_ready():
     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
     payload={}
     r=requests.post(url,headers=headers,json={})
-    #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+    log('in agones_ready:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
   except Exception as error:
     log('agones_ready:',error)
 

@@ -238,14 +238,14 @@ class Handler(socketserver.BaseRequestHandler):
       global AGONES_HEALTH_THREAD
       log('in agones_health:self.running',self.running,' :AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
       #while self.running:
-      #  try:
-      #    if AGONES_HEALTH_THREAD == 1:
-      headers={'Content-Type':'application/json'}
-      url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
-      r=requests.post(url,headers=headers,json={})
-      log('in Handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
-      #    else:
-      #      break
+      if AGONES_HEALTH_THREAD == 1:
+        #try:
+        headers={'Content-Type':'application/json'}
+        url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+        r=requests.post(url,headers=headers,json={})
+        log('in Handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+      else:
+        break
       #    time.sleep(10)
       #  except Exception as error:
       #    log('agones_health:error',error)

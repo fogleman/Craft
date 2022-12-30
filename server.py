@@ -355,9 +355,7 @@ class Model(object):
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
-        #log('on_connect:', client.client_id, *client.client_address)
-        #if IS_AGONES == 'True':
-        #  self.agones_player(client.nick,'connect')
+        log('on_connect:', client.client_id, *client.client_address)
         self.clients.append(client)
         client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
@@ -432,6 +430,8 @@ class Model(object):
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)
+        if IS_AGONES == 'True':
+          self.agones_player(client.nick,'connect')
 
     def on_chunk(self, client, p, q, key=0):
         packets = b''

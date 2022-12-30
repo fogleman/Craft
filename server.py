@@ -236,20 +236,19 @@ class Handler(socketserver.BaseRequestHandler):
         thread.start()
     def agones_health(self):
       global AGONES_HEALTH_THREAD
-      log('in agones_health:AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
-      while self.running:
-        try:
-          log('in agones_health:self.running',self.running,' :AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
-          if AGONES_HEALTH_THREAD == 1:
-            headers={'Content-Type':'application/json'}
-            url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
-            r=requests.post(url,headers=headers,json={})
-            log('in Handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
-          else:
-            break
-          time.sleep(10)
-        except Exception as error:
-          log('agones_health:error',error)
+      log('in agones_health:self.running',self.running,' :AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
+      #while self.running:
+      #  try:
+      #    if AGONES_HEALTH_THREAD == 1:
+      headers={'Content-Type':'application/json'}
+      url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
+      r=requests.post(url,headers=headers,json={})
+      log('in Handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+      #    else:
+      #      break
+      #    time.sleep(10)
+      #  except Exception as error:
+      #    log('agones_health:error',error)
 
     def run(self):
         while self.running:

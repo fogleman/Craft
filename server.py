@@ -89,13 +89,17 @@ def log(*args):
 def sig_handler(signum,frame):
   global AGONES_HEALTH_THREAD
   AGONES_HEALTH_THREAD=0
-  log('Signal hanlder called with signal',signum)
-  log('execute ',cmd)
+  log('in sig_handler:Signal hanlder called with signal',signum)
+  log('in sig_handler:execute ',cmd)
   os.system(cmd)
   model.is_going_down=1
   model.send_talk("Game server maintenance is pending - pls reconnect")
   model.send_talk("Don't worry, your universe is saved with us")
   model.send_talk('Removing the server from load balancer %s'%(cmd))
+  headers={'Content-Type':'application/json'}
+  url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
+  r=requests.post(url,headers=headers,json={})
+  log('in sig_handler:response from agones /shutdown:',r)
 
 def pg_read(sql,param):
   try:

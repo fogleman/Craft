@@ -99,7 +99,7 @@ def sig_handler(signum,frame):
   headers={'Content-Type':'application/json'}
   url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
   r=requests.post(url,headers=headers,json={})
-  log('in sig_handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+  log('in sig_handler:shutdown:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
 
 def pg_read(sql,param):
   try:
@@ -232,13 +232,14 @@ class Handler(socketserver.BaseRequestHandler):
         thread.start()
     def start_agones_health(self):
         thread = threading.Thread(target=self.agones_health)
-        thread.setDaemon=True
+        #thread.setDaemon=True
         thread.start()
     def agones_health(self):
       global AGONES_HEALTH_THREAD
       log('in agones_health:AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
       while self.running:
         try:
+          log('in agones_health:self.running',self.running,' :AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
           if AGONES_HEALTH_THREAD == 1:
             headers={'Content-Type':'application/json'}
             url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'

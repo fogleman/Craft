@@ -96,10 +96,13 @@ def sig_handler(signum,frame):
   model.send_talk("Game server maintenance is pending - pls reconnect")
   model.send_talk("Don't worry, your universe is saved with us")
   model.send_talk('Removing the server from load balancer %s'%(cmd))
-  #headers={'Content-Type':'application/json'}
-  #url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
-  #r=requests.post(url,headers=headers,json={})
-  #log('in sig_handler:shutdown:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+  headers={'Content-Type':'application/json'}
+  try:
+    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
+    r=requests.post(url,headers=headers,json={})
+    log('in sig_handler:shutdown:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+  except Exception as error:
+    log('in sig_handler:error',error)
 
 def pg_read(sql,param):
   try:
@@ -237,14 +240,12 @@ class Handler(socketserver.BaseRequestHandler):
     def agones_health(self):
       global AGONES_HEALTH_THREAD
       log('in agones_health:self.running',self.running,' :AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
-      #while self.running:
       if AGONES_HEALTH_THREAD == 1:
         try:
           headers={'Content-Type':'application/json'}
           url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
           r=requests.post(url,headers=headers,json={})
           log('in Handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
-      #    time.sleep(10)
         except Exception as error:
           log('agones_health:error',error)
 

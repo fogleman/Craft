@@ -432,6 +432,9 @@ class Model(object):
         self.send_talk('%s has joined the game.' % client.nick)
         if IS_AGONES == 'True':
           self.agones_player(client.nick,'connect')
+          headers={'Content-Type':'application/json'}
+          url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/allocate'
+          r=requests.post(url,headers=headers,json={})
 
     def on_chunk(self, client, p, q, key=0):
         packets = b''

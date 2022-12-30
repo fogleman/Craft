@@ -346,9 +346,9 @@ class Model(object):
         try:
           headers={'Content-Type':'application/json'}
           url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/alpha/player/'+action
-          payload={'playerID':client_nick}
+          payload={"playerID":client_nick}
           r=requests.post(url,headers=headers,json={})
-          log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+          log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:'payload)
         except Exception as error:
           log('agones_player_',action,':error',error)
         

@@ -737,7 +737,7 @@ def agones_ready():
     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
     payload={}
     r=requests.post(url,headers=headers,json={})
-    log('in agones_ready:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+    log('in agones_ready:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
   except Exception as error:
     log('agones_ready:',error)
 
@@ -751,7 +751,12 @@ def main():
         port = int(sys.argv[2])
     log('SERV', host, port)
     if IS_AGONES == 'True':
-      agones_ready()
+      headers={'Content-Type':'application/json'}
+      url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
+      payload={}
+      r=requests.post(url,headers=headers,json={})
+      log('in agones_ready:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
+      #agones_ready()
     signal.signal(signal.SIGTERM,sig_handler)
     model.start()
     server = Server((host, port), Handler)

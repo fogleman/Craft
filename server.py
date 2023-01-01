@@ -6,6 +6,8 @@ import datetime
 import random
 import re
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import sys
 import threading
 import time
@@ -97,12 +99,12 @@ def sig_handler(signum,frame):
   model.send_talk("Don't worry, your universe is saved with us")
   model.send_talk('Removing the server from load balancer %s'%(cmd))
   headers={'Content-Type':'application/json'}
-  #try:
-  url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
-  r=requests.post(url,headers=headers,json={})
-  log('in sig_handler:shutdown:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
-  #except Exception as error:
-  #  log('in sig_handler:error',error)
+  try:
+    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
+    r=requests.post(url,headers=headers,json={},timeout=10)
+    log('in sig_handler:shutdown:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+  except Exception as error:
+    log('in sig_handler:error',error)
 
 def pg_read(sql,param):
   try:

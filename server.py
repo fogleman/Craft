@@ -101,7 +101,7 @@ def sig_handler(signum,frame):
   headers={'Content-Type':'application/json'}
   try:
     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
-    r=requests.post(url,headers=headers,json={},timeout=10)
+    r=requests.post(url,headers=headers,json={},timeout=100)
     log('in sig_handler:shutdown:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
   except Exception as error:
     log('in sig_handler:error',error)

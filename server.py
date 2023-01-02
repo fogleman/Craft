@@ -6,6 +6,8 @@ import datetime
 import random
 import re
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import sys
 import threading
 import time
@@ -32,6 +34,7 @@ IS_AGONES=os.environ['IS_AGONES']
 
 if IS_AGONES == 'True':
   AGONES_SDK_HTTP_PORT=os.environ['AGONES_SDK_HTTP_PORT']
+  AGONES_HEALTH_THREAD=0
 
 DB_PATH = 'craft.db'
 LOG_PATH = 'log.txt'
@@ -48,8 +51,6 @@ SPAWN_X=int(os.environ['SPAWN_X'])
 SPAWN_Y=int(os.environ['SPAWN_Y'])
 SPAWN_Z=int(os.environ['SPAWN_Z'])
 SPAWN_POINT = (SPAWN_X, SPAWN_Y, SPAWN_Z, 0, 0)
-print("SPAWN_POINT",SPAWN_POINT)
-sys.stdout.flush()
 RATE_LIMIT = False
 RECORD_HISTORY =os.environ['RECORD_HISTORY']
 INDESTRUCTIBLE_ITEMS = set([16])
@@ -88,13 +89,22 @@ def log(*args):
     sys.stdout.flush()
 
 def sig_handler(signum,frame):
-  log('Signal hanlder called with signal',signum)
-  log('execute ',cmd)
+  global AGONES_HEALTH_THREAD
+  AGONES_HEALTH_THREAD=0
+  log('in sig_handler:Signal hanlder called with signal',signum)
+  log('in sig_handler:execute ',cmd)
   os.system(cmd)
   model.is_going_down=1
   model.send_talk("Game server maintenance is pending - pls reconnect")
   model.send_talk("Don't worry, your universe is saved with us")
   model.send_talk('Removing the server from load balancer %s'%(cmd))
+  headers={'Content-Type':'application/json'}
+  try:
+    url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/shutdown'
+    r=requests.post(url,headers=headers,json={},timeout=100)
+    log('in sig_handler:shutdown:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+  except Exception as error:
+    log('in sig_handler:error',error)
 
 def pg_read(sql,param):
   try:
@@ -168,6 +178,7 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 class Handler(socketserver.BaseRequestHandler):
     def setup(self):
+        global AGONES_HEALTH_THREAD
         self.position_limiter = RateLimiter(100, 5)
         self.limiter = RateLimiter(1000, 10)
         self.version = None
@@ -178,6 +189,7 @@ class Handler(socketserver.BaseRequestHandler):
         self.running = True
         self.start()
         if IS_AGONES == 'True':
+          AGONES_HEALTH_THREAD=1
           self.start_agones_health()
     def handle(self):
         model = self.server.model
@@ -225,16 +237,17 @@ class Handler(socketserver.BaseRequestHandler):
         thread.start()
     def start_agones_health(self):
         thread = threading.Thread(target=self.agones_health)
-        thread.setDaemon=True
+        #thread.setDaemon=True
         thread.start()
     def agones_health(self):
-      while self.running:
+      global AGONES_HEALTH_THREAD
+      log('in agones_health:self.running',self.running,' :AGONES_HEALTH_THREAD:',AGONES_HEALTH_THREAD)
+      if AGONES_HEALTH_THREAD == 1:
         try:
           headers={'Content-Type':'application/json'}
           url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/health'
           r=requests.post(url,headers=headers,json={})
-          #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
-          time.sleep(10)
+          log('in Handler:agones_health:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
         except Exception as error:
           log('agones_health:error',error)
 
@@ -338,18 +351,16 @@ class Model(object):
         try:
           headers={'Content-Type':'application/json'}
           url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/alpha/player/'+action
-          payload={'playerID':client_nick}
+          payload={"playerID":client_nick}
           r=requests.post(url,headers=headers,json={})
-          log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+          log('in Model:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
         except Exception as error:
           log('agones_player_',action,':error',error)
         
     def on_connect(self, client):
         client.client_id = self.next_client_id()
         client.nick = 'guest%d' % client.client_id
-        #log('on_connect:', client.client_id, *client.client_address)
-        #if IS_AGONES == 'True':
-        #  self.agones_player(client.nick,'connect')
+        log('on_connect:', client.client_id, *client.client_address)
         self.clients.append(client)
         client.send(TIME, time.time(), DAY_LENGTH)
         client.send(TALK, 'Welcome to Craft!')
@@ -365,9 +376,12 @@ class Model(object):
             func(client, *args)
 
     def on_disconnect(self, client):
-        #log('on_disconnect:',self.next_client_id())
-        #if IS_AGONES == 'True':
-        #  self.agones_player(client.nick,'disconnect')
+        log('on_disconnect:',self.next_client_id())
+        if IS_AGONES == 'True':
+          if 'guest' not in client.nick:
+            self.agones_player(client.nick,'disconnect')
+          else:
+            log('on_disconnect:skipping:',client.nick)
         self.clients.remove(client)
         self.send_disconnect(client)
 
@@ -424,6 +438,12 @@ class Model(object):
         client.send(TALK, 'Current pod is '+pod_name)
         client.send(TALK, 'Current node is '+node_name)
         self.send_talk('%s has joined the game.' % client.nick)
+        if IS_AGONES == 'True':
+          self.agones_player(client.nick,'connect')
+          headers={'Content-Type':'application/json'}
+          url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/allocate'
+          r=requests.post(url,headers=headers,json={})
+          log('in Model:on_authenticate:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
 
     def on_chunk(self, client, p, q, key=0):
         packets = b''
@@ -722,14 +742,13 @@ def agones_ready():
     url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
     payload={}
     r=requests.post(url,headers=headers,json={})
-    #log('in Handler:run:response-agones:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers)
+    log('in agones_ready:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
   except Exception as error:
     log('agones_ready:',error)
 
 model = Model(None)
 
 def main():
-    log('in main SPAWN_POINT',SPAWN_POINT)
     host, port = DEFAULT_HOST, DEFAULT_PORT
     if len(sys.argv) > 1:
         host = sys.argv[1]
@@ -737,7 +756,12 @@ def main():
         port = int(sys.argv[2])
     log('SERV', host, port)
     if IS_AGONES == 'True':
-      agones_ready()
+      headers={'Content-Type':'application/json'}
+      url='http://localhost:'+AGONES_SDK_HTTP_PORT+'/ready'
+      payload={}
+      r=requests.post(url,headers=headers,json={})
+      log('in agones_ready:url:',url, ' response.status_code:',r.status_code,' response.headers:',r.headers,' payload:',payload)
+      #agones_ready()
     signal.signal(signal.SIGTERM,sig_handler)
     model.start()
     server = Server((host, port), Handler)
@@ -745,6 +769,4 @@ def main():
     server.serve_forever()
 
 if __name__ == '__main__':
-    print('in __main__ SPAWN_POINT:',SPAWN_POINT)
-    sys.stdout.flush()
     main()

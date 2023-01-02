@@ -378,7 +378,10 @@ class Model(object):
     def on_disconnect(self, client):
         log('on_disconnect:',self.next_client_id())
         if IS_AGONES == 'True':
-          self.agones_player(client.nick,'disconnect')
+          if 'guest' not in client.nick:
+            self.agones_player(client.nick,'disconnect')
+          else:
+            log('on_disconnect:skipping:',client.nick)
         self.clients.remove(client)
         self.send_disconnect(client)
 

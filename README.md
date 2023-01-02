@@ -29,7 +29,25 @@ In `aws-samples/containerized-game-servers/blob/master/craft/ci/craft-server/ser
 ```bash
 export GITHUB_CRAFT_BRANCH=mybranch && ./build.sh
 ```
+### Agones
 
+Install agones 
+```bash
+helm upgrade agones agones/agones --namespace agones-system --install --wait --create-namespace \
+    --set agones.featureGates=PlayerTracking=true
+```
+
+Enable player tracking
+```bash
+helm upgrade agones agones/agones --namespace agones-system --set agones.featureGates=PlayerTracking=true
+```
+
+Add `IS_AGONES` env parameter 
+```bash
+IS_AGONES=True
+```
+
+Use TBD link to https://github.com/aws-samples/containerized-game-servers/tree/master/craft
 ## Craft
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.

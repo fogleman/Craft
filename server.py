@@ -376,9 +376,9 @@ class Model(object):
             func(client, *args)
 
     def on_disconnect(self, client):
-        #log('on_disconnect:',self.next_client_id())
-        #if IS_AGONES == 'True':
-        #  self.agones_player(client.nick,'disconnect')
+        log('on_disconnect:',self.next_client_id())
+        if IS_AGONES == 'True':
+          self.agones_player(client.nick,'disconnect')
         self.clients.remove(client)
         self.send_disconnect(client)
 

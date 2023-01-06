@@ -74,6 +74,7 @@ TALK = 'T'
 TIME = 'E'
 VERSION = 'V'
 YOU = 'U'
+GETSERVERS = 'G'
 
 try:
     from config import *
@@ -292,6 +293,7 @@ class Model(object):
             TALK: self.on_talk,
             SIGN: self.on_sign,
             VERSION: self.on_version,
+            GETSERVERS: self.on_get_servers,
         }
         self.patterns = [
             (re.compile(r'^/nick(?:\s+([^,\s]+))?$'), self.on_nick),
@@ -384,6 +386,9 @@ class Model(object):
             log('on_disconnect:skipping:',client.nick)
         self.clients.remove(client)
         self.send_disconnect(client)
+
+    def on_get_servers(self,client):
+        client.send(TALK, 'Availible servers for you:')
 
     def on_version(self, client, version):
         if client.version is not None:

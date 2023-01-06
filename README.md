@@ -1,3 +1,53 @@
+## Craft fork
+
+Running on python3, using Amazon Aurora PG instead of sqlite, deployed on Agones/NLB and using craft.auth.yahav.sa.aws.dev/auth/identity/ for auth players. 
+
+See all users:
+```bash
+curl http://craft.auth.yahav.sa.aws.dev/auth/allusers/
+```
+
+Create a user:
+```bash
+curl http://craft.auth.yahav.sa.aws.dev/auth/adduser/?username=yahavb
+```
+
+Generate token:
+```bash
+curl http://craft.auth.yahav.sa.aws.dev/auth/getoken/?username=yahavb
+```
+Use the token and username to validate your token `/identity username token` in the craf game client. 
+
+### Database setup
+This fork uses postgresql instead of sqlite so some of the sql were adopted to postgresql.
+To spin an aurora postgresql use https://github.com/aws-samples/amazon-aurora-call-to-amazon-sagemaker-sample/tree/master/multiplayer-matchmaker/aurora-pg-cdk
+
+### Making changes 
+branch=mybranch && git checkout -b $branch && git add server.py&&git commit -m $branch && git push --set-upstream origin $branch
+To build a new image manually, use https://github.com/aws-samples/containerized-game-servers/blob/master/craft/ci/craft-server/serverfiles/build.sh. 
+In `aws-samples/containerized-game-servers/blob/master/craft/ci/craft-server/serverfiles`
+```bash
+export GITHUB_CRAFT_BRANCH=mybranch && ./build.sh
+```
+### Agones
+
+Install agones 
+```bash
+helm upgrade agones agones/agones --namespace agones-system --install --wait --create-namespace \
+    --set agones.featureGates=PlayerTracking=true
+```
+
+Enable player tracking
+```bash
+helm upgrade agones agones/agones --namespace agones-system --set agones.featureGates=PlayerTracking=true
+```
+
+Add `IS_AGONES` env parameter 
+```bash
+IS_AGONES=True
+```
+
+Use TBD link to https://github.com/aws-samples/containerized-game-servers/tree/master/craft
 ## Craft
 
 Minecraft clone for Windows, Mac OS X and Linux. Just a few thousand lines of C using modern OpenGL (shaders). Online multiplayer support is included using a Python-based server.

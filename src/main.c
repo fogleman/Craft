@@ -2418,12 +2418,11 @@ void handle_movement(double dt) {
         float m = dt * 1.0;
         g->ortho = glfwGetKey(g->window, CRAFT_KEY_ORTHO) ? 64 : 0;
         g->fov = glfwGetKey(g->window, CRAFT_KEY_ZOOM) ? 15 : 65;
-        if (glfwGetKey(g->window, CRAFT_KEY_FORWARD)) sz--;
-        if (glfwGetKey(g->window, CRAFT_KEY_BACKWARD)) sz++;
         if (glfwGetKey(g->window, CRAFT_KEY_FORWARD)) {
             if(glfwGetKey(g->window, CRAFT_KEY_RUN)) isRunning = 1;
             sz--;
-        }
+        }       
+        if (glfwGetKey(g->window, CRAFT_KEY_BACKWARD)) sz++;
         if (glfwGetKey(g->window, CRAFT_KEY_LEFT)) sx--;
         if (glfwGetKey(g->window, CRAFT_KEY_RIGHT)) sx++;
         if (glfwGetKey(g->window, GLFW_KEY_LEFT)) s->rx -= m;
@@ -2444,7 +2443,7 @@ void handle_movement(double dt) {
         }
     }
     float speed = g->flying ? 20 : 5;
-    if(isRunning) speed*=4;
+    if(isRunning) speed*=1.5;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
         powf(vy * speed + ABS(dy) * 2, 2) +

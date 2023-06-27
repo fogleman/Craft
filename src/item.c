@@ -25,6 +25,10 @@ const int items[] = {
     SUN_FLOWER,
     WHITE_FLOWER,
     BLUE_FLOWER,
+    STAR,
+    DARK_AND_LIGHT,
+    COLOR_FUL,
+    STONE_CEMENT_MIX,
     COLOR_00,
     COLOR_01,
     COLOR_02,
@@ -61,6 +65,11 @@ const int items[] = {
 
 const int item_count = sizeof(items) / sizeof(int);
 
+/** 
+ * numbers refer to position in the texture.png file, 1
+ * 6x16 pixel units are parsed into blocks
+ * a new 16x16 texture was added for a 'star' block
+*/
 const int blocks[256][6] = {
     // w => (left, right, top, bottom, front, back) tiles
     {0, 0, 0, 0, 0, 0}, // 0 - empty
@@ -80,21 +89,25 @@ const int blocks[256][6] = {
     {13, 13, 13, 13, 13, 13}, // 14 - chest
     {14, 14, 14, 14, 14, 14}, // 15 - leaves
     {15, 15, 15, 15, 15, 15}, // 16 - cloud
-    {0, 0, 0, 0, 0, 0}, // 17
+    {0, 0, 0, 0, 0, 0}, // 17 
     {0, 0, 0, 0, 0, 0}, // 18
     {0, 0, 0, 0, 0, 0}, // 19
     {0, 0, 0, 0, 0, 0}, // 20
     {0, 0, 0, 0, 0, 0}, // 21
     {0, 0, 0, 0, 0, 0}, // 22
     {0, 0, 0, 0, 0, 0}, // 23
-    {0, 0, 0, 0, 0, 0}, // 24
+    //defining new block star
+    {55, 55, 55, 55, 55, 55}, // 24
     {0, 0, 0, 0, 0, 0}, // 25
     {0, 0, 0, 0, 0, 0}, // 26
     {0, 0, 0, 0, 0, 0}, // 27
     {0, 0, 0, 0, 0, 0}, // 28
-    {0, 0, 0, 0, 0, 0}, // 29
-    {0, 0, 0, 0, 0, 0}, // 30
-    {0, 0, 0, 0, 0, 0}, // 31
+    //defining new block dark and light stone
+    {11, 11, 11, 12, 12, 12}, // 29  
+    //defining new block combo of colors
+    {176, 179, 183, 185, 187, 196}, // 30 
+    //defining new block stone/cement mix
+    {2, 2, 5, 5, 2, 2}, // 31
     {176, 176, 176, 176, 176, 176}, // 32
     {177, 177, 177, 177, 177, 177}, // 33
     {178, 178, 178, 178, 178, 178}, // 34

@@ -36,6 +36,17 @@ the installation:
 
 #### Linux (Ubuntu)
 
+GTest install and build from dev package:
+```bash
+sudo apt-get install libgtest-dev  # install gtest dev package
+cd /usr/src/gtest  
+sudo cmake CMakeLists.txt 
+sudo make
+# copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
+sudo cp *.a /usr/lib
+```
+The rest of the dependencies can be found below.
+
     sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
     sudo apt-get build-dep glfw
 

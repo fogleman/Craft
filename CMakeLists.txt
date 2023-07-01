@@ -47,3 +47,8 @@ if(MINGW)
     target_link_libraries(craft ws2_32.lib glfw
         ${GLFW_LIBRARIES} ${CURL_LIBRARIES})
 endif()
+
+# GTest setup
+enable_testing()
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIR})

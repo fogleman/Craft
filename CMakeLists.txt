@@ -49,6 +49,30 @@ if(MINGW)
 endif()
 
 # GTest setup
+# do not want main included so it is a valid executable
+#MESSAGE(STATUS "${SOURCE_FILES}")
+FOREACH(item ${SOURCE_FILES})
+  IF(${item} MATCHES "src/main.c")
+    LIST(REMOVE_ITEM SOURCE_FILES ${item})
+  ENDIF(${item} MATCHES "src/main.c")
+ENDFOREACH(item)
+#MESSAGE(STATUS "${SOURCE_FILES}")
+
 enable_testing()
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIR})
+add_executable(
+    runTests 
+    tests/tests.cpp 
+    ${SOURCE_FILES}
+    deps/glew/src/glew.c
+    deps/lodepng/lodepng.c
+    deps/noise/noise.c
+    deps/sqlite/sqlite3.c
+    deps/tinycthread/tinycthread.c)
+target_link_libraries(runTests 
+    ${GTEST_BOTH_LIBRARIES} 
+    pthread
+    dl glfw
+    ${GLFW_LIBRARIES} 
+    ${CURL_LIBRARIES} )

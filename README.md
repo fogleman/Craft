@@ -74,6 +74,12 @@ terminal.
     make
     ./craft
 
+### Tests
+
+Follow the TEST structure within `tests/tests.cpp` to add unit tests to your code. It is structured to allow multiple tests under one test suite, so each feature can have multiple tests under it. 
+
+Once your tests are written, follow the normal build procedure above and then target the new `./runTests` executable.
+
 ### Multiplayer
 
 After many years, craft.michaelfogleman.com has been taken down. See the [Server](#server) section for info on self-hosting.

@@ -2623,7 +2623,8 @@ int main(int argc, char **argv) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    load_png_texture("textures/texture.png");
+    //updated to new texture file that was edited to include a new block texture
+    load_png_texture("textures/texture2.png");
 
     GLuint font;
     glGenTextures(1, &font);

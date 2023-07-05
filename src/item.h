@@ -25,6 +25,10 @@
 #define SUN_FLOWER 21
 #define WHITE_FLOWER 22
 #define BLUE_FLOWER 23
+#define STAR 24
+#define DARK_AND_LIGHT 29
+#define COLOR_FUL 30
+#define STONE_CEMENT_MIX 31
 #define COLOR_00 32
 #define COLOR_01 33
 #define COLOR_02 34

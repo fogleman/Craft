@@ -36,6 +36,17 @@ the installation:
 
 #### Linux (Ubuntu)
 
+GTest install and build from dev package:
+```bash
+sudo apt-get install libgtest-dev  # install gtest dev package
+cd /usr/src/gtest  
+sudo cmake CMakeLists.txt 
+sudo make
+# copy or symlink libgtest.a and libgtest_main.a to your /usr/lib folder
+sudo cp *.a /usr/lib
+```
+The rest of the dependencies can be found below.
+
     sudo apt-get install cmake libglew-dev xorg-dev libcurl4-openssl-dev
     sudo apt-get build-dep glfw
 
@@ -62,6 +73,12 @@ terminal.
     cmake .
     make
     ./craft
+
+### Tests
+
+Follow the TEST structure within `tests/tests.cpp` to add unit tests to your code. It is structured to allow multiple tests under one test suite, so each feature can have multiple tests under it. 
+
+Once your tests are written, follow the normal build procedure above and then target the new `./runTests` executable.
 
 ### Multiplayer
 

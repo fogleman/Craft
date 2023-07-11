@@ -11,7 +11,7 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
-#define DAY_LENGTH 600
+#define DAY_LENGTH 7200
 #define INVERT_MOUSE 0
 
 // rendering options
@@ -42,7 +42,7 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
-
+#define CRAFT_KEY_RUN GLFW_KEY_LEFT_CONTROL
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10
 #define RENDER_CHUNK_RADIUS 10

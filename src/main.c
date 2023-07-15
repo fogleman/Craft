@@ -135,6 +135,7 @@ typedef struct {
     int observe1;
     int observe2;
     int flying;
+    int flying_sprint_speed;
     int item_index;
     int scale;
     int ortho;
@@ -2024,7 +2025,7 @@ void parse_command(const char *buffer, int forward) {
     char server_addr[MAX_ADDR_LENGTH];
     int server_port = DEFAULT_PORT;
     char filename[MAX_PATH_LENGTH];
-    int radius, count, xc, yc, zc;
+    int radius, count, xc, yc, zc, speed;
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
@@ -2070,6 +2071,14 @@ void parse_command(const char *buffer, int forward) {
         }
         else {
             add_message("Viewing distance must be between 1 and 24.");
+        }
+    }
+    else if (sscanf(buffer, "/flyspeed %d", &speed) == 1) {
+        if (speed >= 1 && speed <= 50) {
+            g->flying_sprint_speed = speed;
+        }
+        else {
+            add_message("Flying speed must be between 1 and 50.");
         }
     }
     else if (strcmp(buffer, "/copy") == 0) {
@@ -2442,7 +2451,7 @@ void handle_movement(double dt) {
             }
         }
     }
-    float speed = g->flying ? 20 : 5;
+    float speed = g->flying ? g->flying_sprint_speed : 5; // flying gets modifiable speed
     if(isRunning) speed*=1.5;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
@@ -2578,6 +2587,7 @@ void reset_model() {
     g->observe1 = 0;
     g->observe2 = 0;
     g->flying = 0;
+    g->flying_sprint_speed = 20;
     g->item_index = 0;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;

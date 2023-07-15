@@ -166,6 +166,12 @@ Teleport to the specified chunk.
 
 Teleport back to the spawn point.
 
+### More Chat Commands (FOR 3l1t3 h4ck3rs ONLY!)
+
+    /flysprint [N]
+
+Sets flying sprint speed. Valid speeds 1 - 50 
+
 ### Screenshot
 
 ![Screenshot](https://i.imgur.com/foYz3aN.png)

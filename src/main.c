@@ -2019,6 +2019,7 @@ void tree(Block *block) {
 }
 
 void parse_command(const char *buffer, int forward) {
+    char help_target[128] = {0};
     char username[128] = {0};
     char token[128] = {0};
     char server_addr[MAX_ADDR_LENGTH];
@@ -2030,6 +2031,13 @@ void parse_command(const char *buffer, int forward) {
         add_message("Successfully imported identity token!");
         login();
     }
+    else if (sscanf(buffer, "/help %128s", help_target) == 1) {
+        //TODO: Implement specific help
+    }
+    else if (strcmp(buffer, "/help") == 0) {
+        //TODO: Implement generic help
+    }
+
     else if (strcmp(buffer, "/logout") == 0) {
         db_auth_select_none();
         login();

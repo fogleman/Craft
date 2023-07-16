@@ -2072,14 +2072,22 @@ void parse_command(const char *buffer, int forward) {
             add_message("Help: /view N");
             add_message("Set viewing distance, 1 - 24.");
         }
+        else if (strcmp(help_target, "flyspeed") == 0) {
+            add_message("Help: /flyspeed [N]");
+            add_message("Sets flying speed. Valid speeds 1 - 50.");
+        }
+        else if (strcmp(help_target, "mouse") == 0) {
+            add_message("Help: /mouse [F]");
+            add_message("Set the mouse sensitivity. Default value is 0.0025. Valid range from 0.0 (exclusive) to 1.0 (inclusive).");
+        }
         else {
              add_message("That command does not have a help page");
         }
     }
     else if (strcmp(buffer, "/help") == 0) {
         add_message("Type \"t\" to chat. Type \"/\" to type commands:");
-        add_message("/goto [NAME], /help [TOPIC], /list, /login NAME, /logout,");
-        add_message("/offline [FILE], /online HOST [PORT], /pq P Q, /spawn, /view N");
+        add_message("/goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /offline [FILE],");
+        add_message("/online HOST [PORT], /pq P Q, /spawn, /view [N], /flyspeed [N], /mouse [F]");
     }
     else if (strcmp(buffer, "/logout") == 0) {
         db_auth_select_none();

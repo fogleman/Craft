@@ -169,9 +169,9 @@ Teleport back to the spawn point.
 
 ### More Chat Commands (FOR 3l1t3 h4ck3rs ONLY!)
 
-    /flysprint [N]
+    /flyspeed [N]
 
-Sets flying sprint speed. Valid speeds 1 - 50 
+Sets flying speed. Valid speeds 1 - 50 
 
 ### Screenshot
 

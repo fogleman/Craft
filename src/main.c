@@ -137,10 +137,12 @@ typedef struct {
     int observe1;
     int observe2;
     int flying;
+    int flying_sprint_speed;
     int item_index;
     int scale;
     int ortho;
     float fov;
+    float mouse_sensitivity;
     int suppress_char;
     int mode;
     int mode_changed;
@@ -2028,7 +2030,8 @@ void parse_command(const char *buffer, int forward) {
     char server_addr[MAX_ADDR_LENGTH];
     int server_port = DEFAULT_PORT;
     char filename[MAX_PATH_LENGTH];
-    int radius, count, xc, yc, zc;
+    int radius, count, xc, yc, zc, speed;
+    float sensitivity;
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
@@ -2065,6 +2068,14 @@ void parse_command(const char *buffer, int forward) {
         g->mode_changed = 1;
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
+    }    
+    else if (sscanf(buffer, "/mouse %f", &sensitivity) == 1) {
+        if (sensitivity > 0.0 && sensitivity <= 1.0) {
+            g->mouse_sensitivity = sensitivity;
+        }
+        else {
+            add_message("Mouse sensitivity must be between 0.0 and 1.0");
+        }
     }
     else if (sscanf(buffer, "/view %d", &radius) == 1) {
         if (radius >= 1 && radius <= 24) {
@@ -2074,6 +2085,14 @@ void parse_command(const char *buffer, int forward) {
         }
         else {
             add_message("Viewing distance must be between 1 and 24.");
+        }
+    }
+    else if (sscanf(buffer, "/flyspeed %d", &speed) == 1) {
+        if (speed >= 1 && speed <= 50) {
+            g->flying_sprint_speed = speed;
+        }
+        else {
+            add_message("Flying speed must be between 1 and 50.");
         }
     }
     else if (strcmp(buffer, "/copy") == 0) {
@@ -2401,13 +2420,12 @@ void handle_mouse_input() {
     if (exclusive && (px || py)) {
         double mx, my;
         glfwGetCursorPos(g->window, &mx, &my);
-        float m = 0.0025;
-        s->rx += (mx - px) * m;
+        s->rx += (mx - px) * g->mouse_sensitivity;
         if (INVERT_MOUSE) {
-            s->ry += (my - py) * m;
+            s->ry += (my - py) * g->mouse_sensitivity;
         }
         else {
-            s->ry -= (my - py) * m;
+            s->ry -= (my - py) * g->mouse_sensitivity;
         }
         if (s->rx < 0) {
             s->rx += RADIANS(360);
@@ -2438,7 +2456,7 @@ void handle_movement(double dt) {
         if (glfwGetKey(g->window, CRAFT_KEY_FORWARD)) {
             if(glfwGetKey(g->window, CRAFT_KEY_RUN)) isRunning = 1;
             sz--;
-        }       
+        } 
         if (glfwGetKey(g->window, CRAFT_KEY_BACKWARD)) sz++;
         if (glfwGetKey(g->window, CRAFT_KEY_LEFT)) sx--;
         if (glfwGetKey(g->window, CRAFT_KEY_RIGHT)) sx++;
@@ -2459,7 +2477,7 @@ void handle_movement(double dt) {
             }
         }
     }
-    float speed = g->flying ? 20 : 5;
+    float speed = g->flying ? g->flying_sprint_speed : 5; // flying gets modifiable speed
     if(isRunning) speed*=1.5;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
@@ -2595,7 +2613,9 @@ void reset_model() {
     g->observe1 = 0;
     g->observe2 = 0;
     g->flying = 0;
+    g->flying_sprint_speed = 20;
     g->item_index = 0;
+    g->mouse_sensitivity = 0.0025;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);

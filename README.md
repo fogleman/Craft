@@ -131,6 +131,10 @@ python server.py [HOST [PORT]]
 
 ### Chat Commands
 
+    /mouse [f]
+
+Set the mouse sensitivity. Default value is 0.0025. Valid range from 0.0 (exclusive) to 1.0 (inclusive). 
+
     /goto [NAME]
 
 Teleport to another user.
@@ -166,6 +170,12 @@ Teleport to the specified chunk.
     /spawn
 
 Teleport back to the spawn point.
+
+### More Chat Commands (FOR 3l1t3 h4ck3rs ONLY!)
+
+    /flyspeed [N]
+
+Sets flying speed. Valid speeds 1 - 50 
 
 ### Screenshot
 

@@ -39,6 +39,8 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
+#define PLAYER_HEIGHT 2
+
 typedef struct {
     Map map;
     Map lights;

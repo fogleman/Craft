@@ -153,6 +153,8 @@ typedef struct {
     Block block1;
     Block copy0;
     Block copy1;
+
+    int p_height; // player height
 } Model;
 
 static Model model;

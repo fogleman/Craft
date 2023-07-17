@@ -140,6 +140,7 @@ typedef struct {
     int scale;
     int ortho;
     float fov;
+    float mouse_sensitivity;
     int suppress_char;
     int mode;
     int mode_changed;
@@ -2026,6 +2027,7 @@ void parse_command(const char *buffer, int forward) {
     int server_port = DEFAULT_PORT;
     char filename[MAX_PATH_LENGTH];
     int radius, count, xc, yc, zc, speed;
+    float sensitivity;
     if (sscanf(buffer, "/identity %128s %128s", username, token) == 2) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
@@ -2062,6 +2064,14 @@ void parse_command(const char *buffer, int forward) {
         g->mode_changed = 1;
         g->mode = MODE_OFFLINE;
         snprintf(g->db_path, MAX_PATH_LENGTH, "%s", DB_PATH);
+    }    
+    else if (sscanf(buffer, "/mouse %f", &sensitivity) == 1) {
+        if (sensitivity > 0.0 && sensitivity <= 1.0) {
+            g->mouse_sensitivity = sensitivity;
+        }
+        else {
+            add_message("Mouse sensitivity must be between 0.0 and 1.0");
+        }
     }
     else if (sscanf(buffer, "/view %d", &radius) == 1) {
         if (radius >= 1 && radius <= 24) {
@@ -2393,13 +2403,12 @@ void handle_mouse_input() {
     if (exclusive && (px || py)) {
         double mx, my;
         glfwGetCursorPos(g->window, &mx, &my);
-        float m = 0.0001;
-        s->rx += (mx - px) * m;
+        s->rx += (mx - px) * g->mouse_sensitivity;
         if (INVERT_MOUSE) {
-            s->ry += (my - py) * m;
+            s->ry += (my - py) * g->mouse_sensitivity;
         }
         else {
-            s->ry -= (my - py) * m;
+            s->ry -= (my - py) * g->mouse_sensitivity;
         }
         if (s->rx < 0) {
             s->rx += RADIANS(360);
@@ -2589,6 +2598,7 @@ void reset_model() {
     g->flying = 0;
     g->flying_sprint_speed = 20;
     g->item_index = 0;
+    g->mouse_sensitivity = 0.0025;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);

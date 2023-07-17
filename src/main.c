@@ -2480,13 +2480,13 @@ void handle_movement(double dt) {
         }
         s->x += vx;
         s->y += vy + dy * ut;
-        s->z += vz;
-        if (collide(2, &s->x, &s->y, &s->z)) {
+        s->z += vz;   		// collide - height is the block height or character height  
+          if (collide(g->p_height, &s->x, &s->y, &s->z)) {
             dy = 0;
         }
     }
     if (s->y < 0) {
-        s->y = highest_block(s->x, s->z) + 2;
+        s->y = highest_block(s->x, s->z) + g->p_height;
     }
 }
 
@@ -2603,6 +2603,7 @@ void reset_model() {
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
+     g->p_height = 2;
 }
 
 int main(int argc, char **argv) {
@@ -2791,7 +2792,7 @@ int main(int argc, char **argv) {
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
         force_chunks(me);
         if (!loaded) {
-            s->y = highest_block(s->x, s->z) + 2;
+             s->y = highest_block(s->x, s->z);
         }
 
         // BEGIN MAIN LOOP //

@@ -2276,6 +2276,19 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             g->observe2 = (g->observe2 + 1) % g->player_count;
         }
     }
+
+    if (key == GLFW_KEY_COMMA) //Lower Height
+    {
+        if (g->p_height > 2)        
+            g->p_height -= 1;            
+    }
+
+    if (key == GLFW_KEY_PERIOD) //Raise Height
+    {
+        State *s = &g->players->state;
+        s->y += 1;
+        g->p_height += 1;        
+    }
 }
 
 void on_char(GLFWwindow *window, unsigned int u) {

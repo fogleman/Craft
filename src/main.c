@@ -39,6 +39,8 @@
 #define WORKER_BUSY 1
 #define WORKER_DONE 2
 
+#define PLAYER_HEIGHT 2
+
 typedef struct {
     Map map;
     Map lights;
@@ -153,6 +155,8 @@ typedef struct {
     Block block1;
     Block copy0;
     Block copy1;
+
+    int p_height; // player height
 } Model;
 
 static Model model;
@@ -2350,6 +2354,19 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
             g->observe2 = (g->observe2 + 1) % g->player_count;
         }
     }
+
+    if (key == GLFW_KEY_COMMA) //Lower Height
+    {
+        if (g->p_height > 2)        
+            g->p_height -= 1;            
+    }
+
+    if (key == GLFW_KEY_PERIOD) //Raise Height
+    {
+        State *s = &g->players->state;
+        s->y += 1;
+        g->p_height += 1;        
+    }
 }
 
 void on_char(GLFWwindow *window, unsigned int u) {
@@ -2540,13 +2557,13 @@ void handle_movement(double dt) {
         }
         s->x += vx;
         s->y += vy + dy * ut;
-        s->z += vz;
-        if (collide(2, &s->x, &s->y, &s->z)) {
+        s->z += vz;   		// collide - height is the block height or character height  
+          if (collide(g->p_height, &s->x, &s->y, &s->z)) {
             dy = 0;
         }
     }
     if (s->y < 0) {
-        s->y = highest_block(s->x, s->z) + 2;
+        s->y = highest_block(s->x, s->z) + g->p_height;
     }
 }
 
@@ -2665,6 +2682,7 @@ void reset_model() {
     g->day_length = DAY_LENGTH;
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
+     g->p_height = 2;
 }
 
 int main(int argc, char **argv) {
@@ -2853,7 +2871,7 @@ int main(int argc, char **argv) {
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
         force_chunks(me);
         if (!loaded) {
-            s->y = highest_block(s->x, s->z) + 2;
+             s->y = highest_block(s->x, s->z);
         }
 
         // BEGIN MAIN LOOP //

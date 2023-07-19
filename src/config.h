@@ -25,6 +25,7 @@
 #define SHOW_INFO_TEXT 1
 #define SHOW_CHAT_TEXT 1
 #define SHOW_PLAYER_NAMES 1
+#define SHOW_MENU 0
 
 // key bindings
 #define CRAFT_KEY_FORWARD 'W'
@@ -43,7 +44,7 @@
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
 #define CRAFT_KEY_RUN GLFW_KEY_LEFT_CONTROL
-
+#define CRAFT_KEY_MENU 'P'
 // advanced parameters
 #define CREATE_CHUNK_RADIUS 10
 #define RENDER_CHUNK_RADIUS 10

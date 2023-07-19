@@ -2021,6 +2021,7 @@ void tree(Block *block) {
 }
 
 void parse_command(const char *buffer, int forward) {
+    char help_target[128] = {0};
     char username[128] = {0};
     char token[128] = {0};
     char server_addr[MAX_ADDR_LENGTH];
@@ -2032,6 +2033,64 @@ void parse_command(const char *buffer, int forward) {
         db_auth_set(username, token);
         add_message("Successfully imported identity token!");
         login();
+    }
+    else if (sscanf(buffer, "/help %128s", help_target) == 1) {
+        if (strcmp(help_target, "goto") == 0) {
+            add_message("Help: /goto [NAME]");
+            add_message("Teleport to another user.");
+            add_message("If NAME is unspecified, a random user is chosen.");
+        }
+        else if (strcmp(help_target, "list") == 0) {
+            add_message("Help: /list");
+            add_message("Display a list of connected users.");
+        }
+        else if (strcmp(help_target, "login") == 0) {
+            add_message("Help: /login NAME");
+            add_message("Switch to another registered username.");
+            add_message("The login server will be re-contacted. The username is case-sensitive.");
+        }
+        else if (strcmp(help_target, "logout") == 0) {
+            add_message("Help: /logout");
+            add_message("Unauthenticate and become a guest user.");
+            add_message("Automatic logins will not occur again until the /login command is re-issued.");
+        }
+        else if (strcmp(help_target, "offline") == 0) {
+            add_message("Help: /offline [FILE]");
+            add_message("Switch to offline mode.");
+            add_message("FILE specifies the save file to use and defaults to craft.");
+        }
+        else if (strcmp(help_target, "online") == 0) {
+            add_message("Help: /online HOST [PORT]");
+            add_message("Connect to the specified server.");
+        }
+        else if (strcmp(help_target, "pq") == 0) {
+            add_message("Help: /pq P Q");
+            add_message("Teleport to the specified chunk.");
+        }
+        else if (strcmp(help_target, "spawn") == 0) {
+            add_message("Help: /spawn");
+            add_message("Teleport back to the spawn point.");
+        }
+        else if (strcmp(help_target, "view") == 0) {
+            add_message("Help: /view N");
+            add_message("Set viewing distance, 1 - 24.");
+        }
+        else if (strcmp(help_target, "flyspeed") == 0) {
+            add_message("Help: /flyspeed [N]");
+            add_message("Sets flying speed. Valid speeds 1 - 50.");
+        }
+        else if (strcmp(help_target, "mouse") == 0) {
+            add_message("Help: /mouse [F]");
+            add_message("Set the mouse sensitivity. Default value is 0.0025. Valid range from 0.0 (exclusive) to 1.0 (inclusive).");
+        }
+        else {
+             add_message("That command does not have a help page");
+        }
+    }
+    else if (strcmp(buffer, "/help") == 0) {
+        add_message("Type \"t\" to chat. Type \"/\" to type commands:");
+        add_message("/goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /offline [FILE],");
+        add_message("/online HOST [PORT], /pq P Q, /spawn, /view [N], /flyspeed [N], /mouse [F]");
     }
     else if (strcmp(buffer, "/logout") == 0) {
         db_auth_select_none();

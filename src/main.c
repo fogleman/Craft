@@ -137,7 +137,7 @@ typedef struct {
     int observe1;
     int observe2;
     int flying;
-    int flying_sprint_speed;
+    int flying_sprint_speed; //add player config setting for this persisting value
     int item_index;
     int scale;
     int ortho;
@@ -2146,9 +2146,9 @@ void parse_command(const char *buffer, int forward) {
             add_message("Viewing distance must be between 1 and 24.");
         }
     }
-    else if (sscanf(buffer, "/flyspeed %d", &speed) == 1) {
-        if (speed >= 1 && speed <= 50) {
-            g->flying_sprint_speed = speed;
+    else if (sscanf(buffer, "/flyspeed %d", &speed) == 1) { //handler for setter command
+        if (speed >= 1 && speed <= 50) { //conform to valid range
+            g->flying_sprint_speed = speed; //update player value
         }
         else {
             add_message("Flying speed must be between 1 and 50.");
@@ -2672,7 +2672,7 @@ void reset_model() {
     g->observe1 = 0;
     g->observe2 = 0;
     g->flying = 0;
-    g->flying_sprint_speed = 20;
+    g->flying_sprint_speed = 20; //player gets the old standard flyspeed upon startup
     g->item_index = 0;
     g->mouse_sensitivity = 0.0025;
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);

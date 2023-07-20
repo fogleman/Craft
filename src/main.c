@@ -156,7 +156,7 @@ typedef struct {
     Block copy0;
     Block copy1;
 
-    int p_height; // player height
+    int p_height; /// player height
 } Model;
 
 static Model model;
@@ -825,14 +825,14 @@ int _gen_sign_buffer(
 void gen_sign_buffer(Chunk *chunk) {
     SignList *signs = &chunk->signs;
 
-    // first pass - count characters
+    /// first pass - count characters
     int max_faces = 0;
     for (int i = 0; i < signs->size; i++) {
         Sign *e = signs->data + i;
         max_faces += strlen(e->text);
     }
 
-    // second pass - generate geometry
+    /// second pass - generate geometry
     GLfloat *data = malloc_faces(5, max_faces);
     int faces = 0;
     for (int i = 0; i < signs->size; i++) {
@@ -970,7 +970,7 @@ void compute_chunk(WorkerItem *item) {
     int oy = -1;
     int oz = item->q * CHUNK_SIZE - CHUNK_SIZE - 1;
 
-    // check for lights
+    /// check for lights
     int has_light = 0;
     if (SHOW_LIGHTS) {
         for (int a = 0; a < 3; a++) {
@@ -983,7 +983,7 @@ void compute_chunk(WorkerItem *item) {
         }
     }
 
-    // populate opaque array
+    /// populate opaque array
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             Map *map = item->block_maps[a][b];
@@ -995,14 +995,14 @@ void compute_chunk(WorkerItem *item) {
                 int y = ey - oy;
                 int z = ez - oz;
                 int w = ew;
-                // TODO: this should be unnecessary
+                /// TODO: this should be unnecessary
                 if (x < 0 || y < 0 || z < 0) {
                     continue;
                 }
                 if (x >= XZ_SIZE || y >= Y_SIZE || z >= XZ_SIZE) {
                     continue;
                 }
-                // END TODO
+                /// END TODO
                 opaque[XYZ(x, y, z)] = !is_transparent(w);
                 if (opaque[XYZ(x, y, z)]) {
                     highest[XZ(x, z)] = MAX(highest[XZ(x, z)], y);
@@ -1011,7 +1011,7 @@ void compute_chunk(WorkerItem *item) {
         }
     }
 
-    // flood fill light intensities
+    /// flood fill light intensities
     if (has_light) {
         for (int a = 0; a < 3; a++) {
             for (int b = 0; b < 3; b++) {
@@ -1031,7 +1031,7 @@ void compute_chunk(WorkerItem *item) {
 
     Map *map = item->block_maps[1][1];
 
-    // count exposed faces
+    /// count exposed faces
     int miny = 256;
     int maxy = 0;
     int faces = 0;
@@ -1060,7 +1060,7 @@ void compute_chunk(WorkerItem *item) {
         faces += total;
     } END_MAP_FOR_EACH;
 
-    // generate geometry
+    /// generate geometry
     GLfloat *data = malloc_faces(10, faces);
     int offset = 0;
     MAP_FOR_EACH(map, ex, ey, ez, ew) {
@@ -2355,13 +2355,13 @@ void on_key(GLFWwindow *window, int key, int scancode, int action, int mods) {
         }
     }
 
-    if (key == GLFW_KEY_COMMA) //Lower Height
+    if (key == GLFW_KEY_COMMA) ///This function is used to lower the height of the camera
     {
         if (g->p_height > 2)        
             g->p_height -= 1;            
     }
 
-    if (key == GLFW_KEY_PERIOD) //Raise Height
+    if (key == GLFW_KEY_PERIOD) ///This function is used to raise the height of the camera
     {
         State *s = &g->players->state;
         s->y += 1;
@@ -2536,7 +2536,7 @@ void handle_movement(double dt) {
             }
         }
     }
-    float speed = g->flying ? g->flying_sprint_speed : 5; // flying gets modifiable speed
+    float speed = g->flying ? g->flying_sprint_speed : 5; /// flying gets modifiable speed
     if(isRunning) speed*=1.5;
     int estimate = roundf(sqrtf(
         powf(vx * speed, 2) +
@@ -2557,7 +2557,7 @@ void handle_movement(double dt) {
         }
         s->x += vx;
         s->y += vy + dy * ut;
-        s->z += vz;   		// collide - height is the block height or character height  
+        s->z += vz; 		/// collide - height is the block height or character height 
           if (collide(g->p_height, &s->x, &s->y, &s->z)) {
             dy = 0;
         }
@@ -2610,7 +2610,7 @@ void parse_buffer(char *buffer) {
                 player->id = pid;
                 player->buffer = 0;
                 snprintf(player->name, MAX_NAME_LENGTH, "player%d", pid);
-                update_player(player, px, py, pz, prx, pry, 1); // twice
+                update_player(player, px, py, pz, prx, pry, 1); /// twice
             }
             if (player) {
                 update_player(player, px, py, pz, prx, pry, 1);
@@ -2686,12 +2686,12 @@ void reset_model() {
 }
 
 int main(int argc, char **argv) {
-    // INITIALIZATION //
+    /// INITIALIZATION ///
     curl_global_init(CURL_GLOBAL_DEFAULT);
     srand(time(NULL));
     rand();
 
-    // WINDOW INITIALIZATION //
+    /// WINDOW INITIALIZATION ///
     if (!glfwInit()) {
         return -1;
     }
@@ -2718,14 +2718,14 @@ int main(int argc, char **argv) {
     glLogicOp(GL_INVERT);
     glClearColor(0, 0, 0, 1);
 
-    // LOAD TEXTURES //
+    /// LOAD TEXTURES ///
     GLuint texture;
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //updated to new texture file that was edited to include a new block texture
+    ///updated to new texture file that was edited to include a new block texture
     load_png_texture("textures/texture2.png");
 
     GLuint font;
@@ -2754,7 +2754,7 @@ int main(int argc, char **argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     load_png_texture("textures/sign.png");
 
-    // LOAD SHADERS //
+    /// LOAD SHADERS ///
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
@@ -2801,7 +2801,7 @@ int main(int argc, char **argv) {
     sky_attrib.sampler = glGetUniformLocation(program, "sampler");
     sky_attrib.timer = glGetUniformLocation(program, "timer");
 
-    // CHECK COMMAND LINE ARGUMENTS //
+    /// CHECK COMMAND LINE ARGUMENTS ///
     if (argc == 2 || argc == 3) {
         g->mode = MODE_ONLINE;
         strncpy(g->server_addr, argv[1], MAX_ADDR_LENGTH);
@@ -2819,7 +2819,7 @@ int main(int argc, char **argv) {
     g->delete_radius = DELETE_CHUNK_RADIUS;
     g->sign_radius = RENDER_SIGN_RADIUS;
 
-    // INITIALIZE WORKER THREADS
+    /// INITIALIZE WORKER THREADS
     for (int i = 0; i < WORKERS; i++) {
         Worker *worker = g->workers + i;
         worker->index = i;
@@ -2829,22 +2829,22 @@ int main(int argc, char **argv) {
         thrd_create(&worker->thrd, worker_run, worker);
     }
 
-    // OUTER LOOP //
+    /// OUTER LOOP ///
     int running = 1;
     while (running) {
-        // DATABASE INITIALIZATION //
+        /// DATABASE INITIALIZATION ///
         if (g->mode == MODE_OFFLINE || USE_CACHE) {
             db_enable();
             if (db_init(g->db_path)) {
                 return -1;
             }
             if (g->mode == MODE_ONLINE) {
-                // TODO: support proper caching of signs (handle deletions)
+                /// TODO: support proper caching of signs (handle deletions)
                 db_delete_all_signs();
             }
         }
 
-        // CLIENT INITIALIZATION //
+        /// CLIENT INITIALIZATION ///
         if (g->mode == MODE_ONLINE) {
             client_enable();
             client_connect(g->server_addr, g->server_port);
@@ -2853,7 +2853,7 @@ int main(int argc, char **argv) {
             login();
         }
 
-        // LOCAL VARIABLES //
+        /// LOCAL VARIABLES ///
         reset_model();
         FPS fps = {0, 0, 0};
         double last_commit = glfwGetTime();
@@ -2867,22 +2867,22 @@ int main(int argc, char **argv) {
         me->buffer = 0;
         g->player_count = 1;
 
-        // LOAD STATE FROM DATABASE //
+        /// LOAD STATE FROM DATABASE ///
         int loaded = db_load_state(&s->x, &s->y, &s->z, &s->rx, &s->ry);
         force_chunks(me);
         if (!loaded) {
              s->y = highest_block(s->x, s->z);
         }
 
-        // BEGIN MAIN LOOP //
+        /// BEGIN MAIN LOOP ///
         double previous = glfwGetTime();
         while (1) {
-            // WINDOW SIZE AND SCALE //
+            /// WINDOW SIZE AND SCALE ///
             g->scale = get_scale_factor();
             glfwGetFramebufferSize(g->window, &g->width, &g->height);
             glViewport(0, 0, g->width, g->height);
 
-            // FRAME RATE //
+            /// FRAME RATE ///
             if (g->time_changed) {
                 g->time_changed = 0;
                 last_commit = glfwGetTime();
@@ -2896,32 +2896,32 @@ int main(int argc, char **argv) {
             dt = MAX(dt, 0.0);
             previous = now;
 
-            // HANDLE MOUSE INPUT //
+            /// HANDLE MOUSE INPUT ///
             handle_mouse_input();
 
-            // HANDLE MOVEMENT //
+            /// HANDLE MOVEMENT ///
             handle_movement(dt);
 
-            // HANDLE DATA FROM SERVER //
+            /// HANDLE DATA FROM SERVER ///
             char *buffer = client_recv();
             if (buffer) {
                 parse_buffer(buffer);
                 free(buffer);
             }
 
-            // FLUSH DATABASE //
+            /// FLUSH DATABASE ///
             if (now - last_commit > COMMIT_INTERVAL) {
                 last_commit = now;
                 db_commit();
             }
 
-            // SEND POSITION TO SERVER //
+            /// SEND POSITION TO SERVER ///
             if (now - last_update > 0.1) {
                 last_update = now;
                 client_position(s->x, s->y, s->z, s->rx, s->ry);
             }
 
-            // PREPARE TO RENDER //
+            /// PREPARE TO RENDER ///
             g->observe1 = g->observe1 % g->player_count;
             g->observe2 = g->observe2 % g->player_count;
             delete_chunks();
@@ -2932,7 +2932,7 @@ int main(int argc, char **argv) {
             }
             Player *player = g->players + g->observe1;
 
-            // RENDER 3-D SCENE //
+            /// RENDER 3-D SCENE ///
             glClear(GL_COLOR_BUFFER_BIT);
             glClear(GL_DEPTH_BUFFER_BIT);
             render_sky(&sky_attrib, player, sky_buffer);
@@ -2945,7 +2945,7 @@ int main(int argc, char **argv) {
                 render_wireframe(&line_attrib, player);
             }
 
-            // RENDER HUD //
+            /// RENDER HUD ///
             glClear(GL_DEPTH_BUFFER_BIT);
             if (SHOW_CROSSHAIRS) {
                 render_crosshairs(&line_attrib);
@@ -2954,7 +2954,7 @@ int main(int argc, char **argv) {
                 render_item(&block_attrib);
             }
 
-            // RENDER TEXT //
+            /// RENDER TEXT ///
             char text_buffer[1024];
             float ts = 12 * g->scale;
             float tx = ts / 2;
@@ -3001,7 +3001,7 @@ int main(int argc, char **argv) {
                 }
             }
 
-            // RENDER PICTURE IN PICTURE //
+            /// RENDER PICTURE IN PICTURE ///
             if (g->observe2) {
                 player = g->players + g->observe2;
 
@@ -3036,7 +3036,7 @@ int main(int argc, char **argv) {
                 }
             }
 
-            // SWAP AND POLL //
+            /// SWAP AND POLL ///
             glfwSwapBuffers(g->window);
             glfwPollEvents();
             if (glfwWindowShouldClose(g->window)) {
@@ -3049,7 +3049,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        // SHUTDOWN //
+        /// SHUTDOWN ///
         db_save_state(s->x, s->y, s->z, s->rx, s->ry);
         db_close();
         db_disable();

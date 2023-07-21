@@ -142,7 +142,7 @@ typedef struct {
     int scale;
     int ortho;
     float fov;
-    float mouse_sensitivity;
+    float mouse_sensitivity; //add player config setting for this persisting value
     int suppress_char;
     int mode;
     int mode_changed;
@@ -2479,12 +2479,13 @@ void handle_mouse_input() {
     if (exclusive && (px || py)) {
         double mx, my;
         glfwGetCursorPos(g->window, &mx, &my);
-        s->rx += (mx - px) * g->mouse_sensitivity;
+        //player defined value replaces the previous const scalar 
+        s->rx += (mx - px) * g->mouse_sensitivity; //update mouse x position, smoothed by mouse sensitivity
         if (INVERT_MOUSE) {
-            s->ry += (my - py) * g->mouse_sensitivity;
+            s->ry += (my - py) * g->mouse_sensitivity; //update mouse y position, smoothed by mouse sensitivity
         }
         else {
-            s->ry -= (my - py) * g->mouse_sensitivity;
+            s->ry -= (my - py) * g->mouse_sensitivity; //update mouse y position, smoothed by mouse sensitivity
         }
         if (s->rx < 0) {
             s->rx += RADIANS(360);
@@ -2674,7 +2675,7 @@ void reset_model() {
     g->flying = 0;
     g->flying_sprint_speed = 20;
     g->item_index = 0;
-    g->mouse_sensitivity = 0.0025;
+    g->mouse_sensitivity = 0.0025; //player gets the old standard mouse sensitivity upon startup
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);

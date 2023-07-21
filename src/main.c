@@ -2025,7 +2025,7 @@ void tree(Block *block) {
 }
 
 void parse_command(const char *buffer, int forward) {
-    char help_target[128] = {0};
+    char help_target[128] = {0}; //optional arg for the help command to get specific help
     char username[128] = {0};
     char token[128] = {0};
     char server_addr[MAX_ADDR_LENGTH];
@@ -2038,7 +2038,8 @@ void parse_command(const char *buffer, int forward) {
         add_message("Successfully imported identity token!");
         login();
     }
-    else if (sscanf(buffer, "/help %128s", help_target) == 1) {
+    else if (sscanf(buffer, "/help %128s", help_target) == 1) {  //this handles a help command with optional target
+        //basic if statement handling for each supported command
         if (strcmp(help_target, "goto") == 0) {
             add_message("Help: /goto [NAME]");
             add_message("Teleport to another user.");
@@ -2087,11 +2088,11 @@ void parse_command(const char *buffer, int forward) {
             add_message("Help: /mouse [F]");
             add_message("Set the mouse sensitivity. Default value is 0.0025. Valid range from 0.0 (exclusive) to 1.0 (inclusive).");
         }
-        else {
+        else { //make sure we handle unincluded commands
              add_message("That command does not have a help page");
         }
     }
-    else if (strcmp(buffer, "/help") == 0) {
+    else if (strcmp(buffer, "/help") == 0) { //non-overloaded function handler
         add_message("Type \"t\" to chat. Type \"/\" to type commands:");
         add_message("/goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /offline [FILE],");
         add_message("/online HOST [PORT], /pq P Q, /spawn, /view [N], /flyspeed [N], /mouse [F]");

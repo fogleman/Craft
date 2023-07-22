@@ -253,13 +253,13 @@ void client_stop() {
     }
     running = 0;
     close(sd);
-    // if (thrd_join(recv_thread, NULL) != thrd_success) {
-    //     perror("thrd_join");
-    //     exit(1);
-    // }
-    // mtx_destroy(&mutex);
+    /// if (thrd_join(recv_thread, NULL) != thrd_success) {
+    ///     perror("thrd_join");
+    ///     exit(1);
+    /// }
+    /// mtx_destroy(&mutex);
     qsize = 0;
     free(queue);
-    // printf("Bytes Sent: %d, Bytes Received: %d\n",
-    //     bytes_sent, bytes_received);
+    /// printf("Bytes Sent: %d, Bytes Received: %d\n",
+    ///     bytes_sent, bytes_received);
 }

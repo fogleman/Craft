@@ -17,53 +17,51 @@ void create_world(int p, int q, world_func func, void *arg) {
             int mh = g * 32 + 16; 
             int h = f * mh;
             int w = 1;
-            int t = 12;  //related to block dimensions 
+            int t = 12;  ///related to block dimensions 
             if (h <= t) {
                 h = t;
                 w = 2;
             }
 
-            /** 
-             * I think this is what is determining where sand and grass blocks are placed up to a certain height
-             * by making the h value higher there will be more sand and grass blocks making the world feel 'deeper' 
-             * potentially adding another layer of stone under the grass/sand could also create that feeling
-             * from the above code 't' appears to be the minimum possible for h, I will try making it much larger to see what 
-             * happens and then reduce it to a more reasonable number
-             * 
-             * t is not the number of block layers.... appears to have altered the block size and i was stuck in a single block 
-             * much larger than the player when changing the value to 50
-             * 
-             * 
-             * */ 
+            
+             /// I think this is what is determining where sand and grass blocks are placed up to a certain height
+             /// by making the h value higher there will be more sand and grass blocks making the world feel 'deeper' 
+             /// potentially adding another layer of stone under the grass/sand could also create that feeling
+             /// from the above code 't' appears to be the minimum possible for h, I will try making it much larger to see what 
+             /// happens and then reduce it to a more reasonable number
+             /// 
+             /// t is not the number of block layers.... appears to have altered the block size and i was stuck in a single block 
+             /// much larger than the player when changing the value to 50
+             
 
-            // cobblestone terrain
-            /**
-             * @brief 
-             * make bottom layer of cobblestone under the grass/sand layer
-             * cobble stone is block 11 in item array
-             * making it half the depth of the original grass/sand layer
-             */
+            /// cobblestone terrain
+           
+             /// @brief 
+             /// make bottom layer of cobblestone under the grass/sand layer
+             /// cobble stone is block 11 in item array
+             /// making it half the depth of the original grass/sand layer
+            
             for (int y = 0; y < h/2; y++) {
                 func(x, y, z, 11 * flag, arg);
             }
-            // sand and grass terrain
-            // modifying parameters to start after the cobblestone level
+            /// sand and grass terrain
+            /// modifying parameters to start after the cobblestone level
             for (int y = h/2; y < 1.5 * h; y++) {
                 func(x, y, z, w * flag, arg);
             }
             if (w == 1) {
                 if (SHOW_PLANTS) {
-                    // grass
+                    /// grass
                     if (simplex2(-x * 0.1, z * 0.1, 4, 0.8, 2) > 0.6) {
                         func(x, 1.5*h, z, 17 * flag, arg);
                     }
-                    // flowers
+                    /// flowers
                     if (simplex2(x * 0.05, -z * 0.05, 4, 0.8, 2) > 0.7) {
                         int w = 18 + simplex2(x * 0.1, z * 0.1, 4, 0.8, 2) * 7;
                         func(x, 1.5*h, z, w * flag, arg);
                     }
                 }
-                // trees
+                /// trees
                 int ok = SHOW_TREES;
                 if (dx - 4 < 0 || dz - 4 < 0 ||
                     dx + 4 >= CHUNK_SIZE || dz + 4 >= CHUNK_SIZE)
@@ -87,7 +85,7 @@ void create_world(int p, int q, world_func func, void *arg) {
                     }
                 }
             }
-            // clouds
+            /// clouds
             if (SHOW_CLOUDS) {
                 for (int y = 64; y < 72; y++) {
                     if (simplex3(

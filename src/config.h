@@ -11,7 +11,7 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
-#define DAY_LENGTH 600
+#define DAY_LENGTH 7200 ///7200 extends day length to 1 hour in real life and 1 hour for night time
 #define INVERT_MOUSE 0
 
 // rendering options

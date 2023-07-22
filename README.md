@@ -110,6 +110,7 @@ python server.py [HOST [PORT]]
 ### Controls
 
 - WASD to move forward, left, backward, right.
+- Ctrl + W to sprint.
 - Space to jump.
 - Left Click to destroy a block.
 - Right Click or Cmd + Left Click to create a block.

@@ -11,7 +11,7 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
-#define DAY_LENGTH 600
+#define DAY_LENGTH 7200 ///7200 extends day length to 1 hour in real life and 1 hour for night time
 #define INVERT_MOUSE 0
 
 /// rendering options
@@ -25,6 +25,7 @@
 #define SHOW_INFO_TEXT 1
 #define SHOW_CHAT_TEXT 1
 #define SHOW_PLAYER_NAMES 1
+#define SHOW_MENU 0
 
 /// key bindings
 #define CRAFT_KEY_FORWARD 'W'
@@ -45,6 +46,7 @@
 #define CRAFT_KEY_RUN GLFW_KEY_LEFT_CONTROL
 
 /// advanced parameters
+#define CRAFT_KEY_MENU 'P'
 #define CREATE_CHUNK_RADIUS 10
 #define RENDER_CHUNK_RADIUS 10
 #define RENDER_SIGN_RADIUS 4

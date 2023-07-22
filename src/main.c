@@ -137,12 +137,12 @@ typedef struct {
     int observe1;
     int observe2;
     int flying;
-    int flying_sprint_speed;
+    int flying_sprint_speed; //add player config setting for this persisting value
     int item_index;
     int scale;
     int ortho;
     float fov;
-    float mouse_sensitivity;
+    float mouse_sensitivity; //add player config setting for this persisting value
     int suppress_char;
     int mode;
     int mode_changed;
@@ -2025,7 +2025,7 @@ void tree(Block *block) {
 }
 
 void parse_command(const char *buffer, int forward) {
-    char help_target[128] = {0};
+    char help_target[128] = {0}; //optional arg for the help command to get specific help
     char username[128] = {0};
     char token[128] = {0};
     char server_addr[MAX_ADDR_LENGTH];
@@ -2038,7 +2038,8 @@ void parse_command(const char *buffer, int forward) {
         add_message("Successfully imported identity token!");
         login();
     }
-    else if (sscanf(buffer, "/help %128s", help_target) == 1) {
+    else if (sscanf(buffer, "/help %128s", help_target) == 1) {  //this handles a help command with optional target
+        //basic if statement handling for each supported command
         if (strcmp(help_target, "goto") == 0) {
             add_message("Help: /goto [NAME]");
             add_message("Teleport to another user.");
@@ -2087,11 +2088,11 @@ void parse_command(const char *buffer, int forward) {
             add_message("Help: /mouse [F]");
             add_message("Set the mouse sensitivity. Default value is 0.0025. Valid range from 0.0 (exclusive) to 1.0 (inclusive).");
         }
-        else {
+        else { //make sure we handle unincluded commands
              add_message("That command does not have a help page");
         }
     }
-    else if (strcmp(buffer, "/help") == 0) {
+    else if (strcmp(buffer, "/help") == 0) { //non-overloaded function handler
         add_message("Type \"t\" to chat. Type \"/\" to type commands:");
         add_message("/goto [NAME], /help [TOPIC], /list, /login NAME, /logout, /offline [FILE],");
         add_message("/online HOST [PORT], /pq P Q, /spawn, /view [N], /flyspeed [N], /mouse [F]");
@@ -2146,9 +2147,9 @@ void parse_command(const char *buffer, int forward) {
             add_message("Viewing distance must be between 1 and 24.");
         }
     }
-    else if (sscanf(buffer, "/flyspeed %d", &speed) == 1) {
-        if (speed >= 1 && speed <= 50) {
-            g->flying_sprint_speed = speed;
+    else if (sscanf(buffer, "/flyspeed %d", &speed) == 1) { //handler for setter command
+        if (speed >= 1 && speed <= 50) { //conform to valid range
+            g->flying_sprint_speed = speed; //update player value
         }
         else {
             add_message("Flying speed must be between 1 and 50.");
@@ -2479,12 +2480,13 @@ void handle_mouse_input() {
     if (exclusive && (px || py)) {
         double mx, my;
         glfwGetCursorPos(g->window, &mx, &my);
-        s->rx += (mx - px) * g->mouse_sensitivity;
+        //player defined value replaces the previous const scalar 
+        s->rx += (mx - px) * g->mouse_sensitivity; //update mouse x position, smoothed by mouse sensitivity
         if (INVERT_MOUSE) {
-            s->ry += (my - py) * g->mouse_sensitivity;
+            s->ry += (my - py) * g->mouse_sensitivity; //update mouse y position, smoothed by mouse sensitivity
         }
         else {
-            s->ry -= (my - py) * g->mouse_sensitivity;
+            s->ry -= (my - py) * g->mouse_sensitivity; //update mouse y position, smoothed by mouse sensitivity
         }
         if (s->rx < 0) {
             s->rx += RADIANS(360);
@@ -2672,9 +2674,9 @@ void reset_model() {
     g->observe1 = 0;
     g->observe2 = 0;
     g->flying = 0;
-    g->flying_sprint_speed = 20;
+    g->flying_sprint_speed = 20; //player gets the old standard flyspeed upon startup
     g->item_index = 0;
-    g->mouse_sensitivity = 0.0025;
+    g->mouse_sensitivity = 0.0025; //player gets the old standard mouse sensitivity upon startup
     memset(g->typing_buffer, 0, sizeof(char) * MAX_TEXT_LENGTH);
     g->typing = 0;
     memset(g->messages, 0, sizeof(char) * MAX_MESSAGES * MAX_TEXT_LENGTH);

@@ -158,6 +158,9 @@ typedef struct {
     Block copy1;
 
     int p_height; /// player height
+    long timeout;
+    bool hasTimeout;  ///timer
+    time_t start;
 } Model;
 
 static Model model;
@@ -2229,6 +2232,12 @@ void parse_command(const char *buffer, int forward) {
     else if (sscanf(buffer, "/cylinder %d", &radius) == 1) {
         cylinder(&g->block0, &g->block1, radius, 0);
     }
+    else if (sscanf(buffer, "/addtime %d", &count) == 1) {
+        g->start = time(NULL);
+        g->hasTimeout = true; ///timer feature
+        g->timeout += count;
+
+    }
     else if (forward) {
         client_talk(buffer);
     }
@@ -2532,6 +2541,7 @@ void handle_movement(double dt) {
     State *s = &g->players->state;
     int sz = 0;
     int sx = 0;
+    int isRunning = 0;
     if (!g->typing) {
         float m = dt * 1.0;
         g->ortho = glfwGetKey(g->window, CRAFT_KEY_ORTHO) ? 64 : 0;
@@ -2707,6 +2717,7 @@ void reset_model() {
     glfwSetTime(g->day_length / 3.0);
     g->time_changed = 1;
      g->p_height = 2;
+    g->timeout = 0;
 }
 
 int main(int argc, char **argv) {
@@ -2993,13 +3004,21 @@ int main(int argc, char **argv) {
             if (SHOW_ITEM) {
                 render_item(&block_attrib);
             }
+
             // Render Binoculars            
             if (glfwGetKey(g->window, CRAFT_KEY_ZOOM))
             {
                 render_binoculars(&block_attrib);
             }
             
- 
+            
+
+            /// Timer
+            time_t _now = time(NULL);
+            time_t elapsed = _now - g->start;
+            if (!g->hasTimeout)
+                elapsed = g->timeout;
+
 
             /// RENDER TEXT ///
             char text_buffer[1024];
@@ -3011,6 +3030,19 @@ int main(int argc, char **argv) {
                 char am_pm = hour < 12 ? 'a' : 'p';
                 hour = hour % 12;
                 hour = hour ? hour : 12;
+
+				///timer text
+                if (g->hasTimeout)
+                {
+                    snprintf(
+                        text_buffer, 1024,
+                        "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps Timeout %ld",
+                        chunked(s->x), chunked(s->z), s->x, s->y, s->z,
+                        g->player_count, g->chunk_count,
+                        face_count * 2, hour, am_pm, fps.fps, g->timeout - elapsed);
+                }
+                else
+                {
                 snprintf(
                     text_buffer, 1024,
                     "(%d, %d) (%.2f, %.2f, %.2f) [%d, %d, %d] %d%cm %dfps",
@@ -3086,7 +3118,7 @@ int main(int argc, char **argv) {
             /// SWAP AND POLL ///
             glfwSwapBuffers(g->window);
             glfwPollEvents();
-            if (glfwWindowShouldClose(g->window)) {
+                 if (glfwWindowShouldClose(g->window) || elapsed > g->timeout) { //closes window when time runs out
                 running = 0;
                 break;
             }

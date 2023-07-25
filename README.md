@@ -110,6 +110,7 @@ python server.py [HOST [PORT]]
 ### Controls
 
 - WASD to move forward, left, backward, right.
+- Ctrl + W to sprint.
 - Space to jump.
 - Left Click to destroy a block.
 - Right Click or Cmd + Left Click to create a block.
@@ -138,6 +139,10 @@ Set the mouse sensitivity. Default value is 0.0025. Valid range from 0.0 (exclus
 
     /goto [NAME]
 
+Set game timer. Replace [time_in_seconds] with the desired duration in seconds for your gameplay session. Once the set time limit is reached, the game window will automatically close.
+
+    /addTime [time_in_seconds]
+    
 Teleport to another user.
 If NAME is unspecified, a random user is chosen.
 

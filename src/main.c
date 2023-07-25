@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdbool.h>
 #include "auth.h"
 #include "client.h"
 #include "config.h"
@@ -299,6 +300,11 @@ GLuint gen_text_buffer(float x, float y, float n, char *text) {
     return gen_faces(4, length, data);
 }
 
+GLuint gen_plane_buffer(float x, float y, float n) {
+    int length = 100;
+    GLfloat *data = malloc_faces(4, length);     
+    return gen_faces(4, length, data);
+}
 void draw_triangles_3d_ao(Attrib *attrib, GLuint buffer, int count) {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glEnableVertexAttribArray(attrib->position);
@@ -1791,6 +1797,23 @@ void render_item(Attrib *attrib) {
     }
 }
 
+void render_binoculars(Attrib *attrib) ///Creates Binoculars
+{
+    float matrix[16];
+    set_matrix_item(matrix, g->width, g->height, g->scale*20);
+    
+    glUseProgram(attrib->program);
+    glUniformMatrix4fv(attrib->matrix, 1, GL_FALSE, matrix);
+    glUniform3f(attrib->camera, 0, 0, 5);
+    glUniform1i(attrib->sampler, 0);
+    glUniform1f(attrib->timer, time_of_day());
+    int w = 23; 
+    
+    GLuint buffer = gen_plant_buffer(-0.9, -.4, 0, 0.5, w);
+    
+        draw_plant(attrib, buffer);
+        del_buffer(buffer);
+}
 void render_text(
     Attrib *attrib, int justify, float x, float y, float n, char *text)
 {
@@ -2759,6 +2782,7 @@ int main(int argc, char **argv) {
     Attrib block_attrib = {0};
     Attrib line_attrib = {0};
     Attrib text_attrib = {0};
+    Attrib binoculars_attrib = {0};
     Attrib sky_attrib = {0};
     GLuint program;
 
@@ -2791,6 +2815,21 @@ int main(int argc, char **argv) {
     text_attrib.matrix = glGetUniformLocation(program, "matrix");
     text_attrib.sampler = glGetUniformLocation(program, "sampler");
     text_attrib.extra1 = glGetUniformLocation(program, "is_sign");
+
+    program = load_program(
+        "shaders/block_vertex.glsl", "shaders/block_fragment.glsl");        
+    binoculars_attrib.program = program;
+    binoculars_attrib.position = glGetAttribLocation(program, "position");
+    binoculars_attrib.normal = glGetAttribLocation(program, "normal");
+    binoculars_attrib.uv = glGetAttribLocation(program, "uv");
+    binoculars_attrib.matrix = glGetUniformLocation(program, "matrix");
+    binoculars_attrib.sampler = glGetUniformLocation(program, "sampler");
+    binoculars_attrib.extra1 = glGetUniformLocation(program, "sky_sampler");
+    binoculars_attrib.extra2 = glGetUniformLocation(program, "daylight");
+    binoculars_attrib.extra3 = glGetUniformLocation(program, "fog_distance");
+    binoculars_attrib.extra4 = glGetUniformLocation(program, "ortho");
+    binoculars_attrib.camera = glGetUniformLocation(program, "camera");
+    binoculars_attrib.timer = glGetUniformLocation(program, "timer");
 
     program = load_program(
         "shaders/sky_vertex.glsl", "shaders/sky_fragment.glsl");
@@ -2954,6 +2993,13 @@ int main(int argc, char **argv) {
             if (SHOW_ITEM) {
                 render_item(&block_attrib);
             }
+            // Render Binoculars            
+            if (glfwGetKey(g->window, CRAFT_KEY_ZOOM))
+            {
+                render_binoculars(&block_attrib);
+            }
+            
+ 
 
             /// RENDER TEXT ///
             char text_buffer[1024];

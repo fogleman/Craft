@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
-extern "C" {  // necessary to link to the c code
+extern "C" {  /// necessary to link to the c code
   #include "../src/util.h"
 }
 
-// TEST(TestSuiteName, TestName) {
-//   ... test body ...
-// }
+/// TEST(TestSuiteName, TestName) {
+///   ... test body ...
+/// }
 
 TEST(UtilTests, stringWidth) {
   ASSERT_EQ(string_width("1"), 3);

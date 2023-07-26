@@ -1,8 +1,8 @@
 #ifndef _config_h_
 #define _config_h_
 
-// app parameters
-#define DEBUG 0
+/// app parameters
+#define DEBUG 1
 #define FULLSCREEN 0
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -11,10 +11,10 @@
 #define MAX_MESSAGES 4
 #define DB_PATH "craft.db"
 #define USE_CACHE 1
-#define DAY_LENGTH 600
+#define DAY_LENGTH 7200 ///7200 extends day length to 1 hour in real life and 1 hour for night time
 #define INVERT_MOUSE 0
 
-// rendering options
+/// rendering options
 #define SHOW_LIGHTS 1
 #define SHOW_PLANTS 1
 #define SHOW_CLOUDS 1
@@ -25,8 +25,9 @@
 #define SHOW_INFO_TEXT 1
 #define SHOW_CHAT_TEXT 1
 #define SHOW_PLAYER_NAMES 1
+#define SHOW_MENU 0
 
-// key bindings
+/// key bindings
 #define CRAFT_KEY_FORWARD 'W'
 #define CRAFT_KEY_BACKWARD 'S'
 #define CRAFT_KEY_LEFT 'A'
@@ -42,8 +43,10 @@
 #define CRAFT_KEY_CHAT 't'
 #define CRAFT_KEY_COMMAND '/'
 #define CRAFT_KEY_SIGN '`'
+#define CRAFT_KEY_RUN GLFW_KEY_LEFT_CONTROL
 
-// advanced parameters
+/// advanced parameters
+#define CRAFT_KEY_MENU 'P'
 #define CREATE_CHUNK_RADIUS 10
 #define RENDER_CHUNK_RADIUS 10
 #define RENDER_SIGN_RADIUS 4

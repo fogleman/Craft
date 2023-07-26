@@ -42,6 +42,9 @@ void create_world(int p, int q, world_func func, void *arg) {
              * make bottom layer of cobblestone under the grass/sand layer
              * cobble stone is block 11 in item array
              * making it half the depth of the original grass/sand layer
+             * based on the value of a given location (x,z) of the noise function matrix
+             * blocks are built in the y axis according to these rules.
+             * issue2 https://github.com/WSUCEG-7140/Craft/issues/2
              */
             for (int y = 0; y < h/2; y++) {
                 func(x, y, z, 11 * flag, arg);

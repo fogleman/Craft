@@ -65,7 +65,6 @@ const int items[] = {
 
 const int item_count = sizeof(items) / sizeof(int);
 
-<<<<<<< HEAD
 /** 
  * numbers refer to position in the texture.png file, 1
  * 6x16 pixel units are parsed into blocks
@@ -74,13 +73,6 @@ const int item_count = sizeof(items) / sizeof(int);
  * new blocks
  * issue5 https://github.com/WSUCEG-7140/Craft/issues/5
 */
-=======
-
- /// numbers refer to position in the texture.png file, 1
- /// 6x16 pixel units are parsed into blocks
- /// a new 16x16 texture was added for a 'star' block
-
->>>>>>> master
 const int blocks[256][6] = {
     /// w => (left, right, top, bottom, front, back) tiles
     {0, 0, 0, 0, 0, 0}, /// 0 - empty

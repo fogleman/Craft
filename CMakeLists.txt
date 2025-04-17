@@ -1,17 +1,28 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 4.0.1)
 
 project(craft)
 
-FILE(GLOB SOURCE_FILES src/*.c)
-
-add_executable(
-    craft
-    ${SOURCE_FILES}
+set(SOURCE_FILES
+    src/auth.c
+    src/client.c
+    src/cube.c
+    src/db.c
+    src/item.c
+    src/main.c
+    src/map.c
+    src/matrix.c
+    src/ring.c
+    src/sign.c
+    src/util.c
+    src/world.c
     deps/glew/src/glew.c
     deps/lodepng/lodepng.c
     deps/noise/noise.c
     deps/sqlite/sqlite3.c
-    deps/tinycthread/tinycthread.c)
+    deps/tinycthread/tinycthread.c
+)
+
+add_executable(craft ${SOURCE_FILES})
 
 add_definitions(-std=c99 -O3)
 

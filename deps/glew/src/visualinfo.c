@@ -4,6 +4,7 @@
 ** Copyright (C) Nate Robins, 1997
 **               Michael Wimmer, 1999
 **               Milan Ikits, 2002-2008
+**               Nigel Stewart, 2008-2019
 **
 ** visualinfo is a small utility that displays all available visuals,
 ** aka. pixelformats, in an OpenGL system along with renderer version
@@ -33,11 +34,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <GL/glew.h>
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA)
+#define GLAPI extern
+#include <GL/osmesa.h>
+#elif defined(GLEW_EGL)
+#include <GL/eglew.h>
+#elif defined(_WIN32)
 #include <GL/wglew.h>
 #elif defined(__APPLE__) && !defined(GLEW_APPLE_GLX)
-#include <AGL/agl.h>
-#else
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/CGLTypes.h>
+#elif !defined(__HAIKU__)
 #include <GL/glxew.h>
 #endif
 
@@ -47,7 +54,7 @@ GLEWContext _glewctx;
 #  ifdef _WIN32
 WGLEWContext _wglewctx;
 #    define wglewGetContext() (&_wglewctx)
-#  elif !defined(__APPLE__) || defined(GLEW_APPLE_GLX)
+#  elif !defined(__APPLE__) && !defined(__HAIKU__) || defined(GLEW_APPLE_GLX)
 GLXEWContext _glxewctx;
 #    define glxewGetContext() (&_glxewctx)
 #  endif
@@ -55,13 +62,17 @@ GLXEWContext _glxewctx;
 
 typedef struct GLContextStruct
 {
-#ifdef _WIN32
+#if defined(GLEW_OSMESA)
+  OSMesaContext ctx;
+#elif defined(GLEW_EGL)
+  EGLContext ctx;
+#elif defined(_WIN32)
   HWND wnd;
   HDC dc;
   HGLRC rc;
 #elif defined(__APPLE__) && !defined(GLEW_APPLE_GLX)
-  AGLContext ctx, octx;
-#else
+  CGLContextObj ctx, octx;
+#elif !defined(__HAIKU__)
   Display* dpy;
   XVisualInfo* vi;
   GLXContext ctx;
@@ -129,7 +140,7 @@ main (int argc, char** argv)
   err = glewContextInit(glewGetContext());
 #  ifdef _WIN32
   err = err || wglewContextInit(wglewGetContext());
-#  elif !defined(__APPLE__) || defined(GLEW_APPLE_GLX)
+#  elif !defined(__APPLE__) && !defined(__HAIKU__) || defined(GLEW_APPLE_GLX)
   err = err || glxewContextInit(glxewGetContext());
 #  endif
 #else
@@ -145,8 +156,15 @@ main (int argc, char** argv)
   /* ---------------------------------------------------------------------- */
   /* open file */
 #if defined(_WIN32)
-  if (!displaystdout) 
+  if (!displaystdout)
+  {
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+    if (fopen_s(&file, "visualinfo.txt", "w") != 0)
+      file = stdout;
+#else
     file = fopen("visualinfo.txt", "w");
+#endif
+  }
   if (file == NULL)
     file = stdout;
 #else
@@ -160,28 +178,34 @@ main (int argc, char** argv)
   fprintf(file, "OpenGL renderer string: %s\n", glGetString(GL_RENDERER));
   fprintf(file, "OpenGL version string: %s\n", glGetString(GL_VERSION));
   fprintf(file, "OpenGL extensions (GL_): \n");
-  PrintExtensions((char*)glGetString(GL_EXTENSIONS));
+  PrintExtensions((const char*)glGetString(GL_EXTENSIONS));
 
 #ifndef GLEW_NO_GLU
   /* GLU extensions */
   fprintf(file, "GLU version string: %s\n", gluGetString(GLU_VERSION));
   fprintf(file, "GLU extensions (GLU_): \n");
-  PrintExtensions((char*)gluGetString(GLU_EXTENSIONS));
+  PrintExtensions((const char*)gluGetString(GLU_EXTENSIONS));
 #endif
 
   /* ---------------------------------------------------------------------- */
   /* extensions string */
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA)
+#elif defined(GLEW_EGL)
+#elif defined(_WIN32)
   /* WGL extensions */
   if (WGLEW_ARB_extensions_string || WGLEW_EXT_extensions_string)
   {
     fprintf(file, "WGL extensions (WGL_): \n");
     PrintExtensions(wglGetExtensionsStringARB ? 
-                    (char*)wglGetExtensionsStringARB(ctx.dc) :
-		    (char*)wglGetExtensionsStringEXT());
+                    (const char*)wglGetExtensionsStringARB(ctx.dc) :
+		    (const char*)wglGetExtensionsStringEXT());
   }
 #elif defined(__APPLE__) && !defined(GLEW_APPLE_GLX)
   
+#elif defined(__HAIKU__)
+
+  /* TODO */
+
 #else
   /* GLX extensions */
   fprintf(file, "GLX extensions (GLX_): \n");
@@ -231,7 +255,11 @@ void PrintExtensions (const char* s)
       fprintf(file, "    %s\n", t);
       p++;
       i = (int)strlen(p);
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+      strcpy_s(t, sizeof(t), p);
+#else
       strcpy(t, p);
+#endif
     }
     s++;
   }
@@ -241,7 +269,14 @@ void PrintExtensions (const char* s)
 
 /* ---------------------------------------------------------------------- */
 
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA) || defined(GLEW_EGL)
+
+void
+VisualInfo (GLContext* ctx)
+{
+}
+
+#elif defined(_WIN32)
 
 void
 VisualInfoARB (GLContext* ctx)
@@ -557,7 +592,7 @@ VisualInfoGDI (GLContext* ctx)
 	 || (drawableonly && !(pfd.dwFlags & PFD_DRAW_TO_WINDOW))) continue;
       fprintf(file, "Visual ID: %2d  depth=%d  class=%s\n", i, pfd.cDepthBits, 
 	     pfd.cColorBits <= 8 ? "PseudoColor" : "TrueColor");
-      fprintf(file, "    bufferSize=%d level=%d renderType=%s doubleBuffer=%ld stereo=%ld\n", pfd.cColorBits, pfd.bReserved, pfd.iPixelType == PFD_TYPE_RGBA ? "rgba" : "ci", pfd.dwFlags & PFD_DOUBLEBUFFER, pfd.dwFlags & PFD_STEREO);
+      fprintf(file, "    bufferSize=%d level=%d renderType=%s doubleBuffer=%ld stereo=%ld\n", pfd.cColorBits, pfd.bReserved, pfd.iPixelType == PFD_TYPE_RGBA ? "rgba" : "ci", (long) (pfd.dwFlags & PFD_DOUBLEBUFFER), (long) (pfd.dwFlags & PFD_STEREO));
       fprintf(file, "    generic=%d generic accelerated=%d\n", (pfd.dwFlags & PFD_GENERIC_FORMAT) == PFD_GENERIC_FORMAT, (pfd.dwFlags & PFD_GENERIC_ACCELERATED) == PFD_GENERIC_ACCELERATED);
       fprintf(file, "    rgba: redSize=%d greenSize=%d blueSize=%d alphaSize=%d\n", pfd.cRedBits, pfd.cGreenBits, pfd.cBlueBits, pfd.cAlphaBits);
       fprintf(file, "    auxBuffers=%d depthSize=%d stencilSize=%d\n", pfd.cAuxBuffers, pfd.cDepthBits, pfd.cStencilBits);
@@ -582,7 +617,7 @@ VisualInfo (GLContext* ctx)
 #elif defined(__APPLE__) && !defined(GLEW_APPLE_GLX)
 
 void
-VisualInfo (GLContext* ctx)
+VisualInfo (__attribute__((unused)) GLContext* ctx)
 {
 /*
   int attrib[] = { AGL_RGBA, AGL_NONE };
@@ -596,6 +631,16 @@ VisualInfo (GLContext* ctx)
     pf = aglNextPixelFormat(pf);
   }
 */
+}
+
+/* ---------------------------------------------------------------------- */
+
+#elif defined(__HAIKU__)
+
+void
+VisualInfo (GLContext* ctx)
+{
+  /* TODO */
 }
 
 #else /* GLX */
@@ -976,7 +1021,60 @@ VisualInfo (GLContext* ctx)
 
 /* ------------------------------------------------------------------------ */
 
-#if defined(_WIN32)
+#if defined(GLEW_OSMESA)
+void InitContext (GLContext* ctx)
+{
+  ctx->ctx = NULL;
+}
+
+static const GLint osmFormat = GL_UNSIGNED_BYTE;
+static const GLint osmWidth = 640;
+static const GLint osmHeight = 480;
+static GLubyte *osmPixels = NULL;
+
+GLboolean CreateContext (GLContext* ctx)
+{
+  if (NULL == ctx) return GL_TRUE;
+  ctx->ctx = OSMesaCreateContext(OSMESA_RGBA, NULL);
+  if (NULL == ctx->ctx) return GL_TRUE;
+  if (NULL == osmPixels)
+  {
+    osmPixels = (GLubyte *) calloc(osmWidth*osmHeight*4, 1);
+  }
+  if (!OSMesaMakeCurrent(ctx->ctx, osmPixels, GL_UNSIGNED_BYTE, osmWidth, osmHeight))
+  {
+      return GL_TRUE;
+  }
+  return GL_FALSE;
+}
+
+void DestroyContext (GLContext* ctx)
+{
+  if (NULL == ctx) return;
+  if (NULL != ctx->ctx) OSMesaDestroyContext(ctx->ctx);
+}
+/* ------------------------------------------------------------------------ */
+
+#elif defined(GLEW_EGL)
+void InitContext (GLContext* ctx)
+{
+  ctx->ctx = NULL;
+}
+
+GLboolean CreateContext (GLContext* ctx)
+{
+  return GL_FALSE;
+}
+
+void DestroyContext (GLContext* ctx)
+{
+  if (NULL == ctx) return;
+  return;
+}
+
+/* ------------------------------------------------------------------------ */
+
+#elif defined(_WIN32)
 
 void InitContext (GLContext* ctx)
 {
@@ -1046,30 +1144,51 @@ void InitContext (GLContext* ctx)
 
 GLboolean CreateContext (GLContext* ctx)
 {
-  int attrib[] = { AGL_RGBA, AGL_NONE };
-  AGLPixelFormat pf;
+  CGLPixelFormatAttribute attrib[] = { kCGLPFAAccelerated, 0 };
+  CGLPixelFormatObj pf;
+  GLint npix;
+  CGLError error;
   /* check input */
   if (NULL == ctx) return GL_TRUE;
-  /*int major, minor;
-  SetPortWindowPort(wnd);
-  aglGetVersion(&major, &minor);
-  fprintf(stderr, "GL %d.%d\n", major, minor);*/
-  pf = aglChoosePixelFormat(NULL, 0, attrib);
-  if (NULL == pf) return GL_TRUE;
-  ctx->ctx = aglCreateContext(pf, NULL);
-  if (NULL == ctx->ctx || AGL_NO_ERROR != aglGetError()) return GL_TRUE;
-  aglDestroyPixelFormat(pf);
-  /*aglSetDrawable(ctx, GetWindowPort(wnd));*/
-  ctx->octx = aglGetCurrentContext();
-  if (GL_FALSE == aglSetCurrentContext(ctx->ctx)) return GL_TRUE;
+  error = CGLChoosePixelFormat(attrib, &pf, &npix);
+  if (error) return GL_TRUE;
+  error = CGLCreateContext(pf, NULL, &ctx->ctx);
+  if (error) return GL_TRUE;
+  CGLReleasePixelFormat(pf);
+  ctx->octx = CGLGetCurrentContext();
+  error = CGLSetCurrentContext(ctx->ctx);
+  if (error) return GL_TRUE;
   return GL_FALSE;
 }
 
 void DestroyContext (GLContext* ctx)
 {
   if (NULL == ctx) return;
-  aglSetCurrentContext(ctx->octx);
-  if (NULL != ctx->ctx) aglDestroyContext(ctx->ctx);
+  CGLSetCurrentContext(ctx->octx);
+  if (NULL != ctx->ctx) CGLReleaseContext(ctx->ctx);
+}
+
+/* ------------------------------------------------------------------------ */
+
+#elif defined(__HAIKU__)
+
+void
+InitContext (GLContext* ctx)
+{
+  /* TODO */
+}
+
+GLboolean
+CreateContext (GLContext* ctx)
+{
+  /* TODO */
+  return GL_FALSE;
+}
+
+void
+DestroyContext (GLContext* ctx)
+{
+  /* TODO */
 }
 
 /* ------------------------------------------------------------------------ */

@@ -1,6 +1,6 @@
 //========================================================================
 // Cursor & input mode tests
-// Copyright (c) Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -30,28 +30,48 @@
 //
 //========================================================================
 
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
  #define _USE_MATH_DEFINES
-#elif __GNUC__
- #define _GNU_SOURCE
 #endif
-
-#include <GLFW/glfw3.h>
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "linmath.h"
+
 #define CURSOR_FRAME_COUNT 60
+
+static const char* vertex_shader_text =
+"#version 110\n"
+"uniform mat4 MVP;\n"
+"attribute vec2 vPos;\n"
+"void main()\n"
+"{\n"
+"    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
+"}\n";
+
+static const char* fragment_shader_text =
+"#version 110\n"
+"void main()\n"
+"{\n"
+"    gl_FragColor = vec4(1.0);\n"
+"}\n";
 
 static double cursor_x;
 static double cursor_y;
 static int swap_interval = 1;
-static GLboolean wait_events = GL_FALSE;
-static GLboolean animate_cursor = GL_FALSE;
-static GLboolean track_cursor = GL_FALSE;
-static GLFWcursor* standard_cursors[6];
+static int wait_events = GLFW_TRUE;
+static int animate_cursor = GLFW_FALSE;
+static int track_cursor = GLFW_FALSE;
+static GLFWcursor* standard_cursors[10];
+static GLFWcursor* tracking_cursor = NULL;
 
 static void error_callback(int error, const char* description)
 {
@@ -94,6 +114,36 @@ static GLFWcursor* create_cursor_frame(float t)
     return glfwCreateCursor(&image, image.width / 2, image.height / 2);
 }
 
+static GLFWcursor* create_tracking_cursor(void)
+{
+    int i = 0, x, y;
+    unsigned char buffer[32 * 32 * 4];
+    const GLFWimage image = { 32, 32, buffer };
+
+    for (y = 0;  y < image.width;  y++)
+    {
+        for (x = 0;  x < image.height;  x++)
+        {
+            if (x == 7 || y == 7)
+            {
+                buffer[i++] = 255;
+                buffer[i++] = 0;
+                buffer[i++] = 0;
+                buffer[i++] = 255;
+            }
+            else
+            {
+                buffer[i++] = 0;
+                buffer[i++] = 0;
+                buffer[i++] = 0;
+                buffer[i++] = 0;
+            }
+        }
+    }
+
+    return glfwCreateCursor(&image, 7, 7);
+}
+
 static void cursor_position_callback(GLFWwindow* window, double x, double y)
 {
     printf("%0.3f: Cursor position: %f %f (%+f %+f)\n",
@@ -122,9 +172,10 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
         case GLFW_KEY_ESCAPE:
         {
-            if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED)
+            const int mode = glfwGetInputMode(window, GLFW_CURSOR);
+            if (mode != GLFW_CURSOR_DISABLED && mode != GLFW_CURSOR_CAPTURED)
             {
-                glfwSetWindowShouldClose(window, GL_TRUE);
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
                 break;
             }
 
@@ -133,6 +184,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
         case GLFW_KEY_N:
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwGetCursorPos(window, &cursor_x, &cursor_y);
             printf("(( cursor is normal ))\n");
             break;
 
@@ -144,6 +196,27 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         case GLFW_KEY_H:
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
             printf("(( cursor is hidden ))\n");
+            break;
+
+        case GLFW_KEY_C:
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_CAPTURED);
+            printf("(( cursor is captured ))\n");
+            break;
+
+        case GLFW_KEY_R:
+            if (!glfwRawMouseMotionSupported())
+                break;
+
+            if (glfwGetInputMode(window, GLFW_RAW_MOUSE_MOTION))
+            {
+                glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+                printf("(( raw input is disabled ))\n");
+            }
+            else
+            {
+                glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+                printf("(( raw input is enabled ))\n");
+            }
             break;
 
         case GLFW_KEY_SPACE:
@@ -159,35 +232,95 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
         case GLFW_KEY_T:
             track_cursor = !track_cursor;
+            if (track_cursor)
+                glfwSetCursor(window, tracking_cursor);
+            else
+                glfwSetCursor(window, NULL);
+
             break;
+
+        case GLFW_KEY_P:
+        {
+            double x, y;
+            glfwGetCursorPos(window, &x, &y);
+
+            printf("Query before set: %f %f (%+f %+f)\n",
+                   x, y, x - cursor_x, y - cursor_y);
+            cursor_x = x;
+            cursor_y = y;
+
+            glfwSetCursorPos(window, cursor_x, cursor_y);
+            glfwGetCursorPos(window, &x, &y);
+
+            printf("Query after set: %f %f (%+f %+f)\n",
+                   x, y, x - cursor_x, y - cursor_y);
+            cursor_x = x;
+            cursor_y = y;
+            break;
+        }
+
+        case GLFW_KEY_UP:
+            glfwSetCursorPos(window, 0, 0);
+            glfwGetCursorPos(window, &cursor_x, &cursor_y);
+            break;
+
+        case GLFW_KEY_DOWN:
+        {
+            int width, height;
+            glfwGetWindowSize(window, &width, &height);
+            glfwSetCursorPos(window, width - 1, height - 1);
+            glfwGetCursorPos(window, &cursor_x, &cursor_y);
+            break;
+        }
 
         case GLFW_KEY_0:
             glfwSetCursor(window, NULL);
             break;
 
         case GLFW_KEY_1:
-            glfwSetCursor(window, standard_cursors[0]);
-            break;
-
         case GLFW_KEY_2:
-            glfwSetCursor(window, standard_cursors[1]);
-            break;
-
         case GLFW_KEY_3:
-            glfwSetCursor(window, standard_cursors[2]);
-            break;
-
         case GLFW_KEY_4:
-            glfwSetCursor(window, standard_cursors[3]);
-            break;
-
         case GLFW_KEY_5:
-            glfwSetCursor(window, standard_cursors[4]);
-            break;
-
         case GLFW_KEY_6:
-            glfwSetCursor(window, standard_cursors[5]);
+        case GLFW_KEY_7:
+        case GLFW_KEY_8:
+        case GLFW_KEY_9:
+        {
+            int index = key - GLFW_KEY_1;
+            if (mods & GLFW_MOD_SHIFT)
+                index += 9;
+
+            if (index < sizeof(standard_cursors) / sizeof(standard_cursors[0]))
+                glfwSetCursor(window, standard_cursors[index]);
+
             break;
+        }
+
+        case GLFW_KEY_F11:
+        case GLFW_KEY_ENTER:
+        {
+            static int x, y, width, height;
+
+            if (mods != GLFW_MOD_ALT)
+                return;
+
+            if (glfwGetWindowMonitor(window))
+                glfwSetWindowMonitor(window, NULL, x, y, width, height, 0);
+            else
+            {
+                GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+                const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+                glfwGetWindowPos(window, &x, &y);
+                glfwGetWindowSize(window, &width, &height);
+                glfwSetWindowMonitor(window, monitor,
+                                     0, 0, mode->width, mode->height,
+                                     mode->refreshRate);
+            }
+
+            glfwGetCursorPos(window, &cursor_x, &cursor_y);
+            break;
+        }
     }
 }
 
@@ -196,11 +329,21 @@ int main(void)
     int i;
     GLFWwindow* window;
     GLFWcursor* star_cursors[CURSOR_FRAME_COUNT];
+    GLFWcursor* current_frame = NULL;
+    GLuint vertex_buffer, vertex_shader, fragment_shader, program;
+    GLint mvp_location, vpos_location;
 
     glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
+
+    tracking_cursor = create_tracking_cursor();
+    if (!tracking_cursor)
+    {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
 
     for (i = 0;  i < CURSOR_FRAME_COUNT;  i++)
     {
@@ -218,18 +361,20 @@ int main(void)
             GLFW_ARROW_CURSOR,
             GLFW_IBEAM_CURSOR,
             GLFW_CROSSHAIR_CURSOR,
-            GLFW_HAND_CURSOR,
-            GLFW_HRESIZE_CURSOR,
-            GLFW_VRESIZE_CURSOR
+            GLFW_POINTING_HAND_CURSOR,
+            GLFW_RESIZE_EW_CURSOR,
+            GLFW_RESIZE_NS_CURSOR,
+            GLFW_RESIZE_NWSE_CURSOR,
+            GLFW_RESIZE_NESW_CURSOR,
+            GLFW_RESIZE_ALL_CURSOR,
+            GLFW_NOT_ALLOWED_CURSOR
         };
 
         standard_cursors[i] = glfwCreateStandardCursor(shapes[i]);
-        if (!standard_cursors[i])
-        {
-            glfwTerminate();
-            exit(EXIT_FAILURE);
-        }
     }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     window = glfwCreateWindow(640, 480, "Cursor Test", NULL, NULL);
     if (!window)
@@ -239,6 +384,31 @@ int main(void)
     }
 
     glfwMakeContextCurrent(window);
+    gladLoadGL(glfwGetProcAddress);
+
+    glGenBuffers(1, &vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+
+    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
+    glCompileShader(vertex_shader);
+
+    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
+    glCompileShader(fragment_shader);
+
+    program = glCreateProgram();
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+
+    mvp_location = glGetUniformLocation(program, "MVP");
+    vpos_location = glGetAttribLocation(program, "vPos");
+
+    glEnableVertexAttribArray(vpos_location);
+    glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE,
+                          sizeof(vec2), (void*) 0);
+    glUseProgram(program);
 
     glfwGetCursorPos(window, &cursor_x, &cursor_y);
     printf("Cursor position: %f %f\n", cursor_x, cursor_y);
@@ -254,24 +424,33 @@ int main(void)
         {
             int wnd_width, wnd_height, fb_width, fb_height;
             float scale;
+            vec2 vertices[4];
+            mat4x4 mvp;
 
             glfwGetWindowSize(window, &wnd_width, &wnd_height);
             glfwGetFramebufferSize(window, &fb_width, &fb_height);
 
-            scale = (float) fb_width / (float) wnd_width;
-
             glViewport(0, 0, fb_width, fb_height);
 
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            glOrtho(0.f, fb_width, 0.f, fb_height, 0.f, 1.f);
+            scale = (float) fb_width / (float) wnd_width;
+            vertices[0][0] = 0.5f;
+            vertices[0][1] = (float) (fb_height - floor(cursor_y * scale) - 1.f + 0.5f);
+            vertices[1][0] = (float) fb_width + 0.5f;
+            vertices[1][1] = (float) (fb_height - floor(cursor_y * scale) - 1.f + 0.5f);
+            vertices[2][0] = (float) floor(cursor_x * scale) + 0.5f;
+            vertices[2][1] = 0.5f;
+            vertices[3][0] = (float) floor(cursor_x * scale) + 0.5f;
+            vertices[3][1] = (float) fb_height + 0.5f;
 
-            glBegin(GL_LINES);
-            glVertex2f(0.f, (GLfloat) (fb_height - cursor_y * scale));
-            glVertex2f((GLfloat) fb_width, (GLfloat) (fb_height - cursor_y * scale));
-            glVertex2f((GLfloat) cursor_x * scale, 0.f);
-            glVertex2f((GLfloat) cursor_x * scale, (GLfloat) fb_height);
-            glEnd();
+            glBufferData(GL_ARRAY_BUFFER,
+                         sizeof(vertices),
+                         vertices,
+                         GL_STREAM_DRAW);
+
+            mat4x4_ortho(mvp, 0.f, (float) fb_width, 0.f, (float) fb_height, 0.f, 1.f);
+            glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) mvp);
+
+            glDrawArrays(GL_LINES, 0, 4);
         }
 
         glfwSwapBuffers(window);
@@ -279,11 +458,22 @@ int main(void)
         if (animate_cursor)
         {
             const int i = (int) (glfwGetTime() * 30.0) % CURSOR_FRAME_COUNT;
-            glfwSetCursor(window, star_cursors[i]);
+            if (current_frame != star_cursors[i])
+            {
+                glfwSetCursor(window, star_cursors[i]);
+                current_frame = star_cursors[i];
+            }
         }
+        else
+            current_frame = NULL;
 
         if (wait_events)
-            glfwWaitEvents();
+        {
+            if (animate_cursor)
+                glfwWaitEventsTimeout(1.0 / 30.0);
+            else
+                glfwWaitEvents();
+        }
         else
             glfwPollEvents();
 

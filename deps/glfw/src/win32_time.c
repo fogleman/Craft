@@ -1,8 +1,8 @@
 //========================================================================
-// GLFW 3.1 Win32 - www.glfw.org
+// GLFW 3.4 Win32 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
-// Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>
+// Copyright (c) 2006-2017 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -27,60 +27,28 @@
 
 #include "internal.h"
 
-
-// Return raw time
-//
-static unsigned __int64 getRawTime(void)
-{
-    if (_glfw.win32_time.hasPC)
-    {
-        unsigned __int64 time;
-        QueryPerformanceCounter((LARGE_INTEGER*) &time);
-        return time;
-    }
-    else
-        return (unsigned __int64) _glfw_timeGetTime();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-//////                       GLFW internal API                      //////
-//////////////////////////////////////////////////////////////////////////
-
-// Initialise timer
-//
-void _glfwInitTimer(void)
-{
-    unsigned __int64 frequency;
-
-    if (QueryPerformanceFrequency((LARGE_INTEGER*) &frequency))
-    {
-        _glfw.win32_time.hasPC = GL_TRUE;
-        _glfw.win32_time.resolution = 1.0 / (double) frequency;
-    }
-    else
-    {
-        _glfw.win32_time.hasPC = GL_FALSE;
-        _glfw.win32_time.resolution = 0.001; // winmm resolution is 1 ms
-    }
-
-    _glfw.win32_time.base = getRawTime();
-}
-
+#if defined(GLFW_BUILD_WIN32_TIMER)
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
 //////////////////////////////////////////////////////////////////////////
 
-double _glfwPlatformGetTime(void)
+void _glfwPlatformInitTimer(void)
 {
-    return (double) (getRawTime() - _glfw.win32_time.base) *
-        _glfw.win32_time.resolution;
+    QueryPerformanceFrequency((LARGE_INTEGER*) &_glfw.timer.win32.frequency);
 }
 
-void _glfwPlatformSetTime(double time)
+uint64_t _glfwPlatformGetTimerValue(void)
 {
-    _glfw.win32_time.base = getRawTime() -
-        (unsigned __int64) (time / _glfw.win32_time.resolution);
+    uint64_t value;
+    QueryPerformanceCounter((LARGE_INTEGER*) &value);
+    return value;
 }
+
+uint64_t _glfwPlatformGetTimerFrequency(void)
+{
+    return _glfw.timer.win32.frequency;
+}
+
+#endif // GLFW_BUILD_WIN32_TIMER
 

@@ -29,7 +29,9 @@
 #include <assert.h>
 #include <stddef.h>
 
-#include <glad/glad.h>
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 /* Map height updates */
@@ -291,12 +293,12 @@ static void generate_heightmap__circle(float* center_x, float* center_y,
 {
     float sign;
     /* random value for element in between [0-1.0] */
-    *center_x = (MAP_SIZE * rand()) / (1.0f * RAND_MAX);
-    *center_y = (MAP_SIZE * rand()) / (1.0f * RAND_MAX);
-    *size = (MAX_CIRCLE_SIZE * rand()) / (1.0f * RAND_MAX);
-    sign = (1.0f * rand()) / (1.0f * RAND_MAX);
+    *center_x = (MAP_SIZE * rand()) / (float) RAND_MAX;
+    *center_y = (MAP_SIZE * rand()) / (float) RAND_MAX;
+    *size = (MAX_CIRCLE_SIZE * rand()) / (float) RAND_MAX;
+    sign = (1.0f * rand()) / (float) RAND_MAX;
     sign = (sign < DISPLACEMENT_SIGN_LIMIT) ? -1.0f : 1.0f;
-    *displacement = (sign * (MAX_DISPLACEMENT * rand())) / (1.0f * RAND_MAX);
+    *displacement = (sign * (MAX_DISPLACEMENT * rand())) / (float) RAND_MAX;
 }
 
 /* Run the specified number of iterations of the generation process for the
@@ -319,7 +321,7 @@ static void update_map(int num_iter)
         {
             GLfloat dx = center_x - map_vertices[0][ii];
             GLfloat dz = center_z - map_vertices[2][ii];
-            GLfloat pd = (2.0f * sqrtf((dx * dx) + (dz * dz))) / circle_size;
+            GLfloat pd = (2.0f * (float) sqrt((dx * dx) + (dz * dz))) / circle_size;
             if (fabs(pd) <= 1.0f)
             {
                 /* tx,tz is within the circle */
@@ -386,7 +388,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     {
         case GLFW_KEY_ESCAPE:
             /* Exit program on Escape */
-            glfwSetWindowShouldClose(window, GL_TRUE);
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
             break;
     }
 }
@@ -406,6 +408,7 @@ int main(int argc, char** argv)
     float f;
     GLint uloc_modelview;
     GLint uloc_project;
+    int width, height;
 
     GLuint shader_program;
 
@@ -414,11 +417,11 @@ int main(int argc, char** argv)
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 
     window = glfwCreateWindow(800, 600, "GLFW OpenGL3 Heightmap demo", NULL, NULL);
     if (! window )
@@ -431,7 +434,7 @@ int main(int argc, char** argv)
     glfwSetKeyCallback(window, key_callback);
 
     glfwMakeContextCurrent(window);
-    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+    gladLoadGL(glfwGetProcAddress);
 
     /* Prepare opengl resources for rendering */
     shader_program = make_shader_program(vertex_shader_text, fragment_shader_text);
@@ -469,7 +472,8 @@ int main(int argc, char** argv)
     /* Create the vbo to store all the information for the grid and the height */
 
     /* setup the scene ready for rendering */
-    glViewport(0, 0, 800, 600);
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     /* main loop */

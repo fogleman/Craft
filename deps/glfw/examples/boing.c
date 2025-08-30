@@ -30,14 +30,15 @@
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
  #define _USE_MATH_DEFINES
-#elif __GNUC__
- #define _GNU_SOURCE
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #include <linmath.h>
@@ -90,10 +91,11 @@ typedef enum { DRAW_BALL, DRAW_BALL_SHADOW } DRAW_BALL_ENUM;
 typedef struct {float x; float y; float z;} vertex_t;
 
 /* Global vars */
+int windowed_xpos, windowed_ypos, windowed_width, windowed_height;
 int width, height;
 GLfloat deg_rot_y       = 0.f;
 GLfloat deg_rot_y_inc   = 2.f;
-GLboolean override_pos  = GL_FALSE;
+int override_pos        = GLFW_FALSE;
 GLfloat cursor_x        = 0.f;
 GLfloat cursor_y        = 0.f;
 GLfloat ball_x          = -RADIUS;
@@ -165,7 +167,7 @@ void CrossProduct( vertex_t a, vertex_t b, vertex_t c, vertex_t *n )
    v2 = c.y - a.y;
    v3 = c.z - a.z;
 
-   n->x = u2 * v3 - v2 * v3;
+   n->x = u2 * v3 - v2 * u3;
    n->y = u3 * v1 - v3 * u1;
    n->z = u1 * v2 - v1 * u2;
 }
@@ -237,8 +239,32 @@ void reshape( GLFWwindow* window, int w, int h )
 
 void key_callback( GLFWwindow* window, int key, int scancode, int action, int mods )
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+    if (action != GLFW_PRESS)
+        return;
+
+    if (key == GLFW_KEY_ESCAPE && mods == 0)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    if ((key == GLFW_KEY_ENTER && mods == GLFW_MOD_ALT) ||
+        (key == GLFW_KEY_F11 && mods == GLFW_MOD_ALT))
+    {
+        if (glfwGetWindowMonitor(window))
+        {
+            glfwSetWindowMonitor(window, NULL,
+                                 windowed_xpos, windowed_ypos,
+                                 windowed_width, windowed_height, 0);
+        }
+        else
+        {
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            if (monitor)
+            {
+                const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+                glfwGetWindowPos(window, &windowed_xpos, &windowed_ypos);
+                glfwGetWindowSize(window, &windowed_width, &windowed_height);
+                glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            }
+        }
+    }
 }
 
 static void set_ball_pos ( GLfloat x, GLfloat y )
@@ -254,12 +280,12 @@ void mouse_button_callback( GLFWwindow* window, int button, int action, int mods
 
    if (action == GLFW_PRESS)
    {
-      override_pos = GL_TRUE;
+      override_pos = GLFW_TRUE;
       set_ball_pos(cursor_x, cursor_y);
    }
    else
    {
-      override_pos = GL_FALSE;
+      override_pos = GLFW_FALSE;
    }
 }
 
@@ -278,7 +304,7 @@ void cursor_position_callback( GLFWwindow* window, double x, double y )
  * The Boing ball is sphere in which each facet is a rectangle.
  * Facet colors alternate between red and white.
  * The ball is built by stacking latitudinal circles.  Each circle is composed
- * of a widely-separated set of points, so that each facet is noticably large.
+ * of a widely-separated set of points, so that each facet is noticeably large.
  *****************************************************************************/
 void DrawBoingBall( void )
 {
@@ -422,7 +448,7 @@ void DrawBoingBallBand( GLfloat long_lo,
    static int colorToggle = 0;
 
   /*
-   * Iterate thru the points of a latitude circle.
+   * Iterate through the points of a latitude circle.
    * A latitude circle is a 2D set of X,Z points.
    */
    for ( lat_deg = 0;
@@ -603,8 +629,6 @@ int main( void )
    if( !glfwInit() )
       exit( EXIT_FAILURE );
 
-   glfwWindowHint(GLFW_DEPTH_BITS, 16);
-
    window = glfwCreateWindow( 400, 400, "Boing (classic Amiga demo)", NULL, NULL );
    if (!window)
    {
@@ -612,12 +636,15 @@ int main( void )
        exit( EXIT_FAILURE );
    }
 
+   glfwSetWindowAspectRatio(window, 1, 1);
+
    glfwSetFramebufferSizeCallback(window, reshape);
    glfwSetKeyCallback(window, key_callback);
    glfwSetMouseButtonCallback(window, mouse_button_callback);
    glfwSetCursorPosCallback(window, cursor_position_callback);
 
    glfwMakeContextCurrent(window);
+   gladLoadGL(glfwGetProcAddress);
    glfwSwapInterval( 1 );
 
    glfwGetFramebufferSize(window, &width, &height);
